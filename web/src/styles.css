@@ -1,0 +1,70 @@
+/* =========================================================
+   Zona privada · mismos tokens, fuentes y viñetas de cómic que la web pública
+   ========================================================= */
+
+@font-face { font-family: 'Panchang'; src: url('/fonts/panchang-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Switzer'; src: url('/fonts/switzer-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Switzer'; src: url('/fonts/switzer-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face {
+  font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2'); font-weight: 400 600; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2'); font-weight: 400 600; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20AB, U+20AD-20C4, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  --brand: #ff7a1f; --brand-alt: #ffffff; --on-brand: #050f16;
+  --paper: #10191f; --on-paper: #e4e9ec; --soft: #8d979e;
+  --dark: #03080b; --dark-2: #15232c; --on-dark: #eef2f4;
+  --ok: #3ddc84; --warn: #ffd23f; --bad: #ff5a5f;
+
+  --font-display: 'Panchang', 'Arial Black', sans-serif;
+  --font-text: 'Switzer', 'Helvetica Neue', Arial, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --step-lead: clamp(1.15rem, 1.05rem + 0.5vw, 1.45rem);
+  --step-head: clamp(1.4rem, 1rem + 1.4vw, 2.1rem);
+  --margin: clamp(16px, 2.8vw, 40px);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+[data-color="lima"]    { --brand: #c8f53c; --on-brand: #0b1a07; }
+[data-color="cobalto"] { --brand: #3355ff; --on-brand: #ffffff; }
+[data-color="rosa"]    { --brand: #ff5fa2; --on-brand: #1a0510; }
+[data-color="rojo"]    { --brand: #e62429; --on-brand: #ffffff; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--dark); color: var(--on-dark); overflow-x: clip; }
+body { font: 400 var(--step-body)/1.5 var(--font-text); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+code { font-family: var(--font-code); }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+::selection { background: var(--brand); color: var(--on-brand); }
+
+.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--brand); color: var(--on-brand);
+  font: 500 var(--step-body)/1 var(--font-text); text-decoration: none;
+  transition: transform 140ms var(--ease-out), filter 180ms ease;
+}
+.button:active { transform: scale(0.96); }
+.button:disabled { opacity: 0.6; cursor: progress; }
+.button--ghost { background: transparent; color: inherit; border: 2px solid currentColor; }
+@media (hover: hover) { .button:hover { filter: brightness(1.08); } }
+
+/* viñeta de cómic: borde y sombra dura en el color de marca */
+.vineta {
+  background: var(--paper); color: var(--on-paper);
+  border: 3px solid var(--brand); box-shadow: 8px 8px 0 var(--brand);
+}
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

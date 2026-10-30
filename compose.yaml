@@ -1,0 +1,77 @@
+# Zona privada en el equipo de casa: base de datos, API (con el front dentro), registros y túnel de Cloudflare.
+#   docker compose up -d --build                 -> todo menos el túnel (prueba en http://localhost:8080)
+#   docker compose --profile tunel up -d --build -> también el túnel: la app sale por Internet con HTTPS
+name: zona-privada
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zonaprivada
+      POSTGRES_USER: mda
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mda -d zonaprivada"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD}
+      Admin__Email: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env}
+      Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env}
+      Seq__Url: http://seq:5341
+    # solo en este equipo: desde fuera se entra por el túnel, nunca por un puerto abierto
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  seq:
+    image: datalust/seq:2026.1
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_PASSWORD:?Falta SEQ_PASSWORD en .env}
+    volumes:
+      - seq:/data
+    ports:
+      - "127.0.0.1:5341:80"
+
+  tunel:
+    image: cloudflare/cloudflared:2026.10.6
+    restart: unless-stopped
+    profiles: ["tunel"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Falta CLOUDFLARE_TUNNEL_TOKEN en .env}
+    depends_on:
+      - api
+
+  # copia de seguridad diaria de la base de datos en ./copias (se guardan las 14 últimas)
+  copias:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./copias:/copias
+    entrypoint: >
+      sh -c 'while true; do
+        pg_dump -h db -U mda -d zonaprivada -Fc -f /copias/zonaprivada-$$(date +%Y%m%d-%H%M).dump &&
+        ls -1t /copias/*.dump | tail -n +15 | xargs -r rm -f;
+        sleep 86400; done'
+
+volumes:
+  db:
+  seq:

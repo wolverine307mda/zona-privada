@@ -1,0 +1,51 @@
+<canvas class="escena" #escena aria-hidden="true"></canvas>
+
+<header class="top">
+  <span class="marca">MDA</span>
+  <a class="volver" href="https://wolverine307mda.github.io/">Volver a la web</a>
+</header>
+
+<main class="main">
+  <section class="intro" aria-hidden="true">
+    <p class="kicker"><code>// zona privada</code></p>
+    <p class="grande">Solo<br>con<br>llave</p>
+  </section>
+
+  <form class="tarjeta vineta" [class.sacude]="sacude()" (submit)="entrar($event)" novalidate aria-labelledby="titulo">
+    <p class="chip"><span class="punto" aria-hidden="true"></span><code>servidor de casa · en línea</code></p>
+    <h1 class="titulo" id="titulo">Área privada</h1>
+
+    <label class="campo">
+      <span class="etiqueta"><code>email</code></span>
+      <input class="entrada" type="email" name="email" autocomplete="username" spellcheck="false" required
+             [value]="email()" (input)="email.set(valor($event))">
+      <span class="linea" aria-hidden="true"></span>
+    </label>
+
+    <label class="campo">
+      <span class="etiqueta"><code>contraseña</code></span>
+      <input class="entrada" [type]="verClave() ? 'text' : 'password'" name="password" autocomplete="current-password" required
+             [value]="password()" (input)="password.set(valor($event))">
+      <span class="linea" aria-hidden="true"></span>
+      <button class="ojo" type="button" (click)="verClave.set(!verClave())" [attr.aria-pressed]="verClave()"
+              [attr.aria-label]="verClave() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </label>
+
+    @if (pideCodigo()) {
+      <label class="campo campo--codigo">
+        <span class="etiqueta"><code>código 2FA</code></span>
+        <input class="entrada" type="text" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required
+               [value]="codigo()" (input)="codigo.set(valor($event))">
+        <span class="linea" aria-hidden="true"></span>
+      </label>
+    }
+
+    <button class="button entrar" type="submit" [disabled]="ocupado()">
+      <span>{{ ocupado() ? 'Comprobando…' : 'Entrar' }}</span>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+    <p class="mensaje" role="status" aria-live="polite">{{ error() }}</p>
+  </form>
+</main>

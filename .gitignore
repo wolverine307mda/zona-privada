@@ -1,0 +1,22 @@
+# secretos y datos locales
+.env
+copias/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+api/Mda.Api/wwwroot/
+
+# Angular / Node
+web/node_modules/
+web/dist/
+web/.angular/
+
+# editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.claude/

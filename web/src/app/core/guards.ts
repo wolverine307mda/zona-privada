@@ -1,0 +1,36 @@
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
+import { SesionService } from './sesion.service';
+
+// El panel solo con sesión; si no, a la pantalla de entrar
+// (inject() siempre antes del primer await: después ya no hay contexto de inyección)
+export const conSesion: CanActivateFn = async () => {
+  const sesion = inject(SesionService);
+  const router = inject(Router);
+  return (await sesion.comprobar()) || router.parseUrl('/entrar');
+};
+
+// Si ya hay sesión, «entrar» lleva directo al panel
+export const sinSesion: CanActivateFn = async () => {
+  const sesion = inject(SesionService);
+  const router = inject(Router);
+  return !(await sesion.comprobar()) || router.parseUrl('/panel');
+};
+
+// Una respuesta 401 fuera del login significa que la sesión caducó
+export const sesionCaducada: HttpInterceptorFn = (req, next) => {
+  const sesion = inject(SesionService);
+  const router = inject(Router);
+  return next(req).pipe(
+    catchError((e: unknown) => {
+      const login = req.url.startsWith('/api/auth/') || req.url === '/api/sesion';
+      if (e instanceof HttpErrorResponse && e.status === 401 && !login) {
+        sesion.olvidar();
+        router.navigateByUrl('/entrar');
+      }
+      return throwError(() => e);
+    }),
+  );
+};

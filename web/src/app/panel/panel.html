@@ -1,0 +1,79 @@
+<header class="top">
+  <span class="marca">MDA <code>/ panel</code></span>
+  <div class="herramientas">
+    <span class="conexion" [attr.data-estado]="sistema.estado()">
+      <span class="punto" aria-hidden="true"></span>
+      <code>
+        @switch (sistema.estado()) {
+          @case ('en-vivo') { en directo }
+          @case ('reconectando') { reconectando… }
+          @case ('conectando') { conectando… }
+          @default { sin conexión }
+        }
+      </code>
+    </span>
+    <button class="button button--ghost salir" type="button" (click)="salir()">
+      Salir
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <section class="hola">
+    <p class="kicker"><code>// {{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }}</code></p>
+    <h1 class="titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h1>
+    <p class="lead">Así va el equipo de casa ahora mismo.</p>
+  </section>
+
+  <section class="rejilla" aria-label="Estado del servidor">
+    <article class="caja vineta caja--cpu">
+      <h2 class="caja__titulo"><code>cpu</code></h2>
+      <div class="medidor" #cpu role="img" [attr.aria-label]="'CPU al ' + (sistema.actual()?.cpu ?? 0) + ' por ciento'"></div>
+      <p class="caja__pie">{{ sistema.actual()?.nucleos ?? '—' }} núcleos</p>
+    </article>
+
+    <article class="caja vineta">
+      <h2 class="caja__titulo"><code>memoria</code></h2>
+      <p class="cifra">{{ memoria().pct }}<span>%</span></p>
+      <div class="barra" role="progressbar" aria-label="Memoria" [attr.aria-valuenow]="memoria().pct" aria-valuemin="0" aria-valuemax="100">
+        <span [style.width.%]="memoria().pct"></span>
+      </div>
+      <p class="caja__pie">{{ memoria().usado }} de {{ memoria().total }} GB</p>
+    </article>
+
+    <article class="caja vineta">
+      <h2 class="caja__titulo"><code>disco</code></h2>
+      <p class="cifra">{{ disco().pct }}<span>%</span></p>
+      <div class="barra" role="progressbar" aria-label="Disco" [attr.aria-valuenow]="disco().pct" aria-valuemin="0" aria-valuemax="100">
+        <span [style.width.%]="disco().pct"></span>
+      </div>
+      <p class="caja__pie">{{ disco().usado }} de {{ disco().total }} GB</p>
+    </article>
+
+    <article class="caja vineta">
+      <h2 class="caja__titulo"><code>encendido</code></h2>
+      <p class="cifra cifra--texto">{{ encendido() }}</p>
+      <p class="caja__pie">{{ sistema.actual()?.equipo ?? '—' }}</p>
+      <p class="caja__pie caja__pie--so">{{ sistema.actual()?.sistemaOperativo ?? '' }}</p>
+    </article>
+
+    <article class="caja vineta caja--ancha">
+      <h2 class="caja__titulo"><code>últimos dos minutos</code></h2>
+      <div class="linea-tiempo" #historial role="img" aria-label="Evolución de CPU y memoria en los últimos dos minutos"></div>
+    </article>
+  </section>
+
+  <section class="proximos" aria-labelledby="proximos-titulo">
+    <h2 class="proximos__titulo" id="proximos-titulo"><code>// próximos módulos</code></h2>
+    <ul class="proximos__lista">
+      @for (m of proximos; track m.codigo) {
+        <li class="modulo">
+          <code class="modulo__codigo">{{ m.codigo }}</code>
+          <h3 class="modulo__titulo">{{ m.titulo }}</h3>
+          <p class="modulo__texto">{{ m.texto }}</p>
+        </li>
+      }
+    </ul>
+  </section>
+</main>

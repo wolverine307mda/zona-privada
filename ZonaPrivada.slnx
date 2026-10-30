@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/api/">
+    <Project Path="api/Mda.Api.Tests/Mda.Api.Tests.csproj" />
+    <Project Path="api/Mda.Api/Mda.Api.csproj" />
+  </Folder>
+</Solution>

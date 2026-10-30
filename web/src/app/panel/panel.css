@@ -1,0 +1,63 @@
+:host {
+  display: block; min-height: 100svh;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--brand) 14%, transparent) 1.2px, transparent 1.5px) 0 0 / 18px 18px,
+    var(--dark);
+}
+
+.top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 14px var(--margin);
+  background: color-mix(in srgb, var(--dark) 88%, transparent); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--dark-2);
+}
+.marca { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.04em; color: var(--brand); }
+.marca code { font: 400 var(--step-small)/1 var(--font-code); color: var(--soft); letter-spacing: 0; }
+.herramientas { display: flex; align-items: center; gap: 12px; }
+.conexion { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--dark-2); font-size: var(--step-small); }
+.conexion .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--soft); }
+.conexion[data-estado='en-vivo'] .punto { background: var(--ok); animation: late 2s var(--ease-out) infinite; }
+.conexion[data-estado='reconectando'] .punto, .conexion[data-estado='conectando'] .punto { background: var(--warn); }
+.conexion[data-estado='sin-conexion'] .punto { background: var(--bad); }
+@keyframes late { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 8px transparent; } }
+.salir { min-height: 42px; padding: 0 18px; }
+
+.main { padding: clamp(32px, 5vw, 64px) var(--margin) 80px; display: flex; flex-direction: column; gap: clamp(32px, 4vw, 56px); max-width: 1400px; margin: 0 auto; }
+.kicker { font-size: var(--step-small); color: var(--brand); margin-bottom: 12px; }
+.titulo { font: 700 clamp(2rem, 1.2rem + 3.6vw, 4.6rem)/0.92 var(--font-display); text-transform: uppercase; letter-spacing: -0.05em; }
+.lead { margin-top: 14px; color: var(--soft); font-size: var(--step-lead); }
+
+.rejilla { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.caja { display: flex; flex-direction: column; gap: 10px; padding: 22px; min-height: 220px; animation: aparece 800ms var(--ease-expo) both; }
+.caja:nth-child(2) { animation-delay: 80ms; rotate: 0.6deg; }
+.caja:nth-child(3) { animation-delay: 160ms; rotate: -0.6deg; }
+.caja:nth-child(4) { animation-delay: 240ms; }
+.caja:nth-child(5) { animation-delay: 320ms; }
+@keyframes aparece { from { opacity: 0; transform: translateY(24px); } }
+.caja__titulo { font-size: var(--step-small); font-weight: 400; color: var(--soft); }
+.caja__titulo code::before { content: '$ '; color: var(--brand); }
+.caja__pie { color: var(--soft); font-size: var(--step-small); margin-top: auto; }
+.caja__pie--so { margin-top: 0; font-family: var(--font-code); font-size: 12px; overflow-wrap: anywhere; }
+.medidor { width: 100%; height: 170px; }
+.cifra { font: 700 clamp(2.4rem, 1.6rem + 2.4vw, 3.6rem)/1 var(--font-display); letter-spacing: -0.04em; }
+.cifra span { font-size: 0.5em; color: var(--soft); margin-left: 4px; }
+.cifra--texto { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem); }
+.barra { height: 12px; border-radius: 999px; background: var(--dark-2); overflow: hidden; }
+.barra span { display: block; height: 100%; border-radius: inherit; background: var(--brand); transition: width 800ms var(--ease-expo); }
+.caja--ancha { grid-column: 1 / -1; min-height: 0; }
+.linea-tiempo { width: 100%; height: 280px; }
+
+.proximos__titulo { font-size: var(--step-small); font-weight: 400; color: var(--brand); margin-bottom: 20px; }
+.proximos__lista { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.modulo { padding: 20px; border: 2px dashed color-mix(in srgb, var(--on-dark) 25%, transparent); display: flex; flex-direction: column; gap: 8px; }
+.modulo__codigo { font-size: var(--step-small); color: var(--soft); }
+.modulo__titulo { font: 700 var(--step-lead)/1.05 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.modulo__texto { color: var(--soft); }
+
+@media (max-width: 1100px) { .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .rejilla, .proximos__lista { grid-template-columns: minmax(0, 1fr); }
+  .caja { rotate: none !important; box-shadow: 6px 6px 0 var(--brand); }
+  .conexion code { display: none; }
+}
