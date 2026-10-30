@@ -22,6 +22,7 @@ export const routes: Routes = [
           { path: 'estadisticas', loadComponent: () => import('./gastos/estadisticas').then((m) => m.Estadisticas) },
         ],
       },
+      { path: 'documentos', title: 'Documentos · MDA', loadComponent: () => import('./documentos/documentos').then((m) => m.Documentos) },
       { path: 'pronto/:id', title: 'Próximamente · MDA', loadComponent: () => import('./pronto/pronto').then((m) => m.Pronto) },
     ],
   },

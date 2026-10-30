@@ -10,15 +10,15 @@ import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, nume
   template: `
     @if (datos(); as d) {
       <section class="kpis">
-        <article class="caja kpi kpi--consumo">
+        <article data-inclina class="caja kpi kpi--consumo">
           <span class="etq">Consumo medio</span>
           <strong class="grande">{{ d.consumoMedio != null ? numero(d.consumoMedio, 1) : '—' }}<small>L/100 km</small></strong>
           <span class="sub">{{ d.consumoMedio != null ? 'con el depósito lleno en cada repostaje' : 'apunta los km en cada repostaje para verlo' }}</span>
         </article>
-        <article class="caja kpi"><span class="etq">Precio medio</span><strong class="grande">{{ d.precioMedio != null ? numero(d.precioMedio, 3) : '—' }}<small>€/L</small></strong>
+        <article data-inclina class="caja kpi"><span class="etq">Precio medio</span><strong class="grande">{{ d.precioMedio != null ? numero(d.precioMedio, 3) : '—' }}<small>€/L</small></strong>
           <span class="sub">último: {{ d.ultimoPrecio != null ? numero(d.ultimoPrecio, 3) + ' €/L' : '—' }}</span></article>
-        <article class="caja kpi"><span class="etq">Este año</span><strong class="grande">{{ euros(d.gastoEsteAnio) }}</strong><span class="sub">{{ numero(d.litros, 0) }} L en total</span></article>
-        <article class="caja kpi"><span class="etq">Coste por km</span><strong class="grande">{{ d.costePorKm != null ? numero(d.costePorKm * 100, 1) : '—' }}<small>cént.</small></strong>
+        <article data-inclina class="caja kpi"><span class="etq">Este año</span><strong class="grande">{{ euros(d.gastoEsteAnio) }}</strong><span class="sub">{{ numero(d.litros, 0) }} L en total</span></article>
+        <article data-inclina class="caja kpi"><span class="etq">Coste por km</span><strong class="grande">{{ d.costePorKm != null ? numero(d.costePorKm * 100, 1) : '—' }}<small>cént.</small></strong>
           <span class="sub">{{ d.kmRecorridos != null ? numero(d.kmRecorridos, 0) + ' km registrados' : 'sin kilómetros todavía' }}</span></article>
       </section>
 
@@ -81,7 +81,14 @@ import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, nume
     .bien { color: var(--ok); }
     [data-mode='light'] .bien { color: #138a4c; }
     @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 560px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 560px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .grafica { height: 240px; }
+      .fila--cab { display: none; }
+      .fila { min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 12px; background: var(--tarjeta-2); margin-bottom: 6px; }
+      .fila span:nth-child(n + 3):not(.fila__importe) { display: none; }
+      .fila span:first-child { grid-column: 1 / -1; color: var(--soft); }
+    }
   `,
 })
 export class Gasolina implements OnDestroy {

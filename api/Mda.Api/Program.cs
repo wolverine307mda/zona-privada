@@ -1,6 +1,7 @@
 // API de la zona privada: inicio de sesión con cookie (ASP.NET Core Identity), PostgreSQL con EF Core,
 // estado del servidor en tiempo real con SignalR y, en producción, el front de Angular servido desde wwwroot.
 using System.Threading.RateLimiting;
+using Mda.Api.Archivos;
 using Mda.Api.Auth;
 using Mda.Api.Data;
 using Mda.Api.Gastos;
@@ -103,6 +104,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<EstadoAgente>();
 builder.Services.AddHostedService<MonitorSistema>();
 
+// ---- Documentos: las carpetas del equipo montadas en Archivos:Base ----
+builder.Services.AddSingleton<Carpetas>();
+
 // ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
 builder.Services.AddHostedService<SemillaAdmin>();
 
@@ -124,6 +128,7 @@ app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOf
 app.MapAuth();
 app.MapSistema();
 app.MapGastos();
+app.MapArchivos();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

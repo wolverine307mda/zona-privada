@@ -1,0 +1,35 @@
+// Service worker de la app instalada: abre al instante con lo último que se cargó y,
+// sin conexión, muestra la app (que avisa de que el equipo no responde) en vez de la página de error del navegador.
+// La API (/api, /hubs) nunca se guarda: los datos siempre son los del equipo.
+const CACHE = 'mda-v1';
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/apple-touch-icon.png'])).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/hubs/')) return;
+
+  // páginas: primero la red (siempre la versión nueva); sin red, la app guardada
+  if (req.mode === 'navigate') {
+    e.respondWith(fetch(req).then((r) => {
+      const copia = r.clone();
+      caches.open(CACHE).then((c) => c.put('/', copia));
+      return r;
+    }).catch(() => caches.match('/')));
+    return;
+  }
+
+  // archivos de la app (llevan huella en el nombre): de la caché y, en segundo plano, se refrescan
+  e.respondWith(caches.open(CACHE).then(async (c) => {
+    const guardado = await c.match(req);
+    const red = fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => guardado);
+    return guardado ?? red;
+  }));
+});

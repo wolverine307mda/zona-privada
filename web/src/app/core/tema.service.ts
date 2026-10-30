@@ -42,6 +42,7 @@ export class TemaService {
     const oscuro = this.modo() === 'dark' || (this.modo() === 'system' && this.sistemaOscuro.matches);
     d.dataset['mode'] = oscuro ? 'dark' : 'light';
     d.dataset['color'] = this.color();
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#070d12' : '#f4f2ee');
     this.cambio.update((n) => n + 1);
   }
 

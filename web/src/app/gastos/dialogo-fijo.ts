@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Errores, GastosService, erroresDe } from './gastos.service';
+import { seguirTeclado } from './teclado';
 import { CATEGORIAS, FRECUENCIAS, Frecuencia, Tipo, euros, hoyIso } from './modelo';
 
 // Diálogo de un fijo: suscripción, alquiler, cuota del coche, seguro, nómina…
@@ -60,6 +61,8 @@ export class DialogoFijo {
     this.errores.set({});
     this.confirmarBorrado.set(false);
     this.dialogo().nativeElement.showModal();
+    this.soltarTeclado?.();
+    this.soltarTeclado = seguirTeclado(this.dialogo().nativeElement);
   }
 
   protected valor(e: Event): string { return (e.target as HTMLInputElement).value; }
@@ -96,6 +99,7 @@ export class DialogoFijo {
   }
 
   protected cerrar(): void { this.dialogo().nativeElement.close(); }
-  protected alCerrar(): void { this.gastos.editandoFijo.set(null); }
+  private soltarTeclado?: () => void;
+  protected alCerrar(): void { this.soltarTeclado?.(); this.soltarTeclado = undefined; this.gastos.editandoFijo.set(null); }
   protected fuera(e: MouseEvent): void { if (e.target === this.dialogo().nativeElement) this.cerrar(); }
 }

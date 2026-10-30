@@ -17,13 +17,13 @@
 </section>
 
 <section class="kpis" aria-label="Estado del equipo">
-  <article class="kpi tarjeta">
+  <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4" /></svg></span><h3>Procesador</h3></header>
     <div class="medidor" #cpu role="img" [attr.aria-label]="'CPU al ' + (a()?.cpu ?? 0) + ' por ciento'"></div>
     <p class="kpi__pie">{{ a()?.nucleos ?? '—' }} núcleos lógicos</p>
   </article>
 
-  <article class="kpi tarjeta">
+  <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M3 8h18v8H3zM7 16v3M11 16v3M15 16v3M19 16v3M7 11v2M11 11v2M15 11v2" /></svg></span><h3>Memoria</h3></header>
     <p class="cifra">{{ memoria().pct }}<span>%</span></p>
     <div class="barra" role="progressbar" aria-label="Memoria en uso" [attr.aria-valuenow]="memoria().pct" aria-valuemin="0" aria-valuemax="100">
@@ -32,7 +32,7 @@
     <p class="kpi__pie">{{ memoria().usado }} de {{ memoria().total }} GB</p>
   </article>
 
-  <article class="kpi tarjeta">
+  <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 14h16M8 17h.01M12 17h.01" /></svg></span><h3>Disco del sistema</h3></header>
     <p class="cifra">{{ disco().pct }}<span>%</span></p>
     <div class="barra" role="progressbar" aria-label="Disco en uso" [attr.aria-valuenow]="disco().pct" aria-valuemin="0" aria-valuemax="100">
@@ -41,7 +41,7 @@
     <p class="kpi__pie">{{ disco().usado }} de {{ disco().total }} GB</p>
   </article>
 
-  <article class="kpi tarjeta">
+  <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01" /></svg></span><h3>Red</h3></header>
     <div class="red">
       <p><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg><span class="red__cifra">{{ bajada() }}</span><code>bajada</code></p>

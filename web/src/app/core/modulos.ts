@@ -41,9 +41,9 @@ export const MODULOS: Modulo[] = [
     planes: ['Gastos e ingresos por categoría', 'Gráficas por mes', 'Exportar a Excel'],
   },
   {
-    id: 'documentos', titulo: 'Documentos', resumen: 'Bóveda de documentos cifrada.', listo: false,
-    icono: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
-    planes: ['DNI, certificados y nóminas cifrados en el equipo', 'Nunca en la nube', 'Acceso con verificación en dos pasos'],
+    id: 'documentos', titulo: 'Documentos', resumen: 'Las carpetas del equipo, desde cualquier sitio.', listo: true,
+    icono: 'M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z',
+    planes: ['Documentos, música, imágenes y vídeos del equipo', 'Subir y descargar desde el móvil', 'Papelera para recuperar lo borrado'],
   },
   {
     id: 'seguridad', titulo: 'Seguridad', resumen: 'Verificación en dos pasos y sesiones.', listo: false,

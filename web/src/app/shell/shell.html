@@ -1,12 +1,18 @@
 <div class="marco" [class.menu-abierto]="menuAbierto()">
-  <aside class="lateral" aria-label="Menú de la zona privada">
-    <a class="marca" routerLink="/inicio">
-      <span class="marca__logo" aria-hidden="true">M</span>
-      <span class="marca__texto">
-        <strong>MDA</strong>
-        <span>Zona privada</span>
-      </span>
-    </a>
+  <aside class="lateral" id="menu-lateral" aria-label="Menú de la zona privada"
+         (touchstart)="empiezaGesto($event)" (touchmove)="sigueGesto($event)" (touchend)="acabaGesto()">
+    <div class="lateral__cabeza">
+      <a class="marca" routerLink="/inicio">
+        <span class="marca__logo" aria-hidden="true">M</span>
+        <span class="marca__texto">
+          <strong>MDA</strong>
+          <span>Zona privada</span>
+        </span>
+      </a>
+      <button class="lateral__cerrar" type="button" (click)="menuAbierto.set(false)" aria-label="Cerrar el menú">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
 
     <nav class="menu">
       <p class="menu__grupo">General</p>
@@ -54,9 +60,9 @@
 
   <button class="velo" type="button" aria-label="Cerrar el menú" tabindex="-1" (click)="menuAbierto.set(false)"></button>
 
-  <div class="contenido">
+  <div class="contenido" [attr.inert]="menuAbierto() ? '' : null">
     <header class="barra">
-      <button class="barra__menu" type="button" aria-label="Abrir el menú" (click)="menuAbierto.set(true)">
+      <button class="barra__menu" type="button" aria-label="Abrir el menú" aria-controls="menu-lateral" [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(true)">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
       </button>
       <div class="barra__titulo">
@@ -83,6 +89,21 @@
       <router-outlet />
     </main>
   </div>
+
+  <!-- móvil: barra de pestañas abajo, como una app -->
+  <nav class="pestanas-app" aria-label="Accesos rápidos">
+    <a [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg><span>{{ inicio.titulo }}</span>
+    </a>
+    @for (m of listos; track m.id) {
+      <a [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg><span>{{ m.titulo }}</span>
+      </a>
+    }
+    <button type="button" (click)="menuAbierto.set(true)" aria-controls="menu-lateral" [attr.aria-expanded]="menuAbierto()">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg><span>Más</span>
+    </button>
+  </nav>
 </div>
 
 <!-- Ajustes de la app: apariencia (modo y color) y la sesión -->

@@ -17,11 +17,11 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
 
     @if (datos(); as d) {
       <section class="kpis">
-        <article class="caja kpi"><span class="etq">Ahorrado</span><strong class="grande" [class.verde]="d.ahorro > 0" [class.rojo]="d.ahorro < 0">{{ eurosCorto(d.ahorro) }}</strong>
+        <article data-inclina class="caja kpi"><span class="etq">Ahorrado</span><strong class="grande" [class.verde]="d.ahorro > 0" [class.rojo]="d.ahorro < 0">{{ eurosCorto(d.ahorro) }}</strong>
           <span class="sub">{{ d.tasaAhorro != null ? d.tasaAhorro + ' % de lo ingresado' : 'sin ingresos en el periodo' }}</span></article>
-        <article class="caja kpi"><span class="etq">Ingresos</span><strong class="grande">{{ eurosCorto(d.ingresos) }}</strong><span class="sub">media {{ euros(d.mediaIngresos) }} / mes</span></article>
-        <article class="caja kpi"><span class="etq">Gastos</span><strong class="grande">{{ eurosCorto(d.gastos) }}</strong><span class="sub">media {{ euros(d.mediaGastos) }} / mes</span></article>
-        <article class="caja kpi kpi--meses">
+        <article data-inclina class="caja kpi"><span class="etq">Ingresos</span><strong class="grande">{{ eurosCorto(d.ingresos) }}</strong><span class="sub">media {{ euros(d.mediaIngresos) }} / mes</span></article>
+        <article data-inclina class="caja kpi"><span class="etq">Gastos</span><strong class="grande">{{ eurosCorto(d.gastos) }}</strong><span class="sub">media {{ euros(d.mediaGastos) }} / mes</span></article>
+        <article data-inclina class="caja kpi kpi--meses">
           <span class="etq">Mejor mes</span>
           <strong>{{ d.mejorMes ? mesLargo(d.mejorMes.anio, d.mejorMes.mes) : '—' }}</strong>
           <span class="sub verde">{{ d.mejorMes ? '+' + euros(d.mejorMes.ahorro) : '' }}</span>
@@ -60,7 +60,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
   `,
   styleUrls: ['./comun.css'],
   styles: `
-    .periodo { display: inline-grid; grid-auto-flow: column; align-self: flex-start; padding: 4px; border-radius: 12px; background: var(--tarjeta); border: 1px solid var(--linea); }
+    .periodo { display: inline-grid; grid-auto-flow: column; align-self: flex-start; padding: 4px; border-radius: 12px; background: var(--vidrio); backdrop-filter: var(--desenfoque); border: 1px solid var(--vidrio-borde); }
     .periodo button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: var(--soft); font-weight: 500; cursor: pointer; }
     .periodo button[aria-pressed='true'] { background: var(--brand); color: var(--on-brand); }
     .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
@@ -81,7 +81,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
     .ranking__barra span { display: block; height: 100%; border-radius: inherit; background: var(--c); transition: width 900ms var(--ease-expo); }
     .ranking__sub { font-size: 12px; color: var(--soft); }
     @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 560px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .kpi--meses { grid-column: 1 / -1; } .grafica { height: 260px; } }
   `,
 })
 export class Estadisticas implements OnDestroy {

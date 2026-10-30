@@ -10,12 +10,12 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
   selector: 'app-fijos',
   template: `
     <section class="kpis">
-      <article class="caja kpi"><span class="etq">Gastos fijos al mes</span><strong class="grande">{{ euros(totales().gastos) }}</strong><span class="sub">{{ eurosCorto(totales().gastos * 12) }} al año</span></article>
-      <article class="caja kpi kpi--subs">
+      <article data-inclina class="caja kpi"><span class="etq">Gastos fijos al mes</span><strong class="grande">{{ euros(totales().gastos) }}</strong><span class="sub">{{ eurosCorto(totales().gastos * 12) }} al año</span></article>
+      <article data-inclina class="caja kpi kpi--subs">
         <span class="etq">Suscripciones</span><strong class="grande">{{ euros(totales().subs) }}<small>/mes</small></strong>
         <span class="sub">{{ totales().nSubs }} activas · {{ eurosCorto(totales().subs * 12) }} al año</span>
       </article>
-      <article class="caja kpi"><span class="etq">Ingresos fijos al mes</span><strong class="grande verde">{{ euros(totales().ingresos) }}</strong><span class="sub">te quedan {{ euros(totales().ingresos - totales().gastos) }} libres</span></article>
+      <article data-inclina class="caja kpi"><span class="etq">Ingresos fijos al mes</span><strong class="grande verde">{{ euros(totales().ingresos) }}</strong><span class="sub">te quedan {{ euros(totales().ingresos - totales().gastos) }} libres</span></article>
     </section>
 
     <div class="barra-acciones">
@@ -31,7 +31,7 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
         <header class="grupo__cab"><h3>{{ gr.titulo }}</h3><span>{{ euros(gr.mensual) }} / mes</span></header>
         <div class="tarjetas">
           @for (r of gr.lista; track r.id) {
-            <article class="fijo" [class.fijo--pausado]="!r.activo" [style.--c]="categoria(r.categoria).color">
+            <article class="fijo" data-inclina [class.fijo--pausado]="!r.activo" [style.--c]="categoria(r.categoria).color">
               <button class="fijo__cuerpo" type="button" (click)="g.editandoFijo.set({ fijo: r })" [attr.aria-label]="'Editar ' + r.nombre">
                 <span class="fijo__logo">{{ r.nombre.slice(0, 1).toUpperCase() }}</span>
                 <span class="fijo__nombre">{{ r.nombre }}</span>
@@ -71,9 +71,9 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
     .grupo__cab h3 { font: 700 var(--step-body)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
     .grupo__cab span { font: 600 var(--step-small)/1 var(--font-code); color: var(--soft); }
     .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-    .fijo { position: relative; border-radius: var(--radio); border: 1px solid var(--linea); background: var(--tarjeta); box-shadow: var(--sombra); overflow: hidden; transition: transform 240ms var(--ease-out), border-color 240ms ease; }
+    .fijo { position: relative; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: var(--desenfoque); box-shadow: var(--sombra); overflow: hidden; transition: transform 500ms var(--ease-out), border-color 240ms ease; }
     .fijo::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: var(--c); }
-    @media (hover: hover) { .fijo:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 50%, var(--linea)); } }
+    @media (hover: hover) { .fijo:hover { border-color: color-mix(in srgb, var(--c) 50%, var(--linea)); } }
     .fijo--pausado { opacity: 0.55; }
     .fijo__cuerpo { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 2px 12px; width: 100%; padding: 18px 16px 16px; border: 0; background: transparent; color: var(--texto); text-align: left; cursor: pointer; font: inherit; }
     .fijo__logo { grid-row: 1 / span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--c); color: #fff; font: 700 20px/1 var(--font-display); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }

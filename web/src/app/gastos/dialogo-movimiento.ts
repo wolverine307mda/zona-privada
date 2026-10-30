@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Errores, GastosService, erroresDe } from './gastos.service';
+import { seguirTeclado } from './teclado';
 import { CATEGORIAS, Tipo, euros, hoyIso, numero } from './modelo';
 
 // Diálogo para apuntar o editar un gasto / ingreso. Con «Gasolina» pide litros, €/litro y kilómetros,
@@ -66,6 +67,8 @@ export class DialogoMovimiento {
     this.errores.set({});
     this.confirmarBorrado.set(false);
     this.dialogo().nativeElement.showModal();
+    this.soltarTeclado?.();
+    this.soltarTeclado = seguirTeclado(this.dialogo().nativeElement);
   }
 
   protected valor(e: Event): string { return (e.target as HTMLInputElement).value; }
@@ -117,6 +120,7 @@ export class DialogoMovimiento {
   }
 
   protected cerrar(): void { this.dialogo().nativeElement.close(); }
-  protected alCerrar(): void { this.gastos.editandoMovimiento.set(null); }
+  private soltarTeclado?: () => void;
+  protected alCerrar(): void { this.soltarTeclado?.(); this.soltarTeclado = undefined; this.gastos.editandoMovimiento.set(null); }
   protected fuera(e: MouseEvent): void { if (e.target === this.dialogo().nativeElement) this.cerrar(); }
 }

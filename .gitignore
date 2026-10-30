@@ -1,6 +1,7 @@
 # secretos y datos locales
 .env
 copias/
+carpetas/
 
 # .NET
 bin/

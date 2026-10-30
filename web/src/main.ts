@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
@@ -13,3 +14,8 @@ try {
 
 bootstrapApplication(App, appConfig)
   .catch((err) => console.error(err));
+
+// app instalable: el service worker solo en la versión compilada (en desarrollo estorbaría a la recarga en caliente)
+if (!isDevMode() && 'serviceWorker' in navigator) {
+  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { /* sin service worker, la app funciona igual */ }));
+}

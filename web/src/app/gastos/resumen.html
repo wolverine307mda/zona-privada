@@ -4,7 +4,7 @@
 @if (datos(); as d) {
   <!-- Balance del mes -->
   <section class="balance">
-    <article class="caja ahorro">
+    <article class="caja ahorro" data-inclina>
       <div class="ahorro__texto">
         <p class="etq">Ahorro del mes</p>
         <p class="ahorro__cifra" [class.verde]="d.ahorro > 0" [class.rojo]="d.ahorro < 0">{{ euros(d.ahorro) }}</p>
@@ -39,7 +39,7 @@
       </div>
     </article>
 
-    <article class="caja fijos">
+    <article class="caja fijos" data-inclina>
       <p class="etq">Fijos de este mes</p>
       <p class="grande">{{ euros(d.fijosDelMes) }}</p>
       <div class="fijos__fila">

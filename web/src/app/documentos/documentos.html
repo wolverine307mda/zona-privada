@@ -1,0 +1,261 @@
+<!-- carpetas del equipo -->
+@if (raices(); as lista) {
+<nav class="raices" aria-label="Carpetas del equipo">
+  @for (r of lista; track r.id) {
+    <button type="button" class="raiz" data-inclina [class.is-activa]="raiz() === r.id" [style.--c]="RAICES[r.id]?.color"
+            [attr.aria-current]="raiz() === r.id ? 'page' : null" (click)="ir(r.id)"
+            (dragover)="sobreCarpeta($event, '')" (drop)="raiz() === r.id && soltarEnCarpeta($event, '')">
+      <span class="raiz__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="RAICES[r.id]?.icono" /></svg></span>
+      <span class="raiz__texto"><strong>{{ r.nombre }}</strong><small>{{ r.elementos }} elementos</small></span>
+    </button>
+  }
+  <button type="button" class="raiz raiz--papelera" [class.is-activa]="raiz() === 'papelera'" [attr.aria-current]="raiz() === 'papelera' ? 'page' : null" (click)="ir('papelera')">
+    <span class="raiz__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="ICONO_PAPELERA" /></svg></span>
+    <span class="raiz__texto"><strong>Papelera</strong><small>recuperable</small></span>
+  </button>
+</nav>
+}
+
+@if (raiz() === 'papelera') {
+  <!-- ---------- Papelera ---------- -->
+  <section class="caja">
+    <header class="caja__cab">
+      <div><h3>Papelera</h3><p class="sub">Lo que borras desde aquí no se pierde hasta que vacías la papelera.</p></div>
+      @if (papelera().length) {
+        <button class="button button--ghost peligro" type="button" (click)="eliminar()">{{ confirmar() === 'todo' ? '¿Seguro? Pulsa otra vez' : 'Vaciar papelera' }}</button>
+      }
+    </header>
+    <ul class="lista">
+      @for (p of papelera(); track p.raiz + p.id) {
+        <li class="fila fila--papelera">
+          <span class="fila__icono" [style.--c]="TIPOS[p.carpeta ? 'carpeta' : 'otro'].color">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS[p.carpeta ? 'carpeta' : 'otro'].icono" /></svg>
+          </span>
+          <span class="fila__texto">
+            <strong>{{ p.nombre }}</strong>
+            <small>{{ nombreDeRaiz(p.raiz) }}/{{ p.origen }} · borrado {{ fecha(p.borrado) }}{{ p.carpeta ? '' : ' · ' + tamano(p.tamano) }}</small>
+          </span>
+          <span class="fila__acciones">
+            <button class="mini" type="button" (click)="recuperar(p)">Recuperar</button>
+            <button class="mini mini--peligro" type="button" (click)="eliminar(p)">{{ confirmar() === p.raiz + '/' + p.id ? '¿Seguro?' : 'Borrar' }}</button>
+          </span>
+        </li>
+      } @empty {
+        <li class="vacio"><strong>{{ cargando() ? 'Cargando…' : 'La papelera está vacía' }}</strong></li>
+      }
+    </ul>
+  </section>
+} @else if (raiz()) {
+  <!-- ---------- Explorador ---------- -->
+  <section class="barra-docs caja">
+    <ol class="migas" aria-label="Ruta">
+      <li>
+        <button type="button" [class.is-sobre]="moviendo() === ''" (click)="ir(raiz()!)"
+                (dragover)="sobreCarpeta($event, '')" (dragleave)="moviendo.set(null)" (drop)="soltarEnCarpeta($event, '')">{{ nombreRaiz() }}</button>
+      </li>
+      @for (m of migas(); track m.ruta; let ultimo = $last) {
+        <li>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          @if (ultimo) { <span aria-current="page">{{ m.nombre }}</span> }
+          @else {
+            <button type="button" [class.is-sobre]="moviendo() === m.ruta" (click)="ir(raiz()!, m.ruta)"
+                    (dragover)="sobreCarpeta($event, m.ruta)" (dragleave)="moviendo.set(null)" (drop)="soltarEnCarpeta($event, m.ruta)">{{ m.nombre }}</button>
+          }
+        </li>
+      }
+    </ol>
+
+    <div class="herramientas">
+      <label class="buscar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
+        <span class="sr">Buscar en {{ nombreRaiz() }}</span>
+        <input type="search" [placeholder]="'Buscar en ' + nombreRaiz() + '…'" [value]="q()" (input)="buscar($any($event.target).value)" enterkeyhint="search">
+      </label>
+      <select class="selector" aria-label="Ordenar" [value]="orden()" (change)="orden.set($any($event.target).value)">
+        <option value="nombre">Nombre</option>
+        <option value="fecha">Más recientes</option>
+        <option value="tamano">Más pesados</option>
+      </select>
+      <div class="vistas" role="group" aria-label="Vista">
+        <button type="button" [attr.aria-pressed]="vista() === 'rejilla'" (click)="vista.set('rejilla')" aria-label="Cuadrícula">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" /></svg>
+        </button>
+        <button type="button" [attr.aria-pressed]="vista() === 'lista'" (click)="vista.set('lista')" aria-label="Lista">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" /></svg>
+        </button>
+      </div>
+      <button class="button button--ghost" type="button" (click)="pedirNombre('carpeta')">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3zM12 12v5M9.5 14.5h5" /></svg>
+        <span>Carpeta</span>
+      </button>
+      <button class="button" type="button" (click)="elegirArchivos()">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+        <span>Subir</span>
+      </button>
+      <input #elegir class="sr" type="file" multiple (change)="alElegir($event)" tabindex="-1" aria-hidden="true">
+    </div>
+
+    <div class="filtros" role="group" aria-label="Filtrar por tipo">
+      @for (f of filtros; track f.id) {
+        <button type="button" [attr.aria-pressed]="filtro() === f.id" (click)="filtro.set(f.id)">{{ f.nombre }}</button>
+      }
+      <span class="filtros__total">
+        @if (resultados(); as r) { {{ r.length }} resultados en {{ nombreRaiz() }} }
+        @else { {{ totales().carpetas }} carpetas · {{ totales().archivos }} archivos · {{ tamano(totales().peso) }} }
+      </span>
+    </div>
+  </section>
+
+  @if (error()) {
+    <div class="caja vacio"><strong>{{ error() }}</strong><button class="mini" type="button" (click)="ir(raiz()!)">Volver al principio</button></div>
+  } @else {
+    <section class="items" [class.items--lista]="vista() === 'lista'" [class.is-cargando]="cargando()" (click)="cerrarMenus()">
+      @for (e of visibles(); track e.ruta; let i = $index) {
+        <article class="item" [class.item--carpeta]="e.carpeta" [class.is-sobre]="moviendo() === e.ruta" [class.is-menu]="menu() === e.ruta"
+                 [style.--c]="TIPOS[e.tipo].color" [style.--i]="i < 24 ? i : 24"
+                 draggable="true" (dragstart)="cogerElemento($event, e)"
+                 (dragover)="e.carpeta && sobreCarpeta($event, e.ruta)" (dragleave)="moviendo.set(null)" (drop)="e.carpeta && soltarEnCarpeta($event, e.ruta)">
+          <button class="item__abrir" type="button" (click)="abrir(e)" [attr.aria-label]="(e.carpeta ? 'Abrir ' : 'Ver ') + e.nombre">
+            <span class="item__vista">
+              @if (esImagen(e) && vista() === 'rejilla') {
+                <img [src]="miniatura(e)" alt="" loading="lazy" decoding="async">
+              } @else {
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS[e.tipo].icono" /></svg>
+                @if (!e.carpeta && extension(e.nombre)) { <em class="item__ext">{{ extension(e.nombre) }}</em> }
+              }
+              @if (e.tipo === 'audio' && sonando()?.ruta === e.ruta) { <span class="item__eq" aria-hidden="true"><i></i><i></i><i></i></span> }
+            </span>
+            <span class="item__texto">
+              <strong [title]="e.nombre">{{ e.nombre }}</strong>
+              <small>
+                @if (resultados()) { {{ carpetaDe(e) }} · }
+                {{ e.carpeta ? 'Carpeta' : tamano(e.tamano) }} · {{ fecha(e.modificado) }}
+              </small>
+            </span>
+          </button>
+          <button class="item__mas" type="button" (click)="abrirMenu($event, e.ruta)" [attr.aria-expanded]="menu() === e.ruta" [attr.aria-label]="'Opciones de ' + e.nombre">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h.01M12 12h.01M12 18h.01" /></svg>
+          </button>
+          @if (menu() === e.ruta) {
+            <div class="menu-item" role="menu" (click)="$event.stopPropagation()">
+              @if (!e.carpeta) {
+                <button role="menuitem" type="button" (click)="descargar(e)">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg> Descargar
+                </button>
+              }
+              <button role="menuitem" type="button" (click)="pedirNombre('renombrar', e)">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg> Renombrar
+              </button>
+              <button role="menuitem" type="button" class="peligro" (click)="borrar(e)">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="ICONO_PAPELERA" /></svg> {{ confirmar() === e.ruta ? '¿Seguro? Pulsa otra vez' : 'A la papelera' }}
+              </button>
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="vacio vacio--grande">
+          @if (cargando()) { <strong>Cargando…</strong> }
+          @else if (resultados()) { <strong>Nada con «{{ q() }}»</strong> Prueba con otra palabra. }
+          @else {
+            <span class="vacio__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS.carpeta.icono" /></svg></span>
+            <strong>{{ filtro() === 'todo' ? 'Carpeta vacía' : 'Nada de este tipo aquí' }}</strong>
+            Arrastra archivos aquí o pulsa «Subir».
+          }
+        </div>
+      }
+    </section>
+  }
+} @else if (raices()) {
+  <div class="caja vacio vacio--grande">
+    <strong>{{ error() ?? 'No hay carpetas conectadas' }}</strong>
+    Las carpetas del equipo se conectan en el archivo .env (CARPETA_DOCUMENTOS, CARPETA_MUSICA…) y se reinicia Docker.
+  </div>
+}
+
+<!-- soltar archivos para subir -->
+@if (soltando()) {
+  <div class="soltar" aria-hidden="true">
+    <div class="soltar__caja">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+      <strong>Suelta para subir</strong>
+      <span>a {{ migas().at(-1)?.nombre ?? nombreRaiz() }}</span>
+    </div>
+  </div>
+}
+
+<!-- subidas en curso -->
+@if (api.subidas().length) {
+  <aside class="subidas" aria-live="polite">
+    <header>
+      <strong>Subidas</strong>
+      <button class="mini" type="button" (click)="api.limpiarSubidas()">Ocultar</button>
+    </header>
+    @for (s of api.subidas(); track s.id) {
+      <div class="subida" [attr.data-estado]="s.estado">
+        <span class="subida__nombre">{{ s.nombre }}</span>
+        <span class="subida__dato">{{ s.estado === 'error' ? 'error' : s.estado === 'hecho' ? 'listo' : (s.progreso * 100 | number: '1.0-0') + ' %' }}</span>
+        <span class="subida__barra"><span [style.width.%]="s.progreso * 100"></span></span>
+      </div>
+    }
+  </aside>
+}
+
+<!-- reproductor de música -->
+@if (sonando(); as s) {
+  <aside class="musica" aria-label="Reproductor">
+    <span class="musica__disco" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path [attr.d]="TIPOS.audio.icono" /></svg></span>
+    <span class="musica__texto"><strong>{{ s.nombre }}</strong><small>{{ carpetaDe(s) }}</small></span>
+    <audio #reproductor controls [src]="urlSonando()" (ended)="siguiente()"></audio>
+    <button class="mini" type="button" (click)="sonando.set(null)" aria-label="Cerrar el reproductor">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </aside>
+}
+
+@if (aviso()) { <p class="aviso" role="status">{{ aviso() }}</p> }
+
+<!-- carpeta nueva / renombrar -->
+<dialog class="dlg-nombre" #dlgNombre (close)="alCerrarNombre()" (click)="fueraNombre($event)" aria-labelledby="dlg-nombre-t">
+  @if (nombreDlg(); as n) {
+    <form (submit)="guardarNombre($event)" novalidate>
+      <h2 id="dlg-nombre-t">{{ n.modo === 'carpeta' ? 'Carpeta nueva' : 'Renombrar' }}</h2>
+      <input class="campo" type="text" [value]="n.valor" (input)="escribirNombre($event)" maxlength="200" autocomplete="off" enterkeyhint="done"
+             [attr.aria-invalid]="n.error ? true : null" aria-label="Nombre">
+      @if (n.error) { <p class="error">{{ n.error }}</p> }
+      <footer>
+        <button class="button button--ghost" type="button" (click)="dlgNombre.close()">Cancelar</button>
+        <button class="button" type="submit" [disabled]="!n.valor.trim()">{{ n.modo === 'carpeta' ? 'Crear' : 'Guardar' }}</button>
+      </footer>
+    </form>
+  }
+</dialog>
+
+<!-- visor de fotos y vídeos -->
+<dialog class="visor" #dlgVer (close)="alCerrarVisor()" (click)="fueraVisor($event)" aria-label="Visor">
+  @if (viendo(); as v) {
+    <header class="visor__cab">
+      <span><strong>{{ v.nombre }}</strong><small>{{ tamano(v.tamano) }} · {{ fecha(v.modificado) }}</small></span>
+      <button class="visor__boton" type="button" (click)="descargar(v)" aria-label="Descargar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+      </button>
+      <button class="visor__boton" type="button" (click)="cerrarVisor()" aria-label="Cerrar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </header>
+    <div class="visor__escena" (pointerdown)="tocarVisor($event)" (pointerup)="soltarVisor($event)">
+      @if (v.tipo === 'video') {
+        <video [src]="miniatura(v)" controls autoplay playsinline></video>
+      } @else {
+        @for (img of [v]; track img.ruta) { <img [src]="miniatura(img)" [alt]="img.nombre" draggable="false"> }
+      }
+    </div>
+    @if (v.tipo !== 'video' && imagenes().length > 1) {
+      <button class="visor__flecha visor__flecha--izq" type="button" (click)="pasar(-1)" aria-label="Anterior">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
+      <button class="visor__flecha visor__flecha--der" type="button" (click)="pasar(1)" aria-label="Siguiente">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+    }
+  }
+</dialog>

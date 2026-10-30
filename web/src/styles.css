@@ -45,6 +45,15 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* vidrio: tarjetas y barras translúcidas sobre el fondo con degradado del color elegido */
+  --vidrio: color-mix(in srgb, var(--tarjeta) 68%, transparent);
+  --vidrio-fuerte: color-mix(in srgb, var(--tarjeta) 84%, transparent);
+  --vidrio-borde: color-mix(in srgb, var(--texto) 9%, transparent);
+  --desenfoque: blur(18px) saturate(1.4);
+  --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 42%);
+  --aura-1: color-mix(in srgb, var(--brand) 26%, transparent);
+  --aura-2: color-mix(in srgb, var(--brand) 12%, #3a5bff 10%);
   color-scheme: dark;
 }
 
@@ -58,6 +67,12 @@
   --texto: #0b151c;
   --soft: #5f6870;
   --sombra: 0 1px 2px rgba(11, 21, 28, 0.04), 0 10px 28px rgba(11, 21, 28, 0.07); /* relieve de las tarjetas */
+  --vidrio: color-mix(in srgb, #ffffff 70%, transparent);
+  --vidrio-fuerte: color-mix(in srgb, #ffffff 86%, transparent);
+  --vidrio-borde: rgba(11, 21, 28, 0.08);
+  --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent 40%);
+  --aura-1: color-mix(in srgb, var(--brand) 20%, transparent);
+  --aura-2: color-mix(in srgb, var(--brand) 8%, #7aa2ff 12%);
   color-scheme: light;
 }
 
@@ -71,7 +86,24 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--fondo); color: var(--texto); overflow-x: clip; }
-body { font: 400 var(--step-body)/1.5 var(--font-text); -webkit-font-smoothing: antialiased; }
+body { font: 400 var(--step-body)/1.5 var(--font-text); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+
+/* fondo: dos auras suaves del color de acento que respiran muy despacio, y un grano de puntos encima */
+body::before, body::after { content: ''; position: fixed; inset: -20vmax; z-index: -1; pointer-events: none; }
+body::before {
+  background:
+    radial-gradient(40vmax 34vmax at 12% 8%, var(--aura-1), transparent 70%),
+    radial-gradient(44vmax 36vmax at 92% 96%, var(--aura-2), transparent 70%),
+    radial-gradient(30vmax 26vmax at 80% 10%, color-mix(in srgb, var(--brand) 7%, transparent), transparent 70%);
+  animation: aura 28s ease-in-out infinite alternate;
+}
+body::after {
+  inset: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--texto) 7%, transparent) 1px, transparent 1.2px) 0 0 / 22px 22px;
+  mask: linear-gradient(180deg, #000, transparent 60%);
+  opacity: 0.6;
+}
+@keyframes aura { to { transform: translate3d(3vmax, -2vmax, 0) rotate(8deg) scale(1.06); } }
 h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
 ul, ol { list-style: none; }
 button, input { font: inherit; color: inherit; }
@@ -97,12 +129,37 @@ a { color: inherit; }
 /* viñeta de cómic: la tarjeta de entrar mantiene el guiño a la web */
 .vineta { background: var(--tarjeta); color: var(--texto); border: 3px solid var(--brand); box-shadow: 8px 8px 0 var(--brand); }
 
-/* tarjeta del panel */
-.tarjeta { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: var(--radio); box-shadow: var(--sombra); }
+/* tarjeta del panel: vidrio con un brillo arriba */
+.tarjeta {
+  background: var(--brillo), var(--vidrio); border: 1px solid var(--vidrio-borde); border-radius: var(--radio); box-shadow: var(--sombra);
+  backdrop-filter: var(--desenfoque); -webkit-backdrop-filter: var(--desenfoque);
+}
+
+/* inclinación 3D al pasar el ratón (core/inclinar.ts pone --rx, --ry y la luz --lx, --ly) */
+[data-inclina] { transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0); transition: transform 500ms var(--ease-out); will-change: transform; }
+[data-inclina].is-inclinando { transition: transform 120ms linear; }
+[data-inclina]::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 300ms ease;
+  background: radial-gradient(420px circle at var(--lx, 50%) var(--ly, 50%), color-mix(in srgb, var(--brand) 14%, rgba(255, 255, 255, 0.06)), transparent 60%);
+}
+[data-inclina].is-inclinando::after { opacity: 1; }
 
 /* el tema nuevo se abre en círculo desde el botón pulsado */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-new(root) { animation: tema-circulo 700ms var(--ease-in-out); }
 @keyframes tema-circulo { from { clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%)); } to { clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 50%)); } }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } [data-inclina] { transform: none !important; } }
+
+/* app instalada (PWA): sin rebote al tirar de la página y sin seleccionar textos de la interfaz por accidente */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  button, a, nav { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
+
+/* Móvil: con menos de 16px iOS hace zoom al enfocar un campo y la página se desplaza */
+@media (max-width: 760px), (pointer: coarse) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}
+/* con un diálogo abierto, el fondo no se mueve */
+html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
