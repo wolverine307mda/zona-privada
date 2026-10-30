@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mda.Api.Auth;
 
-// Al arrancar: aplica las migraciones y crea el usuario administrador si no existe.
-// Email y contraseña salen de la configuración (Admin__Email / Admin__Password), nunca del código.
+// Al arrancar: aplica las migraciones y deja el usuario administrador tal y como dice la configuración
+// (Admin__Usuario, Admin__Email, Admin__Password), nunca el código. Si ya existe y cambias el usuario
+// o la contraseña en el .env, se actualiza al reiniciar.
 public class SemillaAdmin(IServiceProvider services, IConfiguration config, ILogger<SemillaAdmin> log) : IHostedService
 {
     public async Task StartAsync(CancellationToken ct)
@@ -22,14 +23,31 @@ public class SemillaAdmin(IServiceProvider services, IConfiguration config, ILog
             log.LogWarning("Sin Admin:Email o Admin:Password: no se crea el usuario administrador");
             return;
         }
+        // nombre con el que se entra; si no hay, se entra con el email
+        var usuario = string.IsNullOrWhiteSpace(config["Admin:Usuario"]) ? email : config["Admin:Usuario"]!;
 
         var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-        if (await users.FindByEmailAsync(email) is not null) return;
+        var admin = await users.FindByEmailAsync(email) ?? await users.FindByNameAsync(usuario);
+        if (admin is null)
+        {
+            admin = new IdentityUser { UserName = usuario, Email = email, EmailConfirmed = true };
+            Informar(await users.CreateAsync(admin, password), "Usuario administrador creado");
+            return;
+        }
 
-        var admin = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
-        var result = await users.CreateAsync(admin, password);
-        if (result.Succeeded) log.LogInformation("Usuario administrador creado");
-        else log.LogError("No se pudo crear el administrador: {Errores}", string.Join("; ", result.Errors.Select(e => e.Description)));
+        if (admin.UserName != usuario)
+            Informar(await users.SetUserNameAsync(admin, usuario), "Nombre de usuario actualizado");
+        if (!await users.CheckPasswordAsync(admin, password))
+        {
+            var token = await users.GeneratePasswordResetTokenAsync(admin);
+            Informar(await users.ResetPasswordAsync(admin, token, password), "Contraseña del administrador actualizada");
+        }
+    }
+
+    private void Informar(IdentityResult r, string ok)
+    {
+        if (r.Succeeded) log.LogInformation(ok);
+        else log.LogError("Usuario administrador: {Errores}", string.Join("; ", r.Errors.Select(e => e.Description)));
     }
 
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;

@@ -21,7 +21,7 @@ export class Entrar implements OnDestroy {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('escena');
   private escena?: ReturnType<typeof crearCandado>;
 
-  protected readonly email = signal('');
+  protected readonly usuario = signal('');
   protected readonly password = signal('');
   protected readonly codigo = signal('');
   protected readonly pideCodigo = signal(false);
@@ -42,13 +42,13 @@ export class Entrar implements OnDestroy {
 
   protected async entrar(e: Event): Promise<void> {
     e.preventDefault();
-    if (!this.email().trim() || !this.password()) { this.fallo('Escribe tu email y tu contraseña.'); return; }
+    if (!this.usuario().trim() || !this.password()) { this.fallo('Escribe tu usuario y tu contraseña.'); return; }
     if (this.pideCodigo() && this.codigo().trim().length < 6) { this.fallo('Escribe el código de 6 cifras de tu app.'); return; }
 
     this.ocupado.set(true);
     this.error.set('');
     this.escena?.intento();
-    const r = await this.sesion.entrar(this.email().trim(), this.password(), this.pideCodigo() ? this.codigo().trim() : undefined);
+    const r = await this.sesion.entrar(this.usuario().trim(), this.password(), this.pideCodigo() ? this.codigo().trim() : undefined);
     this.ocupado.set(false);
 
     if (r === 'ok') {

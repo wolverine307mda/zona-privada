@@ -16,9 +16,9 @@
     <h1 class="titulo" id="titulo">Área privada</h1>
 
     <label class="campo">
-      <span class="etiqueta"><code>email</code></span>
-      <input class="entrada" type="email" name="email" autocomplete="username" spellcheck="false" required
-             [value]="email()" (input)="email.set(valor($event))">
+      <span class="etiqueta"><code>usuario</code></span>
+      <input class="entrada" type="text" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required
+             [value]="usuario()" (input)="usuario.set(valor($event))">
       <span class="linea" aria-hidden="true"></span>
     </label>
 

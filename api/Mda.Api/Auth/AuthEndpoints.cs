@@ -11,7 +11,8 @@ public static class AuthEndpoints
 
     public static void MapAuth(this IEndpointRouteBuilder app)
     {
-        // login, 2FA, refresh… de Identity, con límite de intentos por IP
+        // login, 2FA, refresh… de Identity, con límite de intentos por IP.
+        // Ojo: en /login el campo se llama «email» pero Identity busca por nombre de usuario (Admin:Usuario).
         app.MapGroup("/api/auth")
             .MapIdentityApi<IdentityUser>()
             .RequireRateLimiting(Limites.Acceso)
@@ -27,7 +28,7 @@ public static class AuthEndpoints
 
         // quién soy (el front lo usa para saber si hay sesión)
         sesion.MapGet("/", (ClaimsPrincipal user) =>
-            Results.Ok(new { email = user.FindFirstValue(ClaimTypes.Email) ?? user.Identity?.Name }));
+            Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email) }));
 
         // cerrar sesión: borra la cookie
         sesion.MapPost("/salir", async (SignInManager<IdentityUser> signIn) =>

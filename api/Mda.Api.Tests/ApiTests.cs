@@ -12,11 +12,13 @@ namespace Mda.Api.Tests;
 // La API completa en memoria: base de datos InMemory y un administrador de prueba.
 public class ApiFactory : WebApplicationFactory<Program>
 {
+    public const string Usuario = "wolve";
     public const string Email = "admin@prueba.local";
-    public const string Password = "Clave-de-prueba-123";
+    public const string Password = "clave-de-prueba";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting("Admin:Usuario", Usuario);
         builder.UseSetting("Admin:Email", Email);
         builder.UseSetting("Admin:Password", Password);
         builder.UseSetting("Seq:Url", "");
@@ -58,7 +60,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     [Fact]
     public async Task Contraseña_mala_no_entra()
     {
-        var res = await factory.CreateClient().PostAsJsonAsync("/api/auth/login?useCookies=true", new { email = ApiFactory.Email, password = "mala" });
+        var res = await factory.CreateClient().PostAsJsonAsync("/api/auth/login?useCookies=true", new { email = ApiFactory.Usuario, password = "mala" });
         Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
@@ -67,12 +69,13 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
-        var login = await client.PostAsJsonAsync("/api/auth/login?useCookies=true", new { email = ApiFactory.Email, password = ApiFactory.Password });
+        var login = await client.PostAsJsonAsync("/api/auth/login?useCookies=true", new { email = ApiFactory.Usuario, password = ApiFactory.Password });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         Assert.Contains(login.Headers.GetValues("Set-Cookie"), c => c.StartsWith("mda.sesion=") && c.Contains("httponly") && c.Contains("samesite=strict"));
 
         var yo = await client.GetFromJsonAsync<Dictionary<string, string>>("/api/sesion");
-        Assert.Equal(ApiFactory.Email, yo!["email"]);
+        Assert.Equal(ApiFactory.Usuario, yo!["usuario"]);
+        Assert.Equal(ApiFactory.Email, yo["email"]);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/sistema")).StatusCode);
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync("/api/sesion/salir", null)).StatusCode);

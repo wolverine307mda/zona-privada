@@ -13,13 +13,13 @@ describe('SesionService', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  it('entra con cookie y guarda el email', async () => {
-    const r = sesion.entrar('yo@casa.es', 'clave');
+  it('entra con cookie y guarda el usuario', async () => {
+    const r = sesion.entrar('wolve', 'clave');
     const req = http.expectOne('/api/auth/login?useCookies=true');
-    expect(req.request.body).toEqual({ email: 'yo@casa.es', password: 'clave' });
+    expect(req.request.body).toEqual({ email: 'wolve', password: 'clave' });
     req.flush({});
     expect(await r).toBe('ok');
-    expect(sesion.dentro()).toBe(true);
+    expect(sesion.usuario()).toBe('wolve');
   });
 
   it('distingue el segundo factor y el bloqueo', async () => {

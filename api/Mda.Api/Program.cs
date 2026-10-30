@@ -34,7 +34,13 @@ builder.Services.AddAuthorization();
 builder.Services
     .AddIdentityApiEndpoints<IdentityUser>(o =>
     {
-        o.Password.RequiredLength = 12;
+        // contraseña a elección del dueño (la única cuenta): mínimo 8 caracteres, sin reglas de símbolos.
+        // La protegen el bloqueo tras 5 fallos, el límite por IP y, en Internet, Cloudflare Access.
+        o.Password.RequiredLength = 8;
+        o.Password.RequireDigit = false;
+        o.Password.RequireLowercase = false;
+        o.Password.RequireUppercase = false;
+        o.Password.RequireNonAlphanumeric = false;
         o.User.RequireUniqueEmail = true;
         o.Lockout.MaxFailedAccessAttempts = 5;
         o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);

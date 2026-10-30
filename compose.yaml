@@ -29,6 +29,7 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD};Gss Encryption Mode=Disable
+      Admin__Usuario: ${ADMIN_USUARIO:-}
       Admin__Email: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env}
       Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env}
       Seq__Url: http://seq:5341
