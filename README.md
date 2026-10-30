@@ -17,7 +17,9 @@ Mi app personal, alojada en el equipo de casa y accesible desde la web
 ```
 api/Mda.Api          API: Program.cs, Auth/, Sistema/ (monitor en tiempo real), Data/ (EF Core + migraciones)
 api/Mda.Api.Tests    xUnit: lectores del sistema y la API completa en memoria
-web/                 Angular: entrar/ (candado 3D), panel/ (estado del servidor), core/ (sesión y guards)
+agente/Mda.Agente    agente de Windows: métricas reales del PC hacia la API
+web/                 Angular: entrar/ (candado 3D), shell/ (menú lateral y tema), inicio/ (el equipo en directo),
+                     pronto/ (secciones por venir), core/ (sesión, tema, guards)
 compose.yaml         db, api, seq, copias diarias y el túnel (perfil «tunel»)
 ```
 
@@ -67,6 +69,20 @@ docker compose --profile tunel up -d --build    # con el túnel: sale a Internet
 > En Docker Desktop (Windows) el panel muestra la máquina virtual de WSL que ejecuta los contenedores
 > (su memoria y su disco), no Windows directamente. La sesión sobrevive a reiniciar la API:
 > las claves de la cookie se guardan en el volumen `claves`.
+
+### Datos reales del PC (agente de Windows)
+
+Dentro de Docker la API solo ve la máquina virtual de WSL. El agente (`agente/Mda.Agente`) corre en Windows,
+lee CPU, memoria, discos y red del PC de verdad y se los manda a la API cada 2 s con el token `AGENTE_TOKEN`
+del `.env`. Si el agente se para, el panel vuelve a mostrar Docker y lo avisa.
+
+```bash
+agenterrancar.cmd                    # doble clic: lo compila la primera vez y lo deja en segundo plano
+dotnet run --project agente/Mda.Agente  # o en primer plano, para ver su estado
+```
+
+Para que arranque solo al iniciar sesión en Windows: acceso directo a `agenterrancar.cmd` en
+`shell:startup` (Win + R → `shell:startup`).
 
 ### Cloudflare (una vez)
 

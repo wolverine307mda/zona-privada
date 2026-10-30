@@ -15,6 +15,7 @@ public class ApiFactory : WebApplicationFactory<Program>
     public const string Usuario = "wolve";
     public const string Email = "admin@prueba.local";
     public const string Password = "clave-de-prueba";
+    public const string Token = "token-del-agente-de-prueba";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -22,6 +23,7 @@ public class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Admin:Email", Email);
         builder.UseSetting("Admin:Password", Password);
         builder.UseSetting("Seq:Url", "");
+        builder.UseSetting("Agente:Token", Token);
         builder.ConfigureServices(services =>
         {
             foreach (var d in services.Where(d =>
@@ -98,6 +100,46 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var sesion = new HttpRequestMessage(HttpMethod.Get, "/api/sesion");
         sesion.Headers.Add("Origin", "https://wolverine307mda.github.io");
         Assert.False((await client.SendAsync(sesion)).Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
+    private static object Lectura(string equipo) => new
+    {
+        cpu = 42.5, memoriaUsada = 8L << 30, memoriaTotal = 32L << 30, discoUsado = 100L << 30, discoTotal = 500L << 30,
+        encendidoSegundos = 3600, nucleos = 16, equipo, sistemaOperativo = "Microsoft Windows 10.0.26200",
+        hora = DateTimeOffset.UtcNow, cpuModelo = "CPU de prueba", discos = new[] { new { nombre = "C:\\", usado = 100L << 30, total = 500L << 30 } },
+        redBajada = 1000.0, redSubida = 500.0, origen = "equipo",
+    };
+
+    [Fact]
+    public async Task El_agente_necesita_el_token()
+    {
+        var client = factory.CreateClient();
+        var sinToken = await client.PostAsJsonAsync("/api/sistema/agente", Lectura("PC-PRUEBA"));
+        Assert.Equal(HttpStatusCode.Unauthorized, sinToken.StatusCode);
+
+        var mal = new HttpRequestMessage(HttpMethod.Post, "/api/sistema/agente") { Content = JsonContent.Create(Lectura("PC-PRUEBA")) };
+        mal.Headers.Add("X-Agente-Token", "otro");
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(mal)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Con_el_agente_el_panel_muestra_el_equipo_real()
+    {
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await client.PostAsJsonAsync("/api/auth/login?useCookies=true", new { email = ApiFactory.Usuario, password = ApiFactory.Password });
+
+        string? equipo = null;
+        for (var i = 0; i < 20 && equipo != "PC-PRUEBA"; i++)
+        {
+            var envio = new HttpRequestMessage(HttpMethod.Post, "/api/sistema/agente") { Content = JsonContent.Create(Lectura("PC-PRUEBA")) };
+            envio.Headers.Add("X-Agente-Token", ApiFactory.Token);
+            Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(envio)).StatusCode);
+            await Task.Delay(500);
+            var sistema = await client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/sistema");
+            if (sistema.GetProperty("actual").ValueKind == System.Text.Json.JsonValueKind.Object)
+                equipo = sistema.GetProperty("actual").GetProperty("equipo").GetString();
+        }
+        Assert.Equal("PC-PRUEBA", equipo);
     }
 
     [Fact]

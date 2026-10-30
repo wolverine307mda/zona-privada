@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/agente/">
+    <Project Path="agente/Mda.Agente/Mda.Agente.csproj" />
+  </Folder>
   <Folder Name="/api/">
     <Project Path="api/Mda.Api.Tests/Mda.Api.Tests.csproj" />
     <Project Path="api/Mda.Api/Mda.Api.csproj" />

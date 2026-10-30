@@ -1,0 +1,97 @@
+import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { SesionService } from '../core/sesion.service';
+import { TemaService } from '../core/tema.service';
+import { echarts, opcionesCpu, opcionesHistorial } from './graficas';
+import { SistemaService } from './sistema.service';
+
+const GB = 1024 ** 3;
+
+// bytes/s legibles: 812 B/s, 34,2 KB/s, 4,1 MB/s
+export function velocidad(b: number): string {
+  if (b < 1024) return `${Math.round(b)} B/s`;
+  if (b < 1024 ** 2) return `${(b / 1024).toLocaleString('es-ES', { maximumFractionDigits: 1 })} KB/s`;
+  return `${(b / 1024 ** 2).toLocaleString('es-ES', { maximumFractionDigits: 1 })} MB/s`;
+}
+
+// Inicio: el equipo de casa en directo (CPU, memoria, discos, red, historial y ficha del equipo)
+@Component({
+  selector: 'app-inicio',
+  templateUrl: './inicio.html',
+  styleUrl: './inicio.css',
+})
+export class Inicio implements OnDestroy {
+  private readonly sesion = inject(SesionService);
+  private readonly tema = inject(TemaService);
+  protected readonly sistema = inject(SistemaService);
+
+  private readonly cpuEl = viewChild.required<ElementRef<HTMLDivElement>>('cpu');
+  private readonly historialEl = viewChild.required<ElementRef<HTMLDivElement>>('historial');
+  private graficaCpu?: echarts.ECharts;
+  private graficaHistorial?: echarts.ECharts;
+  private observador?: ResizeObserver;
+
+  protected readonly ahora = signal(new Date());
+  protected readonly a = computed(() => this.sistema.actual());
+  protected readonly nombre = computed(() => {
+    const u = this.sesion.usuario() ?? '';
+    return u ? u[0].toUpperCase() + u.slice(1) : '';
+  });
+  protected readonly saludo = computed(() => {
+    const h = this.ahora().getHours();
+    return h < 7 ? 'Buenas noches' : h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches';
+  });
+  protected readonly real = computed(() => this.a()?.origen === 'equipo');
+
+  protected readonly memoria = computed(() => this.porcentaje(this.a()?.memoriaUsada, this.a()?.memoriaTotal));
+  protected readonly disco = computed(() => this.porcentaje(this.a()?.discoUsado, this.a()?.discoTotal));
+  protected readonly discos = computed(() => (this.a()?.discos ?? []).map((d) => ({ nombre: d.nombre.replace(/\\$/, ''), ...this.porcentaje(d.usado, d.total) })));
+  protected readonly bajada = computed(() => velocidad(this.a()?.redBajada ?? 0));
+  protected readonly subida = computed(() => velocidad(this.a()?.redSubida ?? 0));
+  protected readonly encendido = computed(() => {
+    const s = this.a()?.encendidoSegundos ?? 0;
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+  });
+  protected readonly so = computed(() => (this.a()?.sistemaOperativo ?? '').replace('Microsoft ', ''));
+
+  constructor() {
+    const reloj = setInterval(() => this.ahora.set(new Date()), 30_000);
+    this.limpiar = () => clearInterval(reloj);
+
+    afterNextRender(() => {
+      this.graficaCpu = echarts.init(this.cpuEl().nativeElement);
+      this.graficaHistorial = echarts.init(this.historialEl().nativeElement);
+      this.observador = new ResizeObserver(() => { this.graficaCpu?.resize(); this.graficaHistorial?.resize(); });
+      this.observador.observe(this.historialEl().nativeElement);
+      this.observador.observe(this.cpuEl().nativeElement);
+      this.pintar();
+    });
+
+    // cada lectura nueva y cada cambio de tema repintan las gráficas
+    effect(() => {
+      this.sistema.historial();
+      this.tema.cambio();
+      this.pintar();
+    });
+  }
+
+  private limpiar: () => void;
+
+  private pintar(): void {
+    this.graficaCpu?.setOption(opcionesCpu(this.a()?.cpu ?? 0));
+    this.graficaHistorial?.setOption(opcionesHistorial(this.sistema.historial()));
+  }
+
+  private porcentaje(usado?: number, total?: number) {
+    if (!usado || !total) return { pct: 0, usado: '—', total: '—' };
+    const f = (b: number) => (b / GB).toLocaleString('es-ES', { maximumFractionDigits: b / GB >= 100 ? 0 : 1 });
+    return { pct: Math.round((100 * usado) / total), usado: f(usado), total: f(total) };
+  }
+
+  ngOnDestroy(): void {
+    this.limpiar();
+    this.observador?.disconnect();
+    this.graficaCpu?.dispose();
+    this.graficaHistorial?.dispose();
+  }
+}

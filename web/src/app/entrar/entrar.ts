@@ -53,7 +53,7 @@ export class Entrar implements OnDestroy {
 
     if (r === 'ok') {
       this.escena?.abrir();
-      setTimeout(() => this.router.navigateByUrl('/panel'), 700);
+      setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
     } else if (r === 'segundo-factor') {
       this.pideCodigo.set(true);
       this.error.set('Falta el código de tu app de autenticación.');

@@ -20,3 +20,6 @@ web/.angular/
 !.vscode/extensions.json
 .idea/
 .claude/
+
+# agente compilado
+agente/publicado/

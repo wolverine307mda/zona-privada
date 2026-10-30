@@ -34,6 +34,7 @@ services:
       Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env}
       Seq__Url: http://seq:5341
       DataProtection__Ruta: /claves
+      Agente__Token: ${AGENTE_TOKEN:-}
     volumes:
       - claves:/claves
     # solo en este equipo: desde fuera se entra por el túnel, nunca por un puerto abierto

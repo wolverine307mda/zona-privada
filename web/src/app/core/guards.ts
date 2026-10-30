@@ -16,7 +16,7 @@ export const conSesion: CanActivateFn = async () => {
 export const sinSesion: CanActivateFn = async () => {
   const sesion = inject(SesionService);
   const router = inject(Router);
-  return !(await sesion.comprobar()) || router.parseUrl('/panel');
+  return !(await sesion.comprobar()) || router.parseUrl('/inicio');
 };
 
 // Una respuesta 401 fuera del login significa que la sesión caducó

@@ -15,6 +15,12 @@ export interface Metricas {
   equipo: string;
   sistemaOperativo: string;
   hora: string;
+  cpuModelo: string;
+  discos: { nombre: string; usado: number; total: number }[] | null;
+  redBajada: number;
+  redSubida: number;
+  // «equipo»: datos reales del PC (agente de Windows); «contenedor»: lo que ve Docker
+  origen: 'equipo' | 'contenedor';
 }
 
 export type EstadoConexion = 'conectando' | 'en-vivo' | 'reconectando' | 'sin-conexion';
@@ -32,6 +38,7 @@ export class SistemaService {
   readonly estado = signal<EstadoConexion>('conectando');
 
   async empezar(): Promise<void> {
+    if (this.hub) return; // ya conectado (el marco lo arranca una vez)
     try {
       const r = await firstValueFrom(this.http.get<{ actual: Metricas | null; historial: Metricas[] }>('/api/sistema'));
       this.historial.set(r.historial);
@@ -60,5 +67,9 @@ export class SistemaService {
 
   async parar(): Promise<void> {
     if (this.hub && this.hub.state !== HubConnectionState.Disconnected) await this.hub.stop();
+    this.hub = undefined;
+    this.historial.set([]);
+    this.actual.set(null);
+    this.estado.set('conectando');
   }
 }

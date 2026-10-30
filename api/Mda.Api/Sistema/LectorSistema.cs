@@ -1,9 +1,14 @@
 using System.Globalization;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 
 namespace Mda.Api.Sistema;
 
-// Una lectura del equipo. La CPU es el % de uso desde la lectura anterior.
+// Un disco del equipo: nombre (C:\, /), usado y total en bytes
+public record Disco(string Nombre, long Usado, long Total);
+
+// Una lectura del equipo. La CPU y la red son la media desde la lectura anterior.
+// Origen: "equipo" si viene del agente de Windows (datos reales del PC), "contenedor" si la mide la propia API.
 public record MetricasSistema(
     double Cpu,
     long MemoriaUsada,
@@ -14,7 +19,12 @@ public record MetricasSistema(
     int Nucleos,
     string Equipo,
     string SistemaOperativo,
-    DateTimeOffset Hora);
+    DateTimeOffset Hora,
+    string CpuModelo = "",
+    IReadOnlyList<Disco>? Discos = null,
+    double RedBajada = 0,
+    double RedSubida = 0,
+    string Origen = "contenedor");
 
 public interface ILectorSistema
 {
@@ -40,6 +50,28 @@ public static class LectorSistema
         catch (UnauthorizedAccessException) { return (0, 0); }
     }
 
+    // Discos fijos del equipo (en Windows, C:, D:…). En un contenedor solo cuenta la raíz.
+    internal static IReadOnlyList<Disco> Discos(bool todos)
+    {
+        if (!todos)
+        {
+            var (u, t) = Disco("/");
+            return t > 0 ? [new Disco("/", u, t)] : [];
+        }
+        var lista = new List<Disco>();
+        foreach (var d in DriveInfo.GetDrives())
+        {
+            try
+            {
+                if (d.DriveType == DriveType.Fixed && d.IsReady && d.TotalSize > 0)
+                    lista.Add(new Disco(d.Name, d.TotalSize - d.AvailableFreeSpace, d.TotalSize));
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+        return lista;
+    }
+
     // % de CPU entre dos lecturas de tiempos acumulados (inactivo y total)
     public static double Porcentaje(ulong inactivoAntes, ulong totalAntes, ulong inactivo, ulong total)
     {
@@ -50,10 +82,43 @@ public static class LectorSistema
     }
 }
 
-// Linux (el contenedor de Docker): /proc/stat, /proc/meminfo y /proc/uptime
+// Velocidad de red (bytes/s) sumando las interfaces activas que no son de bucle local
+internal sealed class MedidorRed
+{
+    private long _bajada, _subida;
+    private long _marca;
+
+    public (double Bajada, double Subida) Leer()
+    {
+        long bajada = 0, subida = 0;
+        foreach (var n in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (n.OperationalStatus != OperationalStatus.Up || n.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+            try
+            {
+                var s = n.GetIPStatistics();
+                bajada += s.BytesReceived;
+                subida += s.BytesSent;
+            }
+            catch (NetworkInformationException) { }
+            catch (PlatformNotSupportedException) { }
+        }
+        var ahora = Environment.TickCount64;
+        var segundos = (ahora - _marca) / 1000.0;
+        var r = _marca == 0 || segundos <= 0
+            ? (0d, 0d)
+            : (Math.Max(0, (bajada - _bajada) / segundos), Math.Max(0, (subida - _subida) / segundos));
+        (_bajada, _subida, _marca) = (bajada, subida, ahora);
+        return r;
+    }
+}
+
+// Linux (el contenedor de Docker): /proc/stat, /proc/meminfo, /proc/uptime y /proc/cpuinfo
 public sealed class LectorLinux : ILectorSistema
 {
     private ulong _inactivo, _total;
+    private readonly MedidorRed _red = new();
+    private readonly string _modelo = ModeloCpu();
 
     public MetricasSistema Leer()
     {
@@ -63,10 +128,23 @@ public sealed class LectorLinux : ILectorSistema
 
         var (memTotal, memLibre) = ParsearMeminfo(File.ReadAllText("/proc/meminfo"));
         var encendido = double.Parse(File.ReadAllText("/proc/uptime").Split(' ')[0], CultureInfo.InvariantCulture);
-        var (discoUsado, discoTotal) = LectorSistema.Disco("/");
+        var discos = LectorSistema.Discos(todos: false);
+        var (bajada, subida) = _red.Leer();
 
-        return new MetricasSistema(cpu, memTotal - memLibre, memTotal, discoUsado, discoTotal, encendido,
-            Environment.ProcessorCount, Environment.MachineName, RuntimeInformation.OSDescription, DateTimeOffset.UtcNow);
+        return new MetricasSistema(cpu, memTotal - memLibre, memTotal,
+            discos.Sum(d => d.Usado), discos.Sum(d => d.Total), encendido,
+            Environment.ProcessorCount, Environment.MachineName, RuntimeInformation.OSDescription, DateTimeOffset.UtcNow,
+            _modelo, discos, bajada, subida, "contenedor");
+    }
+
+    private static string ModeloCpu()
+    {
+        try
+        {
+            var linea = File.ReadLines("/proc/cpuinfo").FirstOrDefault(l => l.StartsWith("model name", StringComparison.Ordinal));
+            return linea?.Split(':', 2)[1].Trim() ?? "";
+        }
+        catch (IOException) { return ""; }
     }
 
     // Primera línea de /proc/stat: "cpu user nice system idle iowait irq softirq steal …" (en ticks)
@@ -95,10 +173,12 @@ public sealed class LectorLinux : ILectorSistema
     }
 }
 
-// Windows (desarrollo en el equipo de casa): GetSystemTimes y GlobalMemoryStatusEx
-public sealed partial class LectorWindows : ILectorSistema
+// Windows (el PC de verdad, desde el agente o con la API fuera de Docker): GetSystemTimes y GlobalMemoryStatusEx
+public sealed class LectorWindows : ILectorSistema
 {
     private ulong _inactivo, _total;
+    private readonly MedidorRed _red = new();
+    private readonly string _modelo = ModeloCpu();
 
     public MetricasSistema Leer()
     {
@@ -109,12 +189,22 @@ public sealed partial class LectorWindows : ILectorSistema
 
         var mem = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
         GlobalMemoryStatusEx(ref mem);
-        var raiz = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
-        var (discoUsado, discoTotal) = LectorSistema.Disco(raiz);
+        var discos = LectorSistema.Discos(todos: true);
+        var sistema = discos.FirstOrDefault(d => string.Equals(d.Nombre, Path.GetPathRoot(Environment.SystemDirectory), StringComparison.OrdinalIgnoreCase))
+                      ?? discos.FirstOrDefault();
+        var (bajada, subida) = _red.Leer();
 
-        return new MetricasSistema(cpu, (long)(mem.TotalPhys - mem.AvailPhys), (long)mem.TotalPhys, discoUsado, discoTotal,
-            Environment.TickCount64 / 1000.0, Environment.ProcessorCount, Environment.MachineName,
-            RuntimeInformation.OSDescription, DateTimeOffset.UtcNow);
+        return new MetricasSistema(cpu, (long)(mem.TotalPhys - mem.AvailPhys), (long)mem.TotalPhys,
+            sistema?.Usado ?? 0, sistema?.Total ?? 0, Environment.TickCount64 / 1000.0,
+            Environment.ProcessorCount, Environment.MachineName, RuntimeInformation.OSDescription, DateTimeOffset.UtcNow,
+            _modelo, discos, bajada, subida, "equipo");
+    }
+
+    private static string ModeloCpu()
+    {
+        if (!OperatingSystem.IsWindows()) return "";
+        using var clave = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+        return (clave?.GetValue("ProcessorNameString") as string)?.Trim() ?? "";
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -137,9 +227,10 @@ public sealed class LectorBasico : ILectorSistema
     public MetricasSistema Leer()
     {
         var gc = GC.GetGCMemoryInfo();
-        var (discoUsado, discoTotal) = LectorSistema.Disco("/");
-        return new MetricasSistema(0, gc.MemoryLoadBytes, gc.TotalAvailableMemoryBytes, discoUsado, discoTotal,
-            Environment.TickCount64 / 1000.0, Environment.ProcessorCount, Environment.MachineName,
-            RuntimeInformation.OSDescription, DateTimeOffset.UtcNow);
+        var discos = LectorSistema.Discos(todos: false);
+        return new MetricasSistema(0, gc.MemoryLoadBytes, gc.TotalAvailableMemoryBytes,
+            discos.Sum(d => d.Usado), discos.Sum(d => d.Total), Environment.TickCount64 / 1000.0,
+            Environment.ProcessorCount, Environment.MachineName, RuntimeInformation.OSDescription, DateTimeOffset.UtcNow,
+            Discos: discos);
     }
 }

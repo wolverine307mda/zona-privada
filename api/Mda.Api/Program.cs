@@ -95,6 +95,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ILectorSistema>(_ => LectorSistema.ParaEsteEquipo());
 builder.Services.AddSingleton<EstadoSistema>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<EstadoAgente>();
 builder.Services.AddHostedService<MonitorSistema>();
 
 // ---- Al arrancar: migraciones y usuario administrador desde la configuración ----

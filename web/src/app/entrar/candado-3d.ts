@@ -116,7 +116,7 @@ export function crearCandado(canvas: HTMLCanvasElement) {
   const loop = (time: number) => { render(time); raf = requestAnimationFrame(loop); };
 
   const tema = new MutationObserver(paint);
-  tema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color'] });
+  tema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color', 'data-mode'] });
   addEventListener('resize', resize);
   addEventListener('pointermove', onMove, { passive: true });
   paint(); resize();

@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { TemaService } from './core/tema.service';
 
 @Component({
   selector: 'app-root',
@@ -7,11 +8,6 @@ import { RouterOutlet } from '@angular/router';
   template: '<router-outlet />',
 })
 export class App {
-  constructor() {
-    // el color elegido en la web pública no viaja (otro dominio): se guarda aquí aparte
-    try {
-      const color = localStorage.getItem('color');
-      if (color) document.documentElement.dataset['color'] = color;
-    } catch { /* sin almacenamiento: color por defecto */ }
-  }
+  // arranca el tema (modo, color y cambios del sistema) para toda la app
+  protected readonly tema = inject(TemaService);
 }

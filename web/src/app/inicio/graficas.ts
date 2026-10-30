@@ -12,7 +12,7 @@ export { echarts };
 const tema = () => {
   const cs = getComputedStyle(document.documentElement);
   const v = (n: string, d: string) => cs.getPropertyValue(n).trim() || d;
-  return { brand: v('--brand', '#ff7a1f'), texto: v('--on-dark', '#eef2f4'), suave: v('--soft', '#8d979e'), linea: v('--dark-2', '#15232c'), ok: v('--ok', '#3ddc84') };
+  return { brand: v('--brand', '#ff7a1f'), texto: v('--texto', '#e8edf0'), suave: v('--soft', '#8d979e'), linea: v('--linea', '#1c2a34'), fondo: v('--tarjeta-2', '#15222b'), ok: v('--ok', '#3ddc84') };
 };
 
 // Medidor de CPU: arco con el color de marca y el número en el centro
@@ -22,10 +22,10 @@ export function opcionesCpu(cpu: number): echarts.EChartsCoreOption {
     series: [{
       type: 'gauge', startAngle: 220, endAngle: -40, min: 0, max: 100, radius: '100%', center: ['50%', '58%'],
       progress: { show: true, roundCap: true, width: 16, itemStyle: { color: t.brand } },
-      axisLine: { roundCap: true, lineStyle: { width: 16, color: [[1, t.linea]] } },
+      axisLine: { roundCap: true, lineStyle: { width: 16, color: [[1, t.fondo]] } },
       axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
       pointer: { show: false }, anchor: { show: false }, title: { show: false },
-      detail: { valueAnimation: true, offsetCenter: [0, '6%'], formatter: '{value}%', color: t.texto, fontSize: 34, fontFamily: 'Panchang, Arial Black, sans-serif' },
+      detail: { valueAnimation: true, offsetCenter: [0, '6%'], formatter: '{value}%', color: t.texto, fontSize: 30, fontFamily: 'Panchang, Arial Black, sans-serif' },
       data: [{ value: Math.round(cpu) }],
       animationDurationUpdate: 600,
     }],
@@ -44,7 +44,7 @@ export function opcionesHistorial(h: Metricas[]): echarts.EChartsCoreOption {
     animationDuration: 300,
     grid: { left: 36, right: 12, top: 36, bottom: 28 },
     legend: { top: 0, right: 0, textStyle: { color: t.suave, fontFamily: 'JetBrains Mono, monospace' }, itemWidth: 14 },
-    tooltip: { trigger: 'axis', valueFormatter: (v: unknown) => `${v} %` },
+    tooltip: { trigger: 'axis', valueFormatter: (v: unknown) => `${v} %`, backgroundColor: t.fondo, borderColor: t.linea, textStyle: { color: t.texto } },
     xAxis: { type: 'category', data: horas, boundaryGap: false, axisLabel: { color: t.suave, hideOverlap: true }, axisLine: { lineStyle: { color: t.linea } } },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: t.suave, formatter: '{value}' }, splitLine: { lineStyle: { color: t.linea } } },
     series: [

@@ -1,0 +1,86 @@
+<div class="marco" [class.menu-abierto]="menuAbierto()">
+  <aside class="lateral" aria-label="Menú de la zona privada">
+    <a class="marca" routerLink="/inicio">
+      <span class="marca__logo" aria-hidden="true">M</span>
+      <span class="marca__texto">
+        <strong>MDA</strong>
+        <code>zona privada</code>
+      </span>
+    </a>
+
+    <nav class="menu">
+      <p class="menu__grupo"><code>// general</code></p>
+      <a class="menu__item" [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg>
+        <span>{{ inicio.titulo }}</span>
+      </a>
+
+      <p class="menu__grupo"><code>// próximamente</code></p>
+      @for (m of modulos; track m.id) {
+        <a class="menu__item menu__item--pronto" [routerLink]="'/pronto/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
+          <span>{{ m.titulo }}</span>
+          <em class="menu__badge">pronto</em>
+        </a>
+      }
+    </nav>
+
+    <section class="tema-panel" aria-label="Tema">
+      <p class="menu__grupo"><code>// tema</code></p>
+      <div class="segmentado" role="group" aria-label="Modo">
+        @for (m of modos; track m.id) {
+          <button type="button" [attr.aria-pressed]="tema.modo() === m.id" (click)="tema.ponerModo(m.id, $any($event.currentTarget))">{{ m.nombre }}</button>
+        }
+      </div>
+      <div class="muestras" role="group" aria-label="Color">
+        @for (c of colores; track c.id) {
+          <button type="button" class="muestra" [style.--m]="c.muestra" [attr.aria-pressed]="tema.color() === c.id"
+                  [attr.aria-label]="c.nombre" [title]="c.nombre" (click)="tema.ponerColor(c.id, $any($event.currentTarget))"></button>
+        }
+      </div>
+    </section>
+
+    <section class="perfil">
+      <img class="perfil__foto" src="img/avatar.webp" width="40" height="40" alt="">
+      <span class="perfil__datos">
+        <strong>{{ usuario() ?? '—' }}</strong>
+        <code>administrador</code>
+      </span>
+      <button class="perfil__salir" type="button" (click)="salir()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" /></svg>
+      </button>
+    </section>
+  </aside>
+
+  <button class="velo" type="button" aria-label="Cerrar el menú" tabindex="-1" (click)="menuAbierto.set(false)"></button>
+
+  <div class="contenido">
+    <header class="barra">
+      <button class="barra__menu" type="button" aria-label="Abrir el menú" (click)="menuAbierto.set(true)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      </button>
+      <div class="barra__titulo">
+        <h1>{{ seccion().titulo }}</h1>
+        <p>{{ seccion().resumen }}</p>
+      </div>
+      <div class="barra__lado">
+        <span class="conexion" [attr.data-estado]="sistema.estado()">
+          <span class="conexion__punto" aria-hidden="true"></span>
+          <code>
+            @switch (sistema.estado()) {
+              @case ('en-vivo') { en directo }
+              @case ('reconectando') { reconectando… }
+              @case ('conectando') { conectando… }
+              @default { sin conexión }
+            }
+          </code>
+        </span>
+        <time class="reloj">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) }}</time>
+      </div>
+    </header>
+
+    <main class="pantalla">
+      <router-outlet />
+    </main>
+  </div>
+</div>
