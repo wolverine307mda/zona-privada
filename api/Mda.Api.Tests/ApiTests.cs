@@ -83,6 +83,24 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task La_web_publica_solo_puede_consultar_la_salud()
+    {
+        var client = factory.CreateClient();
+        var salud = new HttpRequestMessage(HttpMethod.Get, "/api/salud");
+        salud.Headers.Add("Origin", "https://wolverine307mda.github.io");
+        var res = await client.SendAsync(salud);
+        Assert.Equal("https://wolverine307mda.github.io", res.Headers.GetValues("Access-Control-Allow-Origin").Single());
+
+        var otraWeb = new HttpRequestMessage(HttpMethod.Get, "/api/salud");
+        otraWeb.Headers.Add("Origin", "https://otra-web.com");
+        Assert.False((await client.SendAsync(otraWeb)).Headers.Contains("Access-Control-Allow-Origin"));
+
+        var sesion = new HttpRequestMessage(HttpMethod.Get, "/api/sesion");
+        sesion.Headers.Add("Origin", "https://wolverine307mda.github.io");
+        Assert.False((await client.SendAsync(sesion)).Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
+    [Fact]
     public async Task Las_respuestas_llevan_cabeceras_de_seguridad()
     {
         var res = await factory.CreateClient().GetAsync("/api/salud");

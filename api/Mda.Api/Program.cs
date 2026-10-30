@@ -76,6 +76,12 @@ builder.Services.AddRateLimiter(o =>
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
+// ---- La web pública (GitHub Pages) solo puede preguntar si el equipo está encendido: GET /api/salud ----
+const string WebPublica = "web-publica";
+builder.Services.AddCors(o => o.AddPolicy(WebPublica, p => p
+    .WithOrigins(builder.Configuration.GetSection("WebPublica:Origenes").Get<string[]>() ?? ["https://wolverine307mda.github.io"])
+    .WithMethods("GET")));
+
 // ---- Detrás de Cloudflare Tunnel: respetar el esquema y la IP originales ----
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
@@ -103,11 +109,12 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 // el enrutado va después de los archivos: si no, la ruta comodín del front se quedaría con los .js y .css
 app.UseRouting();
+app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous();
+app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous().RequireCors(WebPublica);
 app.MapAuth();
 app.MapSistema();
 
