@@ -31,7 +31,8 @@ export class SesionService {
   async entrar(usuario: string, password: string, codigo?: string): Promise<ResultadoEntrar> {
     try {
       await firstValueFrom(this.http.post('/api/auth/login?useCookies=true', {
-        email: usuario, password, ...(codigo ? { twoFactorCode: codigo } : {}),
+        // 6 cifras: el código de la app; algo más largo: un código de recuperación
+        email: usuario, password, ...(codigo ? (/^\d{6}$/.test(codigo.replace(/\s/g, '')) ? { twoFactorCode: codigo.replace(/\s/g, '') } : { twoFactorRecoveryCode: codigo }) : {}),
       }));
       this.nombre.set(usuario);
       this.comprobada = true;

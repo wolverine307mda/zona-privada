@@ -25,7 +25,7 @@ public static class CabecerasSeguras
         h["Referrer-Policy"] = "no-referrer";
         h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         h["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com; " +
             "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
         await next();
     });

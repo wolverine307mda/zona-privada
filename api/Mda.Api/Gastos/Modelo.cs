@@ -20,6 +20,9 @@ public class Movimiento
     public int? RecurrenteId { get; set; }
     public Recurrente? Recurrente { get; set; }
 
+    // si es un pago de una deuda (el coche, un préstamo…), de cuál
+    public int? DeudaId { get; set; }
+
     // gasolina
     public decimal? Litros { get; set; }
     public decimal? PrecioLitro { get; set; }
@@ -69,6 +72,19 @@ public class Recurrente
     };
 }
 
+// Algo que se va pagando poco a poco hasta llegar a un total: el coche, un préstamo, una compra a plazos…
+// Lo pagado es la suma de los apuntes enlazados (Movimiento.DeudaId).
+public class Deuda
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public decimal Total { get; set; }
+    public string Categoria { get; set; } = "cuota-coche";
+    public DateOnly Inicio { get; set; }
+    public string? Notas { get; set; }
+    public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
+}
+
 // Categorías que acepta la API (el front pone los iconos y colores con estos mismos id)
 public static class Categorias
 {
@@ -89,6 +105,7 @@ public static class Categorias
             ["seguro"] = ("Seguro", TipoMovimiento.Gasto, "Coche"),
             ["mecanico"] = ("Mecánico", TipoMovimiento.Gasto, "Coche"),
             ["cuota-coche"] = ("Cuota del coche", TipoMovimiento.Gasto, "Coche"),
+            ["coche-extras"] = ("Papeleo y extras", TipoMovimiento.Gasto, "Coche"),
             ["otros"] = ("Otros gastos", TipoMovimiento.Gasto, "Día a día"),
             ["nomina"] = ("Nómina", TipoMovimiento.Ingreso, "Ingresos"),
             ["extra"] = ("Extra", TipoMovimiento.Ingreso, "Ingresos"),

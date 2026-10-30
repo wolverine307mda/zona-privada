@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -7,11 +8,12 @@ import { INICIO, MODULOS } from '../core/modulos';
 import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
+import { Buscador } from './buscador';
 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {
@@ -27,6 +29,7 @@ export class Shell {
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
+  protected readonly pestanas = MODULOS.filter((m) => m.listo && m.pestana);
   protected readonly modulos = MODULOS.filter((m) => !m.listo);
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
@@ -34,6 +37,7 @@ export class Shell {
   protected readonly menuAbierto = signal(false);
   protected readonly ahora = signal(new Date());
   private readonly ajustes = viewChild.required<ElementRef<HTMLDialogElement>>('ajustes');
+  protected readonly buscador = viewChild.required(Buscador);
 
   // título de la barra superior según la sección abierta
   private readonly url = toSignal(this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)), { initialValue: this.router.url });
@@ -48,6 +52,13 @@ export class Shell {
     this.sistema.empezar();
     const reloj = setInterval(() => this.ahora.set(new Date()), 15_000);
     const sinInclinar = activarInclinacion();
+    // latido: la pestaña abierta avisa cada minuto de que sigue ahí (Seguridad lo enseña como «en línea»)
+    const http = inject(HttpClient);
+    const app = matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const latir = () => { if (!document.hidden) http.post('/api/seguridad/latido', { app }).subscribe({ error: () => {} }); };
+    latir();
+    const latido = setInterval(latir, 60_000);
+    document.addEventListener('visibilitychange', latir);
     // el gesto que empieza en el borde se sigue por todo el documento
     const mover = (e: TouchEvent) => this.sigueGesto(e);
     const acabar = () => {
@@ -58,6 +69,8 @@ export class Shell {
     document.addEventListener('touchend', acabar);
     inject(DestroyRef).onDestroy(() => {
       clearInterval(reloj);
+      clearInterval(latido);
+      document.removeEventListener('visibilitychange', latir);
       sinInclinar();
       document.removeEventListener('touchmove', mover);
       document.removeEventListener('touchend', acabar);

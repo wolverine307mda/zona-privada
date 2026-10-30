@@ -87,6 +87,10 @@
 .conexion[data-estado='reconectando'] .conexion__punto, .conexion[data-estado='conectando'] .conexion__punto { background: var(--warn); }
 .conexion[data-estado='sin-conexion'] .conexion__punto { background: var(--bad); }
 @keyframes late { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 8px transparent; } }
+.barra__buscar { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px 0 12px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque); color: var(--soft); font: 500 13px/1 var(--font-text); cursor: pointer; transition: border-color 160ms ease, color 160ms ease; }
+.barra__buscar .icon { width: 17px; height: 17px; }
+.barra__buscar kbd { padding: 3px 6px; border-radius: 6px; border: 1px solid var(--linea); font: 600 10px/1 var(--font-code); background: var(--tarjeta-2); }
+@media (hover: hover) { .barra__buscar:hover { border-color: var(--brand); color: var(--texto); } }
 .reloj { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.02em; }
 
 .pantalla { padding: clamp(20px, 3vw, 36px) var(--margin) 64px; max-width: 1440px; width: 100%; view-transition-name: pantalla; }
@@ -147,6 +151,8 @@
 @media (max-width: 560px) {
   .barra { gap: 12px; }
   .barra__titulo p, .reloj { display: none; }
+  .barra__buscar { width: 40px; height: 40px; padding: 0; justify-content: center; }
+  .barra__buscar span, .barra__buscar kbd { display: none; }
   .conexion__texto { display: none; }
 }
 

@@ -35,8 +35,8 @@
 
     @if (pideCodigo()) {
       <label class="campo campo--codigo">
-        <span class="etiqueta"><code>código 2FA</code></span>
-        <input class="entrada" type="text" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required
+        <span class="etiqueta"><code>código 2FA</code> <em>(o un código de recuperación)</em></span>
+        <input class="entrada" type="text" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required
                [value]="codigo()" (input)="codigo.set(valor($event))">
         <span class="linea" aria-hidden="true"></span>
       </label>

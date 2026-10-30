@@ -1,0 +1,129 @@
+@if (portada(); as p) { <div class="fondo" aria-hidden="true"><img [src]="p" alt=""></div> }
+
+@if (aviso()) {
+  <p class="aviso" role="status"><span>{{ aviso() }}</span><button type="button" (click)="aviso.set('')" aria-label="Cerrar el aviso">×</button></p>
+}
+
+@if (conexion(); as c) {
+  @if (!c.conectado) {
+    <section class="caja enlazar">
+      <span class="logo-spotify" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1ed760" /><path d="M6.5 9.2c3.6-1 7.6-.7 11 1M7.2 12.4c3-.8 6.2-.5 9 .9M7.8 15.4c2.4-.6 4.9-.4 7.1.7" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" /></svg>
+      </span>
+      <h2>Tu música, aquí</h2>
+      <p class="enlazar__lead">Lo que suena ahora en cualquier dispositivo, tus canciones y artistas más escuchados y lo último que has oído, con controles para pausar o pasar de canción.</p>
+      @if (c.configurado) {
+        <button class="button boton-spotify" type="button" (click)="conectar()">Conectar con Spotify</button>
+      } @else {
+        <ol class="pasos">
+          <li>Entra en <strong>developer.spotify.com/dashboard</strong> con tu cuenta y pulsa <em>Create app</em>.</li>
+          <li>Nombre y descripción, los que quieras. Marca <em>Web API</em>.</li>
+          <li>
+            En <em>Redirect URIs</em> pega exactamente esta dirección:
+            <button class="copiar" type="button" (click)="copiar(c.vuelta)"><code>{{ c.vuelta }}</code><span>{{ copiado() ? '✓ Copiada' : 'Copiar' }}</span></button>
+          </li>
+          <li>Guarda y abre <em>Settings</em>: copia el <strong>Client ID</strong> y el <strong>Client secret</strong>.</li>
+          <li>Pásamelos (o ponlos en el <code>.env</code> como <code>SPOTIFY_CLIENT_ID</code> y <code>SPOTIFY_CLIENT_SECRET</code>) y reinicia la API. Aquí saldrá el botón para conectar.</li>
+        </ol>
+      }
+    </section>
+  } @else {
+    <!-- sonando ahora -->
+    <section class="ahora" [class.parado]="!ahora()?.sonando">
+      @if (ahora()?.cancion; as s) {
+        <a class="disco" data-inclina [href]="s.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'Abrir ' + s.nombre + ' en Spotify'">
+          <span class="disco__vinilo" aria-hidden="true"></span>
+          @if (s.imagen) { <img class="disco__portada" [src]="s.imagen" alt="" width="300" height="300"> }
+        </a>
+        <div class="ahora__info">
+          <p class="ahora__estado">
+            @if (ahora()!.sonando) { <span class="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Sonando ahora } @else { En pausa }
+            @if (ahora()!.dispositivo) {
+              <span class="dispositivo"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icono(ahora()!.tipoDispositivo)" /></svg>{{ ahora()!.dispositivo }}</span>
+            }
+          </p>
+          <h2 class="ahora__titulo">{{ s.nombre }}</h2>
+          <p class="ahora__artista">{{ s.artistas }}@if (s.album) { <span> · {{ s.album }}</span> }</p>
+          <div class="progreso">
+            <span>{{ tiempo(progreso()) }}</span>
+            <span class="progreso__barra"><span [style.width.%]="pct()"></span></span>
+            <span>{{ tiempo(s.duracion) }}</span>
+          </div>
+          <div class="controles">
+            <button type="button" (click)="control('previous')" aria-label="Anterior"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12l-9-6zM6 6v12" /></svg></button>
+            <button class="controles__play" type="button" (click)="control(ahora()!.sonando ? 'pause' : 'play')" [attr.aria-label]="ahora()!.sonando ? 'Pausa' : 'Reproducir'">
+              @if (ahora()!.sonando) { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg> }
+              @else { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg> }
+            </button>
+            <button type="button" (click)="control('next')" aria-label="Siguiente"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12l9-6zM18 6v12" /></svg></button>
+          </div>
+        </div>
+      } @else {
+        <div class="ahora__nada">
+          <span class="ondas ondas--quieta" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <h2>No suena nada</h2>
+          <p>Abre Spotify en el móvil o en el PC y dale al play: aparecerá aquí.</p>
+        </div>
+      }
+    </section>
+
+    <!-- lo más escuchado -->
+    <section class="caja">
+      <header class="top__cab">
+        <div class="segmento" role="group" aria-label="Qué ver">
+          <button type="button" [attr.aria-pressed]="tipoTop() === 'canciones'" (click)="verTop('canciones')">Canciones</button>
+          <button type="button" [attr.aria-pressed]="tipoTop() === 'artistas'" (click)="verTop('artistas')">Artistas</button>
+        </div>
+        <div class="segmento" role="group" aria-label="Periodo">
+          @for (p of periodos; track p.id) { <button type="button" [attr.aria-pressed]="periodo() === p.id" (click)="verPeriodo(p.id)">{{ p.nombre }}</button> }
+        </div>
+      </header>
+      @if (tipoTop() === 'canciones') {
+        <ol class="top">
+          @for (t of topCanciones(); track t.id; let i = $index) {
+            <li [class.podio]="i < 3">
+              <a [href]="t.url" target="_blank" rel="noopener noreferrer">
+                <span class="top__n">{{ i + 1 }}</span>
+                @if (t.imagen) { <img [src]="t.imagen" alt="" width="56" height="56" loading="lazy"> } @else { <span class="top__img"></span> }
+                <span class="top__texto"><strong>{{ t.nombre }}</strong><span>{{ t.artistas }}</span></span>
+              </a>
+            </li>
+          } @empty { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
+        </ol>
+      } @else {
+        <ol class="artistas">
+          @for (a of topArtistas(); track a.id; let i = $index) {
+            <li>
+              <a [href]="a.url" target="_blank" rel="noopener noreferrer" data-inclina>
+                @if (a.imagen) { <img [src]="a.imagen" alt="" width="160" height="160" loading="lazy"> } @else { <span class="artistas__img"></span> }
+                <span class="artistas__n">{{ i + 1 }}</span>
+                <strong>{{ a.nombre }}</strong>
+                @if (a.generos.length) { <span>{{ a.generos.slice(0, 2).join(' · ') }}</span> }
+              </a>
+            </li>
+          } @empty { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
+        </ol>
+      }
+    </section>
+
+    @if (recientes().length) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Lo último que has escuchado</h3></header>
+        <ul class="recientes">
+          @for (r of recientes(); track r.cuando) {
+            <li>
+              <a [href]="r.cancion.url" target="_blank" rel="noopener noreferrer">
+                @if (r.cancion.imagen) { <img [src]="r.cancion.imagen" alt="" width="44" height="44" loading="lazy"> }
+                <span class="top__texto"><strong>{{ r.cancion.nombre }}</strong><span>{{ r.cancion.artistas }}</span></span>
+                <time>{{ hace(r.cuando) }}</time>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    <p class="pie">Conectado como <strong>{{ c.cuenta ?? 'tu cuenta' }}</strong>. Se desconecta desde <a routerLink="/seguridad">Seguridad</a>.</p>
+  }
+} @else {
+  <p class="cargando">Cargando…</p>
+}

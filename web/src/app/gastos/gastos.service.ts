@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Estadisticas, Gasolina, Movimiento, Recurrente, ResumenMes, Tipo } from './modelo';
+import { Deudas, Estadisticas, Gasolina, Movimiento, Recurrente, ResumenMes, Tipo } from './modelo';
 
 export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId'> & { recurrenteId?: number | null };
 export type RecurrenteEntrada = Omit<Recurrente, 'id' | 'mensual'>;
@@ -48,6 +48,14 @@ export class GastosService {
     const params: Record<string, string> = {};
     Object.entries(filtro).forEach(([k, v]) => { if (v) params[k] = v; });
     return firstValueFrom(this.http.get<Movimiento[]>(`${this.base}/movimientos`, { params }));
+  }
+  deudas() { return firstValueFrom(this.http.get<Deudas>(`${this.base}/deudas`)); }
+  guardarDeuda(d: { nombre: string; total: number; categoria: string; inicio: string; notas: string | null }, id?: number) {
+    return firstValueFrom(id ? this.http.put(`${this.base}/deudas/${id}`, d) : this.http.post(`${this.base}/deudas`, d));
+  }
+  borrarDeuda(id: number) { return firstValueFrom(this.http.delete(`${this.base}/deudas/${id}`)); }
+  pagarDeuda(id: number, p: { importe: number; fecha: string; concepto?: string; notas?: string }) {
+    return firstValueFrom(this.http.post<Movimiento>(`${this.base}/deudas/${id}/pagos`, p));
   }
   recurrentes() { return firstValueFrom(this.http.get<Recurrente[]>(`${this.base}/recurrentes`)); }
 

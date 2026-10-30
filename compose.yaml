@@ -36,6 +36,21 @@ services:
       DataProtection__Ruta: /claves
       Agente__Token: ${AGENTE_TOKEN:-}
       Archivos__Base: /carpetas
+      App__UrlPublica: ${URL_PUBLICA:-}
+      App__Zona: ${ZONA_HORARIA:-Europe/Madrid}
+      # avisos de la agenda (opcionales): correo por SMTP y WhatsApp con CallMeBot
+      Correo__Servidor: ${CORREO_SERVIDOR:-}
+      Correo__Puerto: ${CORREO_PUERTO:-587}
+      Correo__Usuario: ${CORREO_USUARIO:-}
+      Correo__Clave: ${CORREO_CLAVE:-}
+      Correo__Para: ${CORREO_PARA:-}
+      WhatsApp__Telefono: ${WHATSAPP_TELEFONO:-}
+      WhatsApp__ApiKey: ${WHATSAPP_APIKEY:-}
+      # cuentas enlazadas (opcionales): Spotify y Google Calendar
+      Spotify__ClientId: ${SPOTIFY_CLIENT_ID:-}
+      Spotify__ClientSecret: ${SPOTIFY_CLIENT_SECRET:-}
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
     volumes:
       - claves:/claves
       # «Documentos»: las carpetas del equipo (rutas de Windows en .env; sin ellas, carpetas vacías en ./carpetas)

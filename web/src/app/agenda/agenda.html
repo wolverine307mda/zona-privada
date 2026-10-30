@@ -1,0 +1,182 @@
+<header class="cab">
+  <div class="mes">
+    <button class="mes__flecha" type="button" (click)="moverMes(-1)" aria-label="Mes anterior"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg></button>
+    <h2 class="mes__nombre" aria-live="polite">{{ titulo() }}</h2>
+    <button class="mes__flecha" type="button" (click)="moverMes(1)" aria-label="Mes siguiente"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg></button>
+    <button class="mes__hoy" type="button" (click)="hoy()">Hoy</button>
+  </div>
+  <div class="acciones">
+    <button class="button button--ghost" type="button" (click)="nuevo('Recordatorio')">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg> Recordatorio
+    </button>
+    <button class="button" type="button" (click)="nuevo('Evento')">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Evento
+    </button>
+  </div>
+</header>
+
+@if (aviso()) {
+  <p class="aviso" role="status"><span>{{ aviso() }}</span><button type="button" (click)="aviso.set('')" aria-label="Cerrar el aviso">×</button></p>
+}
+
+@if (estado(); as e) {
+  @if (!e.google.conectado) {
+    <section class="caja google">
+      <span class="google__logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#4285f4" d="M4 5h16v15H4z" opacity=".18" /><path fill="none" stroke="#4285f4" stroke-width="1.8" stroke-linecap="round" d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /><text x="12" y="17.6" text-anchor="middle" font-size="7" font-weight="700" fill="#4285f4">31</text></svg></span>
+      <div class="google__texto">
+        <strong>Google Calendar</strong>
+        <span>{{ e.google.configurado ? 'Enlaza tu cuenta para ver aquí tus eventos y copiar los nuevos allí.' : 'Falta el ID de cliente de Google en el servidor: los pasos están en Seguridad › Apps conectadas.' }}</span>
+      </div>
+      @if (e.google.configurado) { <button class="button" type="button" (click)="conectarGoogle()">Enlazar</button> }
+    </section>
+  }
+}
+
+<div class="rejilla">
+  <section class="caja calendario" aria-label="Calendario">
+    <div class="semana" aria-hidden="true">@for (s of semana; track $index) { <span>{{ s }}</span> }</div>
+    <div class="dias" role="grid">
+      @for (d of dias(); track d.fecha.getTime()) {
+        <button type="button" class="dia" role="gridcell" [class.fuera]="!d.delMes" [class.hoy]="d.hoy" [class.elegido]="esElegido(d)"
+                (click)="elegir(d)" (dblclick)="nuevo('Evento', d.fecha)" [attr.aria-label]="diaLargo(d.fecha) + (d.eventos.length ? ', ' + d.eventos.length + ' eventos' : '')">
+          <span class="dia__n">{{ d.fecha.getDate() }}</span>
+          <span class="dia__eventos">
+            @for (a of d.eventos.slice(0, 3); track a.clave) {
+              <span class="chip-ev" [class.hecho]="a.hecho" [style.--c]="colorEvento(a.color)">{{ a.todoElDia ? '' : hora(a.inicio) + ' ' }}{{ a.titulo }}</span>
+            }
+            @if (d.eventos.length > 3) { <span class="chip-mas">+{{ d.eventos.length - 3 }}</span> }
+          </span>
+          <span class="dia__puntos" aria-hidden="true">
+            @for (a of d.eventos.slice(0, 4); track a.clave) { <i [style.--c]="colorEvento(a.color)"></i> }
+          </span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <aside class="lado">
+    <section class="caja">
+      <header class="caja__cab"><h3 class="primera">{{ diaLargo(elegido()) }}</h3><button class="enlace" type="button" (click)="nuevo('Evento')">+ Añadir</button></header>
+      @for (a of delDia(); track a.clave) {
+        <button class="ev" type="button" [style.--c]="colorEvento(a.color)" [class.hecho]="a.hecho" (click)="abrir(a)">
+          <span class="ev__hora">{{ a.todoElDia ? 'Todo el día' : hora(a.inicio) }}@if (a.fin && !a.todoElDia) {<small>{{ hora(a.fin) }}</small>}</span>
+          <span class="ev__texto">
+            <strong>{{ a.titulo }}</strong>
+            <span>
+              @if (a.lugar) { 📍 {{ a.lugar }} }
+              @if (a.repetir !== 'No') { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Se repite"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg> }
+              @if (a.avisoMinutos != null && (a.porCorreo || a.porWhatsApp)) { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Con aviso"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg> }
+              @if (a.origen === 'google') { <em class="g">Google</em> }
+            </span>
+          </span>
+          @if (a.tipo === 'Recordatorio') {
+            <span class="check" role="checkbox" [attr.aria-checked]="a.hecho" aria-label="Hecho" tabindex="0" (click)="marcar(a, $event)" (keydown.enter)="marcar(a, $event)"></span>
+          }
+        </button>
+      } @empty {
+        <p class="nada">Nada este día. <button class="enlace" type="button" (click)="nuevo('Evento')">Añade algo</button></p>
+      }
+    </section>
+
+    <section class="caja">
+      <header class="caja__cab"><h3>Recordatorios</h3><span class="sub">{{ recordatorios().length }} pendientes</span></header>
+      @for (a of recordatorios().slice(0, 8); track a.clave) {
+        <button class="ev ev--rec" type="button" [style.--c]="colorEvento(a.color)" (click)="abrir(a)">
+          <span class="check" role="checkbox" aria-checked="false" aria-label="Marcar como hecho" tabindex="0" (click)="marcar(a, $event)" (keydown.enter)="marcar(a, $event)"></span>
+          <span class="ev__texto"><strong>{{ a.titulo }}</strong><span>{{ cuando(a) }}</span></span>
+        </button>
+      } @empty {
+        <p class="nada">Sin recordatorios pendientes. 🎉</p>
+      }
+    </section>
+  </aside>
+</div>
+
+<dialog class="dlg" #dialogo (close)="alCerrar()" (click)="fuera($event)" aria-labelledby="dlg-ev-t">
+  <form class="dlg__caja" (submit)="guardar($event)" novalidate [style.--c]="colorEvento(color())">
+    <header class="dlg__cabeza">
+      <h2 id="dlg-ev-t">{{ editando() ? 'Editar' : tipo() === 'Evento' ? 'Nuevo evento' : 'Nuevo recordatorio' }}</h2>
+      <button class="dlg__x" type="button" (click)="dialogo.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+    </header>
+
+    <div class="tipo" role="group" aria-label="Tipo">
+      <button type="button" [attr.aria-pressed]="tipo() === 'Evento'" (click)="tipo.set('Evento')">Evento</button>
+      <button type="button" [attr.aria-pressed]="tipo() === 'Recordatorio'" (click)="tipo.set('Recordatorio')">Recordatorio</button>
+    </div>
+
+    <label class="campo">
+      <span class="campo__etiqueta">{{ tipo() === 'Evento' ? 'Qué' : 'Qué tengo que recordar' }}</span>
+      <input class="campo__input" type="text" maxlength="200" [placeholder]="tipo() === 'Evento' ? 'Cena con…, dentista, viaje…' : 'Pagar el coche, llamar a…'" [value]="tituloEv()" (input)="tituloEv.set(valor($event))">
+    </label>
+
+    <div class="fila3">
+      <label class="campo"><span class="campo__etiqueta">Día</span><input class="campo__input" type="date" [value]="fecha()" (input)="fecha.set(valor($event))"></label>
+      @if (!todoElDia()) {
+        <label class="campo"><span class="campo__etiqueta">{{ tipo() === 'Evento' ? 'Empieza' : 'Hora' }}</span><input class="campo__input" type="time" [value]="horaIni()" (input)="horaIni.set(valor($event))"></label>
+        @if (tipo() === 'Evento') { <label class="campo"><span class="campo__etiqueta">Acaba</span><input class="campo__input" type="time" [value]="horaFin()" (input)="horaFin.set(valor($event))"></label> }
+      }
+    </div>
+    <label class="interruptor">
+      <input type="checkbox" [checked]="todoElDia()" (change)="ponerTodoElDia(marcado($event))">
+      <span class="interruptor__pista" aria-hidden="true"></span><span>Todo el día</span>
+    </label>
+
+    <div class="fila2">
+      <label class="campo">
+        <span class="campo__etiqueta">Repetir</span>
+        <select class="campo__input" (change)="repetir.set($any(valor($event)))">
+          @for (r of repeticiones; track r.id) { <option [value]="r.id" [selected]="repetir() === r.id">{{ r.nombre }}</option> }
+        </select>
+      </label>
+      @if (repetir() !== 'No') {
+        <label class="campo"><span class="campo__etiqueta">Hasta <em>(opcional)</em></span><input class="campo__input" type="date" [value]="hasta()" (input)="hasta.set(valor($event))"></label>
+      }
+    </div>
+    @if (editando() && editando()!.repetir !== 'No') { <p class="dlg__lead">Los cambios se aplican a todas las repeticiones.</p> }
+
+    <div class="caja-aviso">
+      <label class="campo">
+        <span class="campo__etiqueta">Avisarme</span>
+        <select class="campo__input" (change)="ponerAviso(valor($event))">
+          @for (a of avisos(); track a.min) { <option [value]="a.min ?? ''" [selected]="avisoMin() === a.min">{{ a.nombre }}</option> }
+        </select>
+      </label>
+      @if (avisoMin() != null) {
+        <div class="canales">
+          <label class="canal" [class.off]="!estado()?.canales?.correo">
+            <input type="checkbox" [checked]="porCorreo()" [disabled]="!estado()?.canales?.correo" (change)="porCorreo.set(marcado($event))">
+            <span>✉️ Correo</span>
+          </label>
+          <label class="canal" [class.off]="!estado()?.canales?.whatsApp">
+            <input type="checkbox" [checked]="porWhatsApp()" [disabled]="!estado()?.canales?.whatsApp" (change)="porWhatsApp.set(marcado($event))">
+            <span>💬 WhatsApp</span>
+          </label>
+        </div>
+        @if (!estado()?.canales?.correo || !estado()?.canales?.whatsApp) { <p class="dlg__lead">Los canales apagados se configuran en el servidor: mira Seguridad › Avisos.</p> }
+      }
+    </div>
+
+    <details class="mas" [open]="!!lugar() || !!notas()">
+      <summary>Lugar, notas y color</summary>
+      <label class="campo"><span class="campo__etiqueta">Lugar</span><input class="campo__input" type="text" maxlength="200" [value]="lugar()" (input)="lugar.set(valor($event))"></label>
+      <label class="campo"><span class="campo__etiqueta">Notas</span><textarea class="campo__input area" maxlength="4000" rows="3" [value]="notas()" (input)="notas.set(valor($event))"></textarea></label>
+      <div class="colores" role="radiogroup" aria-label="Color">
+        @for (c of colores; track c.id) { <button type="button" role="radio" [attr.aria-checked]="color() === c.id" [style.--m]="c.color" [attr.aria-label]="c.id || 'del tema'" (click)="color.set(c.id)"></button> }
+      </div>
+    </details>
+
+    @if (estado()?.google?.conectado) {
+      <label class="interruptor">
+        <input type="checkbox" [checked]="enGoogle()" (change)="enGoogle.set(marcado($event))">
+        <span class="interruptor__pista" aria-hidden="true"></span><span>Copiar en Google Calendar <em>({{ estado()!.google.cuenta }})</em></span>
+      </label>
+    }
+
+    @for (e of erroresLista(); track e) { <p class="error">{{ e }}</p> }
+    <footer class="dlg__pie">
+      @if (editando()) { <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmar() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button> }
+      <button class="button button--ghost" type="button" (click)="dialogo.close()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+    </footer>
+  </form>
+</dialog>

@@ -1,10 +1,14 @@
 // API de la zona privada: inicio de sesión con cookie (ASP.NET Core Identity), PostgreSQL con EF Core,
 // estado del servidor en tiempo real con SignalR y, en producción, el front de Angular servido desde wwwroot.
 using System.Threading.RateLimiting;
+using Mda.Api.Agenda;
 using Mda.Api.Archivos;
 using Mda.Api.Auth;
+using Mda.Api.Avisos;
+using Mda.Api.Conexiones;
 using Mda.Api.Data;
 using Mda.Api.Gastos;
+using Mda.Api.Notas;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
 using Microsoft.AspNetCore.DataProtection;
@@ -62,6 +66,21 @@ builder.Services.ConfigureApplicationCookie(o =>
     // una API no redirige a una página de login: responde 401 / 403
     o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
     o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
+    // cada cookie es una sesión apuntada en la base (Seguridad): se puede ver y cerrar desde otro equipo
+    o.Events.OnSigningIn = Sesiones.AlEntrar;
+    var sello = o.Events.OnValidatePrincipal;
+    o.Events.OnValidatePrincipal = async ctx =>
+    {
+        await sello(ctx);
+        if (ctx.Principal is not null) await Sesiones.AlValidar(ctx);
+    };
+});
+// al renovar la cookie por el sello de seguridad, se conserva el id de la sesión
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.OnRefreshingPrincipal = ctx =>
+{
+    if (ctx.CurrentPrincipal?.FindFirst(Sesiones.Claim) is { } c && ctx.NewPrincipal?.Identity is System.Security.Claims.ClaimsIdentity id)
+        id.AddClaim(new System.Security.Claims.Claim(c.Type, c.Value));
+    return Task.CompletedTask;
 });
 
 // ---- Claves que firman la cookie: en un volumen, para que reiniciar el contenedor no cierre la sesión ----
@@ -108,7 +127,20 @@ builder.Services.AddHostedService<MonitorSistema>();
 builder.Services.AddSingleton<Carpetas>();
 
 // ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
+// (va antes que los demás servicios de fondo: el host los arranca en orden y así ya tienen las tablas)
 builder.Services.AddHostedService<SemillaAdmin>();
+
+// ---- Avisos (correo, WhatsApp), cuentas enlazadas (Spotify, Google) y agenda con recordatorios ----
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20));
+builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddSingleton<IAvisos, Avisos>();
+builder.Services.AddSingleton<ServicioConexiones>();
+builder.Services.AddSingleton(Zona.Desde(builder.Configuration));
+builder.Services.AddSingleton<GoogleCalendar>();
+builder.Services.AddSingleton<Recordatorios>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Recordatorios>());
+
 
 var app = builder.Build();
 
@@ -121,6 +153,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors();
 app.UseRateLimiter();
+app.UseRegistroAccesos();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -129,6 +162,12 @@ app.MapAuth();
 app.MapSistema();
 app.MapGastos();
 app.MapArchivos();
+app.MapDeudas();
+app.MapNotas();
+app.MapAgenda();
+app.MapConexiones();
+app.MapMusica();
+app.MapSeguridad();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

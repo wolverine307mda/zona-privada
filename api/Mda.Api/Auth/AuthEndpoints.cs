@@ -31,8 +31,13 @@ public static class AuthEndpoints
             Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email) }));
 
         // cerrar sesión: borra la cookie
-        sesion.MapPost("/salir", async (SignInManager<IdentityUser> signIn) =>
+        sesion.MapPost("/salir", async (ClaimsPrincipal user, SignInManager<IdentityUser> signIn, Data.AppDbContext db) =>
         {
+            if (Sesiones.Actual(user) is { } sid && await db.Sesiones.FindAsync(sid) is { } s)
+            {
+                s.Cerrada = DateTimeOffset.UtcNow;
+                await db.SaveChangesAsync();
+            }
             await signIn.SignOutAsync();
             return Results.NoContent();
         });

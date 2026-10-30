@@ -6,6 +6,7 @@ export interface Modulo {
   resumen: string;
   icono: string; // trazos SVG (viewBox 0 0 24 24)
   listo: boolean;
+  pestana?: boolean; // sale en la barra de abajo del móvil
   planes?: string[];
 }
 
@@ -21,7 +22,7 @@ export const MODULOS: Modulo[] = [
     planes: ['Subir fotos desde el móvil', 'Convertir a WebP y sacar los datos de la cámara', 'Publicar en la galería de la web con un botón'],
   },
   {
-    id: 'musica', titulo: 'Música', resumen: 'Lo que suena, con estadísticas de Spotify.', listo: false,
+    id: 'musica', titulo: 'Música', resumen: 'Lo que suena, con estadísticas de Spotify.', listo: true,
     icono: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
     planes: ['Lo más escuchado del mes', '«Sonando ahora» también en la web pública', 'La clave de Spotify, a salvo en el servidor'],
   },
@@ -31,14 +32,18 @@ export const MODULOS: Modulo[] = [
     planes: ['Mis repos de GitHub: commits y lenguajes', 'Estado de los despliegues', 'Tablero de ideas y tareas'],
   },
   {
-    id: 'notas', titulo: 'Notas', resumen: 'Notas rápidas y tareas.', listo: false,
+    id: 'notas', titulo: 'Notas', resumen: 'Notas rápidas, listas y tareas.', listo: true, pestana: true,
     icono: 'M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h5',
     planes: ['Notas con Markdown', 'Lista de tareas con fechas', 'Búsqueda al instante'],
   },
   {
-    id: 'gastos', titulo: 'Gastos', resumen: 'Ingresos, gastos, fijos y ahorro.', listo: true,
+    id: 'gastos', titulo: 'Gastos', resumen: 'Ingresos, gastos, fijos, deudas y ahorro.', listo: true, pestana: true,
     icono: 'M3 6h18v12H3zM3 10h18M7 15h3',
     planes: ['Gastos e ingresos por categoría', 'Gráficas por mes', 'Exportar a Excel'],
+  },
+  {
+    id: 'agenda', titulo: 'Agenda', resumen: 'Eventos, recordatorios y Google Calendar.', listo: true, pestana: true,
+    icono: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2',
   },
   {
     id: 'documentos', titulo: 'Documentos', resumen: 'Las carpetas del equipo, desde cualquier sitio.', listo: true,
@@ -46,7 +51,7 @@ export const MODULOS: Modulo[] = [
     planes: ['Documentos, música, imágenes y vídeos del equipo', 'Subir y descargar desde el móvil', 'Papelera para recuperar lo borrado'],
   },
   {
-    id: 'seguridad', titulo: 'Seguridad', resumen: 'Verificación en dos pasos y sesiones.', listo: false,
+    id: 'seguridad', titulo: 'Seguridad', resumen: 'Sesiones abiertas, accesos y verificación en dos pasos.', listo: true,
     icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',
     planes: ['Activar la verificación en dos pasos con el móvil', 'Cambiar la contraseña', 'Ver y cerrar sesiones abiertas'],
   },

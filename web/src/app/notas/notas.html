@@ -1,0 +1,130 @@
+<header class="cab">
+  <label class="buscar">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
+    <span class="sr">Buscar en las notas</span>
+    <input type="search" placeholder="Buscar en las notas…" [value]="q()" (input)="buscar($any($event.target).value)">
+  </label>
+  <div class="segmento cab__vista" role="group" aria-label="Qué notas ver">
+    <button type="button" [attr.aria-pressed]="!archivadas()" (click)="verArchivadas(false)">Notas</button>
+    <button type="button" [attr.aria-pressed]="archivadas()" (click)="verArchivadas(true)">Archivadas</button>
+  </div>
+</header>
+
+@if (!archivadas()) {
+  <div class="rapida" role="group" aria-label="Nota nueva">
+    <button class="rapida__texto" type="button" (click)="nueva()">Escribe una nota…<kbd>N</kbd></button>
+    <button class="rapida__boton" type="button" (click)="nueva('- [ ] ')" title="Lista de tareas" aria-label="Nueva lista de tareas">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2" /></svg>
+    </button>
+    <button class="rapida__boton rapida__boton--brand" type="button" (click)="nueva()" aria-label="Nueva nota">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+    </button>
+  </div>
+}
+
+@if (todasEtiquetas().length) {
+  <nav class="etiquetas" aria-label="Filtrar por etiqueta">
+    <button type="button" [attr.aria-pressed]="!etiqueta()" (click)="etiqueta.set(null)">Todas</button>
+    @for (e of todasEtiquetas(); track e) {
+      <button type="button" [attr.aria-pressed]="etiqueta() === e" (click)="etiqueta.set(etiqueta() === e ? null : e)"># {{ e }}</button>
+    }
+  </nav>
+}
+
+<ng-template #tarjeta let-n>
+  <article class="nota" data-inclina [style.--c]="colorNota(n.color)" [class.nota--color]="n.color" (click)="clicTarjeta($event, n)"
+           tabindex="0" (keydown.enter)="abrir(n)" [attr.aria-label]="'Nota ' + (n.titulo || 'sin título')">
+    <button class="nota__pin" type="button" [class.activa]="n.fijada" (click)="alternarFijada($event, n)" [attr.aria-label]="n.fijada ? 'Desfijar' : 'Fijar arriba'" [attr.aria-pressed]="n.fijada">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 5 4 3v2H6v-2l4-3zM12 14v6" /></svg>
+    </button>
+    @if (n.titulo) { <h3 class="nota__titulo">{{ n.titulo }}</h3> }
+    <div class="nota__texto md" [innerHTML]="render(n)"></div>
+    @if (progreso(n.contenido); as p) {
+      @if (p.total) {
+        <div class="nota__progreso" [attr.aria-label]="p.hechas + ' de ' + p.total + ' tareas hechas'">
+          <span class="nota__barra"><span [style.width.%]="p.hechas / p.total * 100"></span></span>
+          <span>{{ p.hechas }}/{{ p.total }}</span>
+        </div>
+      }
+    }
+    <footer class="nota__pie">
+      @for (e of n.etiquetas; track e) { <span class="chip">#{{ e }}</span> }
+      <time>{{ fecha(n.modificado) }}</time>
+    </footer>
+  </article>
+</ng-template>
+
+@if (fijadas().length) {
+  <section class="grupo">
+    <h2 class="grupo__titulo">Fijadas</h2>
+    <div class="mosaico">@for (n of fijadas(); track n.id) { <ng-container *ngTemplateOutlet="tarjeta; context: { $implicit: n }" /> }</div>
+  </section>
+}
+@if (otras().length) {
+  <section class="grupo">
+    @if (fijadas().length) { <h2 class="grupo__titulo">Otras</h2> }
+    <div class="mosaico">@for (n of otras(); track n.id) { <ng-container *ngTemplateOutlet="tarjeta; context: { $implicit: n }" /> }</div>
+  </section>
+}
+@if (cargado() && !visibles().length) {
+  <div class="caja vacio">
+    <span class="vacio__icono" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h5" /></svg></span>
+    <strong>{{ q() ? 'Nada con «' + q() + '»' : archivadas() ? 'No hay notas archivadas' : 'Aún no hay notas' }}</strong>
+    @if (!q() && !archivadas()) { Apunta ideas, la lista de la compra o tareas con casillas. Pulsa <kbd>N</kbd> para empezar. }
+  </div>
+}
+
+<!-- editor: guarda solo mientras escribes -->
+<dialog class="dlg editor" #editor (close)="alCerrar()" (click)="fuera($event)" aria-label="Editor de la nota" [style.--c]="colorNota(color())">
+  <div class="dlg__caja editor__caja">
+    <header class="editor__cab">
+      <button class="dlg__x" type="button" (click)="cerrar()" aria-label="Cerrar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
+      <span class="editor__estado" aria-live="polite">
+        @switch (estado()) { @case ('guardando') { Guardando… } @case ('guardado') { ✓ Guardado } @case ('error') { No se pudo guardar } }
+      </span>
+      <button class="dlg__x" type="button" [class.activa]="fijada()" (click)="alternarFijadaEditor()" [attr.aria-pressed]="fijada()" aria-label="Fijar arriba" title="Fijar arriba">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 5 4 3v2H6v-2l4-3zM12 14v6" /></svg>
+      </button>
+      <button class="dlg__x" type="button" [class.activa]="vista()" (click)="vista.set(!vista())" [attr.aria-pressed]="vista()" aria-label="Ver cómo queda" title="Ver cómo queda">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /></svg>
+      </button>
+    </header>
+
+    <input class="editor__titulo" type="text" placeholder="Título" maxlength="200" [value]="titulo()" (input)="cambio('titulo', $any($event.target).value)">
+
+    @if (vista()) {
+      <div class="editor__previa md" [innerHTML]="previa()"></div>
+    } @else {
+      <div class="editor__formato" role="toolbar" aria-label="Formato">
+        <button type="button" (click)="formato('tarea')" aria-label="Tarea"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v6H4zM5.5 8l1.5 1.5L9.5 6M13 8h7M4 14h6v6H4zM13 17h7" /></svg></button>
+        <button type="button" (click)="formato('lista')" aria-label="Lista"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" /></svg></button>
+        <button type="button" (click)="formato('titulo')" aria-label="Encabezado"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M13 5v14M5 12h8M17 10l2-1v10" /></svg></button>
+        <button type="button" (click)="formato('negrita')" aria-label="Negrita"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" /></svg></button>
+      </div>
+      <textarea #area class="editor__texto" placeholder="Escribe… (- [ ] para una tarea, # para un título, **negrita**)" [value]="contenido()"
+                (input)="cambio('contenido', $any($event.target).value)" (keydown)="tecla($event)"></textarea>
+    }
+
+    <label class="editor__etiquetas">
+      <span aria-hidden="true">#</span>
+      <span class="sr">Etiquetas, separadas por comas</span>
+      <input type="text" placeholder="etiquetas, separadas por comas" [value]="etiquetas()" (input)="cambio('etiquetas', $any($event.target).value)">
+    </label>
+
+    <div class="editor__colores" role="radiogroup" aria-label="Color">
+      @for (c of colores; track c.id) {
+        <button type="button" role="radio" [attr.aria-checked]="color() === c.id" [style.--m]="c.color" [attr.aria-label]="c.nombre" [title]="c.nombre" (click)="ponerColor(c.id)"></button>
+      }
+    </div>
+
+    <footer class="dlg__pie">
+      <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmar() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button>
+      @if (abierta()) {
+        <button class="button button--ghost" type="button" (click)="archivar()">{{ abierta()!.archivada ? 'Sacar del archivo' : 'Archivar' }}</button>
+      }
+      <button class="button" type="button" (click)="cerrar()">Hecho</button>
+    </footer>
+  </div>
+</dialog>

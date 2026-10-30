@@ -168,3 +168,22 @@ a { color: inherit; }
 }
 /* con un diálogo abierto, el fondo no se mueve */
 html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
+
+/* Markdown de las notas (va con innerHTML, así que sus estilos son globales) */
+.md { overflow-wrap: anywhere; line-height: 1.5; }
+.md :is(p, ul, ol, pre, blockquote, h2, h3, h4) { margin: 0 0 8px; }
+.md > :last-child { margin-bottom: 0; }
+.md :is(h2, h3, h4) { font: 700 1.05em/1.2 var(--font-display); letter-spacing: -0.02em; }
+.md h2 { font-size: 1.2em; }
+.md :is(ul, ol) { padding-left: 1.3em; }
+.md li.con-tarea { list-style: none; margin-left: -1.3em; display: flex; gap: 9px; align-items: flex-start; padding: 2px 0; }
+.md .tarea { flex: none; width: 18px; height: 18px; margin-top: 2px; border-radius: 6px; border: 2px solid color-mix(in srgb, var(--c, var(--brand)) 70%, var(--soft)); transition: background-color 160ms ease, transform 200ms var(--ease-out); }
+.md .tarea.hecha { background: var(--c, var(--brand)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 13px no-repeat; border-color: transparent; }
+.md li.con-tarea:active .tarea { transform: scale(0.85); }
+.md .tarea__texto.hecha { text-decoration: line-through; color: var(--soft); }
+.md code { padding: 1px 5px; border-radius: 5px; background: color-mix(in srgb, var(--texto) 9%, transparent); font: 0.88em var(--font-code); }
+.md pre { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--texto) 7%, transparent); overflow-x: auto; }
+.md pre code { padding: 0; background: none; }
+.md blockquote { padding-left: 10px; border-left: 3px solid var(--c, var(--brand)); color: var(--soft); }
+.md a { color: var(--acento); }
+.md hr { border: 0; border-top: 1px solid var(--linea); margin: 10px 0; }

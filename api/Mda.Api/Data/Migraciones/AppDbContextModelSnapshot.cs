@@ -22,6 +22,159 @@ namespace Mda.Api.Data.Migraciones
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Mda.Api.Agenda.Evento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("AvisoDe")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("AvisoMinutos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("EnGoogle")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("Fin")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<bool>("Hecho")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Inicio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Lugar")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Notas")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<bool>("PorCorreo")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("PorWhatsApp")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("ProximoAviso")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Repetir")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateOnly?>("RepetirHasta")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("TodoElDia")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("UltimoAviso")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Inicio");
+
+                    b.HasIndex("ProximoAviso");
+
+                    b.ToTable("eventos", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Conexiones.Conexion", b =>
+                {
+                    b.Property<string>("Proveedor")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("AccessToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("Caduca")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("Conectado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Cuenta")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Proveedor");
+
+                    b.ToTable("conexiones", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Gastos.Deuda", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Inicio")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Notas")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("deudas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Gastos.Movimiento", b =>
                 {
                     b.Property<int>("Id")
@@ -42,6 +195,9 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<DateTimeOffset>("Creado")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeudaId")
+                        .HasColumnType("integer");
 
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
@@ -74,6 +230,8 @@ namespace Mda.Api.Data.Migraciones
                         .HasColumnType("character varying(10)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeudaId");
 
                     b.HasIndex("Fecha");
 
@@ -134,6 +292,142 @@ namespace Mda.Api.Data.Migraciones
                     b.HasKey("Id");
 
                     b.ToTable("recurrentes", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Notas.Nota", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Archivada")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Contenido")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Etiquetas")
+                        .IsRequired()
+                        .HasMaxLength(900)
+                        .HasColumnType("character varying(900)");
+
+                    b.Property<bool>("Fijada")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Modificado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Archivada", "Fijada", "Modificado");
+
+                    b.ToTable("notas", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Seguridad.Acceso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Agente")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<bool>("Exito")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("accesos", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Seguridad.Ajuste", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Clave");
+
+                    b.ToTable("ajustes", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Seguridad.SesionAbierta", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Agente")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<bool>("App")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("Cerrada")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("Creada")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UltimaVez")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UltimaVez");
+
+                    b.ToTable("sesiones", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -334,6 +628,11 @@ namespace Mda.Api.Data.Migraciones
 
             modelBuilder.Entity("Mda.Api.Gastos.Movimiento", b =>
                 {
+                    b.HasOne("Mda.Api.Gastos.Deuda", null)
+                        .WithMany()
+                        .HasForeignKey("DeudaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Mda.Api.Gastos.Recurrente", "Recurrente")
                         .WithMany()
                         .HasForeignKey("RecurrenteId")

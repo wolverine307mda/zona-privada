@@ -129,3 +129,38 @@ public static class Calculos
             lista.Where(r => r.Fecha.Year == anioActual).Sum(r => r.Importe));
     }
 }
+
+public record PagoDeuda(int Id, DateOnly Fecha, decimal Importe, string Concepto, string? Notas);
+public record MesPagado(int Anio, int Mes, decimal Total);
+public record EstadoDeuda(
+    int Id, string Nombre, decimal Total, string Categoria, DateOnly Inicio, string? Notas,
+    decimal Pagado, decimal Restante, double Porcentaje, int NumPagos, decimal? MediaMensual, DateOnly? FinEstimado,
+    IReadOnlyList<MesPagado> PorMes, IReadOnlyList<PagoDeuda> Pagos);
+
+public static class CalculosDeuda
+{
+    // Lo pagado, lo que falta y, al ritmo de pago medio desde el primer pago, cuándo se acaba
+    public static EstadoDeuda De(Deuda d, IReadOnlyList<Movimiento> pagos, DateOnly hoy)
+    {
+        var lista = pagos.OrderBy(p => p.Fecha).ThenBy(p => p.Id).ToList();
+        var pagado = lista.Sum(p => p.Importe);
+        var restante = Math.Max(0, d.Total - pagado);
+        decimal? media = null;
+        DateOnly? fin = null;
+        var porMes = new List<MesPagado>();
+        if (lista.Count > 0)
+        {
+            var primero = new DateOnly(lista[0].Fecha.Year, lista[0].Fecha.Month, 1);
+            var ultimo = new DateOnly(hoy.Year, hoy.Month, 1);
+            if (ultimo < primero) ultimo = primero;
+            for (var m = primero; m <= ultimo; m = m.AddMonths(1))
+                porMes.Add(new MesPagado(m.Year, m.Month, lista.Where(p => p.Fecha.Year == m.Year && p.Fecha.Month == m.Month).Sum(p => p.Importe)));
+            media = Math.Round(pagado / porMes.Count, 2);
+            if (restante == 0) fin = lista[^1].Fecha;
+            else if (media > 0) fin = hoy.AddMonths((int)Math.Ceiling(restante / media.Value));
+        }
+        return new EstadoDeuda(d.Id, d.Nombre, d.Total, d.Categoria, d.Inicio, d.Notas,
+            pagado, restante, d.Total > 0 ? Math.Round((double)(pagado / d.Total) * 100, 1) : 0, lista.Count, media, fin,
+            porMes, lista.OrderByDescending(p => p.Fecha).ThenByDescending(p => p.Id).Select(p => new PagoDeuda(p.Id, p.Fecha, p.Importe, p.Concepto, p.Notas)).ToList());
+    }
+}

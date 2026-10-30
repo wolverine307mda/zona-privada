@@ -46,6 +46,14 @@ export interface Estadisticas {
   mediaGastos: number; mediaIngresos: number; mejorMes: PuntoMes | null; peorMes: PuntoMes | null; porCategoria: TotalCategoria[];
 }
 export interface Repostaje { id: number; fecha: string; importe: number; litros: number; precioLitro: number; kilometros: number | null; consumo: number | null; concepto: string; }
+export interface PagoDeuda { id: number; fecha: string; importe: number; concepto: string; notas: string | null; }
+export interface Deuda {
+  id: number; nombre: string; total: number; categoria: string; inicio: string; notas: string | null;
+  pagado: number; restante: number; porcentaje: number; numPagos: number; mediaMensual: number | null; finEstimado: string | null;
+  porMes: { anio: number; mes: number; total: number }[]; pagos: PagoDeuda[];
+}
+export interface GrupoCoste { grupo: string; total: number; porCategoria: { categoria: string; total: number; cantidad: number }[]; }
+export interface Deudas { deudas: Deuda[]; grupos: GrupoCoste[]; }
 export interface Gasolina {
   repostajes: Repostaje[]; gastado: number; litros: number; precioMedio: number | null; ultimoPrecio: number | null;
   consumoMedio: number | null; kmRecorridos: number | null; costePorKm: number | null; gastoEsteAnio: number;
@@ -74,6 +82,7 @@ const I = {
   estrella: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
   etiqueta: 'M20 12l-8 8-9-9V3h8zM7.5 7.5h.01',
   mas: 'M12 5v14M5 12h14',
+  documento: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4',
 };
 
 export const CATEGORIAS: Categoria[] = [
@@ -91,6 +100,7 @@ export const CATEGORIAS: Categoria[] = [
   { id: 'seguro', nombre: 'Seguro', tipo: 'Gasto', grupo: 'Coche', color: '#8e9aaf', icono: I.escudo },
   { id: 'mecanico', nombre: 'Mecánico', tipo: 'Gasto', grupo: 'Coche', color: '#c08f62', icono: I.llave },
   { id: 'cuota-coche', nombre: 'Cuota del coche', tipo: 'Gasto', grupo: 'Coche', color: '#f4a261', icono: I.coche },
+  { id: 'coche-extras', nombre: 'Papeleo y extras', tipo: 'Gasto', grupo: 'Coche', color: '#b5838d', icono: I.documento },
   { id: 'otros', nombre: 'Otros gastos', tipo: 'Gasto', grupo: 'Día a día', color: '#8d979e', icono: I.puntos },
   { id: 'nomina', nombre: 'Nómina', tipo: 'Ingreso', grupo: 'Ingresos', color: '#3ddc84', icono: I.maletin },
   { id: 'extra', nombre: 'Extra', tipo: 'Ingreso', grupo: 'Ingresos', color: '#a7e05a', icono: I.estrella },

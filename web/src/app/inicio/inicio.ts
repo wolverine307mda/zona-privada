@@ -1,3 +1,4 @@
+import { Hoy } from './hoy';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
@@ -16,6 +17,7 @@ export function velocidad(b: number): string {
 // Inicio: el equipo de casa en directo (CPU, memoria, discos, red, historial y ficha del equipo)
 @Component({
   selector: 'app-inicio',
+  imports: [Hoy],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })

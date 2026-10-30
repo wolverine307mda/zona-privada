@@ -37,6 +37,7 @@ import { mesLargo } from './modelo';
       <a routerLink="/gastos/movimientos" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Movimientos</a>
       <a routerLink="/gastos/fijos" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Fijos y suscripciones</a>
       <a routerLink="/gastos/gasolina" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Gasolina</a>
+      <a routerLink="/gastos/deudas" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Coche y deudas</a>
       <a routerLink="/gastos/estadisticas" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Estadísticas</a>
     </nav>
 

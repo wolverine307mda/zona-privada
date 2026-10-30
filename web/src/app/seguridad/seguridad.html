@@ -1,0 +1,186 @@
+@if (aviso()) {
+  <p class="aviso" role="status"><span>{{ aviso() }}</span><button type="button" (click)="aviso.set('')" aria-label="Cerrar el aviso">×</button></p>
+}
+
+<section class="kpis">
+  <article data-inclina class="caja kpi">
+    <span class="etq">Sesiones abiertas</span>
+    <strong class="grande">{{ sesiones().length }}</strong>
+    <span class="sub"><span class="punto" [class.vivo]="enLinea()"></span>{{ enLinea() }} en línea ahora</span>
+  </article>
+  <article data-inclina class="caja kpi" [class.kpi--ok]="estado()?.dosPasos" [class.kpi--mal]="estado() && !estado()!.dosPasos">
+    <span class="etq">Verificación en dos pasos</span>
+    <strong class="grande">{{ estado() ? (estado()!.dosPasos ? 'Activada' : 'Apagada') : '—' }}</strong>
+    <span class="sub">{{ estado()?.dosPasos ? 'Hace falta el móvil para entrar' : 'Recomendado: tus archivos están expuestos' }}</span>
+  </article>
+  <article data-inclina class="caja kpi" [class.kpi--mal]="(estado()?.fallosMes ?? 0) > 10">
+    <span class="etq">Intentos fallidos</span>
+    <strong class="grande">{{ estado()?.fallosMes ?? '—' }}</strong>
+    <span class="sub">en los últimos 30 días</span>
+  </article>
+</section>
+
+<!-- sesiones -->
+<section class="caja">
+  <header class="caja__cab">
+    <h3>Dónde está abierta</h3>
+    @if (sesiones().length > 1) { <button class="enlace peligro" type="button" (click)="cerrarOtras()">Cerrar las demás</button> }
+  </header>
+  <ul class="sesiones">
+    @for (s of sesiones(); track s.id) {
+      <li class="sesion" [class.actual]="s.actual">
+        <span class="sesion__icono" [class.vivo]="s.enLinea">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos[s.tipo] ?? iconos['otro']" /></svg>
+        </span>
+        <span class="sesion__texto">
+          <strong>{{ s.dispositivo }} · {{ s.navegador }}
+            @if (s.actual) { <em class="chip chip--brand">Este equipo</em> }
+            @if (s.app) { <em class="chip">App instalada</em> }
+          </strong>
+          <span>
+            @if (s.enLinea) { <span class="en-linea">● En línea</span> } @else { Visto {{ hace(s.ultimaVez) }} }
+            · {{ s.ip }} · entró el {{ fecha(s.creada) }}
+          </span>
+        </span>
+        @if (!s.actual) {
+          <button class="button button--ghost sesion__cerrar" type="button" (click)="cerrar(s)">Cerrar</button>
+        }
+      </li>
+    } @empty { <p class="nada">Cargando…</p> }
+  </ul>
+</section>
+
+<div class="dos-col">
+  <!-- verificación en dos pasos -->
+  <section class="caja dos">
+    <header class="caja__cab"><h3>Verificación en dos pasos</h3></header>
+    @if (codigos(); as cs) {
+      <p class="lead">Guarda estos <strong>códigos de recuperación</strong>: cada uno sirve <strong>una vez</strong> para entrar si pierdes el móvil. No se volverán a mostrar.</p>
+      <ol class="codigos">@for (c of cs; track c) { <li><code>{{ c }}</code></li> }</ol>
+      <div class="fila">
+        <button class="button" type="button" (click)="descargarCodigos()">Descargar</button>
+        <button class="button button--ghost" type="button" (click)="copiar(cs.join('\n'))">{{ copiado() === cs.join('\n') ? '✓ Copiados' : 'Copiar' }}</button>
+        <button class="enlace" type="button" (click)="codigos.set(null)">Ya los he guardado</button>
+      </div>
+    } @else if (dos(); as d) {
+      <ol class="pasos">
+        <li>
+          Abre la app de contraseñas del iPhone (o Google Authenticator, Authy…) y escanea el código.
+          @if (qr()) { <img class="qr" [src]="qr()" alt="Código QR para la app de autenticación" width="200" height="200"> }
+          <a class="enlace" [href]="enlaceApp()">¿Estás en el móvil? Ábrelo directamente</a>
+          <span class="clave">O escribe la clave: <button type="button" class="copiar" (click)="copiar(d.sharedKey)"><code>{{ clave() }}</code>{{ copiado() === d.sharedKey ? ' ✓' : '' }}</button></span>
+        </li>
+        <li>
+          Escribe el código de 6 cifras que te da:
+          <form class="codigo" (submit)="activarDosPasos($event)">
+            <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123 456" [value]="codigo()" (input)="codigo.set($any($event.target).value)" aria-label="Código de 6 cifras">
+            <button class="button" type="submit" [disabled]="codigo().replace(' ', '').length < 6">Activar</button>
+          </form>
+          @if (errorDos()) { <p class="error">{{ errorDos() }}</p> }
+        </li>
+      </ol>
+      <button class="enlace" type="button" (click)="dos.set(null)">Cancelar</button>
+    } @else if (estado()?.dosPasos) {
+      <p class="lead"><span class="ok-grande" aria-hidden="true">✓</span> Activada. Al entrar se pide tu contraseña y el código de la app del móvil.</p>
+      <div class="fila">
+        <button class="button button--ghost" type="button" (click)="nuevosCodigos()">Nuevos códigos de recuperación</button>
+        <button class="enlace peligro" type="button" (click)="quitarDosPasos()">{{ confirmarQuitar() ? '¿Seguro? Pulsa otra vez' : 'Desactivar' }}</button>
+      </div>
+    } @else {
+      <p class="lead">Aunque alguien sepa tu contraseña, sin tu móvil no entra. Tarda un minuto.</p>
+      <button class="button" type="button" (click)="empezarDosPasos()">Activar</button>
+    }
+  </section>
+
+  <!-- avisos -->
+  <section class="caja">
+    <header class="caja__cab"><h3>Avisos</h3><span class="sub">recordatorios de la agenda</span></header>
+    @if (estado(); as e) {
+      <ul class="canales">
+        <li>
+          <span class="canal__icono">✉️</span>
+          <span class="canal__texto"><strong>Correo</strong><span>{{ e.canales.correo ? 'Listo' : 'Sin configurar' }}</span></span>
+          @if (e.canales.correo) { <button class="button button--ghost" type="button" [disabled]="ocupado() === 'correo'" (click)="probar('correo')">{{ ocupado() === 'correo' ? 'Enviando…' : 'Probar' }}</button> }
+        </li>
+        <li>
+          <span class="canal__icono">💬</span>
+          <span class="canal__texto"><strong>WhatsApp</strong><span>{{ e.canales.whatsApp ? 'Listo (CallMeBot)' : 'Sin configurar' }}</span></span>
+          @if (e.canales.whatsApp) { <button class="button button--ghost" type="button" [disabled]="ocupado() === 'whatsapp'" (click)="probar('whatsapp')">{{ ocupado() === 'whatsapp' ? 'Enviando…' : 'Probar' }}</button> }
+        </li>
+      </ul>
+      <label class="interruptor" [class.off]="!e.canales.correo">
+        <input type="checkbox" [checked]="e.avisarInicios" [disabled]="!e.canales.correo" (change)="avisarInicios($any($event.target).checked)">
+        <span class="interruptor__pista" aria-hidden="true"></span>
+        <span>Mandarme un correo cada vez que alguien entre</span>
+      </label>
+      @if (!e.canales.correo || !e.canales.whatsApp) {
+        <details class="ayuda">
+          <summary>Cómo configurarlos</summary>
+          @if (!e.canales.correo) {
+            <p><strong>Correo con Gmail:</strong> activa la verificación en dos pasos de Google y crea una <em>contraseña de aplicación</em> en myaccount.google.com › Seguridad. Luego, en el <code>.env</code>:</p>
+            <pre>CORREO_SERVIDOR=smtp.gmail.com
+CORREO_USUARIO=tucorreo&#64;gmail.com
+CORREO_CLAVE=la-contraseña-de-aplicación
+CORREO_PARA=tucorreo&#64;gmail.com</pre>
+          }
+          @if (!e.canales.whatsApp) {
+            <p><strong>WhatsApp con CallMeBot</strong> (gratis, uso personal): sigue los pasos de <strong>callmebot.com/blog/free-api-whatsapp-messages</strong>: guardas su número en tus contactos, le mandas por WhatsApp «I allow callmebot to send me messages» y te contesta con tu API key. Luego:</p>
+            <pre>WHATSAPP_TELEFONO=+34600000000
+WHATSAPP_APIKEY=la-clave-que-te-da</pre>
+          }
+          <p>Reinicia la API (<code>docker compose up -d</code>) y vuelve aquí para probarlos.</p>
+        </details>
+      }
+    }
+  </section>
+</div>
+
+<!-- apps conectadas -->
+<section class="caja">
+  <header class="caja__cab"><h3>Apps conectadas</h3></header>
+  <ul class="apps">
+    @for (c of conexiones(); track c.id) {
+      <li class="app" [attr.data-app]="c.id">
+        <span class="app__logo" aria-hidden="true">
+          @if (c.id === 'spotify') {
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1ed760" /><path d="M6.5 9.2c3.6-1 7.6-.7 11 1M7.2 12.4c3-.8 6.2-.5 9 .9M7.8 15.4c2.4-.6 4.9-.4 7.1.7" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" /></svg>
+          } @else {
+            <svg viewBox="0 0 24 24"><path fill="none" stroke="#4285f4" stroke-width="1.8" stroke-linecap="round" d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /><text x="12" y="17.6" text-anchor="middle" font-size="7" font-weight="700" fill="#4285f4">31</text></svg>
+          }
+        </span>
+        <span class="app__texto">
+          <strong>{{ c.nombre }}</strong>
+          <span>{{ c.conectado ? 'Conectada' + (c.cuenta ? ' como ' + c.cuenta : '') : c.configurado ? 'Lista para conectar' : 'Falta configurarla en el servidor' }}</span>
+        </span>
+        @if (c.conectado) { <button class="button button--ghost" type="button" (click)="desconectar(c)">Desconectar</button> }
+        @else if (c.configurado) { <button class="button" type="button" (click)="conectar(c.id)">Conectar</button> }
+        @if (!c.configurado) {
+          <div class="app__ayuda">
+            <p>Dirección de vuelta que hay que dar de alta:</p>
+            <button class="copiar" type="button" (click)="copiar(c.vuelta)"><code>{{ c.vuelta }}</code><span>{{ copiado() === c.vuelta ? '✓' : 'Copiar' }}</span></button>
+            @if (c.id === 'google') {
+              <p>En <strong>console.cloud.google.com</strong>: crea un proyecto, activa <em>Google Calendar API</em>, configura la pantalla de consentimiento (tipo Externo, tu correo como usuario de prueba y luego <em>Publicar la app</em> para que el permiso no caduque a los 7 días) y crea un <em>ID de cliente de OAuth</em> de tipo «Aplicación web» con esa dirección. Pon <code>GOOGLE_CLIENT_ID</code> y <code>GOOGLE_CLIENT_SECRET</code> en el <code>.env</code>.</p>
+            } @else {
+              <p>En <strong>developer.spotify.com/dashboard</strong>: <em>Create app</em>, marca <em>Web API</em> y pega esa dirección en <em>Redirect URIs</em>. Pon <code>SPOTIFY_CLIENT_ID</code> y <code>SPOTIFY_CLIENT_SECRET</code> en el <code>.env</code>.</p>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</section>
+
+<!-- historial de accesos -->
+<section class="caja">
+  <header class="caja__cab"><h3>Últimos intentos de entrar</h3><span class="sub">bien y mal</span></header>
+  <ul class="accesos">
+    @for (a of accesosVistos(); track a.fecha) {
+      <li [class.fallo]="!a.exito">
+        <span class="acceso__marca" aria-hidden="true">{{ a.exito ? '✓' : '✕' }}</span>
+        <span class="acceso__texto"><strong>{{ a.exito ? 'Entrada correcta' : a.motivo }}</strong><span>{{ a.dispositivo }} · {{ a.ip }}</span></span>
+        <time>{{ fecha(a.fecha) }}</time>
+      </li>
+    } @empty { <p class="nada">Aún no hay intentos registrados.</p> }
+  </ul>
+  @if (accesos().length > 8 && !verTodos()) { <button class="enlace" type="button" (click)="verTodos.set(true)">Ver los {{ accesos().length }}</button> }
+</section>
