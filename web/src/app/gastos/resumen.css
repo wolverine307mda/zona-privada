@@ -1,0 +1,91 @@
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- Balance ---------- */
+.balance { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
+.ahorro { position: relative; overflow: hidden; flex-direction: row; align-items: center; gap: 24px; padding: clamp(20px, 3vw, 30px); }
+.ahorro::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--brand) 22%, transparent) 1.3px, transparent 1.6px) 0 0 / 14px 14px;
+  mask: linear-gradient(100deg, transparent 45%, #000);
+}
+.ahorro > * { position: relative; }
+.ahorro__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ahorro__cifra { font: 700 clamp(2.2rem, 1.4rem + 3vw, 3.8rem)/1 var(--font-display); letter-spacing: -0.05em; }
+.cambio { font-size: var(--step-small); color: var(--soft); font-weight: 500; }
+.cambio.sube { color: var(--ok); }
+.cambio.baja { color: var(--bad); }
+.flujo { display: flex; gap: 32px; margin-top: 12px; }
+.flujo__cifra { font: 700 var(--step-lead)/1.1 var(--font-display); letter-spacing: -0.03em; }
+.flujo__cambio { font-size: 12px; color: var(--soft); }
+.flujo__cambio.malo { color: var(--bad); }
+.barra-flujo { height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 25%, var(--tarjeta-2)); overflow: hidden; margin-top: 8px; }
+.barra-flujo span { display: block; height: 100%; border-radius: inherit; background: var(--brand); transition: width 900ms var(--ease-expo); }
+.barra-flujo span.pasado { background: var(--bad); }
+
+/* anillo de tasa de ahorro */
+.anillo {
+  --p: 0; flex: none; width: clamp(130px, 14vw, 170px); aspect-ratio: 1; border-radius: 50%;
+  background: conic-gradient(var(--ok) calc(var(--p) * 1%), var(--tarjeta-2) 0);
+  display: grid; place-items: center; transition: --p 900ms var(--ease-expo);
+}
+@property --p { syntax: '<number>'; inherits: false; initial-value: 0; }
+.anillo__dentro { width: 76%; aspect-ratio: 1; border-radius: 50%; background: var(--tarjeta); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.anillo__dentro strong { font: 700 clamp(1.5rem, 1.1rem + 1.2vw, 2.1rem)/1 var(--font-display); letter-spacing: -0.04em; }
+.anillo__dentro small { font-size: 0.5em; color: var(--soft); }
+.anillo__dentro span { font-size: 12px; color: var(--soft); }
+
+.fijos { justify-content: space-between; }
+.fijos__fila { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--tarjeta-2); }
+.fijos__fila div { display: flex; flex-direction: column; min-width: 0; }
+.fijos__fila strong { font-weight: 600; }
+.fijos__fila small { color: var(--soft); font-weight: 400; }
+.fijos__fila span:not(.icono-cat) { font-size: 12px; color: var(--soft); }
+
+/* ---------- Dos columnas ---------- */
+.dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+/* pendientes */
+.pendientes { display: flex; flex-direction: column; gap: 6px; }
+.pend { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px; background: var(--tarjeta-2); }
+.pend__importe { display: flex; align-items: center; gap: 4px; }
+.pend__importe input { width: 84px; min-height: 36px; padding: 0 8px; border-radius: 8px; border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--texto); font: 600 var(--step-small)/1 var(--font-code); text-align: right; }
+.pend__importe input:focus { outline: none; border-color: var(--brand); }
+.pend__importe em { font-style: normal; color: var(--soft); }
+.pend__boton { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--brand); color: var(--on-brand); font-weight: 500; cursor: pointer; transition: transform 140ms var(--ease-out); }
+.pend__boton:active { transform: scale(0.94); }
+.pend__boton:disabled { opacity: 0.6; }
+
+/* reparto */
+.reparto { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px; align-items: center; }
+.rosco { width: 100%; height: 230px; }
+.leyenda { display: flex; flex-direction: column; gap: 10px; }
+.leyenda li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; font-size: var(--step-small); }
+.leyenda__punto { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.leyenda__nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leyenda__total { font: 600 12px/1 var(--font-code); }
+.leyenda__barra { grid-column: 2 / -1; height: 4px; border-radius: 999px; background: var(--tarjeta-2); overflow: hidden; }
+.leyenda__barra span { display: block; height: 100%; background: var(--c); border-radius: inherit; }
+
+/* calendario de gasto */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal__sem { font-size: 11px; font-weight: 500; color: var(--soft); text-align: center; padding-bottom: 2px; }
+.cal__dia {
+  --n: 0; position: relative; aspect-ratio: 1; border-radius: 10px; padding: 5px 6px;
+  display: flex; flex-direction: column; justify-content: space-between; min-width: 0;
+  background: color-mix(in srgb, var(--brand) calc(var(--n) * 100%), var(--tarjeta-2));
+  color: var(--texto); transition: transform 160ms var(--ease-out);
+}
+.cal__dia b { font-size: 11px; font-weight: 500; opacity: 0.8; }
+.cal__dia i { font: 600 10px/1 var(--font-code); font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal__dia--hoy { outline: 2px solid var(--texto); outline-offset: 1px; }
+@media (hover: hover) { .cal__dia:hover { transform: scale(1.08); z-index: 1; } }
+
+@media (max-width: 1100px) { .balance, .dos { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .ahorro { flex-direction: column-reverse; align-items: stretch; }
+  .anillo { align-self: center; }
+  .reparto { grid-template-columns: minmax(0, 1fr); }
+  .pend { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .pend__boton { grid-column: 1 / -1; }
+  .cal__dia i { display: none; }
+}

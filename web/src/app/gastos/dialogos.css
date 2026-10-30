@@ -1,0 +1,83 @@
+/* Diálogos de gastos: apunte y fijo */
+.dlg {
+  width: min(600px, calc(100vw - 24px)); max-height: calc(100svh - 24px);
+  padding: 0; border: 1px solid var(--linea); border-radius: 22px;
+  background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+.dlg[open] { animation: entra 380ms var(--ease-expo); }
+.dlg::backdrop { background: rgba(3, 8, 11, 0.55); backdrop-filter: blur(4px); }
+@keyframes entra { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
+.dlg__caja { display: flex; flex-direction: column; gap: 16px; padding: 22px; }
+.dlg__cabeza { display: flex; align-items: center; justify-content: space-between; }
+.dlg__cabeza h2 { font: 700 var(--step-lead)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.dlg__x { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; border: 0; background: var(--tarjeta-2); color: var(--soft); cursor: pointer; }
+.dlg__lead { font-size: var(--step-small); color: var(--soft); margin-top: -6px; }
+.dlg__lead strong { color: var(--texto); }
+.dlg__pie { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid var(--linea); }
+.dlg__pie .button { min-height: 46px; }
+.boton-borrar { margin-right: auto; border: 0; background: none; color: var(--bad); font-weight: 500; cursor: pointer; padding: 8px 4px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* gasto / ingreso */
+.tipo, .segmento { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; border-radius: 12px; background: var(--tarjeta-2); }
+.tipo button, .segmento button { min-height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--soft); font-weight: 500; cursor: pointer; transition: background-color 200ms ease, color 200ms ease; }
+.tipo button[aria-pressed='true'] { background: var(--brand); color: var(--on-brand); }
+.tipo .tipo--ingreso[aria-pressed='true'] { background: var(--ok); color: #05210f; }
+.segmento button[aria-pressed='true'] { background: var(--tarjeta); color: var(--texto); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); }
+
+/* importe grande */
+.importe { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 6px 0 2px; border-bottom: 2px solid var(--linea); }
+.importe:focus-within { border-color: var(--brand); }
+.importe input {
+  width: 100%; max-width: 320px; border: 0; background: transparent; text-align: center; color: var(--texto);
+  font: 700 clamp(2.4rem, 1.8rem + 3vw, 3.6rem)/1.1 var(--font-display); letter-spacing: -0.04em;
+}
+.importe input:focus { outline: none; }
+.importe input::placeholder { color: color-mix(in srgb, var(--soft) 50%, transparent); }
+.importe__simbolo { font: 700 var(--step-head)/1 var(--font-display); color: var(--soft); }
+.importe--ingreso input { color: var(--ok); }
+
+/* categorías con icono */
+.cats { border: 0; margin: 0; padding: 0; min-width: 0; }
+.cats__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; margin-top: 8px; }
+.cat {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px;
+  border-radius: 12px; border: 2px solid transparent; background: var(--tarjeta-2); color: var(--texto);
+  cursor: pointer; font-size: 12px; line-height: 1.2; text-align: center; transition: border-color 160ms ease, transform 160ms var(--ease-out);
+}
+.cat__icono { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--c) 22%, transparent); color: var(--c); }
+.cat__icono .icon { width: 18px; height: 18px; }
+.cat[aria-pressed='true'] { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--tarjeta-2)); }
+@media (hover: hover) { .cat:hover { transform: translateY(-2px); } }
+
+/* campos */
+.campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.campo__etiqueta { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); }
+.campo__etiqueta em { text-transform: none; letter-spacing: 0; font-style: normal; opacity: 0.8; }
+.campo__input {
+  width: 100%; min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--linea);
+  background: var(--tarjeta-2); color: var(--texto); font: 500 var(--step-body)/1 var(--font-text);
+}
+.campo__input:focus { outline: none; border-color: var(--brand); }
+.fila2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+.error { color: var(--bad); font-size: var(--step-small); margin-top: -8px; }
+
+.gasolina { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px; border-radius: 14px; background: color-mix(in srgb, #ff7a1f 10%, var(--tarjeta-2)); border: 1px dashed color-mix(in srgb, #ff7a1f 45%, transparent); }
+.gasolina__nota { grid-column: 1 / -1; font-size: var(--step-small); color: var(--soft); }
+.gasolina__nota strong { color: var(--texto); }
+
+/* interruptor */
+.interruptor { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: var(--step-small); }
+.interruptor em { color: var(--soft); font-style: normal; }
+.interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.interruptor__pista { position: relative; flex: none; width: 44px; height: 26px; border-radius: 999px; background: var(--tarjeta-2); border: 1px solid var(--linea); transition: background-color 200ms ease; }
+.interruptor__pista::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--soft); transition: translate 300ms var(--ease-expo), background-color 200ms ease; }
+.interruptor input:checked + .interruptor__pista { background: var(--brand); border-color: var(--brand); }
+.interruptor input:checked + .interruptor__pista::after { translate: 18px 0; background: var(--on-brand); }
+.interruptor input:focus-visible + .interruptor__pista { outline: 3px solid var(--acento); outline-offset: 2px; }
+
+@media (max-width: 520px) {
+  .fila2, .gasolina { grid-template-columns: minmax(0, 1fr); }
+  .cats__rejilla { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dlg__pie { flex-wrap: wrap; }
+}

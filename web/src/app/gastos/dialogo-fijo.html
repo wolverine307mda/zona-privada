@@ -1,0 +1,90 @@
+<dialog class="dlg" #dialogo (close)="alCerrar()" (click)="fuera($event)" aria-labelledby="dlg-fijo-titulo">
+  <form class="dlg__caja" (submit)="guardar($event)" novalidate>
+    <header class="dlg__cabeza">
+      <h2 id="dlg-fijo-titulo">{{ id() ? 'Editar fijo' : 'Nuevo fijo' }}</h2>
+      <button class="dlg__x" type="button" (click)="cerrar()" aria-label="Cerrar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </header>
+    <p class="dlg__lead">Lo que se repite: suscripciones, alquiler, la cuota del coche, el seguro o tu nómina. Cada mes te recordará apuntarlo.</p>
+
+    <div class="tipo" role="group" aria-label="Tipo">
+      <button type="button" [attr.aria-pressed]="tipo() === 'Gasto'" (click)="ponerTipo('Gasto')">Gasto</button>
+      <button type="button" class="tipo--ingreso" [attr.aria-pressed]="tipo() === 'Ingreso'" (click)="ponerTipo('Ingreso')">Ingreso</button>
+    </div>
+
+    <label class="campo">
+      <span class="campo__etiqueta">Nombre</span>
+      <input class="campo__input" type="text" maxlength="80" [placeholder]="tipo() === 'Gasto' ? 'Netflix, alquiler, seguro del coche…' : 'Nómina Fontventa…'"
+             [value]="nombre()" (input)="nombre.set(valor($event))">
+    </label>
+    @if (errores()['nombre']) { <p class="error">{{ errores()['nombre'][0] }}</p> }
+
+    <fieldset class="cats">
+      <legend class="campo__etiqueta">Categoría</legend>
+      <div class="cats__rejilla">
+        @for (c of categorias(); track c.id) {
+          <button type="button" class="cat" [style.--c]="c.color" [attr.aria-pressed]="categoria() === c.id" (click)="categoria.set(c.id)">
+            <span class="cat__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="c.icono" /></svg></span>
+            <span class="cat__nombre">{{ c.nombre }}</span>
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <div class="fila2">
+      <label class="campo">
+        <span class="campo__etiqueta">Importe {{ variable() ? 'aproximado' : '' }}</span>
+        <input class="campo__input" type="text" inputmode="decimal" placeholder="12,99" [value]="importe()" (input)="importe.set(valor($event))">
+      </label>
+      <label class="campo">
+        <span class="campo__etiqueta">Día del mes</span>
+        <input class="campo__input" type="number" min="1" max="31" [value]="dia()" (input)="dia.set(valor($event))">
+      </label>
+    </div>
+    @if (errores()['importe']) { <p class="error">{{ errores()['importe'][0] }}</p> }
+
+    <div class="campo">
+      <span class="campo__etiqueta">Cada cuánto</span>
+      <div class="segmento" role="group" aria-label="Frecuencia">
+        @for (f of frecuencias; track f.id) {
+          <button type="button" [attr.aria-pressed]="frecuencia() === f.id" (click)="frecuencia.set(f.id)">{{ f.nombre }}</button>
+        }
+      </div>
+      @if (alMes() != null && frecuencia() !== 'Mensual') { <p class="dlg__lead">Equivale a <strong>{{ euros(alMes()) }}</strong> al mes.</p> }
+    </div>
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="variable()" (change)="variable.set($any($event.target).checked)">
+      <span class="interruptor__pista" aria-hidden="true"></span>
+      <span>El importe cambia cada vez <em>(luz, agua…: te lo pedirá al apuntarlo)</em></span>
+    </label>
+
+    <div class="fila2">
+      <label class="campo">
+        <span class="campo__etiqueta">Desde</span>
+        <input class="campo__input" type="date" [value]="inicio()" (input)="inicio.set(valor($event))">
+      </label>
+      <label class="campo">
+        <span class="campo__etiqueta">Hasta <em>(opcional)</em></span>
+        <input class="campo__input" type="date" [value]="fin()" (input)="fin.set(valor($event))">
+      </label>
+    </div>
+    @if (errores()['fin']) { <p class="error">{{ errores()['fin'][0] }}</p> }
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="activo()" (change)="activo.set($any($event.target).checked)">
+      <span class="interruptor__pista" aria-hidden="true"></span>
+      <span>Activo <em>(desactívalo para pausarlo sin borrarlo)</em></span>
+    </label>
+    @if (errores()['general']) { <p class="error">{{ errores()['general'][0] }}</p> }
+
+    <footer class="dlg__pie">
+      @if (id()) {
+        <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmarBorrado() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button>
+      }
+      <button class="button button--ghost" type="button" (click)="cerrar()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+    </footer>
+  </form>
+</dialog>

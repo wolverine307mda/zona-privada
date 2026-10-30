@@ -3,6 +3,7 @@
 using System.Threading.RateLimiting;
 using Mda.Api.Auth;
 using Mda.Api.Data;
+using Mda.Api.Gastos;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
 using Microsoft.AspNetCore.DataProtection;
@@ -91,6 +92,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.KnownProxies.Clear();
 });
 
+// ---- JSON: enums como texto («Gasto», «Mensual») ----
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+
 // ---- Estado del servidor en tiempo real ----
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ILectorSistema>(_ => LectorSistema.ParaEsteEquipo());
@@ -119,6 +123,7 @@ app.UseAuthorization();
 app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous().RequireCors(WebPublica);
 app.MapAuth();
 app.MapSistema();
+app.MapGastos();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

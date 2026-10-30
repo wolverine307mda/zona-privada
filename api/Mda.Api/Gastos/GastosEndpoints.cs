@@ -1,0 +1,212 @@
+using Mda.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Mda.Api.Gastos;
+
+public record MovimientoEntrada(
+    TipoMovimiento Tipo, DateOnly Fecha, decimal Importe, string Categoria, string Concepto, string? Notas,
+    int? RecurrenteId, decimal? Litros, decimal? PrecioLitro, int? Kilometros);
+
+public record RecurrenteEntrada(
+    string Nombre, TipoMovimiento Tipo, string Categoria, decimal Importe, bool Variable, int Dia,
+    Frecuencia Frecuencia, DateOnly Inicio, DateOnly? Fin, bool Activo = true);
+
+public record Registro(decimal? Importe, DateOnly? Fecha);
+
+// API del módulo de gastos: apuntes, fijos (suscripciones, alquiler, nómina…), resumen del mes,
+// estadísticas y gasolina. Todo con sesión iniciada.
+public static class GastosEndpoints
+{
+    public static void MapGastos(this IEndpointRouteBuilder app)
+    {
+        var g = app.MapGroup("/api/gastos").RequireAuthorization();
+
+        g.MapGet("/categorias", () => Categorias.Todas.Select(c => new { id = c.Key, nombre = c.Value.Nombre, tipo = c.Value.Tipo, grupo = c.Value.Grupo }));
+
+        // ---- Resumen de un mes ----
+        g.MapGet("/mes/{anio:int}/{mes:int}", async (int anio, int mes, AppDbContext db) =>
+        {
+            if (mes is < 1 or > 12 || anio is < 2000 or > 2100) return Results.BadRequest();
+            var desde = new DateOnly(anio, mes, 1);
+            var ant = desde.AddMonths(-1);
+            var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha >= ant && m.Fecha < desde.AddMonths(1)).ToListAsync();
+            var recurrentes = await db.Recurrentes.AsNoTracking().ToListAsync();
+            return Results.Ok(Calculos.Mes(anio, mes,
+                movs.Where(m => m.Fecha >= desde).ToList(), movs.Where(m => m.Fecha < desde).ToList(), recurrentes));
+        });
+
+        // ---- Estadísticas de los últimos N meses ----
+        g.MapGet("/estadisticas", async (int? meses, int? anio, int? mes, AppDbContext db) =>
+        {
+            var hoy = DateOnly.FromDateTime(DateTime.Today);
+            var n = Math.Clamp(meses ?? 12, 1, 60);
+            var hasta = new DateOnly(anio ?? hoy.Year, mes ?? hoy.Month, 1);
+            var desde = hasta.AddMonths(-(n - 1));
+            var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha >= desde && m.Fecha < hasta.AddMonths(1)).ToListAsync();
+            return Results.Ok(Calculos.Periodo(hasta.Year, hasta.Month, n, movs));
+        });
+
+        // ---- Gasolina ----
+        g.MapGet("/gasolina", async (AppDbContext db) =>
+        {
+            var repostajes = await db.Movimientos.AsNoTracking().Where(m => m.Categoria == "gasolina").ToListAsync();
+            return Results.Ok(Calculos.GasolinaDe(repostajes, DateTime.Today.Year));
+        });
+
+        // ---- Apuntes ----
+        g.MapGet("/movimientos", async (DateOnly? desde, DateOnly? hasta, string? categoria, string? q, AppDbContext db) =>
+        {
+            var consulta = db.Movimientos.AsNoTracking().AsQueryable();
+            if (desde is { } d) consulta = consulta.Where(m => m.Fecha >= d);
+            if (hasta is { } h) consulta = consulta.Where(m => m.Fecha <= h);
+            if (!string.IsNullOrWhiteSpace(categoria)) consulta = consulta.Where(m => m.Categoria == categoria);
+            var lista = await consulta.OrderByDescending(m => m.Fecha).ThenByDescending(m => m.Id).Take(1000).ToListAsync();
+            if (!string.IsNullOrWhiteSpace(q))
+                lista = lista.Where(m => m.Concepto.Contains(q, StringComparison.OrdinalIgnoreCase) || (m.Notas ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+            return Results.Ok(lista);
+        });
+
+        g.MapPost("/movimientos", async (MovimientoEntrada e, AppDbContext db) =>
+        {
+            if (Validar(e) is { } error) return error;
+            var m = new Movimiento();
+            Copiar(e, m);
+            db.Movimientos.Add(m);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
+        });
+
+        g.MapPut("/movimientos/{id:int}", async (int id, MovimientoEntrada e, AppDbContext db) =>
+        {
+            if (Validar(e) is { } error) return error;
+            var m = await db.Movimientos.FindAsync(id);
+            if (m is null) return Results.NotFound();
+            Copiar(e, m);
+            await db.SaveChangesAsync();
+            return Results.Ok(m);
+        });
+
+        g.MapDelete("/movimientos/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var m = await db.Movimientos.FindAsync(id);
+            if (m is null) return Results.NotFound();
+            db.Movimientos.Remove(m);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        // ---- Fijos: suscripciones, alquiler, cuota del coche, nómina… ----
+        g.MapGet("/recurrentes", async (AppDbContext db) =>
+            Results.Ok((await db.Recurrentes.AsNoTracking().ToListAsync())
+                .OrderByDescending(r => r.Activo).ThenBy(r => r.Tipo).ThenByDescending(r => r.Mensual)
+                .Select(r => new { r.Id, r.Nombre, r.Tipo, r.Categoria, r.Importe, r.Variable, r.Dia, r.Frecuencia, r.Inicio, r.Fin, r.Activo, r.Mensual })));
+
+        g.MapPost("/recurrentes", async (RecurrenteEntrada e, AppDbContext db) =>
+        {
+            if (Validar(e) is { } error) return error;
+            var r = new Recurrente();
+            Copiar(e, r);
+            db.Recurrentes.Add(r);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/gastos/recurrentes/{r.Id}", r);
+        });
+
+        g.MapPut("/recurrentes/{id:int}", async (int id, RecurrenteEntrada e, AppDbContext db) =>
+        {
+            if (Validar(e) is { } error) return error;
+            var r = await db.Recurrentes.FindAsync(id);
+            if (r is null) return Results.NotFound();
+            Copiar(e, r);
+            await db.SaveChangesAsync();
+            return Results.Ok(r);
+        });
+
+        g.MapDelete("/recurrentes/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var r = await db.Recurrentes.FindAsync(id);
+            if (r is null) return Results.NotFound();
+            // los apuntes ya registrados se conservan, sin el enlace
+            await db.Movimientos.Where(m => m.RecurrenteId == id).ForEachAsync(m => m.RecurrenteId = null);
+            db.Recurrentes.Remove(r);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        // Apunta el fijo en su mes (con el importe real si es variable)
+        g.MapPost("/recurrentes/{id:int}/registrar", async (int id, Registro reg, AppDbContext db) =>
+        {
+            var r = await db.Recurrentes.FindAsync(id);
+            if (r is null) return Results.NotFound();
+            var fecha = reg.Fecha ?? DateOnly.FromDateTime(DateTime.Today);
+            var importe = reg.Importe ?? r.Importe;
+            if (importe <= 0 || importe > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["El importe tiene que ser mayor que 0."] });
+            var desde = new DateOnly(fecha.Year, fecha.Month, 1);
+            var hasta = desde.AddMonths(1);
+            if (await db.Movimientos.AnyAsync(m => m.RecurrenteId == id && m.Fecha >= desde && m.Fecha < hasta))
+                return Results.Conflict(new { detail = "Este fijo ya está apuntado este mes." });
+            var m = new Movimiento { Tipo = r.Tipo, Fecha = fecha, Importe = importe, Categoria = r.Categoria, Concepto = r.Nombre, RecurrenteId = r.Id };
+            db.Movimientos.Add(m);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
+        });
+    }
+
+    // ---- Validación ----
+    private static IResult? Validar(MovimientoEntrada e)
+    {
+        var errores = new Dictionary<string, string[]>();
+        var importe = Importe(e);
+        if (importe <= 0 || importe > 1_000_000) errores["importe"] = ["El importe tiene que ser mayor que 0."];
+        if (!Categorias.Valida(e.Categoria, e.Tipo)) errores["categoria"] = ["Esa categoría no existe para este tipo."];
+        if (string.IsNullOrWhiteSpace(e.Concepto) || e.Concepto.Length > 120) errores["concepto"] = ["Escribe un concepto (máximo 120 caracteres)."];
+        if (e.Notas?.Length > 500) errores["notas"] = ["Las notas no pueden pasar de 500 caracteres."];
+        if (e.Litros is <= 0 or > 500) errores["litros"] = ["Los litros tienen que estar entre 0 y 500."];
+        if (e.PrecioLitro is <= 0 or > 10) errores["precioLitro"] = ["El precio por litro no parece correcto."];
+        if (e.Kilometros is < 0 or > 5_000_000) errores["kilometros"] = ["Los kilómetros no parecen correctos."];
+        return errores.Count > 0 ? Results.ValidationProblem(errores) : null;
+    }
+
+    private static IResult? Validar(RecurrenteEntrada e)
+    {
+        var errores = new Dictionary<string, string[]>();
+        if (string.IsNullOrWhiteSpace(e.Nombre) || e.Nombre.Length > 80) errores["nombre"] = ["Escribe un nombre (máximo 80 caracteres)."];
+        if (e.Importe <= 0 || e.Importe > 1_000_000) errores["importe"] = ["El importe tiene que ser mayor que 0."];
+        if (!Categorias.Valida(e.Categoria, e.Tipo)) errores["categoria"] = ["Esa categoría no existe para este tipo."];
+        if (e.Dia is < 1 or > 31) errores["dia"] = ["El día tiene que estar entre 1 y 31."];
+        if (e.Fin is { } f && f < e.Inicio) errores["fin"] = ["La fecha de fin es anterior al inicio."];
+        return errores.Count > 0 ? Results.ValidationProblem(errores) : null;
+    }
+
+    // en la gasolina, si no hay importe se calcula con litros × precio
+    private static decimal Importe(MovimientoEntrada e) =>
+        e.Importe > 0 ? e.Importe : e.Litros is { } l && e.PrecioLitro is { } p ? Math.Round(l * p, 2) : e.Importe;
+
+    private static void Copiar(MovimientoEntrada e, Movimiento m)
+    {
+        m.Tipo = e.Tipo;
+        m.Fecha = e.Fecha;
+        m.Importe = Importe(e);
+        m.Categoria = e.Categoria;
+        m.Concepto = e.Concepto.Trim();
+        m.Notas = string.IsNullOrWhiteSpace(e.Notas) ? null : e.Notas.Trim();
+        m.RecurrenteId = e.RecurrenteId;
+        var gasolina = e.Categoria == "gasolina";
+        m.Litros = gasolina ? e.Litros : null;
+        m.PrecioLitro = gasolina ? e.PrecioLitro ?? (e.Litros is > 0 ? Math.Round(m.Importe / e.Litros.Value, 3) : null) : null;
+        m.Kilometros = gasolina ? e.Kilometros : null;
+    }
+
+    private static void Copiar(RecurrenteEntrada e, Recurrente r)
+    {
+        r.Nombre = e.Nombre.Trim();
+        r.Tipo = e.Tipo;
+        r.Categoria = e.Categoria;
+        r.Importe = e.Importe;
+        r.Variable = e.Variable;
+        r.Dia = e.Dia;
+        r.Frecuencia = e.Frecuencia;
+        r.Inicio = e.Inicio;
+        r.Fin = e.Fin;
+        r.Activo = e.Activo;
+    }
+}

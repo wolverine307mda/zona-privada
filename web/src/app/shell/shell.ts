@@ -21,7 +21,8 @@ export class Shell {
   protected readonly sistema = inject(SistemaService);
 
   protected readonly inicio = INICIO;
-  protected readonly modulos = MODULOS;
+  protected readonly listos = MODULOS.filter((m) => m.listo);
+  protected readonly modulos = MODULOS.filter((m) => !m.listo);
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
   protected readonly usuario = this.sesion.usuario;
@@ -32,7 +33,9 @@ export class Shell {
   // título de la barra superior según la sección abierta
   private readonly url = toSignal(this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)), { initialValue: this.router.url });
   protected readonly seccion = computed(() => {
-    const id = this.url().split('/').filter(Boolean).pop() ?? 'inicio';
+    // /gastos/fijos -> gastos; /pronto/fotos -> fotos
+    const partes = this.url().split(/[?#]/)[0].split('/').filter(Boolean);
+    const id = partes[0] === 'pronto' ? partes[1] : partes[0] ?? 'inicio';
     return [INICIO, ...MODULOS].find((m) => m.id === id) ?? INICIO;
   });
 

@@ -12,6 +12,16 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
       { path: 'inicio', title: 'Inicio · MDA', loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio) },
+      {
+        path: 'gastos', title: 'Gastos · MDA', loadComponent: () => import('./gastos/gastos').then((m) => m.Gastos),
+        children: [
+          { path: '', loadComponent: () => import('./gastos/resumen').then((m) => m.Resumen) },
+          { path: 'movimientos', loadComponent: () => import('./gastos/movimientos').then((m) => m.Movimientos) },
+          { path: 'fijos', loadComponent: () => import('./gastos/fijos').then((m) => m.Fijos) },
+          { path: 'gasolina', loadComponent: () => import('./gastos/gasolina').then((m) => m.Gasolina) },
+          { path: 'estadisticas', loadComponent: () => import('./gastos/estadisticas').then((m) => m.Estadisticas) },
+        ],
+      },
       { path: 'pronto/:id', title: 'Próximamente · MDA', loadComponent: () => import('./pronto/pronto').then((m) => m.Pronto) },
     ],
   },

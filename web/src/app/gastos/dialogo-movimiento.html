@@ -1,0 +1,87 @@
+<dialog class="dlg" #dialogo (close)="alCerrar()" (click)="fuera($event)" aria-labelledby="dlg-mov-titulo">
+  <form class="dlg__caja" (submit)="guardar($event)" novalidate>
+    <header class="dlg__cabeza">
+      <h2 id="dlg-mov-titulo">{{ id() ? 'Editar' : 'Nuevo' }} {{ tipo() === 'Gasto' ? 'gasto' : 'ingreso' }}</h2>
+      <button class="dlg__x" type="button" (click)="cerrar()" aria-label="Cerrar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </header>
+
+    <div class="tipo" role="group" aria-label="Tipo">
+      <button type="button" [attr.aria-pressed]="tipo() === 'Gasto'" (click)="ponerTipo('Gasto')">Gasto</button>
+      <button type="button" class="tipo--ingreso" [attr.aria-pressed]="tipo() === 'Ingreso'" (click)="ponerTipo('Ingreso')">Ingreso</button>
+    </div>
+
+    <label class="importe" [class.importe--ingreso]="tipo() === 'Ingreso'">
+      <span class="sr">Importe en euros</span>
+      <input type="text" inputmode="decimal" name="importe" placeholder="0,00" autocomplete="off"
+             [value]="importe()" (input)="ponerImporte($event)">
+      <span class="importe__simbolo">€</span>
+    </label>
+    @if (errores()['importe']) { <p class="error">{{ errores()['importe'][0] }}</p> }
+
+    <fieldset class="cats">
+      <legend class="campo__etiqueta">Categoría</legend>
+      <div class="cats__rejilla">
+        @for (c of categorias(); track c.id) {
+          <button type="button" class="cat" [style.--c]="c.color" [attr.aria-pressed]="categoria() === c.id" (click)="categoria.set(c.id)">
+            <span class="cat__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="c.icono" /></svg></span>
+            <span class="cat__nombre">{{ c.nombre }}</span>
+          </button>
+        }
+      </div>
+      @if (errores()['categoria']) { <p class="error">{{ errores()['categoria'][0] }}</p> }
+    </fieldset>
+
+    @if (esGasolina()) {
+      <div class="gasolina">
+        <label class="campo">
+          <span class="campo__etiqueta">Litros</span>
+          <input class="campo__input" type="text" inputmode="decimal" placeholder="40" [value]="litros()" (input)="litros.set(valor($event))">
+        </label>
+        <label class="campo">
+          <span class="campo__etiqueta">€ por litro</span>
+          <input class="campo__input" type="text" inputmode="decimal" placeholder="1,499" [value]="precio()" (input)="precio.set(valor($event))">
+        </label>
+        <label class="campo">
+          <span class="campo__etiqueta">Km del coche</span>
+          <input class="campo__input" type="text" inputmode="numeric" placeholder="123456" [value]="km()" (input)="km.set(valor($event))">
+        </label>
+        <p class="gasolina__nota">
+          @if (calculado() != null) { {{ numero(+litros().replace(',', '.')) }} L × {{ numero(+precio().replace(',', '.'), 3) }} €/L = <strong>{{ euros(calculado()) }}</strong>. }
+          Con los kilómetros de cada repostaje (llenando el depósito) se calcula el consumo.
+        </p>
+      </div>
+    }
+
+    <div class="fila2">
+      <label class="campo">
+        <span class="campo__etiqueta">Concepto</span>
+        <input class="campo__input" type="text" maxlength="120" [placeholder]="esGasolina() ? 'Repsol, Cepsa…' : 'Mercadona, cena con…'"
+               [value]="concepto()" (input)="concepto.set(valor($event))">
+      </label>
+      <label class="campo">
+        <span class="campo__etiqueta">Fecha</span>
+        <input class="campo__input" type="date" required [value]="fecha()" (input)="fecha.set(valor($event))">
+      </label>
+    </div>
+    @if (errores()['concepto']) { <p class="error">{{ errores()['concepto'][0] }}</p> }
+
+    <label class="campo">
+      <span class="campo__etiqueta">Notas <em>(opcional)</em></span>
+      <input class="campo__input" type="text" maxlength="500" [value]="notas()" (input)="notas.set(valor($event))">
+    </label>
+    @if (errores()['general']) { <p class="error">{{ errores()['general'][0] }}</p> }
+    @if (errores()['litros'] || errores()['precioLitro'] || errores()['kilometros']) {
+      <p class="error">{{ (errores()['litros'] ?? errores()['precioLitro'] ?? errores()['kilometros'])[0] }}</p>
+    }
+
+    <footer class="dlg__pie">
+      @if (id()) {
+        <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmarBorrado() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button>
+      }
+      <button class="button button--ghost" type="button" (click)="cerrar()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+    </footer>
+  </form>
+</dialog>

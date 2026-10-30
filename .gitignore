@@ -8,7 +8,9 @@ obj/
 *.user
 .vs/
 TestResults/
-api/Mda.Api/wwwroot/
+# el front compilado (lo copia el Dockerfile); la carpeta existe siempre
+api/Mda.Api/wwwroot/*
+!api/Mda.Api/wwwroot/.gitkeep
 
 # Angular / Node
 web/node_modules/

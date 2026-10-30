@@ -36,7 +36,7 @@ export const MODULOS: Modulo[] = [
     planes: ['Notas con Markdown', 'Lista de tareas con fechas', 'Búsqueda al instante'],
   },
   {
-    id: 'gastos', titulo: 'Gastos', resumen: 'Cuentas personales con gráficas.', listo: false,
+    id: 'gastos', titulo: 'Gastos', resumen: 'Ingresos, gastos, fijos y ahorro.', listo: true,
     icono: 'M3 6h18v12H3zM3 10h18M7 15h3',
     planes: ['Gastos e ingresos por categoría', 'Gráficas por mes', 'Exportar a Excel'],
   },

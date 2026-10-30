@@ -1,0 +1,150 @@
+@if (error()) {
+  <div class="caja vacio"><strong>No se pudieron cargar los datos.</strong>Comprueba que el servidor está en marcha.</div>
+}
+@if (datos(); as d) {
+  <!-- Balance del mes -->
+  <section class="balance">
+    <article class="caja ahorro">
+      <div class="ahorro__texto">
+        <p class="etq">Ahorro del mes</p>
+        <p class="ahorro__cifra" [class.verde]="d.ahorro > 0" [class.rojo]="d.ahorro < 0">{{ euros(d.ahorro) }}</p>
+        @if (variacion(d.ahorro, d.anterior.ahorro); as v) {
+          <p class="cambio" [class.sube]="v > 0" [class.baja]="v < 0">
+            {{ v > 0 ? '▲' : '▼' }} {{ v > 0 ? '+' : '' }}{{ v }} % que el mes pasado
+          </p>
+        } @else if (d.ingresos === 0 && d.gastos === 0) {
+          <p class="cambio">Aún no hay nada apuntado este mes.</p>
+        }
+        <div class="flujo">
+          <div>
+            <p class="etq">Ingresos</p>
+            <p class="flujo__cifra verde">{{ euros(d.ingresos) }}</p>
+            @if (variacion(d.ingresos, d.anterior.ingresos); as v) { <p class="flujo__cambio">{{ v > 0 ? '+' : '' }}{{ v }} %</p> }
+          </div>
+          <div>
+            <p class="etq">Gastos</p>
+            <p class="flujo__cifra">{{ euros(d.gastos) }}</p>
+            @if (variacion(d.gastos, d.anterior.gastos); as v) { <p class="flujo__cambio" [class.malo]="v > 0">{{ v > 0 ? '+' : '' }}{{ v }} %</p> }
+          </div>
+        </div>
+        <div class="barra-flujo" role="img" [attr.aria-label]="'Gastado el ' + gastado() + ' % de lo ingresado'">
+          <span [style.width.%]="gastado() > 100 ? 100 : gastado()" [class.pasado]="d.gastos > d.ingresos"></span>
+        </div>
+      </div>
+      <div class="anillo" [style.--p]="tasa()" role="img" [attr.aria-label]="'Tasa de ahorro ' + (d.tasaAhorro ?? 0) + ' por ciento'">
+        <div class="anillo__dentro">
+          <strong>{{ d.tasaAhorro ?? 0 }}<small>%</small></strong>
+          <span>ahorrado</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="caja fijos">
+      <p class="etq">Fijos de este mes</p>
+      <p class="grande">{{ euros(d.fijosDelMes) }}</p>
+      <div class="fijos__fila">
+        <span class="icono-cat" style="--c: #e62429"><svg class="icon" viewBox="0 0 24 24"><path [attr.d]="categoria('suscripciones').icono" /></svg></span>
+        <div>
+          <strong>{{ euros(d.suscripciones.mensual) }} <small>/ mes</small></strong>
+          <span>{{ d.suscripciones.cantidad }} suscripciones · {{ eurosCorto(d.suscripciones.anual) }} al año</span>
+        </div>
+      </div>
+      <a class="enlace" routerLink="/gastos/fijos">Gestionar fijos →</a>
+    </article>
+  </section>
+
+  <!-- Pendientes y últimos movimientos -->
+  <section class="dos">
+    <article class="caja">
+      <header class="caja__cab">
+        <h3>Por apuntar</h3>
+        <span class="sub">{{ d.pendientes.length ? d.pendientes.length + ' fijos de este mes' : 'al día' }}</span>
+      </header>
+      @if (d.pendientes.length) {
+        <ul class="pendientes">
+          @for (p of d.pendientes; track p.recurrenteId) {
+            <li class="pend" [style.--c]="categoria(p.categoria).color">
+              <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
+              <div class="mov__texto">
+                <strong>{{ p.nombre }}</strong>
+                <span>{{ diaCorto(p.fecha) }} · {{ categoria(p.categoria).nombre }}{{ p.variable ? ' · importe variable' : '' }}</span>
+              </div>
+              @if (p.variable) {
+                <label class="pend__importe"><span class="sr">Importe de {{ p.nombre }}</span>
+                  <input type="text" inputmode="decimal" [value]="importeDe(p)" (input)="ponerImporte(p, $event)"><em>€</em>
+                </label>
+              } @else {
+                <span class="mov__importe" [class.ingreso]="p.tipo === 'Ingreso'">{{ p.tipo === 'Ingreso' ? '+' : '' }}{{ euros(p.importe) }}</span>
+              }
+              <button class="pend__boton" type="button" (click)="apuntar(p)" [disabled]="apuntando() === p.recurrenteId">
+                {{ apuntando() === p.recurrenteId ? '…' : 'Apuntar' }}
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="vacio">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:32px;height:32px;color:var(--ok)"><path d="M20 6L9 17l-5-5" /></svg>
+          <strong>Todo apuntado</strong>Los fijos de este mes ya están registrados.
+        </div>
+      }
+    </article>
+
+    <article class="caja">
+      <header class="caja__cab">
+        <h3>Últimos movimientos</h3>
+        <a class="enlace" routerLink="/gastos/movimientos">Ver todos →</a>
+      </header>
+      @for (m of ultimos(); track m.id) {
+        <button class="mov" type="button" [style.--c]="categoria(m.categoria).color" (click)="editar(m)">
+          <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(m.categoria).icono" /></svg></span>
+          <span class="mov__texto">
+            <strong>{{ m.concepto }}@if (m.recurrenteId) {<em class="chip-fijo">fijo</em>}</strong>
+            <span>{{ diaCorto(m.fecha) }} · {{ categoria(m.categoria).nombre }}</span>
+          </span>
+          <span class="mov__importe" [class.ingreso]="m.tipo === 'Ingreso'">{{ m.tipo === 'Ingreso' ? '+' : '−' }}{{ euros(m.importe) }}</span>
+        </button>
+      } @empty {
+        <div class="vacio"><strong>Sin movimientos este mes</strong>Usa «Gasto» o «Ingreso» arriba para apuntar el primero.</div>
+      }
+    </article>
+  </section>
+
+  <!-- En qué se va y calendario -->
+  <section class="dos">
+    <article class="caja">
+      <header class="caja__cab"><h3>En qué se va</h3><span class="sub">{{ reparto().length }} categorías</span></header>
+      <div class="reparto">
+        <div class="rosco" #rosco role="img" aria-label="Gastos por categoría"></div>
+        <ul class="leyenda">
+          @for (c of reparto().slice(0, 7); track c.categoria) {
+            <li [style.--c]="c.cat.color">
+              <span class="leyenda__punto"></span>
+              <span class="leyenda__nombre">{{ c.cat.nombre }}</span>
+              <span class="leyenda__total">{{ euros(c.total) }}</span>
+              <span class="leyenda__barra"><span [style.width.%]="c.pct"></span></span>
+            </li>
+          } @empty {
+            <li class="vacio">Sin gastos todavía.</li>
+          }
+        </ul>
+      </div>
+    </article>
+
+    <article class="caja">
+      <header class="caja__cab"><h3>Gasto por día</h3><span class="sub">más oscuro, más gasto</span></header>
+      <div class="cal" role="grid" aria-label="Calendario de gasto">
+        @for (s of ['L', 'M', 'X', 'J', 'V', 'S', 'D']; track $index) { <span class="cal__sem">{{ s }}</span> }
+        @for (h of calendario().huecos; track $index) { <span></span> }
+        @for (dia of calendario().dias; track dia.n) {
+          <span class="cal__dia" [class.cal__dia--hoy]="dia.hoy" [style.--n]="dia.nivel" [title]="dia.n + ': ' + euros(dia.v)">
+            <b>{{ dia.n }}</b>
+            @if (dia.v > 0) { <i>{{ eurosCorto(dia.v) }}</i> }
+          </span>
+        }
+      </div>
+    </article>
+  </section>
+} @else if (!error()) {
+  <p class="cargando">Cargando…</p>
+}
