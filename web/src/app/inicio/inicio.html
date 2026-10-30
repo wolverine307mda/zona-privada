@@ -1,7 +1,7 @@
 <section class="hola tarjeta">
   <img class="hola__foto" src="img/avatar.webp" width="72" height="72" alt="">
   <div class="hola__texto">
-    <p class="hola__fecha"><code>// {{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }}</code></p>
+    <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }}</p>
     <h2 class="hola__titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h2>
     <p class="hola__lead">Así va <strong>{{ a()?.equipo ?? 'tu equipo' }}</strong> ahora mismo.</p>
   </div>

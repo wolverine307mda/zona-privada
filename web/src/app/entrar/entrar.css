@@ -15,7 +15,7 @@
   padding: 24px var(--margin) 64px;
 }
 .intro { align-self: end; padding-bottom: 4vh; pointer-events: none; }
-.kicker { font-size: var(--step-small); color: var(--brand); margin-bottom: 18px; }
+.kicker { font-size: var(--step-small); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--acento); margin-bottom: 18px; }
 .grande {
   font: 700 clamp(3rem, 9vw, 9rem)/0.84 var(--font-display); text-transform: uppercase; letter-spacing: -0.05em;
   color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--on-dark) 55%, transparent);
@@ -33,7 +33,6 @@
 
 .campo { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .etiqueta { font-size: var(--step-small); color: var(--soft); }
-.etiqueta code::before { content: '$ '; color: var(--brand); }
 .entrada {
   width: 100%; min-height: 52px; padding: 10px 44px 10px 0; border: 0; border-radius: 0;
   background: transparent; border-bottom: 2px solid color-mix(in srgb, var(--on-paper) 22%, transparent);

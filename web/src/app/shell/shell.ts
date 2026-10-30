@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -7,7 +7,7 @@ import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
 
-// Marco de la zona privada: menú lateral (secciones, tema y usuario), barra superior y la pantalla activa.
+// Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
@@ -27,6 +27,7 @@ export class Shell {
   protected readonly usuario = this.sesion.usuario;
   protected readonly menuAbierto = signal(false);
   protected readonly ahora = signal(new Date());
+  private readonly ajustes = viewChild.required<ElementRef<HTMLDialogElement>>('ajustes');
 
   // título de la barra superior según la sección abierta
   private readonly url = toSignal(this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)), { initialValue: this.router.url });
@@ -41,6 +42,16 @@ export class Shell {
     // cerrar el menú del móvil al navegar
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.menuAbierto.set(false));
     addEventListener('beforeunload', () => clearInterval(reloj), { once: true });
+  }
+
+  // Ajustes en un modal: se cierra con Esc, con la X o pulsando fuera de la caja
+  protected abrirAjustes(): void {
+    this.menuAbierto.set(false);
+    this.ajustes().nativeElement.showModal();
+  }
+
+  protected cerrarFuera(e: MouseEvent): void {
+    if (e.target === this.ajustes().nativeElement) this.ajustes().nativeElement.close();
   }
 
   protected async salir(): Promise<void> {

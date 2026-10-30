@@ -4,18 +4,18 @@
       <span class="marca__logo" aria-hidden="true">M</span>
       <span class="marca__texto">
         <strong>MDA</strong>
-        <code>zona privada</code>
+        <span>Zona privada</span>
       </span>
     </a>
 
     <nav class="menu">
-      <p class="menu__grupo"><code>// general</code></p>
+      <p class="menu__grupo">General</p>
       <a class="menu__item" [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg>
         <span>{{ inicio.titulo }}</span>
       </a>
 
-      <p class="menu__grupo"><code>// próximamente</code></p>
+      <p class="menu__grupo">Próximamente</p>
       @for (m of modulos; track m.id) {
         <a class="menu__item menu__item--pronto" [routerLink]="'/pronto/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
@@ -25,31 +25,24 @@
       }
     </nav>
 
-    <section class="tema-panel" aria-label="Tema">
-      <p class="menu__grupo"><code>// tema</code></p>
-      <div class="segmentado" role="group" aria-label="Modo">
-        @for (m of modos; track m.id) {
-          <button type="button" [attr.aria-pressed]="tema.modo() === m.id" (click)="tema.ponerModo(m.id, $any($event.currentTarget))">{{ m.nombre }}</button>
-        }
-      </div>
-      <div class="muestras" role="group" aria-label="Color">
-        @for (c of colores; track c.id) {
-          <button type="button" class="muestra" [style.--m]="c.muestra" [attr.aria-pressed]="tema.color() === c.id"
-                  [attr.aria-label]="c.nombre" [title]="c.nombre" (click)="tema.ponerColor(c.id, $any($event.currentTarget))"></button>
-        }
-      </div>
-    </section>
-
-    <section class="perfil">
-      <img class="perfil__foto" src="img/avatar.webp" width="40" height="40" alt="">
-      <span class="perfil__datos">
-        <strong>{{ usuario() ?? '—' }}</strong>
-        <code>administrador</code>
-      </span>
-      <button class="perfil__salir" type="button" (click)="salir()" aria-label="Cerrar sesión" title="Cerrar sesión">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" /></svg>
+    <div class="lateral__pie">
+      <button class="menu__item menu__item--ajustes" type="button" (click)="abrirAjustes()" aria-haspopup="dialog">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
+        <span>Ajustes</span>
+        <span class="menu__muestra" aria-hidden="true"></span>
       </button>
-    </section>
+
+      <section class="perfil">
+        <img class="perfil__foto" src="img/avatar.webp" width="40" height="40" alt="">
+        <span class="perfil__datos">
+          <strong>{{ usuario() ?? '—' }}</strong>
+          <span>Administrador</span>
+        </span>
+        <button class="perfil__salir" type="button" (click)="salir()" aria-label="Cerrar sesión" title="Cerrar sesión">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" /></svg>
+        </button>
+      </section>
+    </div>
   </aside>
 
   <button class="velo" type="button" aria-label="Cerrar el menú" tabindex="-1" (click)="menuAbierto.set(false)"></button>
@@ -66,14 +59,14 @@
       <div class="barra__lado">
         <span class="conexion" [attr.data-estado]="sistema.estado()">
           <span class="conexion__punto" aria-hidden="true"></span>
-          <code>
+          <span class="conexion__texto">
             @switch (sistema.estado()) {
-              @case ('en-vivo') { en directo }
-              @case ('reconectando') { reconectando… }
-              @case ('conectando') { conectando… }
-              @default { sin conexión }
+              @case ('en-vivo') { En directo }
+              @case ('reconectando') { Reconectando… }
+              @case ('conectando') { Conectando… }
+              @default { Sin conexión }
             }
-          </code>
+          </span>
         </span>
         <time class="reloj">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) }}</time>
       </div>
@@ -84,3 +77,51 @@
     </main>
   </div>
 </div>
+
+<!-- Ajustes de la app: apariencia (modo y color) y la sesión -->
+<dialog class="ajustes" #ajustes aria-labelledby="ajustes-titulo" (click)="cerrarFuera($event)">
+  <div class="ajustes__caja">
+    <header class="ajustes__cabeza">
+      <h2 id="ajustes-titulo">Ajustes</h2>
+      <button class="ajustes__cerrar" type="button" (click)="ajustes.close()" aria-label="Cerrar los ajustes">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </header>
+
+    <section class="ajustes__seccion" aria-labelledby="ajustes-modo">
+      <h3 id="ajustes-modo">Modo</h3>
+      <div class="modos" role="group" aria-labelledby="ajustes-modo">
+        @for (m of modos; track m.id) {
+          <button type="button" class="modo" [attr.data-modo]="m.id" [attr.aria-pressed]="tema.modo() === m.id"
+                  (click)="tema.ponerModo(m.id, $any($event.currentTarget))">
+            <span class="modo__vista" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="modo__nombre">{{ m.nombre }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="ajustes__seccion" aria-labelledby="ajustes-color">
+      <h3 id="ajustes-color">Color de acento</h3>
+      <div class="colores" role="group" aria-labelledby="ajustes-color">
+        @for (c of colores; track c.id) {
+          <button type="button" class="color" [style.--m]="c.muestra" [attr.aria-pressed]="tema.color() === c.id"
+                  (click)="tema.ponerColor(c.id, $any($event.currentTarget))">
+            <span class="color__punto" aria-hidden="true"></span>
+            <span>{{ c.nombre }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="ajustes__seccion ajustes__seccion--fila">
+      <div>
+        <h3>Sesión</h3>
+        <p class="ajustes__nota">Has entrado como <strong>{{ usuario() }}</strong>.</p>
+      </div>
+      <button class="button button--ghost" type="button" (click)="ajustes.close(); salir()">Cerrar sesión</button>
+    </section>
+
+    <p class="ajustes__nota ajustes__nota--pie">El tema se guarda en este navegador.</p>
+  </div>
+</dialog>
