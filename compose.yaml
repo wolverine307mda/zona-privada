@@ -51,7 +51,8 @@ services:
     profiles: ["tunel"]
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Falta CLOUDFLARE_TUNNEL_TOKEN en .env}
+      # solo hace falta con el perfil «tunel»; sin él, el resto arranca igual
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       - api
 
