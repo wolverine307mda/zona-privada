@@ -71,17 +71,26 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
     .kpi--meses .etq:nth-of-type(2) { margin-top: 8px; }
     .grafica { width: 100%; height: 340px; }
     .ranking { display: flex; flex-direction: column; gap: 14px; }
-    .ranking li { display: grid; grid-template-columns: 22px 40px minmax(0, 1fr); align-items: center; gap: 12px; }
+    .ranking li { display: grid; grid-template-columns: 28px 40px minmax(0, 1fr); align-items: center; gap: 12px; }
     .ranking__pos { font: 700 var(--step-body)/1 var(--font-display); color: var(--soft); text-align: center; }
     .ranking__datos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    .ranking__fila { display: flex; justify-content: space-between; gap: 12px; }
+    .ranking__fila { display: flex; justify-content: space-between; gap: 12px; min-width: 0; }
+    .ranking__fila strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ranking__fila span { flex: none; }
     .ranking__fila strong { font-weight: 500; }
     .ranking__fila span { font: 600 var(--step-small)/1.4 var(--font-code); }
     .ranking__barra { height: 8px; border-radius: 999px; background: var(--tarjeta-2); overflow: hidden; }
     .ranking__barra span { display: block; height: 100%; border-radius: inherit; background: var(--c); transition: width 900ms var(--ease-expo); }
     .ranking__sub { font-size: 12px; color: var(--soft); }
     @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .kpi--meses { grid-column: 1 / -1; } .grafica { height: 260px; } }
+    @media (max-width: 560px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .kpi:first-child, .kpi--meses { grid-column: 1 / -1; }
+      .grafica { height: 260px; }
+      .periodo { display: grid; grid-auto-columns: 1fr; align-self: stretch; }
+      .periodo button { padding: 0 8px; white-space: nowrap; }
+      .ranking__fila span { font-size: 12px; }
+    }
   `,
 })
 export class Estadisticas implements OnDestroy {

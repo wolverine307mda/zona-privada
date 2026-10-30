@@ -89,7 +89,9 @@
 @keyframes late { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 8px transparent; } }
 .reloj { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.02em; }
 
-.pantalla { padding: clamp(20px, 3vw, 36px) var(--margin) 64px; max-width: 1440px; width: 100%; }
+.pantalla { padding: clamp(20px, 3vw, 36px) var(--margin) 64px; max-width: 1440px; width: 100%; view-transition-name: pantalla; }
+.barra { view-transition-name: barra; }
+.lateral { view-transition-name: lateral; }
 
 .velo, .pestanas-app { display: none; }
 
@@ -125,7 +127,9 @@
     border-top: 1px solid var(--vidrio-borde);
     transition: transform 420ms var(--ease-expo);
   }
-  .menu-abierto .pestanas-app { transform: translateY(110%); }
+  .pestanas-app { view-transition-name: pestanas; }
+  /* se esconde con el menú abierto y mientras se escribe (el teclado la subiría encima del contenido) */
+  .menu-abierto .pestanas-app, .marco:has(.contenido :is(input:not([type=checkbox], [type=radio], [type=file]), select, textarea):focus) .pestanas-app { transform: translateY(110%); }
   .pestanas-app a, .pestanas-app button {
     position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px;
     border: 0; background: none; color: var(--soft); text-decoration: none; font: 500 11px/1 var(--font-text); cursor: pointer;

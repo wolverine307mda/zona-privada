@@ -55,7 +55,11 @@ export class TemaService {
       document.documentElement.style.setProperty('--vt-x', `${r.left + r.width / 2}px`);
       document.documentElement.style.setProperty('--vt-y', `${r.top + r.height / 2}px`);
     }
-    if (doc.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) doc.startViewTransition(run);
-    else run();
+    if (doc.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const d = document.documentElement;
+      d.classList.add('vt-tema');
+      const t = doc.startViewTransition(run) as { finished?: Promise<unknown> };
+      (t.finished ?? Promise.resolve()).finally(() => d.classList.remove('vt-tema'));
+    } else run();
   }
 }

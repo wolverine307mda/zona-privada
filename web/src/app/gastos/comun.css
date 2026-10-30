@@ -18,7 +18,13 @@
 .enlace { border: 0; background: none; color: var(--acento); font-weight: 500; cursor: pointer; padding: 0; text-decoration: none; font-size: var(--step-small); }
 
 .etq { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); }
-.grande { font: 700 clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem)/1 var(--font-display); letter-spacing: -0.04em; }
+.grande { font: 700 clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem)/1 var(--font-display); letter-spacing: -0.04em; overflow-wrap: anywhere; }
+/* en tarjetas estrechas la cifra encoge con la tarjeta en vez de salirse */
+.kpi { container-type: inline-size; }
+@container (max-width: 260px) {
+  .grande { font-size: clamp(0.8rem, 12.5cqi, 1.9rem); white-space: nowrap; overflow-wrap: normal; }
+  .grande small { display: block; margin: 6px 0 0 !important; font: 500 11px/1 var(--font-text) !important; letter-spacing: 0 !important; }
+}
 .verde { color: var(--ok); }
 .rojo { color: var(--bad); }
 [data-mode='light'] .verde { color: #138a4c; }
@@ -37,6 +43,9 @@
 .mov__texto strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mov__texto span { font-size: 12px; color: var(--soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mov__importe { font: 600 var(--step-body)/1 var(--font-code); white-space: nowrap; }
+@media (max-width: 400px) { .mov { gap: 10px; padding: 10px 8px; } .mov__importe { font-size: 0.85rem; } .kpi { padding: 14px; } }
+/* en los móviles más estrechos las cifras grandes van una por fila */
+@media (max-width: 360px) { .kpis { grid-template-columns: minmax(0, 1fr) !important; } }
 .mov__importe.ingreso { color: var(--ok); }
 [data-mode='light'] .mov__importe.ingreso { color: #138a4c; }
 .chip-fijo { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; background: var(--tarjeta-2); color: var(--soft); vertical-align: 2px; }
