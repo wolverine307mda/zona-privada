@@ -5,6 +5,7 @@ using Mda.Api.Auth;
 using Mda.Api.Data;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,11 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
     o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
 });
+
+// ---- Claves que firman la cookie: en un volumen, para que reiniciar el contenedor no cierre la sesión ----
+var claves = builder.Configuration["DataProtection:Ruta"];
+var proteccion = builder.Services.AddDataProtection().SetApplicationName("zona-privada");
+if (!string.IsNullOrWhiteSpace(claves)) proteccion.PersistKeysToFileSystem(new DirectoryInfo(claves));
 
 // ---- Límite de intentos de inicio de sesión por IP ----
 builder.Services.AddRateLimiter(o =>

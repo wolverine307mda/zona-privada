@@ -21,8 +21,10 @@ RUN dotnet publish api/Mda.Api/Mda.Api.csproj -c Release -o /app --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=api /app ./
-ENV ASPNETCORE_URLS=http://+:8080 \
+ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
+# carpeta para las claves de las cookies: el volumen las conserva entre reinicios
+RUN mkdir -p /claves && chown $APP_UID /claves
 USER $APP_UID
 ENTRYPOINT ["dotnet", "Mda.Api.dll"]

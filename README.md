@@ -63,6 +63,10 @@ docker compose up -d --build                    # prueba local en http://localho
 docker compose --profile tunel up -d --build    # con el túnel: sale a Internet con HTTPS
 ```
 
+> En Docker Desktop (Windows) el panel muestra la máquina virtual de WSL que ejecuta los contenedores
+> (su memoria y su disco), no Windows directamente. La sesión sobrevive a reiniciar la API:
+> las claves de la cookie se guardan en el volumen `claves`.
+
 ### Cloudflare (una vez)
 
 1. Dominio propio añadido a Cloudflare (p. ej. `mariodedomingo.dev`).

@@ -21,15 +21,20 @@ services:
 
   api:
     build: .
+    # nombre que sale en el panel (si no, el id del contenedor)
+    hostname: equipo-de-casa
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD};Gss Encryption Mode=Disable
       Admin__Email: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env}
       Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env}
       Seq__Url: http://seq:5341
+      DataProtection__Ruta: /claves
+    volumes:
+      - claves:/claves
     # solo en este equipo: desde fuera se entra por el túnel, nunca por un puerto abierto
     ports:
       - "127.0.0.1:8080:8080"
@@ -76,3 +81,4 @@ services:
 volumes:
   db:
   seq:
+  claves:
