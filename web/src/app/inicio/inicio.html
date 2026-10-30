@@ -3,7 +3,13 @@
   <div class="hola__texto">
     <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }}</p>
     <h2 class="hola__titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h2>
-    <p class="hola__lead">Así va <strong>{{ a()?.equipo ?? 'tu equipo' }}</strong> ahora mismo.</p>
+    <p class="hola__lead">Tu día de un vistazo y <strong>{{ a()?.equipo ?? 'tu equipo' }}</strong> en directo.</p>
+    <nav class="rapidos" aria-label="Crear">
+      <button type="button" (click)="nuevoGasto()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Gasto</button>
+      <a routerLink="/notas" [queryParams]="{ nueva: 1 }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6" /></svg>Nota</a>
+      <a routerLink="/agenda" [queryParams]="{ nuevo: 'evento' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /></svg>Evento</a>
+      <a routerLink="/agenda" [queryParams]="{ nuevo: 'recordatorio' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg>Recordatorio</a>
+    </nav>
   </div>
   @if (a()) {
     @if (real()) {
@@ -16,7 +22,9 @@
   }
 </section>
 
-<app-hoy />
+<app-panel />
+
+<h2 class="seccion"><span>El equipo de casa</span><code>en directo</code></h2>
 
 <section class="kpis" aria-label="Estado del equipo">
   <article class="kpi tarjeta" data-inclina>

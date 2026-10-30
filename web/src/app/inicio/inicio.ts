@@ -1,4 +1,6 @@
-import { Hoy } from './hoy';
+import { Router, RouterLink } from '@angular/router';
+import { GastosService } from '../gastos/gastos.service';
+import { Panel } from './panel';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
@@ -14,10 +16,10 @@ export function velocidad(b: number): string {
   return `${(b / 1024 ** 2).toLocaleString('es-ES', { maximumFractionDigits: 1 })} MB/s`;
 }
 
-// Inicio: el equipo de casa en directo (CPU, memoria, discos, red, historial y ficha del equipo)
+// Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Hoy],
+  imports: [Panel, RouterLink],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })
@@ -78,6 +80,13 @@ export class Inicio implements OnDestroy {
   }
 
   private limpiar: () => void;
+  private readonly gastos = inject(GastosService);
+  private readonly router = inject(Router);
+
+  protected nuevoGasto(): void {
+    this.gastos.editandoMovimiento.set({ tipo: 'Gasto' });
+    this.router.navigateByUrl('/gastos');
+  }
 
   private pintar(): void {
     this.graficaCpu?.setOption(opcionesCpu(this.a()?.cpu ?? 0));

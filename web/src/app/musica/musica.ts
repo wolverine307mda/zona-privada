@@ -20,7 +20,7 @@ const MENSAJES: Record<string, string> = {
   selector: 'app-musica',
   imports: [RouterLink],
   templateUrl: './musica.html',
-  styleUrls: ['../gastos/comun.css', './musica.css'],
+  styleUrls: ['../gastos/comun.css', '../gastos/dialogos.css', './musica.css'],
 })
 export class Musica {
   private readonly http = inject(HttpClient);

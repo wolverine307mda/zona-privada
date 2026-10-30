@@ -27,13 +27,13 @@
 
 /* sonando ahora */
 .ahora { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: center; padding: clamp(18px, 3vw, 32px); border-radius: calc(var(--radio) + 6px); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: var(--sombra); }
-.disco { position: relative; display: block; width: clamp(150px, 26vw, 280px); aspect-ratio: 1; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 400ms var(--ease-out); }
+.disco { --d: clamp(150px, 24vw, 270px); position: relative; display: block; width: var(--d); aspect-ratio: 1; margin-right: calc(var(--d) * 0.2); transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 400ms var(--ease-out); }
 .disco__portada { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 14px; object-fit: cover; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6); }
 /* el vinilo asoma por la derecha y gira mientras suena */
-.disco__vinilo { position: absolute; inset: 4%; border-radius: 50%; background: radial-gradient(circle, #222 0 13%, #e0e0e0 13.5% 15%, #111 15.5% 30%, #1a1a1a 30.5% 31%, #111 31.5% 45%, #1c1c1c 45.5% 46%, #0d0d0d 46.5%); box-shadow: inset 0 0 0 2px #000; transform: translateX(26%); animation: gira 3.2s linear infinite; transition: transform 700ms var(--ease-expo); }
-.parado .disco__vinilo { animation-play-state: paused; transform: translateX(8%); }
+.disco__vinilo { position: absolute; inset: 4%; border-radius: 50%; background: radial-gradient(circle, #222 0 13%, #e0e0e0 13.5% 15%, #111 15.5% 30%, #1a1a1a 30.5% 31%, #111 31.5% 45%, #1c1c1c 45.5% 46%, #0d0d0d 46.5%); box-shadow: inset 0 0 0 2px #000, 0 20px 40px -18px rgba(0, 0, 0, 0.7); translate: 24% 0; animation: gira 3.2s linear infinite; transition: translate 700ms var(--ease-expo); }
+.parado .disco__vinilo { animation-play-state: paused; translate: 8% 0; }
 @keyframes gira { from { rotate: 0deg; } to { rotate: 360deg; } }
-.ahora__info { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding-left: clamp(0px, 3vw, 40px); }
+.ahora__info { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .ahora__estado { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #1ed760; }
 .parado .ahora__estado { color: var(--soft); }
 .dispositivo { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tarjeta-2); color: var(--soft); text-transform: none; letter-spacing: 0; font-weight: 500; }
@@ -88,7 +88,8 @@
 
 @media (max-width: 700px) {
   .ahora { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
-  .disco { width: min(62vw, 240px); margin-right: 14%; }
+  /* el disco y el vinilo que asoma quedan centrados juntos */
+  .disco { --d: min(58vw, 230px); }
   .ahora__info { padding: 0; align-items: center; width: 100%; }
   .ahora__estado { justify-content: center; }
   .progreso { width: 100%; }
