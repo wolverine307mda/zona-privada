@@ -17,6 +17,12 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
 @Component({
   selector: 'app-galeria',
   template: `
+    <nav class="pestanas" role="tablist" aria-label="Partes de la galería">
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'fotos'" (click)="pestana.set('fotos')">Fotos <small>{{ estado()?.publicadas ?? 0 }}</small></button>
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'luz'" (click)="pestana.set('luz')">Luz</button>
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'web'" (click)="pestana.set('web')">Qué ve la web</button>
+    </nav>
+    @if (pestana() === 'fotos') {
     <section class="caja">
       <header class="caja__cab">
         <h3>Galería del portfolio</h3>
@@ -30,7 +36,58 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
         </span>
       </label>
     </section>
-
+    <section class="caja">
+      <header class="caja__cab"><h3>En el portfolio</h3><span class="sub">El orden de aquí es el de la web</span></header>
+      @if (fotos().length === 0) {
+        <p class="vacio">Aún no has publicado nada. Elige fotos de tu carpeta de abajo.</p>
+      } @else {
+        <ol class="lista">
+          @for (f of fotos(); track f.id; let i = $index) {
+            <li class="fila" [class.oculta]="!f.publicada">
+              <img class="mini" [src]="'/api/galeria/fotos/' + f.id + '/mini?v=' + f.hash" [style.background]="f.tono" alt="" width="64" height="64" loading="lazy">
+              <div class="texto">
+                <strong>{{ f.titulo || 'Sin título' }}</strong>
+                <small>{{ f.categoria || 'sin categoría' }} · {{ f.ancho }}×{{ f.alto }}{{ f.publicada ? '' : ' · oculta' }}</small>
+                <small class="desc">{{ f.descripcion }}</small>
+              </div>
+              <div class="acciones">
+                <button class="icono" type="button" (click)="mover(i, -1)" [disabled]="i === 0" aria-label="Subir">↑</button>
+                <button class="icono" type="button" (click)="mover(i, 1)" [disabled]="i === fotos().length - 1" aria-label="Bajar">↓</button>
+                <button class="enlace" type="button" (click)="editar(f)">Editar</button>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+    <section class="caja">
+      <header class="caja__cab">
+        <h3>Tu carpeta de imágenes</h3>
+        <span class="sub">
+          <button class="enlace" type="button" (click)="abrir('')">Imágenes</button>
+          @for (m of migas(); track m.ruta) { / <button class="enlace" type="button" (click)="abrir(m.ruta)">{{ m.nombre }}</button> }
+        </span>
+      </header>
+      @if (fallo()) { <p class="error">No se pudo leer la carpeta. ¿Está montada «Imágenes» en el equipo?</p> }
+      <ul class="rejilla">
+        @for (e of elementos(); track e.ruta) {
+          <li>
+            @if (e.carpeta) {
+              <button class="carpeta" type="button" (click)="abrir(e.ruta)"><span aria-hidden="true">📁</span> {{ e.nombre }}</button>
+            } @else {
+              <button class="foto" type="button" [disabled]="!e.soportada" (click)="elegir(e)" [class.puesta]="e.foto?.publicada"
+                      [attr.aria-label]="(e.foto ? 'Editar ' : 'Publicar ') + e.nombre"
+                      [title]="e.soportada ? e.nombre : 'Formato no publicable: pásalo a JPG, PNG o WebP'">
+                <img [src]="'/api/archivos/archivo?raiz=imagenes&ruta=' + codificar(e.ruta) + '&ver=true'" alt="" loading="lazy" decoding="async">
+                <span class="marca">{{ e.foto ? (e.foto.publicada ? '✓ publicada' : 'oculta') : e.soportada ? 'publicar' : 'no soportada' }}</span>
+              </button>
+            }
+          </li>
+        } @empty { @if (!fallo()) { <li class="vacio">Esta carpeta no tiene fotos.</li> } }
+      </ul>
+    </section>
+    }
+    @if (pestana() === 'luz') {
     <section class="caja">
       <header class="caja__cab">
         <h3>Luz para fotografiar</h3>
@@ -61,7 +118,8 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
         <label class="interruptor"><input type="checkbox" [checked]="l.ajustes.astro" (change)="ajustarLuz({ astro: $any($event.target).checked })"><span><strong>Incluir noches de Vía Láctea</strong></span></label>
       }
     </section>
-
+    }
+    @if (pestana() === 'web') {
     <section class="caja">
       <header class="caja__cab">
         <h3>Estado en vivo en la web</h3>
@@ -76,7 +134,6 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
         <span><strong>Enseñar también la carga del equipo</strong><small>CPU y memoria en directo, redondeadas, con una mini gráfica y las horas encendido. Nunca el nombre del equipo, discos ni red.</small></span>
       </label>
     </section>
-
     <section class="caja">
       <header class="caja__cab"><h3>Zona de mi casa</h3><span class="sub">Las fotos hechas dentro de este radio nunca salen en el globo</span></header>
       <div class="fila-buscar">
@@ -90,58 +147,7 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
       <label class="campo"><span class="campo__etiqueta">Radio: {{ casa().radioKm }} km</span>
         <input type="range" min="0" max="100" step="5" [value]="casa().radioKm" (change)="radioCasa($any($event.target).value)"></label>
     </section>
-
-    <section class="caja">
-      <header class="caja__cab"><h3>En el portfolio</h3><span class="sub">El orden de aquí es el de la web</span></header>
-      @if (fotos().length === 0) {
-        <p class="vacio">Aún no has publicado nada. Elige fotos de tu carpeta de abajo.</p>
-      } @else {
-        <ol class="lista">
-          @for (f of fotos(); track f.id; let i = $index) {
-            <li class="fila" [class.oculta]="!f.publicada">
-              <img class="mini" [src]="'/api/galeria/fotos/' + f.id + '/mini?v=' + f.hash" [style.background]="f.tono" alt="" width="64" height="64" loading="lazy">
-              <div class="texto">
-                <strong>{{ f.titulo || 'Sin título' }}</strong>
-                <small>{{ f.categoria || 'sin categoría' }} · {{ f.ancho }}×{{ f.alto }}{{ f.publicada ? '' : ' · oculta' }}</small>
-                <small class="desc">{{ f.descripcion }}</small>
-              </div>
-              <div class="acciones">
-                <button class="icono" type="button" (click)="mover(i, -1)" [disabled]="i === 0" aria-label="Subir">↑</button>
-                <button class="icono" type="button" (click)="mover(i, 1)" [disabled]="i === fotos().length - 1" aria-label="Bajar">↓</button>
-                <button class="enlace" type="button" (click)="editar(f)">Editar</button>
-              </div>
-            </li>
-          }
-        </ol>
-      }
-    </section>
-
-    <section class="caja">
-      <header class="caja__cab">
-        <h3>Tu carpeta de imágenes</h3>
-        <span class="sub">
-          <button class="enlace" type="button" (click)="abrir('')">Imágenes</button>
-          @for (m of migas(); track m.ruta) { / <button class="enlace" type="button" (click)="abrir(m.ruta)">{{ m.nombre }}</button> }
-        </span>
-      </header>
-      @if (fallo()) { <p class="error">No se pudo leer la carpeta. ¿Está montada «Imágenes» en el equipo?</p> }
-      <ul class="rejilla">
-        @for (e of elementos(); track e.ruta) {
-          <li>
-            @if (e.carpeta) {
-              <button class="carpeta" type="button" (click)="abrir(e.ruta)"><span aria-hidden="true">📁</span> {{ e.nombre }}</button>
-            } @else {
-              <button class="foto" type="button" [disabled]="!e.soportada" (click)="elegir(e)" [class.puesta]="e.foto?.publicada"
-                      [attr.aria-label]="(e.foto ? 'Editar ' : 'Publicar ') + e.nombre"
-                      [title]="e.soportada ? e.nombre : 'Formato no publicable: pásalo a JPG, PNG o WebP'">
-                <img [src]="'/api/archivos/archivo?raiz=imagenes&ruta=' + codificar(e.ruta) + '&ver=true'" alt="" loading="lazy" decoding="async">
-                <span class="marca">{{ e.foto ? (e.foto.publicada ? '✓ publicada' : 'oculta') : e.soportada ? 'publicar' : 'no soportada' }}</span>
-              </button>
-            }
-          </li>
-        } @empty { @if (!fallo()) { <li class="vacio">Esta carpeta no tiene fotos.</li> } }
-      </ul>
-    </section>
+    }
 
     <dialog #dialogo class="dlg" (close)="actual.set(null)">
       @if (actual(); as a) {
@@ -196,6 +202,7 @@ export class Galeria implements OnInit {
   protected readonly categorias = CATEGORIAS;
   protected readonly estado = signal<Estado | null>(null);
   protected readonly publico = signal({ estado: false, cpu: false });
+  protected readonly pestana = signal<'fotos' | 'luz' | 'web'>('fotos');
   protected readonly luz = signal<Luz | null>(null);
   protected readonly consulta = signal('');
   protected readonly sitios = signal<Sitio[]>([]);

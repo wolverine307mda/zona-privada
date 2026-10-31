@@ -178,3 +178,11 @@ ul { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 
 .dinero__saldo span { color: var(--soft); }
 .dinero__saldo b { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.02em; white-space: nowrap; }
 .dinero__saldo.rojo b { color: var(--bad); }
+
+/* Mosaico en columnas (en escritorio): cada tarjeta mide lo que necesita y las columnas se llenan de arriba abajo.
+   Con filas, una tarjeta alta (el tiempo con la semana) estiraba a sus vecinas y las dejaba casi vacías. */
+@media (min-width: 641px) {
+  .panel { display: block; column-width: 400px; column-gap: 20px; }
+  .asis-inicio { column-span: all; margin-bottom: 20px; }
+  .panel > .caja { display: flex; width: 100%; margin: 0 0 20px; break-inside: avoid; page-break-inside: avoid; }
+}
