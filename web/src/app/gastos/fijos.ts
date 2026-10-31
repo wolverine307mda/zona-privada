@@ -4,26 +4,28 @@ import { FRECUENCIAS, Recurrente, categoria, euros, eurosCorto } from './modelo'
 
 interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: number; }
 
-// Fijos y suscripciones: lo que se repite, agrupado (suscripciones, casa, coche, otros e ingresos),
-// con lo que suponen al mes y al año. Pulsar uno lo edita; el interruptor lo pausa.
+// Recurrentes: todo lo que se repite, ingresos y gastos (nómina, alquiler, suscripciones, seguro…), agrupado
+// y con lo que suponen al mes y al año. Pulsar uno lo edita; el interruptor lo pausa.
 @Component({
   selector: 'app-fijos',
   template: `
     <section class="kpis">
-      <article data-inclina class="caja kpi"><span class="etq">Gastos fijos al mes</span><strong class="grande">{{ euros(totales().gastos) }}</strong><span class="sub">{{ eurosCorto(totales().gastos * 12) }} al año</span></article>
+      <article data-inclina class="caja kpi"><span class="etq">Gastos que se repiten, al mes</span><strong class="grande">{{ euros(totales().gastos) }}</strong><span class="sub">{{ eurosCorto(totales().gastos * 12) }} al año</span></article>
       <article data-inclina class="caja kpi kpi--subs">
         <span class="etq">Suscripciones</span><strong class="grande">{{ euros(totales().subs) }}<small>/mes</small></strong>
         <span class="sub">{{ totales().nSubs }} activas · {{ eurosCorto(totales().subs * 12) }} al año</span>
       </article>
-      <article data-inclina class="caja kpi"><span class="etq">Ingresos fijos al mes</span><strong class="grande verde">{{ euros(totales().ingresos) }}</strong><span class="sub">te quedan {{ euros(totales().ingresos - totales().gastos) }} libres</span></article>
+      <article data-inclina class="caja kpi"><span class="etq">Ingresos que se repiten, al mes</span><strong class="grande verde">{{ euros(totales().ingresos) }}</strong><span class="sub">te quedan {{ euros(totales().ingresos - totales().gastos) }} libres</span></article>
     </section>
 
     <div class="barra-acciones">
-      <button class="button" type="button" (click)="g.editandoFijo.set({ tipo: 'Gasto', categoria: 'suscripciones' })">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nueva suscripción
+      <button class="button" type="button" (click)="g.editandoFijo.set({ tipo: 'Gasto', categoria: 'vivienda' })">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Gasto que se repite
       </button>
-      <button class="button button--ghost" type="button" (click)="g.editandoFijo.set({ tipo: 'Gasto', categoria: 'vivienda' })">Otro fijo</button>
-      <button class="button button--ghost" type="button" (click)="g.editandoFijo.set({ tipo: 'Ingreso', categoria: 'nomina' })">Ingreso fijo</button>
+      <button class="button button--ghost accion-ingreso" type="button" (click)="g.editandoFijo.set({ tipo: 'Ingreso', categoria: 'nomina' })">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Ingreso que se repite
+      </button>
+      <button class="button button--ghost" type="button" (click)="g.editandoFijo.set({ tipo: 'Gasto', categoria: 'suscripciones' })">Suscripción</button>
     </div>
 
     @for (gr of grupos(); track gr.id) {
@@ -50,8 +52,8 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
       </section>
     } @empty {
       <div class="caja vacio">
-        <strong>{{ cargado() ? 'Aún no hay fijos' : 'Cargando…' }}</strong>
-        @if (cargado()) { Añade tus suscripciones, el alquiler o la nómina: cada mes te recordará apuntarlos. }
+        <strong>{{ cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
+        @if (cargado()) { Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen. }
       </div>
     }
   `,
@@ -66,6 +68,7 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
     .barra-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
     .barra-acciones .button { min-height: 44px; padding: 0 18px; }
     .barra-acciones .icon { width: 18px; height: 18px; }
+    .accion-ingreso { border-color: color-mix(in srgb, var(--ok) 50%, var(--linea)); }
     .grupo { display: flex; flex-direction: column; gap: 12px; }
     .grupo__cab { display: flex; justify-content: space-between; align-items: baseline; }
     .grupo__cab h3 { font: 700 var(--step-body)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
@@ -113,11 +116,11 @@ export class Fijos {
 
   protected readonly grupos = computed<Grupo[]>(() => {
     const def = [
+      { id: 'ingresos', titulo: 'Ingresos', f: (r: Recurrente) => r.tipo === 'Ingreso' },
       { id: 'subs', titulo: 'Suscripciones', f: (r: Recurrente) => r.categoria === 'suscripciones' },
       { id: 'casa', titulo: 'Casa', f: (r: Recurrente) => categoria(r.categoria).grupo === 'Casa' },
       { id: 'coche', titulo: 'Coche', f: (r: Recurrente) => categoria(r.categoria).grupo === 'Coche' },
-      { id: 'otros', titulo: 'Otros gastos', f: (r: Recurrente) => r.tipo === 'Gasto' && !['Suscripciones', 'Casa', 'Coche'].includes(categoria(r.categoria).grupo) },
-      { id: 'ingresos', titulo: 'Ingresos', f: (r: Recurrente) => r.tipo === 'Ingreso' },
+      { id: 'otros', titulo: 'Otros pagos', f: (r: Recurrente) => r.tipo === 'Gasto' && !['Suscripciones', 'Casa', 'Coche'].includes(categoria(r.categoria).grupo) },
     ];
     return def.map((d) => {
       const lista = this.lista().filter(d.f);

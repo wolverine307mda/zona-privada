@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Errores, GastosService, erroresDe } from './gastos.service';
+import { MantenimientoCoche } from './mantenimiento';
 import { seguirTeclado } from './teclado';
 import { CATEGORIAS, Deuda, Deudas as Datos, MESES, categoria, diaCorto, euros, eurosCorto, hoyIso } from './modelo';
 
@@ -7,7 +8,9 @@ import { CATEGORIAS, Deuda, Deudas as Datos, MESES, categoria, diaCorto, euros, 
 // los pagos por mes, cuándo se acaba al ritmo actual y lo que ha costado el coche en total.
 @Component({
   selector: 'app-deudas',
+  imports: [MantenimientoCoche],
   template: `
+    <app-mantenimiento />
     @for (d of datos()?.deudas ?? []; track d.id) {
       <section class="caja deuda" [style.--c]="categoria(d.categoria).color">
         <div class="deuda__anillo" data-inclina role="img" [attr.aria-label]="'Pagado el ' + d.porcentaje + ' por ciento'">

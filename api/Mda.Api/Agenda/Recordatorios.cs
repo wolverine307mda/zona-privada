@@ -36,6 +36,7 @@ public class Recordatorios(IServiceScopeFactory scopes, IAvisos avisos, Zona zon
                 var ok = false;
                 if (e.PorCorreo) ok |= await avisos.PorCorreo($"⏰ {e.Titulo}", texto, ct);
                 if (e.PorWhatsApp) ok |= await avisos.PorWhatsApp(texto, ct);
+                if (e.PorPush) ok |= await avisos.PorPush($"⏰ {e.Titulo}", Cuando(e, de), "/agenda", ct);
                 if (ok) e.UltimoAviso = ahora;
                 log.LogInformation("Aviso de «{Titulo}»: {Resultado}", e.Titulo, ok ? "enviado" : "sin canal que funcione");
             }
@@ -44,6 +45,13 @@ public class Recordatorios(IServiceScopeFactory scopes, IAvisos avisos, Zona zon
             e.AvisoDe = p?.De;
         }
         if (tocan.Count > 0) await db.SaveChangesAsync(ct);
+    }
+
+    private string Cuando(Evento e, DateTimeOffset de)
+    {
+        var local = TimeZoneInfo.ConvertTime(de, zona.Info);
+        var cuando = e.TodoElDia ? local.ToString("dddd d 'de' MMMM", Es) : local.ToString("dddd d 'de' MMMM, HH:mm", Es);
+        return e.Lugar is null ? cuando : $"{cuando} · {e.Lugar}";
     }
 
     private string Texto(Evento e, DateTimeOffset de)

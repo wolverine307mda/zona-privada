@@ -11,6 +11,9 @@
         <div><span class="etq">Ahorro</span><strong class="cifra" [class.rojo]="m.ahorro < 0">{{ eurosCorto(m.ahorro) }}</strong>
           @if (m.tasaAhorro != null) { <small>{{ m.tasaAhorro.toFixed(0) }} % de lo que entra</small> }</div>
       </div>
+      @if (saldo()?.configurado) {
+        <p class="dinero__saldo" [class.rojo]="saldo()!.actual < 0"><span>Dinero ahora</span><b>{{ euros(saldo()!.actual) }}</b></p>
+      }
       <div class="dias" aria-label="Gasto de cada día del mes">
         @for (d of dias(); track $index) { <span [class.futuro]="d.futuro" [class.hoy]="d.hoy" [style.--h.%]="d.h" [style.animation-delay.ms]="$index * 18"></span> }
       </div>

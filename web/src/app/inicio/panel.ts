@@ -33,6 +33,7 @@ export class Panel {
   protected readonly raicesInfo = RAICES;
 
   protected readonly mes = signal<ResumenMes | null>(null);
+  protected readonly saldo = signal<{ configurado: boolean; actual: number } | null>(null);
   protected readonly sonando = signal<Sonando | null>(null);
   protected readonly spotify = signal<'si' | 'no' | null>(null);
   protected readonly progreso = signal(0);
@@ -71,6 +72,7 @@ export class Panel {
     const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
     const hoy = new Date();
     get<ResumenMes>(`/api/gastos/mes/${hoy.getFullYear()}/${hoy.getMonth() + 1}`).then((m) => this.mes.set(m)).catch(() => {});
+    get<{ configurado: boolean; actual: number }>('/api/gastos/saldo').then((x) => this.saldo.set(x)).catch(() => {});
     get<Deudas>('/api/gastos/deudas').then((d) => this.deudas.set(d)).catch(() => {});
     get<Aparicion[]>('/api/agenda/proximos?dias=14').then((a) => this.agenda.set(a)).catch(() => this.agenda.set([]));
     get<Nota[]>('/api/notas').then((n) => this.notas.set(n)).catch(() => this.notas.set([]));

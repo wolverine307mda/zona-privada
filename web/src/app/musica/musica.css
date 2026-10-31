@@ -81,6 +81,17 @@
 .ahora__nada .ondas i { width: 5px; }
 .ahora__nada h2 { font: 700 var(--step-head)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.04em; color: #fff; }
 
+/* ---------- acceso a «Tu año en música» ---------- */
+.wrapped { position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: calc(var(--radio) + 4px); color: #fff; text-decoration: none;
+  background: linear-gradient(110deg, #1ed760, #0f9d58 35%, #6c3cff 70%, #ff4fa3); background-size: 200% 100%; animation: wrapped-mueve 10s ease-in-out infinite alternate; box-shadow: 0 20px 50px -30px #6c3cff; }
+@keyframes wrapped-mueve { to { background-position: 100% 0; } }
+.wrapped__brillo { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.5px) 0 0 / 14px 14px; mask: linear-gradient(90deg, transparent, #000); }
+.wrapped__texto { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wrapped__texto strong { font: 700 var(--step-lead)/1.05 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.wrapped__texto span { font-size: var(--step-small); opacity: 0.9; }
+.wrapped__ir { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #000; font-size: 16px; transition: transform 300ms var(--ease-out); }
+@media (hover: hover) { .wrapped:hover .wrapped__ir { transform: scale(1.1); } }
+
 /* ---------- debajo: lo más escuchado a la izquierda; la cola y lo último a la derecha ---------- */
 .rejilla { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
 .lado { display: flex; flex-direction: column; gap: 20px; min-width: 0; }

@@ -52,11 +52,13 @@
       </button>
 
       <section class="perfil">
-        <img class="perfil__foto" src="img/avatar.webp" width="40" height="40" alt="">
-        <span class="perfil__datos">
-          <strong>{{ usuario() ?? '—' }}</strong>
-          <span>Administrador</span>
-        </span>
+        <a class="perfil__enlace" routerLink="/perfil" title="Editar el perfil">
+          <img class="perfil__foto" [src]="perfil.foto()" width="40" height="40" alt="">
+          <span class="perfil__datos">
+            <strong>{{ perfil.nombreVisible() ?? usuario() ?? '—' }}</strong>
+            <span>&#64;{{ usuario() }} · Editar perfil</span>
+          </span>
+        </a>
         <button class="perfil__salir" type="button" (click)="salir()" aria-label="Cerrar sesión" title="Cerrar sesión">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" /></svg>
         </button>
@@ -76,6 +78,7 @@
         <p>{{ seccion().resumen }}</p>
       </div>
       <div class="barra__lado">
+        <app-mini-musica [oculto]="seccion().id === 'musica'" />
         <button class="barra__buscar" type="button" (click)="buscador().abrir()" aria-label="Buscar (Ctrl+K)" title="Buscar (Ctrl+K)">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
           <span>Buscar</span><kbd>Ctrl K</kbd>

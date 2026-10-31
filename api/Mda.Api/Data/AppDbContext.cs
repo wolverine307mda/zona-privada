@@ -1,4 +1,5 @@
 using Mda.Api.Agenda;
+using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
 using Mda.Api.Gastos;
 using Mda.Api.Notas;
@@ -21,6 +22,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<SesionAbierta> Sesiones => Set<SesionAbierta>();
     public DbSet<Acceso> Accesos => Set<Acceso>();
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
+    public DbSet<Hucha> Huchas => Set<Hucha>();
+    public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
+    public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
+    public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
+    public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
+
+    // PostgreSQL guarda «timestamp with time zone» en UTC y Npgsql no acepta otro desfase:
+    // toda fecha con hora pasa a UTC al escribirla o al usarla en una consulta
+    protected override void ConfigureConventions(ModelConfigurationBuilder c)
+    {
+        c.Properties<DateTimeOffset>().HaveConversion<UtcConverter>();
+        c.Properties<DateTimeOffset?>().HaveConversion<UtcConverter>();
+    }
+
+    private class UtcConverter() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTimeOffset, DateTimeOffset>(d => d.ToUniversalTime(), d => d);
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -107,6 +123,50 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasKey(x => x.Clave);
             e.Property(x => x.Clave).HasMaxLength(60);
             e.Property(x => x.Valor).HasMaxLength(2000);
+        });
+
+        b.Entity<Hucha>(e =>
+        {
+            e.ToTable("huchas");
+            e.Property(x => x.Nombre).HasMaxLength(80);
+            e.Property(x => x.Objetivo).HasPrecision(12, 2);
+            e.Property(x => x.Ahorrado).HasPrecision(12, 2);
+            e.Property(x => x.Color).HasMaxLength(20);
+            e.Property(x => x.Emoji).HasMaxLength(16);
+        });
+
+        b.Entity<Presupuesto>(e =>
+        {
+            e.ToTable("presupuestos");
+            e.HasKey(x => x.Categoria);
+            e.Property(x => x.Categoria).HasMaxLength(40);
+            e.Property(x => x.Limite).HasPrecision(12, 2);
+            e.Property(x => x.AvisadoMes).HasMaxLength(7);
+        });
+
+        b.Entity<Mantenimiento>(e =>
+        {
+            e.ToTable("mantenimientos");
+            e.Property(x => x.Nombre).HasMaxLength(80);
+            e.Property(x => x.Notas).HasMaxLength(500);
+        });
+
+        b.Entity<Adjunto>(e =>
+        {
+            e.ToTable("adjuntos");
+            e.HasKey(x => x.Clave);
+            e.Property(x => x.Clave).HasMaxLength(60);
+            e.Property(x => x.Tipo).HasMaxLength(40);
+        });
+
+        b.Entity<PushSuscripcion>(e =>
+        {
+            e.ToTable("push");
+            e.Property(x => x.Endpoint).HasMaxLength(1000);
+            e.Property(x => x.P256dh).HasMaxLength(200);
+            e.Property(x => x.Auth).HasMaxLength(100);
+            e.Property(x => x.Dispositivo).HasMaxLength(120);
+            e.HasIndex(x => x.Endpoint).IsUnique();
         });
 
         b.Entity<Recurrente>(e =>

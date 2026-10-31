@@ -3,7 +3,7 @@ using System.Net.Mail;
 
 namespace Mda.Api.Avisos;
 
-public record Canales(bool Correo, bool WhatsApp);
+public record Canales(bool Correo, bool WhatsApp, bool Push = true);
 
 // Manda avisos al dueño: por correo (SMTP, por ejemplo Gmail con una contraseña de aplicación)
 // y por WhatsApp con CallMeBot (gratis para uso personal: una API key ligada a tu número).
@@ -13,9 +13,13 @@ public interface IAvisos
     Canales Disponibles();
     Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default);
     Task<bool> PorWhatsApp(string texto, CancellationToken ct = default);
+    // notificación en los móviles y navegadores suscritos (Web Push)
+    Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => Task.FromResult(false);
+    // correo con versión HTML (el resumen semanal); el texto plano va de respaldo
+    Task<bool> PorCorreoHtml(string asunto, string html, string texto, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
 }
 
-public class Avisos(IConfiguration config, IHttpClientFactory http, ILogger<Avisos> log) : IAvisos
+public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, ILogger<Avisos> log) : IAvisos
 {
     private string? C(string k) => string.IsNullOrWhiteSpace(config[k]) ? null : config[k];
 
@@ -23,7 +27,11 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, ILogger<Avis
         C("Correo:Servidor") is not null && C("Correo:Para") is not null,
         C("WhatsApp:Telefono") is not null && C("WhatsApp:ApiKey") is not null);
 
-    public async Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default)
+    public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) => Correo(asunto, texto, null, ct);
+    public Task<bool> PorCorreoHtml(string asunto, string html, string texto, CancellationToken ct = default) => Correo(asunto, texto, html, ct);
+    public Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => push.Enviar(titulo, texto, url, ct);
+
+    private async Task<bool> Correo(string asunto, string texto, string? html, CancellationToken ct)
     {
         if (!Disponibles().Correo) return false;
         try
@@ -38,6 +46,8 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, ILogger<Avis
             {
                 Subject = asunto, Body = texto, IsBodyHtml = false,
             };
+            if (html is not null)
+                msg.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(html, System.Text.Encoding.UTF8, "text/html"));
             await smtp.SendMailAsync(msg, ct);
             return true;
         }

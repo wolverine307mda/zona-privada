@@ -28,6 +28,9 @@ public class Movimiento
     public decimal? PrecioLitro { get; set; }
     public int? Kilometros { get; set; }
 
+    // foto del ticket (en la tabla de adjuntos, con la clave «ticket:{Id}»)
+    public bool TieneTicket { get; set; }
+
     public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
 }
 
@@ -83,6 +86,42 @@ public class Deuda
     public DateOnly Inicio { get; set; }
     public string? Notas { get; set; }
     public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
+}
+
+// Una hucha: dinero apartado para algo (un viaje, el colchón de emergencia…). Lo apartado sigue siendo tuyo:
+// no cambia el saldo, solo dice cuánto de él ya tiene destino.
+public class Hucha
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public decimal Objetivo { get; set; }
+    public decimal Ahorrado { get; set; }
+    public string Color { get; set; } = "";
+    public string Emoji { get; set; } = "🐷";
+    public DateOnly? Fecha { get; set; }
+    public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
+}
+
+// Límite de gasto al mes en una categoría. Avisa una vez al pasar del 80 % y otra al pasar del 100 %.
+public class Presupuesto
+{
+    public string Categoria { get; set; } = "";
+    public decimal Limite { get; set; }
+    public string? AvisadoMes { get; set; } // «2026-10»
+    public int AvisadoNivel { get; set; }    // 0, 80 o 100
+}
+
+// Mantenimiento del coche: ITV, revisión, aceite… cada tantos km y/o meses, contado desde la última vez.
+public class Mantenimiento
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public int? CadaKm { get; set; }
+    public int? CadaMeses { get; set; }
+    public DateOnly? UltimaFecha { get; set; }
+    public int? UltimoKm { get; set; }
+    public string? Notas { get; set; }
+    public DateOnly? Avisado { get; set; } // último día en que se avisó de que toca
 }
 
 // Categorías que acepta la API (el front pone los iconos y colores con estos mismos id)

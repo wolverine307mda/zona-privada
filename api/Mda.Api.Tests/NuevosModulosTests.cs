@@ -17,8 +17,9 @@ public class AvisosDePrueba : IAvisos
 {
     public List<string> Enviados { get; } = [];
     public Canales Disponibles() => new(true, true);
-    public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) { lock (Enviados) Enviados.Add($"correo:{texto}"); return Task.FromResult(true); }
+    public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) { lock (Enviados) Enviados.Add($"correo:{asunto}:{texto}"); return Task.FromResult(true); }
     public Task<bool> PorWhatsApp(string texto, CancellationToken ct = default) { lock (Enviados) Enviados.Add($"whatsapp:{texto}"); return Task.FromResult(true); }
+    public Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) { lock (Enviados) Enviados.Add($"push:{titulo}:{texto}"); return Task.FromResult(true); }
 }
 
 public class ModulosFactory : ApiFactory

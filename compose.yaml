@@ -51,8 +51,11 @@ services:
       Spotify__ClientSecret: ${SPOTIFY_CLIENT_SECRET:-}
       Google__ClientId: ${GOOGLE_CLIENT_ID:-}
       Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      # la API vigila que la copia diaria exista (y avisa si falta)
+      Copias__Ruta: /copias
     volumes:
       - claves:/claves
+      - ./copias:/copias:ro
       # «Documentos»: las carpetas del equipo (rutas de Windows en .env; sin ellas, carpetas vacías en ./carpetas)
       - ${CARPETA_DOCUMENTOS:-./carpetas/documentos}:/carpetas/documentos
       - ${CARPETA_ESCRITORIO:-./carpetas/escritorio}:/carpetas/escritorio
@@ -105,7 +108,9 @@ services:
     depends_on:
       - api
 
-  # copia de seguridad diaria de la base de datos en ./copias (se guardan las 14 últimas)
+  # copia de seguridad diaria de la base de datos en ./copias (se guardan las 14 últimas automáticas).
+  # Mira cada 10 minutos: si hoy aún no hay copia y son más de las 3 (hora de Madrid), la hace;
+  # si el equipo estaba apagado de madrugada, la hace en cuanto se enciende. La API avisa si pasan 30 h sin copia.
   copias:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -114,13 +119,19 @@ services:
         condition: service_healthy
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Europe/Madrid
     volumes:
       - ./copias:/copias
     entrypoint: >
       sh -c 'while true; do
-        pg_dump -h db -U mda -d zonaprivada -Fc -f /copias/zonaprivada-$$(date +%Y%m%d-%H%M).dump &&
-        ls -1t /copias/*.dump | tail -n +15 | xargs -r rm -f;
-        sleep 86400; done'
+        hoy=$$(date +%Y%m%d);
+        if [ "$$(date +%H)" -ge 3 ] && ! ls /copias/zonaprivada-$$hoy-*.dump >/dev/null 2>&1; then
+          pg_dump -h db -U mda -d zonaprivada -Fc -f /copias/.tmp.dump &&
+          mv /copias/.tmp.dump /copias/zonaprivada-$$hoy-$$(date +%H%M).dump &&
+          echo "copia hecha: $$hoy" &&
+          ls -1t /copias/zonaprivada-*.dump | tail -n +15 | xargs -r rm -f;
+        fi;
+        sleep 600; done'
 
 volumes:
   db:

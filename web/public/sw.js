@@ -1,7 +1,7 @@
 // Service worker de la app instalada: abre al instante con lo último que se cargó y,
 // sin conexión, muestra la app (que avisa de que el equipo no responde) en vez de la página de error del navegador.
 // La API (/api, /hubs) nunca se guarda: los datos siempre son los del equipo.
-const CACHE = 'mda-v1';
+const CACHE = 'mda-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/apple-touch-icon.png'])).then(() => self.skipWaiting()));
@@ -31,5 +31,25 @@ self.addEventListener('fetch', (e) => {
     const guardado = await c.match(req);
     const red = fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => guardado);
     return guardado ?? red;
+  }));
+});
+
+// notificaciones de la app (recordatorios, presupuestos, coche, resumen semanal…)
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { texto: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Zona privada', {
+    body: d.texto || '', icon: '/img/icono-192.png', badge: '/img/icono-192.png', data: { url: d.url || '/inicio' }, tag: d.titulo || undefined,
+  }));
+});
+
+// al tocarla, abre (o enfoca) la app en la sección que toca
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url || '/inicio', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+    const abierta = ventanas.find((v) => v.url.startsWith(self.location.origin));
+    if (abierta) { abierta.navigate(url).catch(() => {}); return abierta.focus(); }
+    return self.clients.openWindow(url);
   }));
 });

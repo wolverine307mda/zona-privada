@@ -134,12 +134,16 @@ builder.Services.AddHostedService<SemillaAdmin>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddSingleton<Push>();
 builder.Services.AddSingleton<IAvisos, Avisos>();
 builder.Services.AddSingleton<ServicioConexiones>();
 builder.Services.AddSingleton(Zona.Desde(builder.Configuration));
 builder.Services.AddSingleton<GoogleCalendar>();
 builder.Services.AddSingleton<Recordatorios>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Recordatorios>());
+// resumen semanal, mantenimiento del coche y copias de seguridad
+builder.Services.AddSingleton<Vigilante>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Vigilante>());
 
 
 var app = builder.Build();
@@ -168,6 +172,10 @@ app.MapAgenda();
 app.MapConexiones();
 app.MapMusica();
 app.MapSeguridad();
+app.MapCartera();
+app.MapCoche();
+app.MapPush();
+app.MapPerfil();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

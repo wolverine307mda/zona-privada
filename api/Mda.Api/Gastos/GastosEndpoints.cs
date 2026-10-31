@@ -1,3 +1,4 @@
+using Mda.Api.Avisos;
 using Mda.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,7 +6,9 @@ namespace Mda.Api.Gastos;
 
 public record MovimientoEntrada(
     TipoMovimiento Tipo, DateOnly Fecha, decimal Importe, string Categoria, string Concepto, string? Notas,
-    int? RecurrenteId, decimal? Litros, decimal? PrecioLitro, int? Kilometros);
+    int? RecurrenteId, decimal? Litros, decimal? PrecioLitro, int? Kilometros,
+    // al crear: «se repite» convierte el apunte en el primero de un recurrente (cada mes, trimestre o año)
+    Frecuencia? Repite = null, bool Variable = false);
 
 public record RecurrenteEntrada(
     string Nombre, TipoMovimiento Tipo, string Categoria, decimal Importe, bool Variable, int Dia,
@@ -66,23 +69,35 @@ public static class GastosEndpoints
             return Results.Ok(lista);
         });
 
-        g.MapPost("/movimientos", async (MovimientoEntrada e, AppDbContext db) =>
+        g.MapPost("/movimientos", async (MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) =>
         {
             if (Validar(e) is { } error) return error;
             var m = new Movimiento();
             Copiar(e, m);
+            if (e.Repite is { } f && e.RecurrenteId is null)
+            {
+                var r = new Recurrente
+                {
+                    Nombre = m.Concepto.Length > 80 ? m.Concepto[..80] : m.Concepto, Tipo = m.Tipo, Categoria = m.Categoria, Importe = m.Importe,
+                    Variable = e.Variable, Dia = m.Fecha.Day, Frecuencia = f, Inicio = m.Fecha,
+                };
+                db.Recurrentes.Add(r);
+                m.Recurrente = r;
+            }
             db.Movimientos.Add(m);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
+            if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
             return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
         });
 
-        g.MapPut("/movimientos/{id:int}", async (int id, MovimientoEntrada e, AppDbContext db) =>
+        g.MapPut("/movimientos/{id:int}", async (int id, MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) =>
         {
             if (Validar(e) is { } error) return error;
-            var m = await db.Movimientos.FindAsync(id);
+            var m = await db.Movimientos.FindAsync([id], ct);
             if (m is null) return Results.NotFound();
             Copiar(e, m);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
+            if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
             return Results.Ok(m);
         });
 
@@ -91,7 +106,40 @@ public static class GastosEndpoints
             var m = await db.Movimientos.FindAsync(id);
             if (m is null) return Results.NotFound();
             db.Movimientos.Remove(m);
+            if (await db.Adjuntos.FindAsync($"ticket:{id}") is { } t) db.Adjuntos.Remove(t);
             await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        // ---- Foto del ticket de un apunte ----
+        g.MapPut("/movimientos/{id:int}/ticket", async (int id, HttpRequest req, AppDbContext db, CancellationToken ct) =>
+        {
+            var m = await db.Movimientos.FindAsync([id], ct);
+            if (m is null) return Results.NotFound();
+            var (datos, tipo, error) = await Adjunto.Leer(req, ct);
+            if (error is not null) return error;
+            var clave = $"ticket:{id}";
+            var a = await db.Adjuntos.FindAsync([clave], ct);
+            if (a is null) db.Adjuntos.Add(a = new Adjunto { Clave = clave });
+            a.Tipo = tipo;
+            a.Datos = datos!;
+            a.Creado = DateTimeOffset.UtcNow;
+            m.TieneTicket = true;
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }).DisableAntiforgery();
+
+        g.MapGet("/movimientos/{id:int}/ticket", async (int id, AppDbContext db, CancellationToken ct) =>
+            await db.Adjuntos.AsNoTracking().FirstOrDefaultAsync(a => a.Clave == $"ticket:{id}", ct) is { } a
+                ? Results.File(a.Datos, a.Tipo) : Results.NotFound());
+
+        g.MapDelete("/movimientos/{id:int}/ticket", async (int id, AppDbContext db, CancellationToken ct) =>
+        {
+            var m = await db.Movimientos.FindAsync([id], ct);
+            if (m is null) return Results.NotFound();
+            if (await db.Adjuntos.FindAsync([$"ticket:{id}"], ct) is { } a) db.Adjuntos.Remove(a);
+            m.TieneTicket = false;
+            await db.SaveChangesAsync(ct);
             return Results.NoContent();
         });
 

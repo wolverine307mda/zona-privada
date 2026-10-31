@@ -94,9 +94,25 @@
 
   <!-- avisos -->
   <section class="caja">
-    <header class="caja__cab"><h3>Avisos</h3><span class="sub">recordatorios de la agenda</span></header>
+    <header class="caja__cab"><h3>Avisos</h3><span class="sub">recordatorios, presupuestos, coche y resumen</span></header>
     @if (estado(); as e) {
       <ul class="canales">
+        <li>
+          <span class="canal__icono">🔔</span>
+          <span class="canal__texto"><strong>Notificaciones</strong><span>
+            @switch (push.estado()) {
+              @case ('activas') { Activas en este dispositivo · {{ e.dispositivosPush }} en total }
+              @case ('denegadas') { Bloqueadas en este navegador: permítelas en sus ajustes }
+              @case ('instalar') { En el iPhone, primero añade la app a la pantalla de inicio }
+              @case ('no-soportadas') { Este navegador no las admite }
+              @default { {{ e.dispositivosPush ? e.dispositivosPush + ' dispositivo(s) con ellas activas' : 'Desactivadas' }} }
+            }
+          </span></span>
+          @if (push.estado() === 'activas' || push.estado() === 'inactivas') {
+            <button class="button" [class.button--ghost]="push.estado() === 'activas'" type="button" [disabled]="ocupado() === 'push-on'" (click)="alternarPush()">{{ push.estado() === 'activas' ? 'Desactivar' : 'Activar aquí' }}</button>
+          }
+          @if (e.dispositivosPush) { <button class="button button--ghost" type="button" [disabled]="ocupado() === 'push'" (click)="probar('push')">{{ ocupado() === 'push' ? 'Enviando…' : 'Probar' }}</button> }
+        </li>
         <li>
           <span class="canal__icono">✉️</span>
           <span class="canal__texto"><strong>Correo</strong><span>{{ e.canales.correo ? 'Listo' : 'Sin configurar' }}</span></span>
@@ -113,6 +129,16 @@
         <span class="interruptor__pista" aria-hidden="true"></span>
         <span>Mandarme un correo cada vez que alguien entre</span>
       </label>
+      <label class="interruptor" [class.off]="!e.canales.correo && !e.dispositivosPush">
+        <input type="checkbox" [checked]="e.resumenSemanal" (change)="resumenSemanal($any($event.target).checked)">
+        <span class="interruptor__pista" aria-hidden="true"></span>
+        <span>Resumen de la semana cada lunes a las 9 <em>(gastos, saldo, agenda y música)</em></span>
+      </label>
+      @if (e.copia.vigilada) {
+        <p class="copia" [class.copia--mal]="copiaVieja(e.copia.fecha)">
+          💾 @if (e.copia.fecha) { Última copia de seguridad {{ hace(e.copia.fecha) }} ({{ tamano(e.copia.tamano) }}) } @else { Aún no hay copia de seguridad automática }
+        </p>
+      }
       @if (!e.canales.correo || !e.canales.whatsApp) {
         <details class="ayuda">
           <summary>Cómo configurarlos</summary>

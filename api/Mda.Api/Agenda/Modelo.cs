@@ -23,6 +23,7 @@ public class Evento
     public int? AvisoMinutos { get; set; }
     public bool PorCorreo { get; set; }
     public bool PorWhatsApp { get; set; }
+    public bool PorPush { get; set; }
     public DateTimeOffset? ProximoAviso { get; set; }
     public DateTimeOffset? AvisoDe { get; set; } // la repetición a la que corresponde ese aviso
     public DateTimeOffset? UltimoAviso { get; set; }

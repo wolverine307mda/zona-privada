@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Seguridad;
 
 public record Latido(bool App);
-public record AjustesSeguridad(bool AvisarInicios);
+public record AjustesSeguridad(bool AvisarInicios, bool? ResumenSemanal = null);
 
 // Seguridad: sesiones abiertas (con quién está en línea ahora), historial de accesos, avisos y verificación en dos pasos
 public static class SeguridadEndpoints
@@ -66,7 +66,7 @@ public static class SeguridadEndpoints
             Results.Ok((await db.Accesos.AsNoTracking().OrderByDescending(a => a.Id).Take(40).ToListAsync())
                 .Select(a => new { a.Fecha, a.Ip, a.Exito, a.Motivo, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente) })));
 
-        g.MapGet("/estado", async (ClaimsPrincipal user, UserManager<IdentityUser> users, AppDbContext db, IAvisos avisos, TimeProvider reloj) =>
+        g.MapGet("/estado", async (ClaimsPrincipal user, UserManager<IdentityUser> users, AppDbContext db, IAvisos avisos, Vigilante vigilante, TimeProvider reloj) =>
         {
             var u = await users.GetUserAsync(user);
             var desde = reloj.GetUtcNow().AddDays(-30);
@@ -76,6 +76,9 @@ public static class SeguridadEndpoints
                 canales = avisos.Disponibles(),
                 avisarInicios = await db.Ajustes.AnyAsync(a => a.Clave == Sesiones.AvisarInicios && a.Valor == "si"),
                 fallosMes = await db.Accesos.CountAsync(a => !a.Exito && a.Fecha > desde),
+                resumenSemanal = !await db.Ajustes.AnyAsync(a => a.Clave == Vigilante.ResumenSemanal && a.Valor == "no"),
+                dispositivosPush = await db.Push.CountAsync(),
+                copia = vigilante.UltimaCopia(),
             });
         });
 
@@ -83,6 +86,11 @@ public static class SeguridadEndpoints
         {
             var aj = await db.Ajustes.FindAsync(Sesiones.AvisarInicios) ?? db.Ajustes.Add(new Ajuste { Clave = Sesiones.AvisarInicios }).Entity;
             aj.Valor = a.AvisarInicios ? "si" : "no";
+            if (a.ResumenSemanal is { } rs)
+            {
+                var r = await db.Ajustes.FindAsync(Vigilante.ResumenSemanal) ?? db.Ajustes.Add(new Ajuste { Clave = Vigilante.ResumenSemanal }).Entity;
+                r.Valor = rs ? "si" : "no";
+            }
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
@@ -95,9 +103,11 @@ public static class SeguridadEndpoints
             {
                 "correo" => await avisos.PorCorreo("Prueba de avisos", texto),
                 "whatsapp" => await avisos.PorWhatsApp(texto),
+                "push" => await avisos.PorPush("👋 Prueba de avisos", "Si ves esto, las notificaciones de la app funcionan en tus dispositivos.", "/seguridad"),
                 _ => (bool?)null,
             };
-            return ok is null ? Results.NotFound() : ok.Value ? Results.NoContent() : Results.Problem("No se pudo enviar: revisa la configuración en el .env.", statusCode: 502);
+            return ok is null ? Results.NotFound() : ok.Value ? Results.NoContent()
+                : Results.Problem(canal == "push" ? "No hay ningún dispositivo con las notificaciones activadas." : "No se pudo enviar: revisa la configuración en el .env.", statusCode: 502);
         });
     }
 }

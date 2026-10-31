@@ -1,7 +1,7 @@
 <dialog class="dlg" #dialogo (close)="alCerrar()" (click)="fuera($event)" aria-labelledby="dlg-fijo-titulo">
   <form class="dlg__caja" (submit)="guardar($event)" novalidate>
     <header class="dlg__cabeza">
-      <h2 id="dlg-fijo-titulo">{{ id() ? 'Editar fijo' : 'Nuevo fijo' }}</h2>
+      <h2 id="dlg-fijo-titulo">{{ id() ? 'Editar' : 'Nuevo' }} {{ tipo() === 'Ingreso' ? 'ingreso' : 'gasto' }} que se repite</h2>
       <button class="dlg__x" type="button" (click)="cerrar()" aria-label="Cerrar">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
@@ -57,7 +57,7 @@
     <label class="interruptor">
       <input type="checkbox" [checked]="variable()" (change)="variable.set($any($event.target).checked)">
       <span class="interruptor__pista" aria-hidden="true"></span>
-      <span>El importe cambia cada vez <em>(luz, agua…: te lo pedirá al apuntarlo)</em></span>
+      <span>El importe cambia cada vez <em>(luz, agua…: al aplicarlo podrás poner el de ese mes)</em></span>
     </label>
 
     <div class="fila2">

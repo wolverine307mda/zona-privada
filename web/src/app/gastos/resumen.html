@@ -2,6 +2,41 @@
   <div class="caja vacio"><strong>No se pudieron cargar los datos.</strong>Comprueba que el servidor está en marcha.</div>
 }
 @if (datos(); as d) {
+  <!-- El dinero de verdad: el saldo (se arrastra entre meses y puede ser negativo) -->
+  @if (saldo(); as s) {
+    <section class="cartera" [class.cartera--rojo]="s.configurado && (esActual() ? s.actual : s.finMes) < 0">
+      @if (!s.configurado) {
+        <div class="cartera__vacia">
+          <span class="cartera__icono" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12v4M4 7v11a2 2 0 0 0 2 2h14V9H6a2 2 0 0 1-2-2zM16 14.5h.01" /></svg></span>
+          <div><strong>¿Cuánto dinero tienes ahora?</strong><span>Dímelo una vez y lo llevo yo: cada ingreso lo sube y cada gasto lo baja, mes a mes.</span></div>
+          <button class="button" type="button" (click)="abrirSaldo()">Poner mi saldo</button>
+        </div>
+      } @else {
+        <div class="cartera__principal">
+          <p class="etq">{{ esActual() ? 'Dinero ahora' : 'Al acabar el mes' }}</p>
+          <p class="cartera__cifra">{{ euros(esActual() ? s.actual : s.finMes) }}</p>
+          <p class="cartera__sub">
+            @if (esActual()) { Empezaste el mes con <b>{{ euros(s.inicioMes) }}</b> · previsto a fin de mes <b [class.rojo]="s.previsto < 0">{{ euros(s.previsto) }}</b> }
+            @else { Empezó con <b>{{ euros(s.inicioMes) }}</b> · {{ s.finMes - s.inicioMes >= 0 ? 'ganaste' : 'perdiste' }} <b>{{ euros(s.finMes - s.inicioMes) }}</b> }
+          </p>
+          <div class="cartera__botones">
+            <button class="chip-boton" type="button" (click)="abrirSaldo()">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" /></svg> Ajustar saldo
+            </button>
+            @if (s.enHuchas > 0) { <a class="chip-boton" routerLink="/gastos/huchas">🐷 {{ euros(s.enHuchas) }} en huchas · libre {{ euros(s.libre) }}</a> }
+          </div>
+        </div>
+        @if (esActual() && consejos(); as c) {
+          <div class="cartera__dia" [class.cartera__dia--malo]="c.porDia < 0">
+            <p class="etq">Puedes gastar</p>
+            <p class="cartera__pordia">{{ euros(c.porDia) }}<small>/día</small></p>
+            <p class="cartera__sub">{{ c.diasRestantes === 1 ? 'Hoy es el último día del mes' : c.diasRestantes + ' días hasta fin de mes' }} · al ritmo actual gastarás <b>{{ eurosCorto(c.proyeccion) }}</b></p>
+          </div>
+        }
+      }
+    </section>
+  }
+
   <!-- Balance del mes -->
   <section class="balance">
     <article class="caja ahorro" data-inclina>
@@ -40,7 +75,7 @@
     </article>
 
     <article class="caja fijos" data-inclina>
-      <p class="etq">Fijos de este mes</p>
+      <p class="etq">Lo que se repite este mes</p>
       <p class="grande">{{ euros(d.fijosDelMes) }}</p>
       <div class="fijos__fila">
         <span class="icono-cat" style="--c: #e62429"><svg class="icon" viewBox="0 0 24 24"><path [attr.d]="categoria('suscripciones').icono" /></svg></span>
@@ -49,16 +84,68 @@
           <span>{{ d.suscripciones.cantidad }} suscripciones · {{ eurosCorto(d.suscripciones.anual) }} al año</span>
         </div>
       </div>
-      <a class="enlace" routerLink="/gastos/fijos">Gestionar fijos →</a>
+      <a class="enlace" routerLink="/gastos/fijos">Ver recurrentes →</a>
     </article>
   </section>
+
+  <!-- Consejos para ahorrar y presupuestos -->
+  @if (consejos()?.lista?.length || presupuestos().length || esActual()) {
+    <section class="dos">
+      @if (consejos(); as c) {
+        <article class="caja consejos">
+          <header class="caja__cab"><h3>Para ahorrar</h3><span class="sub">con tus propios números</span></header>
+          <ul class="consejos__lista">
+            @for (x of c.lista; track x.icono) {
+              <li class="consejo" [attr.data-tono]="x.tono">
+                <span class="consejo__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconoConsejo(x.icono)" /></svg></span>
+                <div><strong>{{ x.titulo }}</strong><span>{{ x.texto }}</span></div>
+              </li>
+            }
+          </ul>
+          @if (regla(); as r) {
+            <div class="regla">
+              <p class="etq">Regla 50 / 30 / 20 <em>(el mes pasado)</em></p>
+              <div class="regla__barra" role="img" [attr.aria-label]="'Necesidades ' + r.necesidades + ' %, caprichos ' + r.caprichos + ' %, ahorro ' + r.ahorro + ' %'">
+                <span class="regla__nec" [style.flex-grow]="r.necesidades || 0.001"></span>
+                <span class="regla__cap" [style.flex-grow]="r.caprichos || 0.001"></span>
+                <span class="regla__aho" [style.flex-grow]="r.ahorro || 0.001"></span>
+              </div>
+              <div class="regla__leyenda">
+                <span><i class="regla__nec"></i>Necesidades {{ r.necesidades }} % <em>/ 50</em></span>
+                <span><i class="regla__cap"></i>Caprichos {{ r.caprichos }} % <em>/ 30</em></span>
+                <span><i class="regla__aho"></i>Ahorro {{ r.negativo ? 0 : r.ahorro }} % <em>/ 20</em></span>
+              </div>
+            </div>
+          }
+        </article>
+      }
+      <article class="caja">
+        <header class="caja__cab"><h3>Presupuestos</h3><button class="enlace" type="button" (click)="abrirPresupuestos()">{{ presupuestos().length ? 'Editar' : 'Crear' }} →</button></header>
+        @for (p of presupuestos(); track p.categoria) {
+          <div class="presu" [style.--c]="categoria(p.categoria).color" [class.presu--cerca]="p.porcentaje >= 80" [class.presu--pasado]="p.porcentaje >= 100">
+            <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
+            <div class="presu__texto">
+              <div class="presu__fila"><strong>{{ categoria(p.categoria).nombre }}</strong><span>{{ euros(p.gastado) }} <em>de {{ eurosCorto(p.limite) }}</em></span></div>
+              <span class="presu__barra"><span [style.width.%]="p.porcentaje > 100 ? 100 : p.porcentaje"></span></span>
+              <small>{{ p.porcentaje >= 100 ? 'Te has pasado ' + euros(p.gastado - p.limite) : 'Quedan ' + euros(p.limite - p.gastado) }}</small>
+            </div>
+          </div>
+        } @empty {
+          <div class="vacio">
+            <strong>Ponle un límite a lo que más se escapa</strong>
+            Restaurantes, ocio, ropa… Te aviso al llegar al 80 % y al pasarte.
+          </div>
+        }
+      </article>
+    </section>
+  }
 
   <!-- Pendientes y últimos movimientos -->
   <section class="dos">
     <article class="caja">
       <header class="caja__cab">
-        <h3>Por apuntar</h3>
-        <span class="sub">{{ d.pendientes.length ? d.pendientes.length + ' fijos de este mes' : 'al día' }}</span>
+        <h3>Por aplicar</h3>
+        <span class="sub">{{ d.pendientes.length ? d.pendientes.length + ' que se repiten este mes' : 'al día' }}</span>
       </header>
       @if (d.pendientes.length) {
         <ul class="pendientes">
@@ -67,17 +154,11 @@
               <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
               <div class="mov__texto">
                 <strong>{{ p.nombre }}</strong>
-                <span>{{ diaCorto(p.fecha) }} · {{ categoria(p.categoria).nombre }}{{ p.variable ? ' · importe variable' : '' }}</span>
+                <span>{{ diaCorto(p.fecha) }} · {{ categoria(p.categoria).nombre }}@if (p.variable) { · <em class="chip-var">puede variar</em> }</span>
               </div>
-              @if (p.variable) {
-                <label class="pend__importe"><span class="sr">Importe de {{ p.nombre }}</span>
-                  <input type="text" inputmode="decimal" [value]="importeDe(p)" (input)="ponerImporte(p, $event)"><em>€</em>
-                </label>
-              } @else {
-                <span class="mov__importe" [class.ingreso]="p.tipo === 'Ingreso'">{{ p.tipo === 'Ingreso' ? '+' : '' }}{{ euros(p.importe) }}</span>
-              }
-              <button class="pend__boton" type="button" (click)="apuntar(p)" [disabled]="apuntando() === p.recurrenteId">
-                {{ apuntando() === p.recurrenteId ? '…' : 'Apuntar' }}
+              <span class="mov__importe" [class.ingreso]="p.tipo === 'Ingreso'">{{ p.tipo === 'Ingreso' ? '+' : '−' }}{{ euros(p.importe) }}@if (p.variable) {<small>≈</small>}</span>
+              <button class="pend__boton" type="button" (click)="aplicar(p)" [disabled]="apuntando() === p.recurrenteId">
+                {{ apuntando() === p.recurrenteId ? '…' : 'Aplicar' }}
               </button>
             </li>
           }
@@ -85,7 +166,7 @@
       } @else {
         <div class="vacio">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:32px;height:32px;color:var(--ok)"><path d="M20 6L9 17l-5-5" /></svg>
-          <strong>Todo apuntado</strong>Los fijos de este mes ya están registrados.
+          <strong>Todo aplicado</strong>Lo que se repite este mes ya está en los movimientos.
         </div>
       }
     </article>
@@ -99,7 +180,7 @@
         <button class="mov" type="button" [style.--c]="categoria(m.categoria).color" (click)="editar(m)">
           <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(m.categoria).icono" /></svg></span>
           <span class="mov__texto">
-            <strong>{{ m.concepto }}@if (m.recurrenteId) {<em class="chip-fijo">fijo</em>}</strong>
+            <strong>{{ m.concepto }}@if (m.recurrenteId) {<em class="chip-fijo">se repite</em>}@if (m.tieneTicket) {<em class="chip-fijo chip-ticket">ticket</em>}</strong>
             <span>{{ diaCorto(m.fecha) }} · {{ categoria(m.categoria).nombre }}</span>
           </span>
           <span class="mov__importe" [class.ingreso]="m.tipo === 'Ingreso'">{{ m.tipo === 'Ingreso' ? '+' : '−' }}{{ euros(m.importe) }}</span>
@@ -148,3 +229,73 @@
 } @else if (!error()) {
   <p class="cargando">Cargando…</p>
 }
+
+<!-- ¿Cuánto tienes ahora? -->
+<dialog class="dlg" #dlgSaldo (click)="cerrarFuera($event)" aria-labelledby="dlg-saldo-t">
+  <form class="dlg__caja" (submit)="guardarSaldo($event)" novalidate>
+    <header class="dlg__cabeza"><h2 id="dlg-saldo-t">Tu dinero ahora</h2>
+      <button class="dlg__x" type="button" (click)="dlgSaldo.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
+    <p class="dlg__lead">Lo que tienes hoy entre todas tus cuentas. Desde aquí, cada ingreso lo sube y cada gasto lo baja; si un día no cuadra, lo ajustas otra vez. Puede ser negativo.</p>
+    <label class="importe"><span class="sr">Saldo en euros</span>
+      <input type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" [value]="saldoTexto()" (input)="saldoTexto.set(valor($event))">
+      <span class="importe__simbolo">€</span></label>
+    @if (errorDlg()) { <p class="error">{{ errorDlg() }}</p> }
+    <footer class="dlg__pie">
+      <button class="button button--ghost" type="button" (click)="dlgSaldo.close()">Cancelar</button>
+      <button class="button" type="submit">Guardar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Aplicar algo que se repite y cuyo importe puede variar -->
+<dialog class="dlg" #dlgAplicar (click)="cerrarFuera($event)" aria-labelledby="dlg-aplicar-t">
+  @if (aplicando(); as p) {
+    <form class="dlg__caja" (submit)="confirmarAplicar($event)" novalidate>
+      <header class="dlg__cabeza"><h2 id="dlg-aplicar-t">Aplicar {{ p.nombre }}</h2>
+        <button class="dlg__x" type="button" (click)="dlgAplicar.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
+      <div class="aplicar__normal" [style.--c]="categoria(p.categoria).color">
+        <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
+        <div><span class="etq">Importe normal</span><strong [class.verde]="p.tipo === 'Ingreso'">{{ euros(p.importe) }}</strong></div>
+        <small>{{ diaCorto(p.fecha) }}</small>
+      </div>
+      <div class="segmento" role="group" aria-label="Qué importe">
+        <button type="button" [attr.aria-pressed]="!cambiarImporte()" (click)="cambiarImporte.set(false)">Usar el normal</button>
+        <button type="button" [attr.aria-pressed]="cambiarImporte()" (click)="cambiarImporte.set(true)">Otro este mes</button>
+      </div>
+      @if (cambiarImporte()) {
+        <label class="importe" [class.importe--ingreso]="p.tipo === 'Ingreso'"><span class="sr">Importe de este mes</span>
+          <input type="text" inputmode="decimal" autocomplete="off" [value]="importeAplicar()" (input)="importeAplicar.set(valor($event))">
+          <span class="importe__simbolo">€</span></label>
+        <p class="dlg__lead">Solo cambia este {{ p.tipo === 'Ingreso' ? 'ingreso' : 'pago' }}: el importe normal sigue igual para los próximos.</p>
+      }
+      @if (errorDlg()) { <p class="error">{{ errorDlg() }}</p> }
+      <footer class="dlg__pie">
+        <button class="button button--ghost" type="button" (click)="dlgAplicar.close()">Cancelar</button>
+        <button class="button" type="submit" [disabled]="apuntando() === p.recurrenteId">Aplicar</button>
+      </footer>
+    </form>
+  }
+</dialog>
+
+<!-- Presupuestos por categoría -->
+<dialog class="dlg" #dlgPresupuestos (click)="cerrarFuera($event)" aria-labelledby="dlg-presu-t">
+  <form class="dlg__caja" (submit)="guardarPresupuestos($event)" novalidate>
+    <header class="dlg__cabeza"><h2 id="dlg-presu-t">Presupuestos al mes</h2>
+      <button class="dlg__x" type="button" (click)="dlgPresupuestos.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
+    <p class="dlg__lead">Deja en blanco las categorías sin límite. Te aviso (notificación y correo) al llegar al 80 % y al pasarte.</p>
+    <div class="limites">
+      @for (c of categoriasGasto; track c.id) {
+        <label class="limite" [style.--c]="c.color">
+          <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="c.icono" /></svg></span>
+          <span class="limite__nombre">{{ c.nombre }}</span>
+          <span class="limite__campo"><input type="text" inputmode="decimal" placeholder="—" [value]="limites()[c.id] ?? ''" (input)="ponerLimite(c.id, $event)"><em>€</em></span>
+        </label>
+      }
+    </div>
+    @if (errorDlg()) { <p class="error">{{ errorDlg() }}</p> }
+    <footer class="dlg__pie">
+      <button class="button button--ghost" type="button" (click)="dlgPresupuestos.close()">Cancelar</button>
+      <button class="button" type="submit">Guardar</button>
+    </footer>
+  </form>
+</dialog>

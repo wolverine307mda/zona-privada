@@ -13,11 +13,12 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
       { path: 'inicio', title: 'Inicio · MDA', loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio) },
       {
-        path: 'gastos', title: 'Gastos · MDA', loadComponent: () => import('./gastos/gastos').then((m) => m.Gastos),
+        path: 'gastos', title: 'Cartera · MDA', loadComponent: () => import('./gastos/gastos').then((m) => m.Gastos),
         children: [
           { path: '', loadComponent: () => import('./gastos/resumen').then((m) => m.Resumen) },
           { path: 'movimientos', loadComponent: () => import('./gastos/movimientos').then((m) => m.Movimientos) },
           { path: 'fijos', loadComponent: () => import('./gastos/fijos').then((m) => m.Fijos) },
+          { path: 'huchas', loadComponent: () => import('./gastos/huchas').then((m) => m.Huchas) },
           { path: 'gasolina', loadComponent: () => import('./gastos/gasolina').then((m) => m.Gasolina) },
           { path: 'deudas', loadComponent: () => import('./gastos/deudas').then((m) => m.Deudas) },
           { path: 'estadisticas', loadComponent: () => import('./gastos/estadisticas').then((m) => m.Estadisticas) },
@@ -27,6 +28,9 @@ export const routes: Routes = [
       { path: 'agenda', title: 'Agenda · MDA', loadComponent: () => import('./agenda/agenda').then((m) => m.Agenda) },
       { path: 'notas', title: 'Notas · MDA', loadComponent: () => import('./notas/notas').then((m) => m.Notas) },
       { path: 'musica', title: 'Música · MDA', loadComponent: () => import('./musica/musica').then((m) => m.Musica) },
+      { path: 'musica/resumen', title: 'Tu música · MDA', loadComponent: () => import('./musica/resumen-musica').then((m) => m.ResumenMusica) },
+      { path: 'perfil', title: 'Perfil · MDA', loadComponent: () => import('./perfil/perfil').then((m) => m.Perfil) },
+      { path: 'cartera', redirectTo: 'gastos' },
       { path: 'seguridad', title: 'Seguridad · MDA', loadComponent: () => import('./seguridad/seguridad').then((m) => m.Seguridad) },
       { path: 'pronto/:id', title: 'Próximamente · MDA', loadComponent: () => import('./pronto/pronto').then((m) => m.Pronto) },
     ],

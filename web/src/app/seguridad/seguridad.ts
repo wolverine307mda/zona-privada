@@ -1,12 +1,16 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
 import type { Conexion } from '../musica/musica';
 
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
 interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; }
-interface Estado { dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean }; avisarInicios: boolean; fallosMes: number; }
+interface Estado {
+  dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean }; avisarInicios: boolean; fallosMes: number;
+  resumenSemanal: boolean; dispositivosPush: number; copia: { vigilada: boolean; fecha: string | null; tamano: number; nombre: string | null };
+}
 interface DosPasos { sharedKey: string; recoveryCodesLeft: number; recoveryCodes: string[] | null; isTwoFactorEnabled: boolean; }
 
 const ICONOS: Record<string, string> = {
@@ -26,6 +30,7 @@ const ICONOS: Record<string, string> = {
 export class Seguridad {
   private readonly http = inject(HttpClient);
   protected readonly usuario = inject(SesionService).usuario;
+  protected readonly push = inject(Notificaciones);
 
   protected readonly sesiones = signal<Sesion[]>([]);
   protected readonly accesos = signal<Acceso[]>([]);
@@ -55,6 +60,7 @@ export class Seguridad {
   });
 
   constructor() {
+    this.push.comprobar();
     this.cargar();
     // la lista de sesiones se refresca sola para ver quién sigue en línea
     const t = setInterval(() => { if (!document.hidden) this.leerSesiones(); }, 30_000);
@@ -100,11 +106,30 @@ export class Seguridad {
     await firstValueFrom(this.http.put('/api/seguridad/ajustes', { avisarInicios: v }));
   }
 
-  protected async probar(canal: 'correo' | 'whatsapp'): Promise<void> {
+  protected async resumenSemanal(v: boolean): Promise<void> {
+    this.estado.update((e) => (e ? { ...e, resumenSemanal: v } : e));
+    await firstValueFrom(this.http.put('/api/seguridad/ajustes', { avisarInicios: this.estado()?.avisarInicios ?? false, resumenSemanal: v }));
+  }
+
+  protected async alternarPush(): Promise<void> {
+    this.ocupado.set('push-on');
+    try {
+      if (this.push.estado() === 'activas') await this.push.desactivar();
+      else if (await this.push.activar()) this.aviso.set('¡Notificaciones activadas en este dispositivo!');
+      this.estado.update((e) => (e ? { ...e, dispositivosPush: e.dispositivosPush + (this.push.estado() === 'activas' ? 1 : -1) } : e));
+    } catch {
+      this.aviso.set('No se pudieron activar las notificaciones en este navegador.');
+    } finally { this.ocupado.set(null); }
+  }
+
+  protected copiaVieja(f: string | null): boolean { return !f || Date.now() - new Date(f).getTime() > 30 * 3600_000; }
+  protected tamano(b: number): string { return b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`; }
+
+  protected async probar(canal: 'correo' | 'whatsapp' | 'push'): Promise<void> {
     this.ocupado.set(canal);
     try {
       await firstValueFrom(this.http.post(`/api/seguridad/avisos/prueba/${canal}`, null));
-      this.aviso.set(canal === 'correo' ? 'Correo de prueba enviado: mira tu bandeja de entrada.' : 'WhatsApp de prueba enviado.');
+      this.aviso.set(canal === 'correo' ? 'Correo de prueba enviado: mira tu bandeja de entrada.' : canal === 'push' ? 'Notificación enviada a tus dispositivos.' : 'WhatsApp de prueba enviado.');
     } catch (e) {
       this.aviso.set(e instanceof HttpErrorResponse ? e.error?.detail ?? 'No se pudo enviar.' : 'Sin conexión.');
     } finally { this.ocupado.set(null); }

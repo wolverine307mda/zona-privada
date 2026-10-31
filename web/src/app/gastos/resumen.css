@@ -1,5 +1,88 @@
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+/* ---------- El dinero ahora ---------- */
+.cartera {
+  position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px;
+  padding: clamp(20px, 3vw, 32px); border-radius: calc(var(--radio) + 6px); color: #fff;
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--brand) 85%, #000) 0%, color-mix(in srgb, var(--brand) 40%, #0a1016) 45%, #0a1016 100%);
+  box-shadow: 0 30px 70px -40px color-mix(in srgb, var(--brand) 90%, transparent), var(--sombra);
+}
+.cartera::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1.2px, transparent 1.5px) 0 0 / 16px 16px; mask: linear-gradient(110deg, transparent 30%, #000); }
+.cartera--rojo { background: radial-gradient(120% 140% at 0% 0%, #b3261e 0%, #4a1210 50%, #120607 100%); }
+.cartera .etq { color: rgba(255, 255, 255, 0.72); }
+.cartera__principal, .cartera__dia { display: flex; flex-direction: column; gap: 8px; min-width: 0; container-type: inline-size; }
+.cartera__cifra { font: 700 clamp(2rem, 14cqi, 4.4rem)/0.95 var(--font-display); letter-spacing: -0.05em; white-space: nowrap; }
+.cartera__sub { font-size: var(--step-small); color: rgba(255, 255, 255, 0.78); }
+.cartera__sub b { color: #fff; font-weight: 600; }
+.cartera__sub b.rojo { color: #ffb4ab; }
+.cartera__botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip-boton { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.1); color: #fff; font: 500 var(--step-small)/1 var(--font-text); text-decoration: none; cursor: pointer; backdrop-filter: blur(8px); }
+.chip-boton .icon { width: 15px; height: 15px; }
+@media (hover: hover) { .chip-boton:hover { background: rgba(255, 255, 255, 0.18); } }
+.cartera__dia { padding: 18px; border-radius: 18px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(10px); justify-content: center; }
+.cartera__dia--malo { background: rgba(255, 80, 70, 0.18); }
+.cartera__pordia { font: 700 clamp(1.2rem, 12cqi, 2.8rem)/1 var(--font-display); letter-spacing: -0.04em; white-space: nowrap; }
+.cartera__pordia small { font-size: 0.42em; margin-left: 4px; opacity: 0.75; letter-spacing: 0; }
+.cartera__vacia { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.cartera__vacia > div { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+.cartera__vacia strong { font: 700 var(--step-lead)/1.1 var(--font-display); letter-spacing: -0.03em; }
+.cartera__vacia span { color: rgba(255, 255, 255, 0.78); font-size: var(--step-small); }
+.cartera__vacia .button { background: #fff; color: #0a1016; }
+.cartera__icono { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: rgba(255, 255, 255, 0.14); }
+.cartera__icono .icon { width: 26px; height: 26px; }
+
+/* ---------- Consejos y presupuestos ---------- */
+.consejos__lista { display: flex; flex-direction: column; gap: 8px; }
+.consejo { --t: var(--acento); display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--t) 8%, var(--tarjeta-2)); }
+.consejo[data-tono='bueno'] { --t: var(--ok); }
+.consejo[data-tono='malo'] { --t: var(--bad); }
+.consejo[data-tono='aviso'] { --t: #f5b83d; }
+.consejo[data-tono='info'] { --t: #4cc9f0; }
+.consejo__icono { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: color-mix(in srgb, var(--t) 20%, transparent); color: var(--t); }
+.consejo__icono .icon { width: 19px; height: 19px; }
+.consejo div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.consejo strong { font-weight: 600; }
+.consejo span { font-size: var(--step-small); color: var(--soft); line-height: 1.4; }
+.regla { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.regla .etq em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: 0.8; }
+.regla__barra { display: flex; gap: 3px; height: 12px; border-radius: 999px; overflow: hidden; }
+.regla__barra span { flex-basis: 0; transition: flex-grow 900ms var(--ease-expo); }
+.regla__nec { background: #6c8cff; } .regla__cap { background: #ff8a5c; } .regla__aho { background: var(--ok); }
+.regla__leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; }
+.regla__leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.regla__leyenda i { width: 9px; height: 9px; border-radius: 3px; }
+.regla__leyenda em { font-style: normal; color: var(--soft); }
+.presu { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 0; }
+.presu__texto { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.presu__fila { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.presu__fila strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.presu__fila span { font: 600 var(--step-small)/1 var(--font-code); white-space: nowrap; }
+.presu__fila em { font-style: normal; color: var(--soft); font-weight: 400; }
+.presu__barra { height: 8px; border-radius: 999px; background: var(--tarjeta-2); overflow: hidden; }
+.presu__barra span { display: block; height: 100%; border-radius: inherit; background: var(--c); transition: width 900ms var(--ease-expo); }
+.presu--cerca .presu__barra span { background: #f5b83d; }
+.presu--pasado .presu__barra span { background: var(--bad); }
+.presu small { font-size: 12px; color: var(--soft); }
+.presu--pasado small { color: var(--bad); }
+.chip-var { font-style: normal; font-size: 11px; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, #f5b83d 18%, transparent); color: #c88a12; }
+[data-mode='dark'] .chip-var { color: #f5b83d; }
+.mov__importe small { margin-left: 2px; color: var(--soft); font-weight: 400; }
+.chip-ticket { background: color-mix(in srgb, #4cc9f0 18%, transparent) !important; }
+
+/* diálogos del resumen */
+.aplicar__normal { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: var(--tarjeta-2); }
+.aplicar__normal div { display: flex; flex-direction: column; gap: 2px; }
+.aplicar__normal strong { font: 700 var(--step-lead)/1 var(--font-display); letter-spacing: -0.03em; }
+.aplicar__normal small { color: var(--soft); }
+.limites { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.limite { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 12px; }
+.limite:focus-within { background: var(--tarjeta-2); }
+.limite__nombre { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.limite__campo { display: flex; align-items: center; gap: 4px; }
+.limite__campo input { width: 96px; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--texto); font: 600 var(--step-small)/1 var(--font-code); text-align: right; }
+.limite__campo input:focus { outline: none; border-color: var(--brand); }
+.limite__campo em { font-style: normal; color: var(--soft); }
+
 /* ---------- Balance ---------- */
 .balance { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
 .ahorro { position: relative; overflow: hidden; flex-direction: row; align-items: center; gap: 24px; padding: clamp(20px, 3vw, 30px); }
@@ -82,6 +165,7 @@
 @media (hover: hover) { .cal__dia:hover { transform: scale(1.08); z-index: 1; } }
 
 @media (max-width: 1100px) { .balance, .dos { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .cartera { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
   .ahorro { flex-direction: column-reverse; align-items: stretch; }
   .anillo { align-self: center; }

@@ -1,10 +1,11 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
-import { Errores, GastosService, erroresDe } from './gastos.service';
+import { Errores, GastosService, erroresDe, reducirFoto } from './gastos.service';
 import { seguirTeclado } from './teclado';
-import { CATEGORIAS, Tipo, euros, hoyIso, numero } from './modelo';
+import { CATEGORIAS, FRECUENCIAS, Frecuencia, Tipo, euros, hoyIso, numero } from './modelo';
 
 // Diálogo para apuntar o editar un gasto / ingreso. Con «Gasolina» pide litros, €/litro y kilómetros,
 // y el importe se calcula solo (litros × precio) mientras no lo cambies a mano.
+// «Se repite» lo convierte en recurrente (nómina, alquiler, gimnasio…) y se puede adjuntar la foto del ticket.
 @Component({
   selector: 'app-dialogo-movimiento',
   templateUrl: './dialogo-movimiento.html',
@@ -28,6 +29,18 @@ export class DialogoMovimiento {
   protected readonly errores = signal<Errores>({});
   protected readonly guardando = signal(false);
   protected readonly confirmarBorrado = signal(false);
+  protected readonly repite = signal(false);
+  protected readonly frecuencia = signal<Frecuencia>('Mensual');
+  protected readonly variable = signal(false);
+  protected readonly esRecurrente = signal(false);
+  protected readonly frecuencias = FRECUENCIAS;
+  // ticket: el que ya tiene (se ve con la versión para saltar la caché) o la foto nueva elegida
+  protected readonly tieneTicket = signal(false);
+  protected readonly ticketNuevo = signal<Blob | null>(null);
+  protected readonly vistaTicket = signal<string | null>(null);
+  protected readonly quitarTicket = signal(false);
+  protected readonly verTicket = signal(false);
+  private versionTicket = Date.now();
 
   protected readonly categorias = computed(() => CATEGORIAS.filter((c) => c.tipo === this.tipo()));
   protected readonly esGasolina = computed(() => this.categoria() === 'gasolina');
@@ -64,6 +77,17 @@ export class DialogoMovimiento {
     this.precio.set(m?.precioLitro != null ? this.coma(m.precioLitro) : '');
     this.km.set(m?.kilometros != null ? String(m.kilometros) : '');
     this.importeAMano.set(!!m);
+    this.repite.set(false);
+    this.frecuencia.set('Mensual');
+    this.variable.set(false);
+    this.esRecurrente.set(!!m?.recurrenteId);
+    this.tieneTicket.set(!!m?.tieneTicket);
+    this.limpiarVista();
+    this.ticketNuevo.set(null);
+    this.quitarTicket.set(false);
+    this.verTicket.set(false);
+    this.versionTicket = Date.now();
+    if (m?.tieneTicket) this.vistaTicket.set(this.gastos.urlTicket(m.id, this.versionTicket));
     this.errores.set({});
     this.confirmarBorrado.set(false);
     this.dialogo().nativeElement.showModal();
@@ -78,6 +102,31 @@ export class DialogoMovimiento {
   private num(s: string): number | null {
     const n = Number(String(s).replace(',', '.'));
     return s.trim() && Number.isFinite(n) ? n : null;
+  }
+
+  protected async elegirFoto(e: Event): Promise<void> {
+    const input = e.target as HTMLInputElement;
+    const f = input.files?.[0];
+    input.value = '';
+    if (!f) return;
+    const foto = await reducirFoto(f);
+    this.limpiarVista();
+    this.ticketNuevo.set(foto);
+    this.vistaTicket.set(URL.createObjectURL(foto));
+    this.quitarTicket.set(false);
+  }
+
+  protected borrarFoto(): void {
+    this.limpiarVista();
+    this.ticketNuevo.set(null);
+    this.vistaTicket.set(null);
+    this.quitarTicket.set(this.tieneTicket());
+  }
+
+  private limpiarVista(): void {
+    const v = this.vistaTicket();
+    if (v?.startsWith('blob:')) URL.revokeObjectURL(v);
+    this.vistaTicket.set(null);
   }
 
   protected ponerTipo(t: Tipo): void {
@@ -96,13 +145,19 @@ export class DialogoMovimiento {
     this.guardando.set(true);
     const concepto = this.concepto().trim() || CATEGORIAS.find((c) => c.id === this.categoria())?.nombre || '';
     try {
-      await this.gastos.guardarMovimiento({
+      const m = await this.gastos.guardarMovimiento({
         tipo: this.tipo(), fecha: this.fecha(), importe: this.num(this.importe()) ?? 0, categoria: this.categoria(), concepto,
         notas: this.notas().trim() || null,
         litros: this.esGasolina() ? this.num(this.litros()) : null,
         precioLitro: this.esGasolina() ? this.num(this.precio()) : null,
         kilometros: this.esGasolina() && this.num(this.km()) != null ? Math.round(this.num(this.km())!) : null,
+        repite: !this.id() && this.repite() ? this.frecuencia() : null,
+        variable: this.repite() && this.variable(),
       }, this.id() ?? undefined);
+      // el ticket va aparte, cuando el apunte ya tiene id
+      const foto = this.ticketNuevo();
+      if (foto) await this.gastos.subirTicket(m.id, foto);
+      else if (this.quitarTicket()) await this.gastos.borrarTicket(m.id);
       this.cerrar();
       this.gastos.recargar();
     } catch (err) {
@@ -121,6 +176,6 @@ export class DialogoMovimiento {
 
   protected cerrar(): void { this.dialogo().nativeElement.close(); }
   private soltarTeclado?: () => void;
-  protected alCerrar(): void { this.soltarTeclado?.(); this.soltarTeclado = undefined; this.gastos.editandoMovimiento.set(null); }
+  protected alCerrar(): void { this.soltarTeclado?.(); this.soltarTeclado = undefined; this.limpiarVista(); this.gastos.editandoMovimiento.set(null); }
   protected fuera(e: MouseEvent): void { if (e.target === this.dialogo().nativeElement) this.cerrar(); }
 }

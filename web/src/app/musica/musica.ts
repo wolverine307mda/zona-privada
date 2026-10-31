@@ -126,7 +126,7 @@ export class Musica {
 
 // Media de los píxeles con color de la portada (los grises casi no cuentan), aclarada u oscurecida
 // para que sirva de fondo bajo texto blanco. Spotify sirve las portadas con CORS, así que el canvas puede leerlas.
-function tonoDe(url: string): Promise<string | null> {
+export function tonoDe(url: string): Promise<string | null> {
   return new Promise((ok) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';

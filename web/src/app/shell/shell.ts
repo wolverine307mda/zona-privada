@@ -9,12 +9,14 @@ import { INICIO, MODULOS } from '../core/modulos';
 import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
+import { PerfilService } from '../core/perfil.service';
 import { Buscador } from './buscador';
+import { MiniMusica } from './mini-musica';
 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {
@@ -28,6 +30,7 @@ export class Shell {
   protected readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);
   protected readonly instalar = inject(Instalar);
+  protected readonly perfil = inject(PerfilService);
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
@@ -47,11 +50,13 @@ export class Shell {
     // /gastos/fijos -> gastos; /pronto/fotos -> fotos
     const partes = this.url().split(/[?#]/)[0].split('/').filter(Boolean);
     const id = partes[0] === 'pronto' ? partes[1] : partes[0] ?? 'inicio';
+    if (id === 'perfil') return { ...INICIO, id: 'perfil', titulo: 'Perfil', resumen: 'Tus datos, tu foto y tu cuenta.' };
     return [INICIO, ...MODULOS].find((m) => m.id === id) ?? INICIO;
   });
 
   constructor() {
     this.sistema.empezar();
+    this.perfil.cargar();
     const reloj = setInterval(() => this.ahora.set(new Date()), 15_000);
     const sinInclinar = activarInclinacion();
     // latido: la pestaña abierta avisa cada minuto de que sigue ahí (Seguridad lo enseña como «en línea»)

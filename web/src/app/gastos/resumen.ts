@@ -3,27 +3,41 @@ import { RouterLink } from '@angular/router';
 import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
-import { Movimiento, Pendiente, ResumenMes, categoria, diaCorto, euros, eurosCorto } from './modelo';
+import { CATEGORIAS, Consejos, Movimiento, Pendiente, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
 
-// Resumen del mes: balance y ahorro, fijos pendientes de apuntar, en qué se va el dinero,
+// Resumen del mes: el dinero que tienes (saldo que se arrastra de mes en mes), lo que puedes gastar al día,
+// consejos para ahorrar, presupuestos, lo que se repite y falta por aplicar, en qué se va el dinero,
 // el calendario de gasto por día y los últimos movimientos.
 @Component({
   selector: 'app-resumen',
   imports: [RouterLink],
   templateUrl: './resumen.html',
-  styleUrls: ['./comun.css', './resumen.css'],
+  styleUrls: ['./comun.css', './dialogos.css', './resumen.css'],
 })
 export class Resumen implements OnDestroy {
   protected readonly g = inject(GastosService);
   private readonly tema = inject(TemaService);
   private readonly roscoEl = viewChild<ElementRef<HTMLDivElement>>('rosco');
+  private readonly dlgSaldo = viewChild<ElementRef<HTMLDialogElement>>('dlgSaldo');
+  private readonly dlgAplicar = viewChild<ElementRef<HTMLDialogElement>>('dlgAplicar');
+  private readonly dlgPresupuestos = viewChild<ElementRef<HTMLDialogElement>>('dlgPresupuestos');
   private rosco?: echarts.ECharts;
   private observador?: ResizeObserver;
 
   protected readonly datos = signal<ResumenMes | null>(null);
   protected readonly error = signal(false);
-  protected readonly importes = signal<Record<number, string>>({});
   protected readonly apuntando = signal<number | null>(null);
+  protected readonly saldo = signal<Saldo | null>(null);
+  protected readonly consejos = signal<Consejos | null>(null);
+  protected readonly presupuestos = signal<Presupuesto[]>([]);
+  // diálogos
+  protected readonly saldoTexto = signal('');
+  protected readonly aplicando = signal<Pendiente | null>(null);
+  protected readonly importeAplicar = signal('');
+  protected readonly cambiarImporte = signal(false);
+  protected readonly limites = signal<Record<string, string>>({});
+  protected readonly errorDlg = signal('');
+  protected readonly categoriasGasto = CATEGORIAS.filter((c) => c.tipo === 'Gasto');
 
   protected readonly euros = euros;
   protected readonly eurosCorto = eurosCorto;
@@ -64,6 +78,14 @@ export class Resumen implements OnDestroy {
     };
   });
   protected readonly ultimos = computed(() => (this.datos()?.movimientos ?? []).slice(0, 7));
+  protected readonly esActual = computed(() => { this.g.version(); return this.g.esMesActual(); });
+  // regla 50/30/20: % de lo ingresado en necesidades, caprichos y ahorro
+  protected readonly regla = computed(() => {
+    const r = this.consejos()?.regla;
+    if (!r || r.ingresos <= 0) return null;
+    const pct = (v: number) => Math.max(0, Math.round((v / r.ingresos) * 100));
+    return { necesidades: pct(r.necesidades), caprichos: pct(r.caprichos), ahorro: pct(r.ahorro), negativo: r.ahorro < 0 };
+  });
 
   constructor() {
     effect(() => {
@@ -82,10 +104,13 @@ export class Resumen implements OnDestroy {
 
   private async cargar(anio: number, mes: number): Promise<void> {
     try {
-      const d = await this.g.resumen(anio, mes);
+      const [d, s, p] = await Promise.all([this.g.resumen(anio, mes), this.g.saldo(anio, mes), this.g.presupuestos(anio, mes)]);
       this.error.set(false);
       this.datos.set(d);
-      this.importes.set(Object.fromEntries(d.pendientes.map((p) => [p.recurrenteId, String(p.importe).replace('.', ',')])));
+      this.saldo.set(s);
+      this.presupuestos.set(p);
+      if (this.g.esMesActual()) this.g.consejos().then((c) => this.consejos.set(c)).catch(() => {});
+      else this.consejos.set(null);
     } catch {
       this.error.set(true);
     }
@@ -103,20 +128,100 @@ export class Resumen implements OnDestroy {
     this.rosco.setOption(opcionesRosco(d.porCategoria, d.gastos), true);
   }
 
-  protected importeDe(p: Pendiente): string { return this.importes()[p.recurrenteId] ?? String(p.importe).replace('.', ','); }
-  protected ponerImporte(p: Pendiente, e: Event): void {
-    this.importes.update((v) => ({ ...v, [p.recurrenteId]: (e.target as HTMLInputElement).value }));
+  private num(s: string): number | null {
+    const n = Number(String(s).replace(/\s/g, '').replace(',', '.'));
+    return s.trim() && Number.isFinite(n) ? n : null;
+  }
+  protected valor(e: Event): string { return (e.target as HTMLInputElement).value; }
+
+  // «Aplicar»: lo que se repite pasa a ser un apunte del mes. Si su importe puede variar, primero se pregunta.
+  protected async aplicar(p: Pendiente): Promise<void> {
+    if (p.variable) {
+      this.aplicando.set(p);
+      this.importeAplicar.set(String(p.importe).replace('.', ','));
+      this.cambiarImporte.set(false);
+      this.errorDlg.set('');
+      this.dlgAplicar()?.nativeElement.showModal();
+      return;
+    }
+    await this.registrar(p);
   }
 
-  protected async apuntar(p: Pendiente): Promise<void> {
+  protected async confirmarAplicar(e: Event): Promise<void> {
+    e.preventDefault();
+    const p = this.aplicando();
+    if (!p) return;
+    const importe = this.cambiarImporte() ? this.num(this.importeAplicar()) : p.importe;
+    if (!importe || importe <= 0) { this.errorDlg.set('Pon un importe mayor que 0.'); return; }
+    if (await this.registrar(p, importe)) this.dlgAplicar()?.nativeElement.close();
+  }
+
+  private async registrar(p: Pendiente, importe?: number): Promise<boolean> {
     this.apuntando.set(p.recurrenteId);
     try {
-      const importe = Number(this.importeDe(p).replace(',', '.'));
-      await this.g.registrarFijo(p.recurrenteId, p.fecha, importe > 0 ? importe : undefined);
+      await this.g.registrarFijo(p.recurrenteId, p.fecha, importe);
       this.g.recargar();
+      return true;
+    } catch {
+      this.errorDlg.set('No se pudo aplicar.');
+      return false;
     } finally {
       this.apuntando.set(null);
     }
+  }
+
+  // «¿Cuánto tienes ahora?»: el saldo de hoy; a partir de ahí lo mueven los apuntes
+  protected abrirSaldo(): void {
+    const s = this.saldo();
+    this.saldoTexto.set(s?.configurado ? String(s.actual).replace('.', ',') : '');
+    this.errorDlg.set('');
+    this.dlgSaldo()?.nativeElement.showModal();
+  }
+
+  protected async guardarSaldo(e: Event): Promise<void> {
+    e.preventDefault();
+    const v = this.num(this.saldoTexto().replace(/€/g, ''));
+    if (v == null) { this.errorDlg.set('Escribe una cantidad (puede ser negativa).'); return; }
+    try {
+      await this.g.ponerSaldo(v);
+      this.dlgSaldo()?.nativeElement.close();
+      this.g.recargar();
+    } catch { this.errorDlg.set('No se pudo guardar.'); }
+  }
+
+  protected abrirPresupuestos(): void {
+    this.limites.set(Object.fromEntries(this.presupuestos().map((p) => [p.categoria, String(p.limite).replace('.', ',')])));
+    this.errorDlg.set('');
+    this.dlgPresupuestos()?.nativeElement.showModal();
+  }
+
+  protected ponerLimite(cat: string, e: Event): void { this.limites.update((l) => ({ ...l, [cat]: this.valor(e) })); }
+
+  protected async guardarPresupuestos(e: Event): Promise<void> {
+    e.preventDefault();
+    const antes = new Map(this.presupuestos().map((p) => [p.categoria, p.limite]));
+    try {
+      for (const c of this.categoriasGasto) {
+        const v = this.num(this.limites()[c.id] ?? '');
+        if (v && v > 0 && v !== antes.get(c.id)) await this.g.ponerPresupuesto(c.id, v);
+        else if (!v && antes.has(c.id)) await this.g.quitarPresupuesto(c.id);
+      }
+      this.dlgPresupuestos()?.nativeElement.close();
+      this.g.recargar();
+    } catch { this.errorDlg.set('Algún límite no es válido.'); }
+  }
+
+  protected cerrarFuera(e: MouseEvent): void { const d = e.target as HTMLElement; if (d.tagName === 'DIALOG') (d as HTMLDialogElement).close(); }
+  protected iconoConsejo(i: string): string {
+    return ({
+      ritmo: 'M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+      alerta: 'M12 3l10 18H2zM12 10v4M12 17h.01',
+      sube: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+      suscripciones: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM10 8l6 4-6 4z',
+      hucha: 'M19 10c0-3.3-3.1-6-7-6S5 6.7 5 10c0 2 1 3.7 2.6 4.8L7 19h3l.5-2h3l.5 2h3l-.6-4.2C18 13.7 19 12 19 10zM15 9h.01M2 10h3',
+      trofeo: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3a3 3 0 0 1-3 4M7 5H4a3 3 0 0 0 3 4',
+      colchon: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+    } as Record<string, string>)[i] ?? 'M12 3v18M3 12h18';
   }
 
   protected editar(m: Movimiento): void { this.g.editandoMovimiento.set({ movimiento: m }); }

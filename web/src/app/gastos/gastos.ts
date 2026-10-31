@@ -5,7 +5,7 @@ import { DialogoMovimiento } from './dialogo-movimiento';
 import { GastosService } from './gastos.service';
 import { mesLargo } from './modelo';
 
-// Página de gastos: el mes que se mira, los botones de apuntar y las pestañas
+// Cartera: el mes que se mira, los botones de apuntar y las pestañas
 // (resumen, movimientos, fijos, gasolina, estadísticas). Los diálogos viven aquí para toda la sección.
 @Component({
   selector: 'app-gastos',
@@ -32,10 +32,11 @@ import { mesLargo } from './modelo';
       </div>
     </header>
 
-    <nav class="pestanas" aria-label="Secciones de gastos">
+    <nav class="pestanas" aria-label="Secciones de la cartera">
       <a routerLink="/gastos" routerLinkActive="is-activa" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">Resumen</a>
       <a routerLink="/gastos/movimientos" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Movimientos</a>
-      <a routerLink="/gastos/fijos" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Fijos y suscripciones</a>
+      <a routerLink="/gastos/fijos" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Recurrentes</a>
+      <a routerLink="/gastos/huchas" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Huchas</a>
       <a routerLink="/gastos/gasolina" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Gasolina</a>
       <a routerLink="/gastos/deudas" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Coche y deudas</a>
       <a routerLink="/gastos/estadisticas" routerLinkActive="is-activa" ariaCurrentWhenActive="page">Estadísticas</a>

@@ -53,6 +53,7 @@
 
 /* avisos */
 .canales li, .app { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--tarjeta-2); }
+.canales li { grid-template-columns: 46px minmax(0, 1fr) auto auto; }
 .canal__icono { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px; background: var(--tarjeta); font-size: 22px; }
 .canal__texto, .app__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .canal__texto strong, .app__texto strong { font-weight: 500; }
@@ -96,6 +97,11 @@
   .sesion__icono, .canal__icono, .app__logo { width: 40px; height: 40px; }
   .sesion__cerrar { grid-column: 2; justify-self: start; }
   .canales li, .app { grid-template-columns: 40px minmax(0, 1fr); }
+  .canales li { grid-template-columns: 40px minmax(0, 1fr); }
   .canales .button, .app > .button { grid-column: 2; justify-self: start; }
   .codigos { grid-template-columns: minmax(0, 1fr); }
 }
+
+.copia { font-size: var(--step-small); color: var(--soft); padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ok) 8%, var(--tarjeta-2)); }
+.copia--mal { color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--tarjeta-2)); }
+.interruptor em { color: var(--soft); font-style: normal; }

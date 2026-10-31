@@ -1,9 +1,9 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Deudas, Estadisticas, Gasolina, Movimiento, Recurrente, ResumenMes, Tipo } from './modelo';
+import { Consejos, Deudas, Estadisticas, Frecuencia, Gasolina, Hucha, Mantenimiento, Movimiento, Presupuesto, Recurrente, ResumenMes, Saldo, Tipo } from './modelo';
 
-export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId'> & { recurrenteId?: number | null };
+export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId' | 'tieneTicket'> & { recurrenteId?: number | null; repite?: Frecuencia | null; variable?: boolean };
 export type RecurrenteEntrada = Omit<Recurrente, 'id' | 'mensual'>;
 
 // Errores de validación de la API (ValidationProblem): campo -> mensajes
@@ -24,6 +24,7 @@ export class GastosService {
   // diálogos (los pinta la página de gastos)
   readonly editandoMovimiento = signal<{ movimiento?: Movimiento; tipo?: Tipo; categoria?: string } | null>(null);
   readonly editandoFijo = signal<{ fijo?: Recurrente; tipo?: Tipo; categoria?: string } | null>(null);
+  readonly editandoSaldo = signal(false);
 
   recargar(): void { this.version.update((v) => v + 1); }
 
@@ -70,5 +71,53 @@ export class GastosService {
   borrarFijo(id: number) { return firstValueFrom(this.http.delete(`${this.base}/recurrentes/${id}`)); }
   registrarFijo(id: number, fecha: string, importe?: number) {
     return firstValueFrom(this.http.post<Movimiento>(`${this.base}/recurrentes/${id}/registrar`, { fecha, importe: importe ?? null }));
+  }
+
+  // ---- Saldo, huchas, presupuestos y consejos ----
+  saldo(anio?: number, mes?: number) {
+    return firstValueFrom(this.http.get<Saldo>(`${this.base}/saldo`, { params: anio && mes ? { anio, mes } : {} }));
+  }
+  ponerSaldo(actual: number) { return firstValueFrom(this.http.put(`${this.base}/saldo`, { actual })); }
+  huchas() { return firstValueFrom(this.http.get<Hucha[]>(`${this.base}/huchas`)); }
+  guardarHucha(h: { nombre: string; objetivo: number; color: string; emoji: string; fecha: string | null }, id?: number) {
+    return firstValueFrom(id ? this.http.put(`${this.base}/huchas/${id}`, h) : this.http.post(`${this.base}/huchas`, h));
+  }
+  aportar(id: number, importe: number) { return firstValueFrom(this.http.post(`${this.base}/huchas/${id}/aportar`, { importe })); }
+  borrarHucha(id: number) { return firstValueFrom(this.http.delete(`${this.base}/huchas/${id}`)); }
+  presupuestos(anio: number, mes: number) { return firstValueFrom(this.http.get<Presupuesto[]>(`${this.base}/presupuestos`, { params: { anio, mes } })); }
+  ponerPresupuesto(categoria: string, limite: number) { return firstValueFrom(this.http.put(`${this.base}/presupuestos/${categoria}`, { limite })); }
+  quitarPresupuesto(categoria: string) { return firstValueFrom(this.http.delete(`${this.base}/presupuestos/${categoria}`)); }
+  consejos() { return firstValueFrom(this.http.get<Consejos>(`${this.base}/consejos`)); }
+
+  // ---- Tickets ----
+  subirTicket(id: number, foto: Blob) {
+    return firstValueFrom(this.http.put(`${this.base}/movimientos/${id}/ticket`, foto, { headers: { 'Content-Type': foto.type || 'image/jpeg' } }));
+  }
+  borrarTicket(id: number) { return firstValueFrom(this.http.delete(`${this.base}/movimientos/${id}/ticket`)); }
+  urlTicket(id: number, v = 0) { return `${this.base}/movimientos/${id}/ticket?v=${v}`; }
+
+  // ---- Mantenimiento del coche ----
+  mantenimiento() { return firstValueFrom(this.http.get<{ kmActual: number | null; lista: Mantenimiento[] }>(`${this.base}/mantenimiento`)); }
+  guardarMantenimiento(m: { nombre: string; cadaKm: number | null; cadaMeses: number | null; ultimaFecha: string | null; ultimoKm: number | null; notas: string | null }, id?: number) {
+    return firstValueFrom(id ? this.http.put(`${this.base}/mantenimiento/${id}`, m) : this.http.post(`${this.base}/mantenimiento`, m));
+  }
+  mantenimientoHecho(id: number, fecha?: string, km?: number | null) {
+    return firstValueFrom(this.http.post(`${this.base}/mantenimiento/${id}/hecho`, { fecha: fecha ?? null, km: km ?? null }));
+  }
+  borrarMantenimiento(id: number) { return firstValueFrom(this.http.delete(`${this.base}/mantenimiento/${id}`)); }
+}
+
+// Reduce una foto (del móvil pueden ser 12 MP) a JPEG de 1600 px como mucho: el ticket se lee igual y pesa ~300 KB
+export async function reducirFoto(f: File, max = 1600, calidad = 0.82): Promise<Blob> {
+  try {
+    const img = await createImageBitmap(f);
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k);
+    c.height = Math.round(img.height * k);
+    c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise((ok) => c.toBlob((b) => ok(b ?? f), 'image/jpeg', calidad));
+  } catch {
+    return f; // formato que el navegador no sabe abrir (HEIC en algunos): se manda tal cual
   }
 }

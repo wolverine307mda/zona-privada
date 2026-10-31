@@ -57,8 +57,9 @@
 /* usuario */
 .perfil { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: var(--vidrio); border: 1px solid var(--vidrio-borde); }
 .perfil__foto { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--brand); box-shadow: 0 0 0 2px var(--lateral), 0 0 0 4px var(--brand); }
+.perfil__enlace { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; color: var(--texto); text-decoration: none; border-radius: 10px; }
 .perfil__datos { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.perfil__datos strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.perfil__datos strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perfil__datos span { font-size: 12px; color: var(--soft); }
 .perfil__salir {
   margin-left: auto; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;

@@ -71,6 +71,52 @@
       <span class="campo__etiqueta">Notas <em>(opcional)</em></span>
       <input class="campo__input" type="text" maxlength="500" [value]="notas()" (input)="notas.set(valor($event))">
     </label>
+
+    <!-- se repite: el apunte pasa a ser el primero de un recurrente -->
+    @if (!id()) {
+      <div class="repite" [class.repite--on]="repite()">
+        <label class="interruptor">
+          <input type="checkbox" [checked]="repite()" (change)="repite.set($any($event.target).checked)">
+          <span class="interruptor__pista" aria-hidden="true"></span>
+          <span>Se repite <em>({{ tipo() === 'Gasto' ? 'alquiler, gimnasio, una suscripción…' : 'nómina, una paga, un alquiler que cobras…' }})</em></span>
+        </label>
+        @if (repite()) {
+          <div class="segmento" role="group" aria-label="Cada cuánto">
+            @for (f of frecuencias; track f.id) {
+              <button type="button" [attr.aria-pressed]="frecuencia() === f.id" (click)="frecuencia.set(f.id)">{{ f.nombre }}</button>
+            }
+          </div>
+          <label class="interruptor">
+            <input type="checkbox" [checked]="variable()" (change)="variable.set($any($event.target).checked)">
+            <span class="interruptor__pista" aria-hidden="true"></span>
+            <span>El importe puede variar <em>(al aplicarlo cada vez podrás cambiarlo)</em></span>
+          </label>
+          <p class="dlg__lead">Saldrá en «Por aplicar» el día {{ +fecha().slice(8, 10) }} de cada {{ frecuencia() === 'Mensual' ? 'mes' : frecuencia() === 'Trimestral' ? 'trimestre' : 'año' }}.</p>
+        }
+      </div>
+    } @else if (esRecurrente()) {
+      <p class="dlg__lead">Este apunte viene de un recurrente: se cambia la repetición en <strong>Recurrentes</strong>.</p>
+    }
+
+    <!-- foto del ticket -->
+    <div class="ticket">
+      @if (vistaTicket(); as v) {
+        <button class="ticket__vista" type="button" (click)="verTicket.set(true)" aria-label="Ver el ticket en grande"><img [src]="v" alt="Ticket"></button>
+        <div class="ticket__acciones">
+          <label class="mini-boton">Cambiar<input type="file" accept="image/*" (change)="elegirFoto($event)" hidden></label>
+          <button class="mini-boton mini-boton--peligro" type="button" (click)="borrarFoto()">Quitar</button>
+        </div>
+      } @else {
+        <label class="ticket__subir">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /></svg>
+          <span><strong>Foto del ticket</strong><em>Hazla con la cámara o elígela de la galería</em></span>
+          <input type="file" accept="image/*" capture="environment" (change)="elegirFoto($event)" hidden>
+        </label>
+      }
+    </div>
+    @if (verTicket() && vistaTicket()) {
+      <button class="ticket__grande" type="button" (click)="verTicket.set(false)" aria-label="Cerrar el ticket"><img [src]="vistaTicket()" alt="Ticket"></button>
+    }
     @if (errores()['general']) { <p class="error">{{ errores()['general'][0] }}</p> }
     @if (errores()['litros'] || errores()['precioLitro'] || errores()['kilometros']) {
       <p class="error">{{ (errores()['litros'] ?? errores()['precioLitro'] ?? errores()['kilometros'])[0] }}</p>

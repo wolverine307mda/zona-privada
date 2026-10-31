@@ -14,6 +14,7 @@ export interface Movimiento {
   litros: number | null;
   precioLitro: number | null;
   kilometros: number | null;
+  tieneTicket?: boolean;
 }
 
 export interface Recurrente {
@@ -57,6 +58,19 @@ export interface Deudas { deudas: Deuda[]; grupos: GrupoCoste[]; }
 export interface Gasolina {
   repostajes: Repostaje[]; gastado: number; litros: number; precioMedio: number | null; ultimoPrecio: number | null;
   consumoMedio: number | null; kmRecorridos: number | null; costePorKm: number | null; gastoEsteAnio: number;
+}
+
+export interface Saldo { configurado: boolean; actual: number; inicioMes: number; finMes: number; previsto: number; enHuchas: number; libre: number; }
+export interface Hucha { id: number; nombre: string; objetivo: number; ahorrado: number; color: string; emoji: string; fecha: string | null; porcentaje: number; alMes: number | null; }
+export interface Presupuesto { categoria: string; limite: number; gastado: number; porcentaje: number; }
+export interface Consejo { icono: string; titulo: string; texto: string; tono: 'bueno' | 'malo' | 'aviso' | 'info'; }
+export interface Consejos {
+  porDia: number; diasRestantes: number; disponible: number; proyeccion: number;
+  regla: { ingresos: number; necesidades: number; caprichos: number; ahorro: number }; lista: Consejo[];
+}
+export interface Mantenimiento {
+  id: number; nombre: string; cadaKm: number | null; cadaMeses: number | null; ultimaFecha: string | null; ultimoKm: number | null; notas: string | null;
+  proximoKm: number | null; faltanKm: number | null; proximaFecha: string | null; faltanDias: number | null; nivel: 'ok' | 'pronto' | 'vencido' | 'sin-datos'; progreso: number;
 }
 
 // ---- Categorías (los id son los de la API) ----

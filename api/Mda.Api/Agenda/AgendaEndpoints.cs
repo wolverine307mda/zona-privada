@@ -7,12 +7,12 @@ namespace Mda.Api.Agenda;
 
 public record EventoEntrada(
     TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin, bool TodoElDia, string? Color,
-    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false);
+    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false, bool PorPush = false);
 
 // Cada aparición de un evento en el calendario: el evento (o el de Google) con el inicio de esa repetición
 public record Aparicion(
     string Clave, int? Id, string Origen, TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin,
-    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url);
+    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url, bool PorPush = false);
 
 // Agenda: eventos y recordatorios propios más los de Google Calendar, si está enlazado
 public static class AgendaEndpoints
@@ -44,7 +44,7 @@ public static class AgendaEndpoints
         {
             var ahora = reloj.GetUtcNow();
             var hoy = TimeZoneInfo.ConvertTime(ahora, zona.Info).Date;
-            var desde = new DateTimeOffset(hoy, zona.Info.GetUtcOffset(hoy));
+            var desde = new DateTimeOffset(hoy, zona.Info.GetUtcOffset(hoy)).ToUniversalTime();
             var lista = await Apariciones(db, desde, ahora.AddDays(Math.Clamp(dias ?? 14, 1, 90)), zona, ct);
             // los recordatorios sin hacer de días pasados siguen pendientes
             var atrasados = await db.Eventos.AsNoTracking()
@@ -109,6 +109,9 @@ public static class AgendaEndpoints
 
     private static async Task<List<Aparicion>> Apariciones(AppDbContext db, DateTimeOffset desde, DateTimeOffset hasta, Zona zona, CancellationToken ct)
     {
+        // PostgreSQL solo admite fechas en UTC como parámetro (el front manda la hora de Madrid)
+        desde = desde.ToUniversalTime();
+        hasta = hasta.ToUniversalTime();
         // los que no se repiten, filtrados en la base; los que se repiten, todos (son pocos) y se calculan aquí
         var eventos = await db.Eventos.AsNoTracking()
             .Where(e => e.Repetir != Repeticion.No || (e.Inicio < hasta && (e.Fin ?? e.Inicio) >= desde)).ToListAsync(ct);
@@ -117,7 +120,7 @@ public static class AgendaEndpoints
 
     private static Aparicion Aparicion(Evento e, DateTimeOffset inicio) => new(
         $"{e.Id}:{inicio.ToUnixTimeSeconds()}", e.Id, "propio", e.Tipo, e.Titulo, e.Notas, e.Lugar, inicio, e.Fin is { } f ? inicio + (f - e.Inicio) : null,
-        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null);
+        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null, e.PorPush);
 
     // Copia en Google si toca; devuelve un aviso para el front si no se pudo
     private static async Task<string?> Sincronizar(Evento ev, GoogleCalendar google, ServicioConexiones con, CancellationToken ct)
@@ -166,6 +169,7 @@ public static class AgendaEndpoints
         ev.AvisoMinutos = e.AvisoMinutos;
         ev.PorCorreo = e.PorCorreo;
         ev.PorWhatsApp = e.PorWhatsApp;
+        ev.PorPush = e.PorPush;
         ev.EnGoogle = e.EnGoogle;
         ev.Hecho = e.Hecho;
         Reprogramar(ev, ahora, zona);
