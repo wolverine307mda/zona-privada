@@ -24,6 +24,7 @@ public class Evento
     public bool PorCorreo { get; set; }
     public bool PorWhatsApp { get; set; }
     public bool PorPush { get; set; }
+    public bool PorTelegram { get; set; }
     public DateTimeOffset? ProximoAviso { get; set; }
     public DateTimeOffset? AvisoDe { get; set; } // la repetición a la que corresponde ese aviso
     public DateTimeOffset? UltimoAviso { get; set; }
@@ -101,7 +102,7 @@ public static class Ocurrencias
     // Null si no avisa, ya está hecho o no quedan repeticiones.
     public static (DateTimeOffset Aviso, DateTimeOffset De)? ProximoAviso(Evento e, DateTimeOffset desde, DateTimeOffset ahora, TimeZoneInfo zona)
     {
-        if (e.AvisoMinutos is not { } min || e.Hecho || (!e.PorCorreo && !e.PorWhatsApp && !e.PorPush)) return null;
+        if (e.AvisoMinutos is not { } min || e.Hecho || (!e.PorCorreo && !e.PorWhatsApp && !e.PorPush && !e.PorTelegram)) return null;
         var antes = TimeSpan.FromMinutes(min);
         // con aviso «después» (negativo), la repetición que ya empezó hoy aún cuenta
         if (Siguiente(e, antes < TimeSpan.Zero ? desde + antes : desde, zona) is not { } o) return null;

@@ -8,7 +8,7 @@ namespace Mda.Api.Asistente;
 
 public record HuchaConocida(int Id, string Nombre, string Emoji);
 public record AporteHucha(int Id, string Nombre, string Emoji, decimal Importe);
-public enum QuePregunta { Saldo, Gastado, Ingresado }
+public enum QuePregunta { Saldo, Gastado, Ingresado, Tiempo }
 public record Pregunta(QuePregunta Que, string? Categoria, string? Concepto, DateOnly Desde, DateOnly Hasta, string Periodo);
 
 // Lo que el asistente ha entendido de una frase. Clase: movimiento, agenda, hucha, pregunta o nada.
@@ -62,6 +62,7 @@ public static partial class Interprete
             .Select(x => (new Regex($@"(?<![\w&]){Regex.Escape(x.Item1)}(?![\w&])", O), x.Item2)).ToArray();
 
     // ---- frases que dicen qué es ----
+    [GeneratedRegex(@"\b(?:que\s+tiempo|el\s+tiempo|tiempo\s+(?:hace|hara|va\s+a\s+hacer)|llov\w*|llueve|lluvia|temperatura|grados|hace\s+(?:frio|calor|sol|viento)|hara\s+(?:frio|calor|sol|viento|bueno|malo)|paraguas|nieva|nevara|tormenta)\b", O)] private static partial Regex ReTiempo();
     [GeneratedRegex(@"^\W*(?:cuant[oa]s?|que\s+saldo|cual\s+es\s+mi\s+saldo|mi\s+saldo|saldo\b|como\s+voy|que\s+me\s+queda|en\s+que\s+(?:he\s+)?gast)", O)] private static partial Regex RePregunta();
     [GeneratedRegex(@"\b(?:saldo|cuanto\s+(?:dinero\s+)?tengo|cuanto\s+me\s+queda|que\s+me\s+queda|dinero\s+(?:tengo|ahora)|como\s+voy)\b", O)] private static partial Regex RePreguntaSaldo();
     [GeneratedRegex(@"\b(?:ingresado|cobrado|ganado|ingresos|cobre)\b", O)] private static partial Regex RePreguntaIngresos();
@@ -77,7 +78,7 @@ public static partial class Interprete
     [GeneratedRegex(@"(?:por\s+)?(?<![\d.,])(?<e>\d+)\s*(?:€|euros?)\s+con\s+(?<c>\d{1,2})\b(?:\s*(?:centimos?|cts?))?", O)] private static partial Regex ReEurosCon();
     [GeneratedRegex(@"(?:por\s+)?(?:€\s*" + N + @"|" + N + @"\s*(?:€|euros?\b|eur\b|pavos?\b|pelas\b))", O)] private static partial Regex ReImporte();
     [GeneratedRegex(@"(?:\bpor\s+)?(?<![\d.,/:])(?<!\b(?:las?|el|dia)\s+)(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?![\d.,:/])(?!\s*(?:de\s+(?:" + Meses + @")|h\b|horas?\b|min\b|minutos?\b|dias?\b|semanas?\b|meses\b|mes\b|anos?\b|km\b|kms\b|l\b|litros?\b|y\s+media|y\s+cuarto))", O)] private static partial Regex ReNumeroSuelto();
-    [GeneratedRegex(@"(?<![\d.,])(?<n>\d+[.,]\d{2,3})\s*(?:€|euros?)?\s*(?:/|el|por|cada|a)\s*(?:l|litro)\b", O)] private static partial Regex RePrecioLitro();
+    [GeneratedRegex(@"(?<![\d.,])(?<n>\d+[.,]\d{2,3})\s*(?:€|euros?)?\s*(?:/\s*|(?:el|por|cada|a)\s+)(?:l|litro)\b", O)] private static partial Regex RePrecioLitro();
     [GeneratedRegex(@"(?<![\d.,])(?<n>\d+(?:[.,]\d+)?)\s*(?:l|lt|lts|litros?)\b", O)] private static partial Regex ReLitros();
     [GeneratedRegex(@"(?:\b(?:a\s+los|con|en)\s+)?(?<![\d.,])(?<n>\d{1,3}(?:\.\d{3})+|\d+)\s*(?:km|kms|kilometros?)\b", O)] private static partial Regex ReKm();
 
@@ -139,9 +140,17 @@ public static partial class Interprete
         var f = new Frase(texto);
         var hoy = DateOnly.FromDateTime(ctx.Ahora);
 
+        var recordatorio = ReRecordatorio().IsMatch(f.Plano);
+        // «¿qué tiempo hace?», «¿va a llover mañana?», «¿hará frío el sábado?» (pero «recuérdame coger el paraguas» es un recordatorio)
+        if (!recordatorio && ReTiempo().IsMatch(f.Plano) && !ReImporte().IsMatch(f.Plano))
+        {
+            Hora(f, ctx); // que «esta mañana» no se lea como mañana
+            var dia = Fecha(f, hoy, futuro: true) ?? hoy;
+            return new("pregunta", "El tiempo", Pregunta: new(QuePregunta.Tiempo, null, null, dia, dia, dia == hoy ? "hoy" : dia == hoy.AddDays(1) ? "mañana" : dia.ToString("dddd d", Es)));
+        }
+
         if (RePregunta().IsMatch(f.Plano) || f.Plano.EndsWith('?') && f.Plano.Contains("cuant")) return Preguntar(f, ctx, hoy);
 
-        var recordatorio = ReRecordatorio().IsMatch(f.Plano);
         var suelto = ReNumeroSuelto().Match(f.Plano);
         var deAgenda = ReEvento().IsMatch(f.Plano) || ReALas().IsMatch(f.Plano) || ReReloj().IsMatch(f.Plano);
         var dinero = !recordatorio && (ReImporte().IsMatch(f.Plano) || ReEurosCon().IsMatch(f.Plano)

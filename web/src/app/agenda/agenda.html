@@ -65,7 +65,7 @@
             <span>
               @if (a.lugar) { 📍 {{ a.lugar }} }
               @if (a.repetir !== 'No') { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Se repite"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg> }
-              @if (a.avisoMinutos != null && (a.porCorreo || a.porWhatsApp || a.porPush)) { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Con aviso"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg> }
+              @if (a.avisoMinutos != null && (a.porCorreo || a.porWhatsApp || a.porPush || a.porTelegram)) { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Con aviso"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg> }
               @if (a.origen === 'google') { <em class="g">Google</em> }
             </span>
           </span>
@@ -154,6 +154,10 @@
           <label class="canal" [class.off]="!estado()?.canales?.whatsApp">
             <input type="checkbox" [checked]="porWhatsApp()" [disabled]="!estado()?.canales?.whatsApp" (change)="porWhatsApp.set(marcado($event))">
             <span>💬 WhatsApp</span>
+          </label>
+          <label class="canal" [class.off]="!estado()?.canales?.telegram">
+            <input type="checkbox" [checked]="porTelegram()" [disabled]="!estado()?.canales?.telegram" (change)="porTelegram.set(marcado($event))">
+            <span>✈️ Telegram</span>
           </label>
         </div>
         <p class="dlg__lead">La notificación llega a los móviles y navegadores donde la hayas activado (Seguridad › Avisos).</p>

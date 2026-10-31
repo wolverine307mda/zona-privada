@@ -3,7 +3,7 @@ using System.Net.Mail;
 
 namespace Mda.Api.Avisos;
 
-public record Canales(bool Correo, bool WhatsApp, bool Push = true);
+public record Canales(bool Correo, bool WhatsApp, bool Push = true, bool Telegram = false);
 
 // Manda avisos al dueño: por correo (SMTP, por ejemplo Gmail con una contraseña de aplicación)
 // y por WhatsApp con CallMeBot (gratis para uso personal: una API key ligada a tu número).
@@ -15,19 +15,24 @@ public interface IAvisos
     // con la pantalla de la app que abre el botón del correo (por defecto, el inicio)
     Task<bool> PorCorreo(string asunto, string texto, string ruta, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
     Task<bool> PorWhatsApp(string texto, CancellationToken ct = default);
+    // al chat de Telegram vinculado (el bot de la zona privada)
+    Task<bool> PorTelegram(string texto, CancellationToken ct = default) => Task.FromResult(false);
     // notificación en los móviles y navegadores suscritos (Web Push)
     Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => Task.FromResult(false);
     // correo con versión HTML (el resumen semanal); el texto plano va de respaldo
     Task<bool> PorCorreoHtml(string asunto, string html, string texto, string? ruta = null, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
 }
 
-public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, ILogger<Avisos> log) : IAvisos
+public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, Telegram.Bot bot, ILogger<Avisos> log) : IAvisos
 {
     private string? C(string k) => string.IsNullOrWhiteSpace(config[k]) ? null : config[k];
 
     public Canales Disponibles() => new(
         C("Correo:Servidor") is not null && C("Correo:Para") is not null,
-        C("WhatsApp:Telefono") is not null && C("WhatsApp:ApiKey") is not null);
+        C("WhatsApp:Telefono") is not null && C("WhatsApp:ApiKey") is not null,
+        Telegram: bot.Vinculado);
+
+    public Task<bool> PorTelegram(string texto, CancellationToken ct = default) => bot.Vinculado ? bot.Enviar(texto, ct: ct) : Task.FromResult(false);
 
     public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) => Correo(asunto, texto, null, null, ct);
     public Task<bool> PorCorreo(string asunto, string texto, string ruta, CancellationToken ct = default) => Correo(asunto, texto, null, ruta, ct);

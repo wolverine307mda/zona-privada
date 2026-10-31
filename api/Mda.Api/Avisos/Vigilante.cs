@@ -16,8 +16,9 @@ public record Copia(bool Vigilada, DateTimeOffset? Fecha, long Tamano, string? N
 // Cada 15 minutos, de día, mira si hay algo que contar:
 //   · los lunes desde las 9, el resumen de la semana por correo (y una notificación);
 //   · el mantenimiento del coche que toca o está a punto (como mucho un aviso por semana);
-//   · que la copia de seguridad de la base de datos se hizo (si la última tiene más de 30 horas, avisa una vez al día).
-public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Zona zona, TimeProvider reloj, IConfiguration config, ILogger<Vigilante> log) : BackgroundService
+//   · que la copia de seguridad de la base de datos se hizo (si la última tiene más de 30 horas, avisa una vez al día);
+//   · desde las 8 de la tarde, si mañana llueve, hay tormenta, mucho calor o helada (una vez al día).
+public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Tiempo.ServicioTiempo tiempo, Zona zona, TimeProvider reloj, IConfiguration config, ILogger<Vigilante> log) : BackgroundService
 {
     public const string ResumenSemanal = "resumen-semanal";
     private const string ResumenUltimo = "resumen-ultimo";
@@ -45,6 +46,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Resumen(db, ct);
         await Coche(db, ct);
         await Copias(db, ct);
+        if (Local.Hour >= 20) await Tiempo(db, ct);
     }
 
     // ---- copia de seguridad ----
@@ -71,6 +73,23 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             : "No hay ninguna copia de seguridad de la base de datos. Revisa el contenedor «copias» (docker compose logs copias).";
         await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
+        await avisos.PorTelegram($"💾 Falta la copia de seguridad\n{texto}", ct);
+    }
+
+    // ---- el tiempo de mañana ----
+    public async Task Tiempo(AppDbContext db, CancellationToken ct)
+    {
+        var hoy = DateOnly.FromDateTime(Local);
+        if (await db.Ajustes.AnyAsync(a => a.Clave == Mda.Api.Tiempo.ServicioTiempo.ClaveAvisos && a.Valor == "no", ct)) return;
+        var hecho = await db.Ajustes.FindAsync([Mda.Api.Tiempo.ServicioTiempo.ClaveAvisado], ct);
+        if (hecho?.Valor == hoy.ToString("O")) return;
+        if (await tiempo.Leer(ct) is not { } p) return; // sin sitio o sin conexión: se mira en el siguiente repaso
+        if (hecho is null) db.Ajustes.Add(hecho = new Ajuste { Clave = Mda.Api.Tiempo.ServicioTiempo.ClaveAvisado });
+        hecho.Valor = hoy.ToString("O");
+        await db.SaveChangesAsync(ct);
+        if (Mda.Api.Tiempo.ServicioTiempo.AvisoDe(p, hoy.AddDays(1)) is not { } aviso) return;
+        await avisos.PorPush(aviso.Titulo, aviso.Texto, "/inicio", ct);
+        await avisos.PorTelegram($"{aviso.Titulo}\n{aviso.Texto}", ct);
     }
 
     // ---- mantenimiento del coche ----
@@ -90,6 +109,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             var titulo = e.Nivel == "vencido" ? $"🚗 {m.Nombre}: ya toca" : $"🚗 {m.Nombre}: falta poco";
             var texto = string.Join(" · ", cuando);
             await avisos.PorPush(titulo, texto, "/gastos/deudas", ct);
+            await avisos.PorTelegram($"{titulo}\n{texto}", ct);
             await avisos.PorCorreo(titulo, $"{texto}.\n\nCuando lo hagas, márcalo como hecho en Cartera › Coche.", "/gastos/deudas", ct);
         }
         await db.SaveChangesAsync(ct);
@@ -108,6 +128,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         var (asunto, html, texto, corto) = await Componer(db, DateOnly.FromDateTime(local), ct);
         var ok = await avisos.PorCorreoHtml(asunto, html, texto, "/inicio", ct);
         ok |= await avisos.PorPush("📊 Tu semana", corto, "/gastos", ct);
+        ok |= await avisos.PorTelegram($"📊 Tu semana\n{corto}", ct);
         if (!ok && avisos.Disponibles().Correo) return; // se reintenta en el siguiente repaso
         if (hecho is null) db.Ajustes.Add(hecho = new Ajuste { Clave = ResumenUltimo });
         hecho.Valor = semana;

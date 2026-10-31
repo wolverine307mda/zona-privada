@@ -15,13 +15,13 @@ public static class AsistenteEndpoints
     {
         var g = app.MapGroup("/api/asistente").RequireAuthorization();
 
-        g.MapPost("/entender", async (FraseEntrada e, AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        g.MapPost("/entender", async (FraseEntrada e, AppDbContext db, TimeProvider reloj, Zona zona, Tiempo.ServicioTiempo tiempo, CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(e.Texto) || e.Texto.Length > 300)
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["texto"] = ["Escribe una frase (máximo 300 caracteres)."] });
             var ctx = await ContextoDe(db, reloj, zona, ct);
             var p = Interprete.Entender(e.Texto, ctx);
-            if (p.Pregunta is { } q) p = p with { Respuesta = await Responder(db, q, DateOnly.FromDateTime(ctx.Ahora), ct) };
+            if (p.Pregunta is { } q) p = p with { Respuesta = await Responder(db, tiempo, q, DateOnly.FromDateTime(ctx.Ahora), ct) };
             return Results.Ok(p);
         });
     }
@@ -40,8 +40,14 @@ public static class AsistenteEndpoints
         return new Contexto(ahora, zona.Info, aprendido, huchas);
     }
 
-    private static async Task<string> Responder(AppDbContext db, Pregunta q, DateOnly hoy, CancellationToken ct)
+    internal static async Task<string> Responder(AppDbContext db, Tiempo.ServicioTiempo tiempo, Pregunta q, DateOnly hoy, CancellationToken ct)
     {
+        if (q.Que == QuePregunta.Tiempo)
+        {
+            if (await tiempo.LugarGuardado(ct) is null) return "Aún no sé dónde vives: elige tu ciudad en la tarjeta del tiempo de Inicio.";
+            return await tiempo.Leer(ct) is { } p ? Tiempo.ServicioTiempo.Frase(p, q.Desde, hoy) : "Ahora mismo no puedo consultar el tiempo. Prueba en un rato.";
+        }
+
         if (q.Que == QuePregunta.Saldo)
         {
             if (await Cartera.Base(db, ct) is null) return "Aún no me has dicho cuánto tienes: ponlo en Cartera › Ajustar saldo.";

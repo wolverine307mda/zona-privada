@@ -123,6 +123,25 @@
           <span class="canal__texto"><strong>WhatsApp</strong><span>{{ e.canales.whatsApp ? 'Listo (CallMeBot)' : 'Sin configurar' }}</span></span>
           @if (e.canales.whatsApp) { <button class="button button--ghost" type="button" [disabled]="ocupado() === 'whatsapp'" (click)="probar('whatsapp')">{{ ocupado() === 'whatsapp' ? 'Enviando…' : 'Probar' }}</button> }
         </li>
+        <li>
+          <span class="canal__icono canal__icono--telegram" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#29a9eb" /><path d="M5.6 11.7l10.8-4.3c.5-.2 1 .1.8.9l-1.8 8.6c-.1.6-.5.8-1 .5l-2.8-2.1-1.4 1.3c-.2.2-.3.3-.6.3l.2-2.9 5.2-4.7c.2-.2 0-.3-.3-.1l-6.4 4-2.7-.9c-.6-.2-.6-.6 0-.6z" fill="#fff" /></svg>
+          </span>
+          <span class="canal__texto"><strong>Telegram</strong><span>
+            @if (!telegram()?.configurado) { Sin configurar }
+            @else if (telegram()!.vinculado) { Conectado{{ telegram()!.nombre ? ' con ' + telegram()!.nombre : '' }} · {{ '@' + telegram()!.bot }} · también le puedes escribir }
+            @else if (enlaceTelegram()) { Esperando a que pulses «Iniciar» en Telegram… }
+            @else { Listo para vincular con {{ '@' + (telegram()!.bot ?? 'tu bot') }} }
+          </span></span>
+          @if (telegram()?.vinculado) {
+            <button class="button button--ghost" type="button" [disabled]="ocupado() === 'telegram'" (click)="probar('telegram')">{{ ocupado() === 'telegram' ? 'Enviando…' : 'Probar' }}</button>
+            <button class="enlace peligro" type="button" (click)="desvincularTelegram()">{{ confirmarTelegram() ? '¿Seguro?' : 'Quitar' }}</button>
+          } @else if (enlaceTelegram(); as enlace) {
+            <a class="button" [href]="enlace" target="_blank" rel="noopener">Abrir Telegram</a>
+          } @else if (telegram()?.configurado) {
+            <button class="button" type="button" [disabled]="ocupado() === 'telegram'" (click)="vincularTelegram()">Vincular</button>
+          }
+        </li>
       </ul>
       <label class="interruptor" [class.off]="!e.canales.correo">
         <input type="checkbox" [checked]="e.avisarInicios" [disabled]="!e.canales.correo" (change)="avisarInicios($any($event.target).checked)">
@@ -139,7 +158,7 @@
           💾 @if (e.copia.fecha) { Última copia de seguridad {{ hace(e.copia.fecha) }} ({{ tamano(e.copia.tamano) }}) } @else { Aún no hay copia de seguridad automática }
         </p>
       }
-      @if (!e.canales.correo || !e.canales.whatsApp) {
+      @if (!e.canales.correo || !e.canales.whatsApp || !telegram()?.configurado) {
         <details class="ayuda">
           <summary>Cómo configurarlos</summary>
           @if (!e.canales.correo) {
@@ -153,6 +172,11 @@ CORREO_PARA=tucorreo&#64;gmail.com</pre>
             <p><strong>WhatsApp con CallMeBot</strong> (gratis, uso personal): sigue los pasos de <strong>callmebot.com/blog/free-api-whatsapp-messages</strong>: guardas su número en tus contactos, le mandas por WhatsApp «I allow callmebot to send me messages» y te contesta con tu API key. Luego:</p>
             <pre>WHATSAPP_TELEFONO=+34600000000
 WHATSAPP_APIKEY=la-clave-que-te-da</pre>
+          }
+          @if (!telegram()?.configurado) {
+            <p><strong>Telegram</strong> (gratis): en Telegram, abre <strong>&#64;BotFather</strong>, escribe <code>/newbot</code>, ponle un nombre y un usuario acabado en «bot» y te dará un <em>token</em>. Luego:</p>
+            <pre>TELEGRAM_TOKEN=123456789:el-token-que-te-da</pre>
+            <p>Después vuelve aquí y pulsa <strong>Vincular</strong>: solo tu chat podrá hablar con el bot.</p>
           }
           <p>Reinicia la API (<code>docker compose up -d</code>) y vuelve aquí para probarlos.</p>
         </details>

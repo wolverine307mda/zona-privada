@@ -39,6 +39,9 @@
     } @else { <p class="vacio">Cargando…</p> }
   </a>
 
+  <!-- el tiempo -->
+  <app-tiempo class="caja tiempo" />
+
   <!-- lo que suena -->
   @if (spotify() === 'si' && sonando()?.cancion; as c) {
     <a class="caja musica" routerLink="/musica" [class.parado]="!sonando()!.sonando">

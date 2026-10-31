@@ -28,6 +28,7 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
     [InlineData("taxi 15€ el 3", 15, "transporte", "Taxi", -25)]
     [InlineData("farmacia 8€ el 20 de septiembre", 8, "salud", "Farmacia", -38)]
     [InlineData("gasto de 20 € en algo raro", 20, "otros", "Algo raro", 0)]
+    [InlineData("taxi 15,40 € al aeropuerto", 15.4, "transporte", "Taxi al aeropuerto", 0)]
     public void Entiende_gastos(string frase, double importe, string categoria, string concepto, int dias)
     {
         var p = E(frase);
@@ -172,6 +173,21 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
         Assert.Equal(categoria, p.Pregunta.Categoria);
         Assert.Equal(concepto, p.Pregunta.Concepto);
         Assert.Equal(periodo, p.Pregunta.Periodo);
+    }
+
+    [Theory]
+    [InlineData("¿qué tiempo hace?", 0)]
+    [InlineData("¿va a llover mañana?", 1)]
+    [InlineData("hará frío el sábado", 3)]
+    [InlineData("cuántos grados hace esta mañana", 0)]
+    public void Entiende_preguntas_del_tiempo(string frase, int dias)
+    {
+        var p = E(frase);
+        Assert.Equal("pregunta", p.Clase);
+        Assert.Equal(QuePregunta.Tiempo, p.Pregunta!.Que);
+        Assert.Equal(Hoy.AddDays(dias), p.Pregunta.Desde);
+        // pero coger el paraguas es algo que recordar
+        Assert.Equal("agenda", E("recuérdame mañana coger el paraguas").Clase);
     }
 
     [Theory]

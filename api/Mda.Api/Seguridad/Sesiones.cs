@@ -63,7 +63,7 @@ public static class Sesiones
             var avisos = sp.GetRequiredService<IAvisos>();
             var hora = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, sp.GetRequiredService<Agenda.Zona>().Info);
             var texto = $"Se ha iniciado sesión en tu zona privada.\n\nEquipo: {Dispositivo.Nombre(s.Agente)}\nIP: {s.Ip}\nHora: {hora:dd/MM/yyyy HH:mm:ss}\n\nSi no has sido tú, ciérrala desde Seguridad y cambia la contraseña.";
-            _ = Task.Run(() => avisos.PorCorreo("🔐 Nuevo inicio de sesión", texto, "/seguridad"));
+            _ = Task.Run(async () => { await avisos.PorCorreo("🔐 Nuevo inicio de sesión", texto, "/seguridad"); await avisos.PorTelegram($"🔐 Nuevo inicio de sesión\n{texto}"); });
         }
     }
 

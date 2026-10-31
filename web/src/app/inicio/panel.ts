@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Tiempo } from './tiempo';
 import { firstValueFrom } from 'rxjs';
 import { Aparicion, colorEvento, hora, mismoDia } from '../agenda/agenda.service';
 import { AsistenteService } from '../core/asistente.service';
@@ -19,7 +20,7 @@ interface Raiz { id: string; nombre: string; elementos: number; }
 // y, si su sección aún no tiene datos, invita a empezar.
 @Component({
   selector: 'app-panel',
-  imports: [RouterLink],
+  imports: [RouterLink, Tiempo],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })

@@ -74,6 +74,9 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<bool>("PorPush")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("PorTelegram")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("PorWhatsApp")
                         .HasColumnType("boolean");
 

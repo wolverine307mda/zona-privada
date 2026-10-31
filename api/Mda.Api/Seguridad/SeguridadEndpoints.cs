@@ -103,6 +103,7 @@ public static class SeguridadEndpoints
             {
                 "correo" => await avisos.PorCorreo("👋 Prueba de avisos", texto, "/seguridad"),
                 "whatsapp" => await avisos.PorWhatsApp(texto),
+                "telegram" => await avisos.PorTelegram(texto),
                 "push" => await avisos.PorPush("👋 Prueba de avisos", "Si ves esto, las notificaciones de la app funcionan en tus dispositivos.", "/seguridad"),
                 _ => (bool?)null,
             };

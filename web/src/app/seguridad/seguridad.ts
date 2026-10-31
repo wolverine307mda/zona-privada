@@ -8,9 +8,10 @@ import type { Conexion } from '../musica/musica';
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
 interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; }
 interface Estado {
-  dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean }; avisarInicios: boolean; fallosMes: number;
+  dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; avisarInicios: boolean; fallosMes: number;
   resumenSemanal: boolean; dispositivosPush: number; copia: { vigilada: boolean; fecha: string | null; tamano: number; nombre: string | null };
 }
+interface Telegram { configurado: boolean; vinculado: boolean; nombre: string | null; bot: string | null; }
 interface DosPasos { sharedKey: string; recoveryCodesLeft: number; recoveryCodes: string[] | null; isTwoFactorEnabled: boolean; }
 
 const ICONOS: Record<string, string> = {
@@ -42,6 +43,12 @@ export class Seguridad {
   protected readonly verTodos = signal(false);
   protected readonly iconos = ICONOS;
 
+  // Telegram
+  protected readonly telegram = signal<Telegram | null>(null);
+  protected readonly enlaceTelegram = signal<string | null>(null);
+  protected readonly confirmarTelegram = signal(false);
+  private esperaTelegram?: ReturnType<typeof setInterval>;
+
   // verificación en dos pasos
   protected readonly dos = signal<DosPasos | null>(null);
   protected readonly qr = signal<string | null>(null);
@@ -64,7 +71,7 @@ export class Seguridad {
     this.cargar();
     // la lista de sesiones se refresca sola para ver quién sigue en línea
     const t = setInterval(() => { if (!document.hidden) this.leerSesiones(); }, 30_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(t));
+    inject(DestroyRef).onDestroy(() => { clearInterval(t); clearInterval(this.esperaTelegram); });
   }
 
   private async cargar(): Promise<void> {
@@ -77,6 +84,7 @@ export class Seguridad {
       if (!e.dosPasos && this.activacionPendiente()) this.empezarDosPasos();
     }).catch(() => {});
     get<Conexion[]>('/api/conexiones').then((c) => this.conexiones.set(c)).catch(() => {});
+    get<Telegram>('/api/telegram').then((t) => this.telegram.set(t)).catch(() => {});
   }
 
   private async leerSesiones(): Promise<void> {
@@ -129,11 +137,47 @@ export class Seguridad {
   protected copiaVieja(f: string | null): boolean { return !f || Date.now() - new Date(f).getTime() > 30 * 3600_000; }
   protected tamano(b: number): string { return b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`; }
 
-  protected async probar(canal: 'correo' | 'whatsapp' | 'push'): Promise<void> {
+  // vincular: un enlace de un solo uso que abre el bot; aquí se espera a que pulses «Iniciar»
+  protected async vincularTelegram(): Promise<void> {
+    this.ocupado.set('telegram');
+    try {
+      const r = await firstValueFrom(this.http.post<{ enlace: string }>('/api/telegram/vincular', null));
+      this.enlaceTelegram.set(r.enlace);
+      window.open(r.enlace, '_blank', 'noopener');
+      const hasta = Date.now() + 15 * 60_000;
+      clearInterval(this.esperaTelegram);
+      this.esperaTelegram = setInterval(async () => {
+        try {
+          const t = await firstValueFrom(this.http.get<Telegram>('/api/telegram'));
+          if (t.vinculado || Date.now() > hasta) {
+            clearInterval(this.esperaTelegram);
+            this.enlaceTelegram.set(null);
+            this.telegram.set(t);
+            if (t.vinculado) {
+              this.estado.update((e) => (e ? { ...e, canales: { ...e.canales, telegram: true } } : e));
+              this.aviso.set('¡Telegram vinculado! Te ha escrito el bot: ya puedes hablarle.');
+            }
+          }
+        } catch { /* se reintenta */ }
+      }, 3000);
+    } catch (e) {
+      this.aviso.set(e instanceof HttpErrorResponse ? e.error?.detail ?? 'No se pudo vincular.' : 'Sin conexión.');
+    } finally { this.ocupado.set(null); }
+  }
+
+  protected async desvincularTelegram(): Promise<void> {
+    if (!this.confirmarTelegram()) { this.confirmarTelegram.set(true); setTimeout(() => this.confirmarTelegram.set(false), 4000); return; }
+    await firstValueFrom(this.http.delete('/api/telegram'));
+    this.confirmarTelegram.set(false);
+    this.telegram.update((t) => (t ? { ...t, vinculado: false, nombre: null } : t));
+    this.estado.update((e) => (e ? { ...e, canales: { ...e.canales, telegram: false } } : e));
+  }
+
+  protected async probar(canal: 'correo' | 'whatsapp' | 'push' | 'telegram'): Promise<void> {
     this.ocupado.set(canal);
     try {
       await firstValueFrom(this.http.post(`/api/seguridad/avisos/prueba/${canal}`, null));
-      this.aviso.set(canal === 'correo' ? 'Correo de prueba enviado: mira tu bandeja de entrada.' : canal === 'push' ? 'Notificación enviada a tus dispositivos.' : 'WhatsApp de prueba enviado.');
+      this.aviso.set(canal === 'correo' ? 'Correo de prueba enviado: mira tu bandeja de entrada.' : canal === 'push' ? 'Notificación enviada a tus dispositivos.' : canal === 'telegram' ? 'Mensaje de prueba enviado a Telegram.' : 'WhatsApp de prueba enviado.');
     } catch (e) {
       this.aviso.set(e instanceof HttpErrorResponse ? e.error?.detail ?? 'No se pudo enviar.' : 'Sin conexión.');
     } finally { this.ocupado.set(null); }

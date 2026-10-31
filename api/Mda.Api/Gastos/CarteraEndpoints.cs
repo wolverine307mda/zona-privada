@@ -112,16 +112,7 @@ public static class Cartera
             return Results.Ok(h);
         });
         // meter (importe positivo) o sacar (negativo) dinero de la hucha
-        g.MapPost("/huchas/{id:int}/aportar", async (int id, Aportacion a, AppDbContext db, CancellationToken ct) =>
-        {
-            var h = await db.Huchas.FindAsync([id], ct);
-            if (h is null) return Results.NotFound();
-            if (a.Importe == 0 || Math.Abs(a.Importe) > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["Pon un importe."] });
-            if (h.Ahorrado + a.Importe < 0) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = [$"En la hucha solo hay {Euros(h.Ahorrado)}."] });
-            h.Ahorrado += a.Importe;
-            await db.SaveChangesAsync(ct);
-            return Results.Ok(h);
-        });
+        g.MapPost("/huchas/{id:int}/aportar", (int id, Aportacion a, AppDbContext db, CancellationToken ct) => Aportar(id, a, db, ct));
         g.MapDelete("/huchas/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
         {
             var h = await db.Huchas.FindAsync([id], ct);
@@ -271,6 +262,18 @@ public static class Cartera
     }
 
     // Tras apuntar un gasto: si cruza el 80 % o el 100 % del presupuesto de su categoría, avisa (una vez por nivel y mes)
+    // meter (importe positivo) o sacar (negativo) dinero de una hucha (lo usan la API y el bot de Telegram)
+    internal static async Task<IResult> Aportar(int id, Aportacion a, AppDbContext db, CancellationToken ct)
+    {
+        var h = await db.Huchas.FindAsync([id], ct);
+        if (h is null) return Results.NotFound();
+        if (a.Importe == 0 || Math.Abs(a.Importe) > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["Pon un importe."] });
+        if (h.Ahorrado + a.Importe < 0) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = [$"En la hucha solo hay {Euros(h.Ahorrado)}."] });
+        h.Ahorrado += a.Importe;
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(h);
+    }
+
     public static async Task ComprobarPresupuesto(AppDbContext db, IAvisos avisos, string categoria, DateOnly fecha, ILogger log, CancellationToken ct)
     {
         var p = await db.Presupuestos.FindAsync([categoria], ct);
@@ -290,7 +293,7 @@ public static class Cartera
         // el aviso sale en segundo plano: apuntar el gasto no espera al correo
         _ = Task.Run(async () =>
         {
-            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorCorreo(titulo, texto, "/gastos"); }
+            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorTelegram($"{titulo}\n{texto}"); await avisos.PorCorreo(titulo, texto, "/gastos"); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar del presupuesto"); }
         });
     }

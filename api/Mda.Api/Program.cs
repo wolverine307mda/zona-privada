@@ -12,6 +12,8 @@ using Mda.Api.Gastos;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
+using Mda.Api.Telegram;
+using Mda.Api.Tiempo;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -135,7 +137,16 @@ builder.Services.AddHostedService<SemillaAdmin>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddHttpClient("telegram", c => c.Timeout = TimeSpan.FromSeconds(20));
+builder.Services.AddHttpClient("telegram-largo", c => c.Timeout = TimeSpan.FromSeconds(75)); // getUpdates espera hasta 50 s
+builder.Services.AddHttpClient("tiempo", c => c.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddSingleton<Push>();
+// bot de Telegram: avisos y hablar con el asistente desde el chat
+builder.Services.AddSingleton<Bot>();
+builder.Services.AddScoped<Conversacion>();
+builder.Services.AddHostedService<Sondeo>();
+// el tiempo (Open-Meteo)
+builder.Services.AddSingleton<ServicioTiempo>();
 builder.Services.AddSingleton<IAvisos, Avisos>();
 builder.Services.AddSingleton<ServicioConexiones>();
 builder.Services.AddSingleton(Zona.Desde(builder.Configuration));
@@ -178,6 +189,8 @@ app.MapCoche();
 app.MapPush();
 app.MapPerfil();
 app.MapAsistente();
+app.MapTelegram();
+app.MapTiempo();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

@@ -46,6 +46,8 @@ services:
       Correo__Para: ${CORREO_PARA:-}
       WhatsApp__Telefono: ${WHATSAPP_TELEFONO:-}
       WhatsApp__ApiKey: ${WHATSAPP_APIKEY:-}
+      # bot de Telegram (opcional): el token que da @BotFather
+      Telegram__Token: ${TELEGRAM_TOKEN:-}
       # cuentas enlazadas (opcionales): Spotify y Google Calendar
       Spotify__ClientId: ${SPOTIFY_CLIENT_ID:-}
       Spotify__ClientSecret: ${SPOTIFY_CLIENT_SECRET:-}

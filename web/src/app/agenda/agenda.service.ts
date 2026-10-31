@@ -9,13 +9,13 @@ export type Repeticion = 'No' | 'Diaria' | 'Semanal' | 'Mensual' | 'Anual';
 export interface Aparicion {
   clave: string; id: number | null; origen: 'propio' | 'google'; tipo: TipoEvento; titulo: string; notas: string | null; lugar: string | null;
   inicio: string; fin: string | null; todoElDia: boolean; color: string; repetir: Repeticion; avisoMinutos: number | null;
-  porCorreo: boolean; porWhatsApp: boolean; porPush: boolean; hecho: boolean; enGoogle: boolean; url: string | null;
+  porCorreo: boolean; porWhatsApp: boolean; porPush: boolean; porTelegram?: boolean; hecho: boolean; enGoogle: boolean; url: string | null;
 }
 export interface EventoEntrada {
   tipo: TipoEvento; titulo: string; notas: string | null; lugar: string | null; inicio: string; fin: string | null; todoElDia: boolean;
-  color: string; repetir: Repeticion; repetirHasta: string | null; avisoMinutos: number | null; porCorreo: boolean; porWhatsApp: boolean; porPush: boolean; enGoogle: boolean; hecho: boolean;
+  color: string; repetir: Repeticion; repetirHasta: string | null; avisoMinutos: number | null; porCorreo: boolean; porWhatsApp: boolean; porPush: boolean; porTelegram?: boolean; enGoogle: boolean; hecho: boolean;
 }
-export interface EstadoAgenda { canales: { correo: boolean; whatsApp: boolean }; google: { configurado: boolean; conectado: boolean; cuenta: string | null }; }
+export interface EstadoAgenda { canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; google: { configurado: boolean; conectado: boolean; cuenta: string | null }; }
 
 export const COLORES_EVENTO: { id: string; color: string }[] = [
   { id: '', color: 'var(--brand)' }, { id: 'naranja', color: '#ff8a3d' }, { id: 'rojo', color: '#ff5a5f' }, { id: 'rosa', color: '#ff5fa2' },

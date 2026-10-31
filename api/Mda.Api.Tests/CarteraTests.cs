@@ -57,10 +57,10 @@ public class CarteraTests(ModulosFactory factory) : IClassFixture<ModulosFactory
         await c.PostAsJsonAsync("/api/gastos/movimientos", new { tipo = "Gasto", fecha = Hoy, importe = 85, categoria = "restaurantes", concepto = "Cena" });
         await c.PostAsJsonAsync("/api/gastos/movimientos", new { tipo = "Gasto", fecha = Hoy, importe = 5, categoria = "restaurantes", concepto = "Café" });
         await Task.Delay(300);
-        Assert.Equal(antes + 2, Avisos()); // push + correo del 80 %, solo una vez
+        Assert.Equal(antes + 3, Avisos()); // push, Telegram y correo del 80 %, solo una vez
         await c.PostAsJsonAsync("/api/gastos/movimientos", new { tipo = "Gasto", fecha = Hoy, importe = 20, categoria = "restaurantes", concepto = "Comida" });
         await Task.Delay(300);
-        Assert.Equal(antes + 4, Avisos());
+        Assert.Equal(antes + 6, Avisos());
         var p = (await c.GetFromJsonAsync<JsonElement>("/api/gastos/presupuestos")).EnumerateArray().Single(x => x.GetProperty("categoria").GetString() == "restaurantes");
         Assert.Equal(110m, p.GetProperty("gastado").GetDecimal());
     }

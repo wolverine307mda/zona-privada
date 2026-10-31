@@ -7,12 +7,12 @@ namespace Mda.Api.Agenda;
 
 public record EventoEntrada(
     TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin, bool TodoElDia, string? Color,
-    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false, bool PorPush = false);
+    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false, bool PorPush = false, bool PorTelegram = false);
 
 // Cada aparición de un evento en el calendario: el evento (o el de Google) con el inicio de esa repetición
 public record Aparicion(
     string Clave, int? Id, string Origen, TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin,
-    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url, bool PorPush = false);
+    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url, bool PorPush = false, bool PorTelegram = false);
 
 // Agenda: eventos y recordatorios propios más los de Google Calendar, si está enlazado
 public static class AgendaEndpoints
@@ -53,17 +53,8 @@ public static class AgendaEndpoints
             return Results.Ok(lista.Where(a => !(a.Tipo == TipoEvento.Recordatorio && a.Hecho)).OrderBy(a => a.Inicio).Take(50));
         });
 
-        g.MapPost("/", async (EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct) =>
-        {
-            if (Validar(e) is { } error) return error;
-            var ev = new Evento();
-            Copiar(e, ev, zona, reloj.GetUtcNow());
-            db.Eventos.Add(ev);
-            await db.SaveChangesAsync(ct);
-            var aviso = await Sincronizar(ev, google, con, ct);
-            await db.SaveChangesAsync(ct);
-            return Results.Created($"/api/agenda/{ev.Id}", new { ev.Id, googleError = aviso });
-        });
+        g.MapPost("/", (EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+            Crear(e, db, google, con, zona, reloj, ct));
 
         g.MapPut("/{id:int}", async (int id, EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct) =>
         {
@@ -89,15 +80,7 @@ public static class AgendaEndpoints
             return Results.Ok(new { ev.Id, ev.Hecho });
         });
 
-        g.MapDelete("/{id:int}", async (int id, AppDbContext db, GoogleCalendar google, CancellationToken ct) =>
-        {
-            var ev = await db.Eventos.FindAsync([id], ct);
-            if (ev is null) return Results.NotFound();
-            if (ev.GoogleId is { } gid) await google.Borrar(gid, ct);
-            db.Eventos.Remove(ev);
-            await db.SaveChangesAsync(ct);
-            return Results.NoContent();
-        });
+        g.MapDelete("/{id:int}", (int id, AppDbContext db, GoogleCalendar google, CancellationToken ct) => Borrar(id, db, google, ct));
 
         // qué canales de aviso hay y si Google está enlazado
         g.MapGet("/estado", async (IAvisos avisos, ServicioConexiones con, CancellationToken ct) =>
@@ -107,7 +90,30 @@ public static class AgendaEndpoints
         });
     }
 
-    private static async Task<List<Aparicion>> Apariciones(AppDbContext db, DateTimeOffset desde, DateTimeOffset hasta, Zona zona, CancellationToken ct)
+    // crear y borrar (los usan la API y el bot de Telegram)
+    internal static async Task<IResult> Crear(EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct)
+    {
+        if (Validar(e) is { } error) return error;
+        var ev = new Evento();
+        Copiar(e, ev, zona, reloj.GetUtcNow());
+        db.Eventos.Add(ev);
+        await db.SaveChangesAsync(ct);
+        var aviso = await Sincronizar(ev, google, con, ct);
+        await db.SaveChangesAsync(ct);
+        return Results.Created($"/api/agenda/{ev.Id}", new { ev.Id, googleError = aviso });
+    }
+
+    internal static async Task<IResult> Borrar(int id, AppDbContext db, GoogleCalendar google, CancellationToken ct)
+    {
+        var ev = await db.Eventos.FindAsync([id], ct);
+        if (ev is null) return Results.NotFound();
+        if (ev.GoogleId is { } gid) await google.Borrar(gid, ct);
+        db.Eventos.Remove(ev);
+        await db.SaveChangesAsync(ct);
+        return Results.NoContent();
+    }
+
+    internal static async Task<List<Aparicion>> Apariciones(AppDbContext db, DateTimeOffset desde, DateTimeOffset hasta, Zona zona, CancellationToken ct)
     {
         // PostgreSQL solo admite fechas en UTC como parámetro (el front manda la hora de Madrid)
         desde = desde.ToUniversalTime();
@@ -120,7 +126,7 @@ public static class AgendaEndpoints
 
     private static Aparicion Aparicion(Evento e, DateTimeOffset inicio) => new(
         $"{e.Id}:{inicio.ToUnixTimeSeconds()}", e.Id, "propio", e.Tipo, e.Titulo, e.Notas, e.Lugar, inicio, e.Fin is { } f ? inicio + (f - e.Inicio) : null,
-        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null, e.PorPush);
+        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null, e.PorPush, e.PorTelegram);
 
     // Copia en Google si toca; devuelve un aviso para el front si no se pudo
     private static async Task<string?> Sincronizar(Evento ev, GoogleCalendar google, ServicioConexiones con, CancellationToken ct)
@@ -170,6 +176,7 @@ public static class AgendaEndpoints
         ev.PorCorreo = e.PorCorreo;
         ev.PorWhatsApp = e.PorWhatsApp;
         ev.PorPush = e.PorPush;
+        ev.PorTelegram = e.PorTelegram;
         ev.EnGoogle = e.EnGoogle;
         ev.Hecho = e.Hecho;
         Reprogramar(ev, ahora, zona);

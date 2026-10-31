@@ -69,26 +69,7 @@ public static class GastosEndpoints
             return Results.Ok(lista);
         });
 
-        g.MapPost("/movimientos", async (MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) =>
-        {
-            if (Validar(e) is { } error) return error;
-            var m = new Movimiento();
-            Copiar(e, m);
-            if (e.Repite is { } f && e.RecurrenteId is null)
-            {
-                var r = new Recurrente
-                {
-                    Nombre = m.Concepto.Length > 80 ? m.Concepto[..80] : m.Concepto, Tipo = m.Tipo, Categoria = m.Categoria, Importe = m.Importe,
-                    Variable = e.Variable, Dia = m.Fecha.Day, Frecuencia = f, Inicio = m.Fecha,
-                };
-                db.Recurrentes.Add(r);
-                m.Recurrente = r;
-            }
-            db.Movimientos.Add(m);
-            await db.SaveChangesAsync(ct);
-            if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
-            return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
-        });
+        g.MapPost("/movimientos", (MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) => Crear(e, db, avisos, log, ct));
 
         g.MapPut("/movimientos/{id:int}", async (int id, MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) =>
         {
@@ -200,6 +181,28 @@ public static class GastosEndpoints
     }
 
     // ---- Validación ----
+    // crear un apunte (lo usan la API y el bot de Telegram)
+    internal static async Task<IResult> Crear(MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger log, CancellationToken ct)
+    {
+        if (Validar(e) is { } error) return error;
+        var m = new Movimiento();
+        Copiar(e, m);
+        if (e.Repite is { } f && e.RecurrenteId is null)
+        {
+            var r = new Recurrente
+            {
+                Nombre = m.Concepto.Length > 80 ? m.Concepto[..80] : m.Concepto, Tipo = m.Tipo, Categoria = m.Categoria, Importe = m.Importe,
+                Variable = e.Variable, Dia = m.Fecha.Day, Frecuencia = f, Inicio = m.Fecha,
+            };
+            db.Recurrentes.Add(r);
+            m.Recurrente = r;
+        }
+        db.Movimientos.Add(m);
+        await db.SaveChangesAsync(ct);
+        if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
+        return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
+    }
+
     private static IResult? Validar(MovimientoEntrada e)
     {
         var errores = new Dictionary<string, string[]>();

@@ -55,6 +55,7 @@
 .canales li, .app { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--tarjeta-2); }
 .canales li { grid-template-columns: 46px minmax(0, 1fr) auto auto; }
 .canal__icono { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px; background: var(--tarjeta); font-size: 22px; }
+.canal__icono svg { width: 28px; height: 28px; }
 .canal__texto, .app__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .canal__texto strong, .app__texto strong { font-weight: 500; }
 .canal__texto span, .app__texto span { font-size: 12.5px; color: var(--soft); overflow-wrap: anywhere; }

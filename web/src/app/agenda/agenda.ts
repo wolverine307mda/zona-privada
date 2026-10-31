@@ -72,6 +72,7 @@ export class Agenda {
   protected readonly avisoMin = signal<number | null>(null);
   protected readonly porCorreo = signal(true);
   protected readonly porWhatsApp = signal(false);
+  protected readonly porTelegram = signal(false);
   protected readonly porPush = signal(false);
   protected readonly enGoogle = signal(false);
   protected readonly errores = signal<Errores>({});
@@ -163,6 +164,7 @@ export class Agenda {
     this.avisoMin.set(tipo === 'Recordatorio' ? 0 : 30);
     this.porCorreo.set(!!this.estado()?.canales.correo);
     this.porWhatsApp.set(tipo === 'Recordatorio' && !!this.estado()?.canales.whatsApp);
+    this.porTelegram.set(!!this.estado()?.canales.telegram);
     this.porPush.set(true);
     this.enGoogle.set(!!this.estado()?.google.conectado && tipo === 'Evento');
     this.abrirDialogo();
@@ -186,6 +188,7 @@ export class Agenda {
     this.avisoMin.set(a.avisoMinutos);
     this.porCorreo.set(a.porCorreo);
     this.porWhatsApp.set(a.porWhatsApp);
+    this.porTelegram.set(!!a.porTelegram);
     this.porPush.set(a.porPush);
     this.enGoogle.set(a.enGoogle);
     this.abrirDialogo();
@@ -225,7 +228,7 @@ export class Agenda {
         tipo: this.tipo(), titulo: this.tituloEv().trim(), notas: this.notas() || null, lugar: this.lugar() || null,
         inicio: ini.toISOString(), fin: fin?.toISOString() ?? null, todoElDia: this.todoElDia(), color: this.color(),
         repetir: this.repetir(), repetirHasta: this.repetir() !== 'No' && this.hasta() ? this.hasta() : null,
-        avisoMinutos: this.avisoMin(), porCorreo: this.porCorreo(), porWhatsApp: this.porWhatsApp(), porPush: this.porPush(), enGoogle: this.enGoogle(),
+        avisoMinutos: this.avisoMin(), porCorreo: this.porCorreo(), porWhatsApp: this.porWhatsApp(), porTelegram: this.porTelegram(), porPush: this.porPush(), enGoogle: this.enGoogle(),
         hecho: this.editando()?.hecho ?? false,
       }, this.editando()?.id ?? undefined);
       this.aviso.set(r.googleError ?? '');
