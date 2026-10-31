@@ -137,8 +137,9 @@ builder.Services.AddHostedService<SemillaAdmin>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
-builder.Services.AddHttpClient("telegram", c => c.Timeout = TimeSpan.FromSeconds(20));
-builder.Services.AddHttpClient("telegram-largo", c => c.Timeout = TimeSpan.FromSeconds(75)); // getUpdates espera hasta 50 s
+// sin registros de cada petición: el token del bot va en la propia URL y acabaría en los logs y en Seq
+builder.Services.AddHttpClient("telegram", c => c.Timeout = TimeSpan.FromSeconds(20)).RemoveAllLoggers();
+builder.Services.AddHttpClient("telegram-largo", c => c.Timeout = TimeSpan.FromSeconds(75)).RemoveAllLoggers(); // getUpdates espera hasta 50 s
 builder.Services.AddHttpClient("tiempo", c => c.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddSingleton<Push>();
 // bot de Telegram: avisos y hablar con el asistente desde el chat

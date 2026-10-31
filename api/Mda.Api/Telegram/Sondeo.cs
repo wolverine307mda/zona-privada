@@ -13,6 +13,18 @@ public class Sondeo(Bot bot, IServiceScopeFactory scopes, ILogger<Sondeo> log) :
         {
             // sin webhook, por si el bot se usó antes en otro sitio (si no, getUpdates no funciona)
             await bot.Llamar("deleteWebhook", new { }, ct);
+            // el menú de comandos que enseña Telegram al pulsar «/», y la descripción del bot
+            await bot.Llamar("setMyCommands", new
+            {
+                commands = new[]
+                {
+                    new { command = "hoy", description = "Tu día: tiempo, agenda y dinero" },
+                    new { command = "tiempo", description = "El tiempo de hoy" },
+                    new { command = "saldo", description = "Cuánto tienes y cuánto puedes gastar" },
+                    new { command = "ayuda", description = "Qué le puedes decir" },
+                },
+            }, ct);
+            await bot.Llamar("setMyShortDescription", new { short_description = "Tu zona privada: apunta gastos, recordatorios y pregúntale lo que quieras." }, ct);
             var yo = await bot.Usuario(ct);
             log.LogInformation("Bot de Telegram @{Bot} escuchando", yo);
             long desde = 0;
