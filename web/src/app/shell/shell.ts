@@ -43,6 +43,7 @@ export class Shell {
   protected readonly usuario = this.sesion.usuario;
   protected readonly menuAbierto = signal(false);
   protected readonly ahora = signal(new Date());
+  protected readonly hora = computed(() => this.ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   private readonly ajustes = viewChild.required<ElementRef<HTMLDialogElement>>('ajustes');
   protected readonly buscador = viewChild.required(Buscador);
 
