@@ -9,6 +9,7 @@ import { RAICES } from '../documentos/archivos.service';
 import { Deudas, Gasolina, ResumenMes, euros, eurosCorto, numero } from '../gastos/modelo';
 import { progresoTareas } from '../notas/markdown';
 import { Nota, colorNota } from '../notas/notas.service';
+import { RecargaService } from '../core/recarga';
 
 interface Cancion { nombre: string; artistas: string; imagen: string | null; duracion: number; }
 interface Sonando { sonando: boolean; cancion: Cancion | null; progreso: number; dispositivo: string | null; }
@@ -73,22 +74,29 @@ export class Panel {
   protected readonly nombreMes = new Date().toLocaleDateString('es-ES', { month: 'long' });
 
   constructor() {
-    const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
-    const hoy = new Date();
-    get<ResumenMes>(`/api/gastos/mes/${hoy.getFullYear()}/${hoy.getMonth() + 1}`).then((m) => this.mes.set(m)).catch(() => {});
-    get<{ configurado: boolean; actual: number; libre: number; enHuchas: number }>('/api/gastos/saldo').then((x) => this.saldo.set(x)).catch(() => {});
-    get<{ porDia: number }>('/api/gastos/consejos').then((c) => this.porDia.set(c.porDia)).catch(() => {});
-    get<Deudas>('/api/gastos/deudas').then((d) => this.deudas.set(d)).catch(() => {});
-    get<Aparicion[]>('/api/agenda/proximos?dias=14').then((a) => this.agenda.set(a)).catch(() => this.agenda.set([]));
-    get<Nota[]>('/api/notas').then((n) => this.notas.set(n)).catch(() => this.notas.set([]));
-    get<{ enLinea: boolean }[]>('/api/seguridad/sesiones').then((s) => this.sesiones.set(s)).catch(() => {});
-    get<Seguridad>('/api/seguridad/estado').then((s) => this.seguridad.set(s)).catch(() => {});
-    get<Gasolina>('/api/gastos/gasolina').then((g) => this.gasolina.set(g)).catch(() => {});
-    get<Raiz[]>('/api/archivos/raices').then((r) => this.raices.set(r)).catch(() => {});
-    this.leerMusica();
+    this.cargar();
+    inject(RecargaService).alRecargar(() => this.cargar(), inject(DestroyRef));
     const t = setInterval(() => { if (!document.hidden && this.spotify() === 'si') this.leerMusica(); }, 8000);
     const s = setInterval(() => { if (this.sonando()?.sonando) this.progreso.update((p) => p + 1000); }, 1000);
     inject(DestroyRef).onDestroy(() => { clearInterval(t); clearInterval(s); });
+  }
+
+  private cargar(): Promise<unknown> {
+    const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
+    const hoy = new Date();
+    return Promise.allSettled([
+      get<ResumenMes>(`/api/gastos/mes/${hoy.getFullYear()}/${hoy.getMonth() + 1}`).then((m) => this.mes.set(m)),
+      get<{ configurado: boolean; actual: number; libre: number; enHuchas: number }>('/api/gastos/saldo').then((x) => this.saldo.set(x)),
+      get<{ porDia: number }>('/api/gastos/consejos').then((c) => this.porDia.set(c.porDia)),
+      get<Deudas>('/api/gastos/deudas').then((d) => this.deudas.set(d)),
+      get<Aparicion[]>('/api/agenda/proximos?dias=14').then((a) => this.agenda.set(a)).catch(() => this.agenda.update((v) => v ?? [])),
+      get<Nota[]>('/api/notas').then((n) => this.notas.set(n)).catch(() => this.notas.update((v) => v ?? [])),
+      get<{ enLinea: boolean }[]>('/api/seguridad/sesiones').then((s) => this.sesiones.set(s)),
+      get<Seguridad>('/api/seguridad/estado').then((s) => this.seguridad.set(s)),
+      get<Gasolina>('/api/gastos/gasolina').then((g) => this.gasolina.set(g)),
+      get<Raiz[]>('/api/archivos/raices').then((r) => this.raices.set(r)),
+      this.leerMusica(),
+    ]);
   }
 
   private async leerMusica(): Promise<void> {

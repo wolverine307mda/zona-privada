@@ -8,6 +8,14 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withFetch(), withInterceptors([sesionCaducada])),
-    provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
+    // fundido entre pantallas, salvo al entrar o salir de la sesión: ahí cambia toda la página
+    // (el candado se abre con su propia animación) y el fundido enseñaba las dos pantallas superpuestas
+    provideRouter(routes, withComponentInputBinding(), withViewTransitions({
+      skipInitialTransition: true,
+      onViewTransitionCreated: ({ transition, from, to }) => {
+        const ruta = (r: typeof from) => r.firstChild?.routeConfig?.path ?? '';
+        if (ruta(from) === 'entrar' || ruta(to) === 'entrar') transition.skipTransition();
+      },
+    })),
   ],
 };

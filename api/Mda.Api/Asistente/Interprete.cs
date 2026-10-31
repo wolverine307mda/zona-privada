@@ -90,8 +90,8 @@ public static partial class Interprete
     [GeneratedRegex(@"\b(?:gast\w*|pag\w*|compr\w*|cost\w*|apunta\w*|anota\w*|factura|cuota|suscripcion|repost\w*)\b", O)] private static partial Regex ReDinero();
 
     // ---- importes, litros y kilómetros ----
-    [GeneratedRegex(@"(?:por\s+)?(?<![\d.,])(?<e>\d+)\s*(?:€|euros?)\s+con\s+(?<c>\d{1,2})\b(?:\s*(?:centimos?|cts?))?", O)] private static partial Regex ReEurosCon();
-    [GeneratedRegex(@"(?:por\s+)?(?:€\s*" + N + @"|" + N + @"\s*(?:€|euros?\b|eur\b|pavos?\b|pelas\b))", O)] private static partial Regex ReImporte();
+    [GeneratedRegex(@"(?:\bpor\s+)?(?<![\d.,])(?<e>\d+)\s*(?:€|euros?)\s+con\s+(?<c>\d{1,2})\b(?:\s*(?:centimos?|cts?))?", O)] private static partial Regex ReEurosCon();
+    [GeneratedRegex(@"(?:\bpor\s+)?(?:€\s*" + N + @"|" + N + @"\s*(?:€|euros?\b|eur\b|pavos?\b|pelas\b))", O)] private static partial Regex ReImporte();
     [GeneratedRegex(@"(?:\bpor\s+)?(?<![\d.,/:])(?<!\b(?:las?|el|dia)\s+)(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?![\d.,:/])(?!\s*(?:de\s+(?:" + Meses + @")|h\b|horas?\b|min\b|minutos?\b|dias?\b|semanas?\b|meses\b|mes\b|anos?\b|km\b|kms\b|l\b|litros?\b|y\s+media|y\s+cuarto))", O)] private static partial Regex ReNumeroSuelto();
     [GeneratedRegex(@"(?<![\d.,])(?<n>\d+[.,]\d{2,3})\s*(?:€|euros?)?\s*(?:/\s*|(?:el|por|cada|a)\s+)(?:l|litro)\b", O)] private static partial Regex RePrecioLitro();
     [GeneratedRegex(@"(?<![\d.,])(?<n>\d+(?:[.,]\d+)?)\s*(?:l|lt|lts|litros?)\b", O)] private static partial Regex ReLitros();
@@ -124,6 +124,9 @@ public static partial class Interprete
     [GeneratedRegex(@"\b(?:se\s+repite|que\s+se\s+repite|fijo)\b", O)] private static partial Regex ReSeRepite();
     [GeneratedRegex(@"\b(?:puede\s+variar|varia|variable|aprox(?:imadamente)?|mas\s+o\s+menos|unos|unas)\b", O)] private static partial Regex ReVariable();
     [GeneratedRegex(@"\s+", O)] private static partial Regex ReEspacios();
+    // «por whatsapp», «avísame por correo y telegram», «por todas partes»: por dónde avisar
+    private const string Canal = @"(?:whats\s?app|wh?asap|wsp|correo(?:\s+electronico)?|e-?mail|mail|telegram|(?:la\s+)?app(?:licacion)?|el\s+movil|notificaci\w+|push|todas?(?:\s+(?:partes|los\s+canales|las\s+apps|las\s+aplicaciones|los\s+sitios|los\s+medios))?|todos\s+(?:los\s+)?(?:canales|sitios|lados|medios))";
+    [GeneratedRegex(@"(?:\b(?:y\s+)?(?:que\s+me\s+)?(?:avis\w*|notific\w*|mand\w*|envi\w*)\s+)?\bpor\s+(?<c>" + Canal + @")(?:\s*(?:,|\by\b|\be\b)\s*(?:por\s+)?(?<c>" + Canal + @"))*\b", O)] private static partial Regex ReCanales();
 
     // palabras de relleno: los verbos se quitan estén donde estén; las otras, solo en los bordes
     private static readonly HashSet<string> Verbos =
@@ -133,6 +136,10 @@ public static partial class Interprete
         "recuerda", "recordatorio", "avisame", "acuerdame", "olvide", "olvides", "dejes", "pon", "ponme", "gasto", "ingreso", "ingresaron",
         "ingresado", "pagaron", "devolvieron", "devuelto", "hicieron", "hecho", "dieron", "dado", "costo", "cuesta", "han", "hucha", "huchas",
         "vendi", "vendido", "agenda", "calendario", "repostado", "repostar",
+        // «nuevo gasto…», «crea un recordatorio con concepto…»: son la orden, no el título
+        "nuevo", "nueva", "nuevos", "nuevas", "anadir", "anademe", "anada", "crea", "crear", "creame", "mete", "meter", "meteme",
+        "registra", "registrar", "registrame", "guarda", "guardar", "guardame", "concepto", "titulo", "titulado", "titulada",
+        "llamado", "llamada", "asunto", "motivo", "evento", "pago", "otro", "otra",
     ];
     private static readonly HashSet<string> Bordes =
     [
@@ -265,6 +272,7 @@ public static partial class Interprete
         var dudas = new List<string>();
         var (_, repeticion, diaFijo) = LeerRepeticion(f);
         f.Coger(ReSeRepite());
+        var canales = LeerCanales(f);
 
         // «en el centro de salud de la calle Mayor»: el lugar va aparte y no ensucia el título
         string? lugar = null;
@@ -347,7 +355,7 @@ public static partial class Interprete
             : inicio + (duracion ?? TimeSpan.FromHours(1));
         DateTimeOffset? fin = finLocal is { } fl ? new DateTimeOffset(fl, ctx.Zona.GetUtcOffset(fl)) : null;
         var ev = new EventoEntrada(tipo, titulo, null, lugar, ini, fin, todoElDia, medico ? "verde" : "",
-            repeticion, null, aviso, recordatorio, false, false, false, true);
+            repeticion, null, aviso, canales.Correo, canales.WhatsApp, false, false, canales.Push, canales.Telegram);
         if (finLocal is { } fl2 && ctx.Horario is { Activo: true } hz && hz.Pisa(inicio, fl2))
             dudas.Add($"Cae en tu horario de {hz.Nombre.ToLower(Es)} ({Horario.Corta(hz.HoraEntrada)}–{Horario.Corta(hz.HoraSalida)}).");
         var cuando = todoElDia ? DiaBonito(DateOnly.FromDateTime(inicio), hoy)
@@ -358,7 +366,7 @@ public static partial class Interprete
             Repeticion.Diaria => " · cada día", Repeticion.Semanal => " · cada semana",
             Repeticion.Mensual => " · cada mes", Repeticion.Anual => " · cada año", _ => "",
         };
-        return new("agenda", $"{(recordatorio ? "Recordatorio" : "Evento")}: {titulo} · {cuando}{rep}", Evento: ev, Dudas: dudas);
+        return new("agenda", $"{(recordatorio ? "Recordatorio" : "Evento")}: {titulo} · {cuando}{rep} · 🔔 {canales.Texto}", Evento: ev, Dudas: dudas);
     }
 
     // ---- preguntas ----
@@ -597,6 +605,32 @@ public static partial class Interprete
     }
 
     // Lo que queda de la frase, sin verbos de relleno ni artículos sueltos en los bordes, con la primera en mayúscula
+    // Por dónde avisar. Si no se dice nada, solo la notificación de la app; «por todas» = todos los canales.
+    private readonly record struct Canales(bool Push, bool Correo, bool WhatsApp, bool Telegram)
+    {
+        public string Texto => (Push, Correo, WhatsApp, Telegram) switch
+        {
+            (true, true, true, true) => "por todas partes",
+            _ => string.Join(", ", new[] { Push ? "la app" : null, Correo ? "correo" : null, WhatsApp ? "WhatsApp" : null, Telegram ? "Telegram" : null }.OfType<string>()),
+        };
+    }
+
+    private static Canales LeerCanales(Frase f)
+    {
+        if (f.Coger(ReCanales()) is not { } m) return new(true, false, false, false);
+        bool push = false, correo = false, whats = false, tg = false;
+        foreach (Capture c in m.Groups["c"].Captures)
+        {
+            var v = c.Value;
+            if (v.StartsWith("tod")) return new(true, true, true, true);
+            if (v.Contains("whats") || v.Contains("asap") || v == "wsp") whats = true;
+            else if (v.Contains("correo") || v.Contains("mail")) correo = true;
+            else if (v.Contains("telegram")) tg = true;
+            else push = true;
+        }
+        return new(push, correo, whats, tg);
+    }
+
     private static string Concepto(string resto)
     {
         var palabras = ReEspacios().Split(resto.Trim(" ,.;:!¡?¿-".ToCharArray())).Select(w => w.Trim(",.;:!¡?¿\"'".ToCharArray())).Where(w => w.Length > 0).ToList();

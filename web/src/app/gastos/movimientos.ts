@@ -49,7 +49,7 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
       </section>
     } @empty {
       <div class="caja vacio">
-        <strong>{{ cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
+        <strong [class.esta-cargando]="!cargado()">{{ cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
         @if (cargado()) { {{ q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».' }} }
       </div>
     }

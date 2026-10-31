@@ -154,7 +154,7 @@
         </article>
       } @empty {
         <div class="vacio vacio--grande">
-          @if (cargando()) { <strong>Cargando…</strong> }
+          @if (cargando()) { <strong class="esta-cargando">Cargando…</strong> }
           @else if (resultados()) { <strong>Nada con «{{ q() }}»</strong> Prueba con otra palabra. }
           @else {
             <span class="vacio__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS.carpeta.icono" /></svg></span>

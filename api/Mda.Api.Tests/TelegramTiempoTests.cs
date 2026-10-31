@@ -138,13 +138,14 @@ public class TelegramTiempoTests(TelegramFactory factory) : IClassFixture<Telegr
         movs = await c.GetFromJsonAsync<JsonElement>("/api/gastos/movimientos");
         Assert.DoesNotContain(movs.EnumerateArray(), m => m.GetProperty("importe").GetDecimal() == 15.40m);
 
-        // un recordatorio pedido por Telegram avisa también por Telegram
-        await Decir(Mensaje(42, "recuérdame mañana a las 9 llamar al taller"));
+        // un recordatorio avisa por donde se pida («por telegram»); si no se dice nada, solo por la app
+        await Decir(Mensaje(42, "recuérdame mañana a las 9 llamar al taller por telegram"));
         await Decir(Boton(42, Ultimo("sendMessage").Cuerpo!["reply_markup"]!["inline_keyboard"]![0]![0]!["callback_data"]!.GetValue<string>()));
         using (var scope = factory.Services.CreateScope())
         {
             var ev = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Eventos.SingleAsync(e => e.Titulo == "Llamar al taller");
             Assert.True(ev.PorTelegram);
+            Assert.False(ev.PorPush || ev.PorCorreo);
             Assert.NotNull(ev.ProximoAviso);
         }
 

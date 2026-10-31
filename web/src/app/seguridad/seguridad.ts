@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
 import type { Conexion } from '../musica/musica';
+import { RecargaService } from '../core/recarga';
 
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
 interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; }
@@ -69,6 +70,7 @@ export class Seguridad {
   constructor() {
     this.push.comprobar();
     this.cargar();
+    inject(RecargaService).alRecargar(() => this.cargar(), inject(DestroyRef));
     // la lista de sesiones se refresca sola para ver quién sigue en línea
     const t = setInterval(() => { if (!document.hidden) this.leerSesiones(); }, 30_000);
     inject(DestroyRef).onDestroy(() => { clearInterval(t); clearInterval(this.esperaTelegram); });

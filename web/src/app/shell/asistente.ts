@@ -138,7 +138,13 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
                         <input type="text" [value]="e.lugar ?? ''" maxlength="200" placeholder="Centro de salud, clínica…" (input)="cambiarEv({ lugar: $any($event.target).value || null })"></label>
                     }
                   </div>
-                  <p class="extra">🔔 Te aviso {{ e.todoElDia ? 'ese día a las 9' : e.avisoMinutos ? e.avisoMinutos + ' min antes' : 'a esa hora' }} con notificación{{ e.porCorreo ? ' y correo' : '' }}.</p>
+                  <p class="extra">🔔 Te aviso {{ e.todoElDia ? 'ese día a las 9' : e.avisoMinutos ? e.avisoMinutos + ' min antes' : 'a esa hora' }} por:</p>
+                  <div class="canales" role="group" aria-label="Por dónde avisar">
+                    <button type="button" class="chip" [class.on]="e.porPush" [attr.aria-pressed]="e.porPush" (click)="cambiarEv({ porPush: !e.porPush })">📱 App</button>
+                    <button type="button" class="chip" [class.on]="e.porCorreo" [attr.aria-pressed]="e.porCorreo" (click)="cambiarEv({ porCorreo: !e.porCorreo })">✉️ Correo</button>
+                    <button type="button" class="chip" [class.on]="e.porWhatsApp" [attr.aria-pressed]="e.porWhatsApp" (click)="cambiarEv({ porWhatsApp: !e.porWhatsApp })">💬 WhatsApp</button>
+                    <button type="button" class="chip" [class.on]="!!e.porTelegram" [attr.aria-pressed]="!!e.porTelegram" (click)="cambiarEv({ porTelegram: !e.porTelegram })">✈️ Telegram</button>
+                  </div>
                 }
               }
               @case ('hucha') {
@@ -241,6 +247,9 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .segmento button.activo { background: var(--brand); color: var(--on-brand); }
     .chip, .pastilla { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--linea); background: var(--tarjeta-2); color: var(--texto); font: 600 12px/1 var(--font-text); }
     button.chip { cursor: pointer; }
+    .canales { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+    .canales .chip { color: var(--soft); transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+    .canales .chip.on { background: color-mix(in srgb, var(--brand) 18%, var(--tarjeta-2)); border-color: var(--brand); color: var(--texto); }
     .importe { display: flex; align-items: baseline; justify-content: center; gap: 4px; font: 700 clamp(2rem, 9vw, 2.8rem)/1 var(--font-display); letter-spacing: -0.03em; color: var(--texto); }
     .importe.ingreso { color: var(--ok); }
     .importe span { opacity: 0.7; }
@@ -282,7 +291,7 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .asis__historial li.deshecho::before { content: '↶ '; color: var(--soft); }
 
     @media (max-width: 640px) {
-      .asis { position: fixed; inset: auto 0 var(--teclado, 0px) 0; margin: 0; width: 100%; max-width: 100%; max-height: calc(var(--alto, 100dvh) - 10px); border-radius: 26px 26px 0 0; border-bottom: 0; }
+      .asis { position: fixed; inset: auto 0 var(--teclado, 0px) 0; margin: 0; width: 100%; max-width: 100%; max-height: calc(var(--alto, 100dvh) - env(safe-area-inset-top) - 12px); border-radius: 26px 26px 0 0; border-bottom: 0; }
       .asis[open] { animation: sube-movil 420ms var(--ease-expo); }
       .asis__caja { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
       .campos { grid-template-columns: minmax(0, 1fr); }

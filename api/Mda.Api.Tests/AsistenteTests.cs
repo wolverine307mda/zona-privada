@@ -108,8 +108,9 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
         Assert.Equal(TipoEvento.Recordatorio, e.Tipo);
         Assert.Equal(titulo, e.Titulo);
         Assert.Equal(new DateTime(a, m, d, h, min, 0), TimeZoneInfo.ConvertTime(e.Inicio, Madrid).DateTime);
+        // sin decir por dónde, solo la notificación de la app
         Assert.True(e.PorPush);
-        Assert.True(e.PorCorreo);
+        Assert.False(e.PorCorreo || e.PorWhatsApp || e.PorTelegram);
         Assert.Equal(0, e.AvisoMinutos);
     }
 
@@ -296,5 +297,43 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
         Assert.Equal("pregunta", r.GetProperty("clase").GetString());
         Assert.Contains("18,00 €", r.GetProperty("respuesta").GetString());
         Assert.Contains("Bolos Kiko", r.GetProperty("respuesta").GetString());
+    }
+    [Theory]
+    [InlineData("nuevo gasto en supermercado 23,40 €", "supermercado", "Supermercado")]
+    [InlineData("nuevo gasto de 12 € en el Mercadona", "supermercado", "Mercadona")]
+    [InlineData("añade un gasto de 9,99 de Netflix", "suscripciones", "Netflix")]
+    public void Las_ordenes_no_entran_en_el_concepto(string frase, string categoria, string concepto)
+    {
+        var p = E(frase);
+        Assert.Equal("movimiento", p.Clase);
+        Assert.Equal(categoria, p.Movimiento!.Categoria);
+        Assert.Equal(concepto, p.Movimiento.Concepto);
+    }
+    [Theory]
+    [InlineData("nuevo recordatorio por whatsapp mañana a las 10 con concepto llamar al banco", "Llamar al banco", false, false, true, false)]
+    [InlineData("crea un recordatorio mañana a las 10 llamado renovar el DNI avisándome por correo", "Renovar el DNI", false, true, false, false)]
+    [InlineData("recuérdame mañana pagar la luz por telegram y por la app", "Pagar la luz", true, false, false, true)]
+    [InlineData("recuérdame el viernes sacar la basura por whatsapp y correo", "Sacar la basura", false, true, true, false)]
+    [InlineData("nuevo recordatorio mañana a las 9 tomar la pastilla por todas partes", "Tomar la pastilla", true, true, true, true)]
+    [InlineData("recuérdame mañana a las 9 llamar a mamá, avisa por todos los canales", "Llamar a mamá", true, true, true, true)]
+    [InlineData("nuevo recordatorio mañana regar las plantas", "Regar las plantas", true, false, false, false)]
+    public void Recordatorios_con_canal(string frase, string titulo, bool push, bool correo, bool whatsapp, bool telegram)
+    {
+        var p = E(frase);
+        Assert.Equal("agenda", p.Clase);
+        var e = p.Evento!;
+        Assert.Equal(TipoEvento.Recordatorio, e.Tipo);
+        Assert.Equal(titulo, e.Titulo);
+        Assert.Equal((push, correo, whatsapp, telegram), (e.PorPush, e.PorCorreo, e.PorWhatsApp, e.PorTelegram));
+    }
+
+    [Fact]
+    public void Un_evento_nuevo_avisa_por_whatsapp_si_se_pide()
+    {
+        var p = E("nuevo evento el sábado a las 21 cena con Laura por whatsapp");
+        Assert.Equal("Cena con Laura", p.Evento!.Titulo);
+        Assert.True(p.Evento.PorWhatsApp);
+        Assert.False(p.Evento.PorPush);
+        Assert.Contains("WhatsApp", p.Resumen);
     }
 }

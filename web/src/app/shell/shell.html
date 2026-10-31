@@ -74,6 +74,9 @@
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
           <span>Asistente</span>
         </button>
+        <button class="barra__recargar" type="button" (click)="recarga.recargar()" [class.gira]="recarga.girando()" aria-label="Actualizar los datos" title="Actualizar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" /></svg>
+        </button>
         <button class="barra__buscar" type="button" (click)="buscador().abrir()" aria-label="Buscar (Ctrl+K)" title="Buscar (Ctrl+K)">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
           <span>Buscar</span><kbd>Ctrl K</kbd>

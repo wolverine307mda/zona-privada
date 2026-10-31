@@ -1,7 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Consejos, Deudas, Estadisticas, Frecuencia, Gasolina, Hucha, Mantenimiento, Movimiento, Presupuesto, Recurrente, ResumenMes, Saldo, Tipo } from './modelo';
+import { RecargaService } from '../core/recarga';
 
 export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId' | 'tieneTicket'> & { recurrenteId?: number | null; repite?: Frecuencia | null; variable?: boolean };
 export type RecurrenteEntrada = Omit<Recurrente, 'id' | 'mensual'>;
@@ -27,6 +28,8 @@ export class GastosService {
   readonly editandoSaldo = signal(false);
 
   recargar(): void { this.version.update((v) => v + 1); }
+
+  constructor() { inject(RecargaService).alRecargar(() => this.recargar(), inject(DestroyRef)); }
 
   moverMes(delta: number): void {
     const d = new Date(this.anio(), this.mes() - 1 + delta, 1);

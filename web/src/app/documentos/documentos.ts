@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnDestroy, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { RecargaService } from '../core/recarga';
+import { Component, DestroyRef, ElementRef, OnDestroy, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -107,6 +108,7 @@ export class Documentos implements OnDestroy {
   protected readonly esImagen = (e: Elemento) => IMAGEN_WEB.test(e.nombre);
 
   constructor() {
+    inject(RecargaService).alRecargar(() => this.recargar(), inject(DestroyRef));
     this.api.raices().then((r) => this.raices.set(r)).catch(() => { this.raices.set([]); this.error.set('No se pudo leer las carpetas del equipo.'); });
 
     // cargar la carpeta abierta (o la papelera) cuando cambia la dirección o algo se modifica

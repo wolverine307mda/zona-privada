@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { RecargaService } from '../core/recarga';
 
 interface Lugar { nombre: string; lat: number; lon: number; region?: string | null; }
 interface Actual { temperatura: number; sensacion: number; codigo: number; deDia: boolean; viento: number; humedad: number; texto: string; icono: string; }
@@ -172,6 +173,7 @@ export class Tiempo {
 
   constructor() {
     this.cargar();
+    inject(RecargaService).alRecargar(() => this.cargar(), inject(DestroyRef));
     const t = setInterval(() => { if (!document.hidden && !this.buscando()) this.cargar(); }, 15 * 60_000);
     inject(DestroyRef).onDestroy(() => { clearInterval(t); clearTimeout(this.espera); });
   }

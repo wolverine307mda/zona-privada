@@ -28,6 +28,8 @@ public class Conversacion(
         "💸 <i>ayer 12 € en el Mercadona</i>\n" +
         "💰 <i>cobré la nómina 1.450 €</i>\n" +
         "⏰ <i>recuérdame mañana a las 9 llamar al taller</i>\n" +
+        "📲 <i>nuevo recordatorio por WhatsApp el viernes a las 18 sacar la basura</i>\n" +
+        "   (sin decir nada te aviso por la app; también «por correo», «por Telegram» o «por todas»)\n" +
         "📅 <i>cita con el médico el jueves de 10 a 11 en el centro de salud</i>\n" +
         "💼 <i>curro de 8:30 a 17:30 de lunes a viernes</i>\n" +
         "🗓️ <i>¿qué tengo mañana?</i>\n" +
@@ -82,8 +84,6 @@ public class Conversacion(
         }
         if (p.Clase == "nada") { await bot.Enviar(p.Resumen, ct: ct); return; }
 
-        // por Telegram, los recordatorios que pidas por aquí te avisan también por aquí
-        if (p.Evento is { } ev) p = p with { Evento = ev with { PorTelegram = true } };
         var clave = Guid.NewGuid().ToString("N")[..10];
         cache.Set($"tg:{clave}", p, TimeSpan.FromHours(2));
         var sb = new StringBuilder($"<b>{H(p.Resumen)}</b>");

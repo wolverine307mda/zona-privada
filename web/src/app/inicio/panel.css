@@ -1,6 +1,12 @@
 /* Panel en mosaico: cada caja tiene un ancho mínimo y crece hasta cerrar la fila,
    así las filas siempre llegan al borde derecho salgan las cajas que salgan */
 .panel { display: flex; flex-wrap: wrap; align-items: stretch; gap: 20px; }
+/* orden pensado para que ninguna caja se quede sola al final de una fila (y estirada y vacía):
+   las pequeñas van juntas tras la música y las listas cierran con las carpetas */
+.panel > .dinero, .panel > .tiempo { order: 1; }
+.panel > .musica, .panel > .coche, .panel > .mini { order: 2; }
+.panel > .lista { order: 3; }
+.panel > .carpetas { order: 4; }
 .asis-inicio { flex: 1 1 100%; display: flex; gap: 10px; }
 .asis-inicio__campo { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 18px; border-radius: 18px; cursor: text; text-align: left;
   border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: var(--desenfoque); color: var(--soft); font: 500 16px/1.2 var(--font-text); transition: border-color 160ms ease, box-shadow 160ms ease; }
@@ -142,7 +148,8 @@ ul { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 
 /* carpetas */
 .carpetas { flex: 2 1 420px; }
 .tiempo { flex-basis: 420px; }
-.carpetas__lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.carpetas { container-type: inline-size; }
+.carpetas__lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .carpeta { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 10px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--c) 12%, var(--tarjeta-2)); min-width: 0; }
 .carpeta .icon { grid-row: span 2; }
 .carpeta { container-type: inline-size; }

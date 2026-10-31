@@ -176,6 +176,24 @@ input[type='date'], input[type='time'], input[type='datetime-local'], input[type
 }
 input::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
 input, select, textarea { max-width: 100%; box-sizing: border-box; }
+/* cargando: un aro que gira delante del texto (vale para cualquier «Cargando…») */
+.cargando, .esta-cargando { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--soft); }
+.cargando::before, .esta-cargando::before {
+  content: ''; flex: none; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--texto) 12%, transparent); border-top-color: var(--brand); animation: gira-carga 800ms linear infinite;
+}
+@keyframes gira-carga { to { transform: rotate(360deg); } }
+/* esqueleto: líneas que brillan mientras llegan los datos */
+.esqueleto { display: flex; flex-direction: column; gap: 10px; list-style: none; }
+.esqueleto i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--tarjeta-2) 25%, color-mix(in srgb, var(--texto) 9%, var(--tarjeta-2)) 50%, var(--tarjeta-2) 75%) 0 0 / 300% 100%; animation: brilla 1.3s ease-in-out infinite; }
+.esqueleto i:nth-child(2) { width: 80%; } .esqueleto i:nth-child(3) { width: 60%; }
+@keyframes brilla { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* precarga de index.html (antes de que arranque Angular): la misma marca que el arranque de app.ts */
+.precarga { position: fixed; inset: 0; display: grid; place-items: center; background: var(--fondo); }
+.precarga span { font: 700 clamp(2.4rem, 8vw, 4rem)/1 var(--font-display); letter-spacing: -0.05em; color: var(--texto); animation: precarga 1.6s ease-in-out infinite; }
+@keyframes precarga { 50% { opacity: 0.55; transform: scale(0.97); } }
+
 /* con un diálogo abierto, el fondo no se mueve */
 html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
 

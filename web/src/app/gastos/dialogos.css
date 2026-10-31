@@ -86,7 +86,7 @@
 @media (max-width: 600px) {
   .dlg {
     position: fixed; inset: auto 0 var(--teclado, 0px) 0; margin: 0; width: 100%; max-width: 100%;
-    max-height: calc(var(--alto, 100dvh) - 10px); border-radius: 22px 22px 0 0; border-bottom: 0; overflow: hidden;
+    max-height: calc(var(--alto, 100dvh) - env(safe-area-inset-top) - 12px); border-radius: 22px 22px 0 0; border-bottom: 0; overflow: hidden;
   }
   .dlg[open] { display: flex; flex-direction: column; animation: sube 380ms var(--ease-expo); }
   .dlg__caja { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px; gap: 14px; scroll-padding-block: 72px 96px; }

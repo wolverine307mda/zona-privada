@@ -36,7 +36,7 @@
       <div class="dias" aria-label="Gasto de cada día del mes">
         @for (d of dias(); track $index) { <span [class.futuro]="d.futuro" [class.hoy]="d.hoy" [style.--h.%]="d.h" [style.animation-delay.ms]="$index * 18"></span> }
       </div>
-    } @else { <p class="vacio">Cargando…</p> }
+    } @else { <div class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></div> }
   </a>
 
   <!-- el tiempo -->
@@ -88,7 +88,7 @@
     <ul class="agenda">
       @for (a of eventos(); track a.clave) {
         <li [style.--c]="colorEvento(a.color)"><time>{{ cuando(a) }}</time><span>{{ a.titulo }}</span></li>
-      } @empty { <li class="vacio">{{ agenda() ? 'Nada en las próximas dos semanas' : 'Cargando…' }}</li> }
+      } @empty { @if (agenda()) { <li class="vacio">Nada en las próximas dos semanas</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
 
@@ -102,7 +102,7 @@
           <button class="check" type="button" (click)="hecho($event, a)" [attr.aria-label]="'Marcar «' + a.titulo + '» como hecho'"></button>
           <span><strong>{{ a.titulo }}</strong><small [class.tarde]="cuando(a).startsWith('Atrasado')">{{ cuando(a) }}</small></span>
         </li>
-      } @empty { <li class="vacio">{{ agenda() ? 'Todo hecho 🎉' : 'Cargando…' }}</li> }
+      } @empty { @if (agenda()) { <li class="vacio">Todo hecho 🎉</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
 
@@ -115,7 +115,7 @@
           <span>{{ n.titulo || n.contenido.split('\n')[0] }}</span>
           @if (progresoTareas(n.contenido); as p) { @if (p.total) { <small><span class="mini-barra"><span [style.width.%]="p.hechas / p.total * 100"></span></span>{{ p.hechas }}/{{ p.total }}</small> } }
         </li>
-      } @empty { <li class="vacio">{{ notas() ? 'Fija una nota y saldrá aquí' : 'Cargando…' }}</li> }
+      } @empty { @if (notas()) { <li class="vacio">Fija una nota y saldrá aquí</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
 

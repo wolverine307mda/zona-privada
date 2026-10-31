@@ -52,7 +52,7 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
       </section>
     } @empty {
       <div class="caja vacio">
-        <strong>{{ cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
+        <strong [class.esta-cargando]="!cargado()">{{ cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
         @if (cargado()) { Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen. }
       </div>
     }

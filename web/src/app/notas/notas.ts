@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { seguirTeclado } from '../gastos/teclado';
 import { alternarTarea, markdown, progresoTareas } from './markdown';
 import { COLORES_NOTA, Nota, NotaEntrada, NotasService, colorNota } from './notas.service';
+import { RecargaService } from '../core/recarga';
 
 // Notas: tarjetas en mosaico (las fijadas arriba), búsqueda al instante, etiquetas, colores y tareas
 // que se marcan desde la propia tarjeta. El editor guarda solo mientras escribes.
@@ -54,6 +55,7 @@ export class Notas {
 
   constructor() {
     this.cargar();
+    inject(RecargaService).alRecargar(() => this.cargar(), inject(DestroyRef));
     // /notas?nueva=1 abre el editor (lo usan el buscador y el inicio)
     this.ruta.queryParamMap.subscribe((p) => { if (p.get('nueva')) { this.nueva(); this.router.navigate([], { queryParams: {}, replaceUrl: true }); } });
     inject(DestroyRef).onDestroy(() => { clearTimeout(this.temporizador); clearTimeout(this.buscando); this.soltar?.(); });

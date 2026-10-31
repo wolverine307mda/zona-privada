@@ -11,6 +11,7 @@ import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
 import { PerfilService } from '../core/perfil.service';
 import { AsistenteService } from '../core/asistente.service';
+import { RecargaService } from '../core/recarga';
 import { Asistente } from './asistente';
 import { Buscador } from './buscador';
 import { MiniMusica } from './mini-musica';
@@ -34,6 +35,7 @@ export class Shell {
   protected readonly instalar = inject(Instalar);
   protected readonly perfil = inject(PerfilService);
   protected readonly asistente = inject(AsistenteService);
+  protected readonly recarga = inject(RecargaService);
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);

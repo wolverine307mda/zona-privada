@@ -1,3 +1,4 @@
+import { RecargaService } from '../core/recarga';
 import { Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Errores, erroresDe } from '../gastos/gastos.service';
@@ -181,6 +182,7 @@ export class Agenda {
     // lo que apunta el asistente desde cualquier pantalla
     const recargar = () => { this.cargar(); this.api.estado().then((e) => this.estado.set(e)).catch(() => {}); };
     window.addEventListener('mda:agenda', recargar);
+    inject(RecargaService).alRecargar(recargar, inject(DestroyRef));
     // la raya de «ahora» en la vista del día
     const t = setInterval(() => this.reloj.set(new Date()), 60_000);
     inject(DestroyRef).onDestroy(() => { window.removeEventListener('mda:agenda', recargar); clearInterval(t); });
