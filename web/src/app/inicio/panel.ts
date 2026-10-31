@@ -114,6 +114,8 @@ export class Panel {
     const dia = mismoDia(i, hoy) ? 'Hoy' : mismoDia(i, man) ? 'Mañana' : i < hoy ? 'Atrasado' : i.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
     return a.todoElDia ? dia : `${dia} · ${hora(i)}`;
   }
+  // 10458 -> «10 mil»: los números de las carpetas caben en su casilla
+  protected compacto(n: number): string { return n < 10000 ? n.toLocaleString('es-ES') : new Intl.NumberFormat('es-ES', { notation: 'compact', maximumFractionDigits: 0 }).format(n); }
   protected anillo(pct: number): string { const l = 2 * Math.PI * 40; return `${(Math.min(pct, 100) / 100) * l} ${l}`; }
   protected icono(id: string): string { return this.raicesInfo[id]?.icono ?? 'M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z'; }
   protected color(id: string): string { return this.raicesInfo[id]?.color ?? 'var(--brand)'; }

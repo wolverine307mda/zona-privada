@@ -23,10 +23,11 @@
       @if (c.imagen) { <img class="musica__fondo" [src]="c.imagen" alt=""> }
       <header class="cab"><span class="ico ico--verde">
         @if (sonando()!.sonando) { <span class="ondas" aria-hidden="true"><i></i><i></i><i></i></span> } @else { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /></svg> }
-      </span><h3>{{ sonando()!.sonando ? 'Sonando' : 'En pausa' }}</h3>@if (sonando()!.dispositivo) { <em class="chip chip--suave">{{ sonando()!.dispositivo }}</em> }</header>
+      </span><h3>{{ sonando()!.sonando ? 'Sonando' : 'En pausa' }}</h3></header>
       <div class="musica__cuerpo">
         <span class="mini-disco"><span class="mini-disco__vinilo" aria-hidden="true"></span>@if (c.imagen) { <img [src]="c.imagen" alt="" width="96" height="96"> }</span>
-        <span class="musica__texto"><strong>{{ c.nombre }}</strong><span>{{ c.artistas }}</span></span>
+        <span class="musica__texto"><strong>{{ c.nombre }}</strong><span>{{ c.artistas }}</span>
+          @if (sonando()!.dispositivo) { <small><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v18H8zM11.5 18h1" /></svg>{{ sonando()!.dispositivo }}</small> }</span>
       </div>
       <div class="musica__pie">
         <span class="musica__barra"><span [style.width.%]="pct()"></span></span>
@@ -114,10 +115,10 @@
   <!-- carpetas -->
   @if (raices().length) {
     <a class="caja carpetas" routerLink="/documentos" data-inclina>
-      <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" /></svg></span><h3>Carpetas</h3><em class="chip chip--suave">{{ totalArchivos() }}</em></header>
+      <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" /></svg></span><h3>Carpetas</h3><em class="chip chip--suave">{{ compacto(totalArchivos()) }}</em></header>
       <div class="carpetas__lista">
         @for (r of raices(); track r.id) {
-          <span class="carpeta" [style.--c]="color(r.id)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icono(r.id)" /></svg><b>{{ r.elementos }}</b><small>{{ r.nombre }}</small></span>
+          <span class="carpeta" [style.--c]="color(r.id)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icono(r.id)" /></svg><b>{{ compacto(r.elementos) }}</b><small>{{ r.nombre }}</small></span>
         }
       </div>
     </a>

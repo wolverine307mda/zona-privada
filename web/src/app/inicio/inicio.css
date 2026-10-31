@@ -65,9 +65,10 @@
 .barra span.alta { background: var(--bad); }
 .barra--fina { height: 6px; }
 .red { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
-.red p { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; }
+.red { container-type: inline-size; }
+.red p { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .red .icon { color: var(--acento); }
-.red__cifra { font: 700 clamp(1rem, 0.85rem + 0.5vw, 1.25rem)/1 var(--font-display); letter-spacing: -0.03em; white-space: nowrap; }
+.red__cifra { font: 700 clamp(0.8rem, 7.6cqi, 1.25rem)/1 var(--font-display); letter-spacing: -0.03em; white-space: nowrap; }
 .red code { font-size: 11px; color: var(--soft); }
 
 /* ---------- Bloques ---------- */
