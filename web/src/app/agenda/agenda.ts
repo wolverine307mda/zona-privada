@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Errores, erroresDe } from '../gastos/gastos.service';
 import { seguirTeclado } from '../gastos/teclado';
@@ -86,6 +86,10 @@ export class Agenda {
     if (q.get('nuevo')) setTimeout(() => this.nuevo(q.get('nuevo') === 'recordatorio' ? 'Recordatorio' : 'Evento'));
     this.cargar();
     this.api.estado().then((e) => this.estado.set(e)).catch(() => {});
+    // lo que apunta el asistente desde cualquier pantalla
+    const recargar = () => this.cargar();
+    window.addEventListener('mda:agenda', recargar);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('mda:agenda', recargar));
   }
 
   private del(f: Date): Aparicion[] {

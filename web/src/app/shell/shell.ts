@@ -10,13 +10,15 @@ import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
 import { PerfilService } from '../core/perfil.service';
+import { AsistenteService } from '../core/asistente.service';
+import { Asistente } from './asistente';
 import { Buscador } from './buscador';
 import { MiniMusica } from './mini-musica';
 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {
@@ -31,6 +33,7 @@ export class Shell {
   protected readonly sistema = inject(SistemaService);
   protected readonly instalar = inject(Instalar);
   protected readonly perfil = inject(PerfilService);
+  protected readonly asistente = inject(AsistenteService);
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);

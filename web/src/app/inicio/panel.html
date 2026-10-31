@@ -1,4 +1,14 @@
 <div class="panel">
+  <!-- el asistente: apuntar cualquier cosa con una frase -->
+  <div class="asis-inicio">
+    <button class="asis-inicio__campo" type="button" (click)="asistente.abrir()">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+      <span>Dime qué apunto… <em>«ayer 12 € en el Mercadona»</em></span>
+    </button>
+    <button class="asis-inicio__mic" type="button" (click)="asistente.abrir('', true)" aria-label="Decírselo hablando">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+    </button>
+  </div>
   <!-- el dinero del mes -->
   <a class="caja dinero" routerLink="/gastos" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 10h18M7 15h3" /></svg></span><h3>{{ nombreMes }}</h3>

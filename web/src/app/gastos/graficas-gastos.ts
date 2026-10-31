@@ -1,9 +1,10 @@
 // Gráficas del módulo de gastos (ECharts por piezas: se suman tarta y barras a lo que ya registra el inicio)
 import { BarChart, PieChart } from 'echarts/charts';
+import { TitleComponent } from 'echarts/components';
 import { echarts } from '../inicio/graficas';
 import { PuntoMes, Repostaje, TotalCategoria, categoria, euros, mesCorto } from './modelo';
 
-echarts.use([PieChart, BarChart]);
+echarts.use([PieChart, BarChart, TitleComponent]); // el título es el total en el centro del rosco
 export { echarts };
 
 const tema = () => {

@@ -79,6 +79,10 @@
       </div>
       <div class="barra__lado">
         <app-mini-musica [oculto]="seccion().id === 'musica'" />
+        <button class="barra__asis" type="button" (click)="asistente.abrir()" aria-label="Asistente (Ctrl+J)" title="Apunta lo que sea con una frase (Ctrl+J)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+          <span>Asistente</span>
+        </button>
         <button class="barra__buscar" type="button" (click)="buscador().abrir()" aria-label="Buscar (Ctrl+K)" title="Buscar (Ctrl+K)">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
           <span>Buscar</span><kbd>Ctrl K</kbd>
@@ -120,6 +124,7 @@
 </div>
 
 <app-buscador />
+<app-asistente />
 
 <!-- Ajustes de la app: apariencia (modo y color) y la sesión -->
 <dialog class="ajustes" #ajustes aria-labelledby="ajustes-titulo" (click)="cerrarFuera($event)">

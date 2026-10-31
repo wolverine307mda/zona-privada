@@ -3,6 +3,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Aparicion, colorEvento, hora, mismoDia } from '../agenda/agenda.service';
+import { AsistenteService } from '../core/asistente.service';
 import { RAICES } from '../documentos/archivos.service';
 import { Deudas, Gasolina, ResumenMes, euros, eurosCorto, numero } from '../gastos/modelo';
 import { progresoTareas } from '../notas/markdown';
@@ -24,6 +25,7 @@ interface Raiz { id: string; nombre: string; elementos: number; }
 })
 export class Panel {
   private readonly http = inject(HttpClient);
+  protected readonly asistente = inject(AsistenteService);
   protected readonly euros = euros;
   protected readonly eurosCorto = eurosCorto;
   protected readonly numero = numero;

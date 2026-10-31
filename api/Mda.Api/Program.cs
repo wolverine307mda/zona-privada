@@ -3,6 +3,7 @@
 using System.Threading.RateLimiting;
 using Mda.Api.Agenda;
 using Mda.Api.Archivos;
+using Mda.Api.Asistente;
 using Mda.Api.Auth;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
@@ -176,6 +177,7 @@ app.MapCartera();
 app.MapCoche();
 app.MapPush();
 app.MapPerfil();
+app.MapAsistente();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

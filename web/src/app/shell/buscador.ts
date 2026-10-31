@@ -3,6 +3,7 @@ import { Component, ElementRef, computed, inject, signal, viewChild } from '@ang
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { INICIO, MODULOS } from '../core/modulos';
+import { AsistenteService } from '../core/asistente.service';
 import { TemaService } from '../core/tema.service';
 import { GastosService } from '../gastos/gastos.service';
 
@@ -77,6 +78,7 @@ export class Buscador {
   private readonly http = inject(HttpClient);
   private readonly tema = inject(TemaService);
   private readonly gastos = inject(GastosService);
+  private readonly asistente = inject(AsistenteService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
   private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
 
@@ -103,7 +105,12 @@ export class Buscador {
   protected readonly opciones = computed(() => {
     const q = quitarTildes(this.q().trim());
     const fijas = q ? this.fijas.filter((o) => quitarTildes(`${o.titulo} ${o.detalle}`).includes(q)) : this.fijas.filter((o) => o.grupo !== 'Tema');
-    return [...fijas, ...this.notas()];
+    // si parece una frase para apuntar («12 € en el Mercadona», «recuérdame…»), lo primero es dársela al asistente
+    const frase = this.q().trim();
+    const asis: Opcion[] = /\d|^(recu[eé]rd|av[ií]s|cu[aá]nt|ayer|ma[ñn]ana|cobr|pagu|gast)/i.test(frase) && frase.length > 2
+      ? [{ id: 'asistente', titulo: 'Decírselo al asistente', detalle: `«${frase}»`, icono: 'M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z', grupo: 'Asistente', hacer: () => this.asistente.abrir(frase) }]
+      : [];
+    return [...asis, ...fijas, ...this.notas()];
   });
 
   abrir(): void {

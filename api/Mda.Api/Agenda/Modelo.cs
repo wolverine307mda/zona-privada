@@ -101,7 +101,7 @@ public static class Ocurrencias
     // Null si no avisa, ya está hecho o no quedan repeticiones.
     public static (DateTimeOffset Aviso, DateTimeOffset De)? ProximoAviso(Evento e, DateTimeOffset desde, DateTimeOffset ahora, TimeZoneInfo zona)
     {
-        if (e.AvisoMinutos is not { } min || e.Hecho || (!e.PorCorreo && !e.PorWhatsApp)) return null;
+        if (e.AvisoMinutos is not { } min || e.Hecho || (!e.PorCorreo && !e.PorWhatsApp && !e.PorPush)) return null;
         var antes = TimeSpan.FromMinutes(min);
         // con aviso «después» (negativo), la repetición que ya empezó hoy aún cuenta
         if (Siguiente(e, antes < TimeSpan.Zero ? desde + antes : desde, zona) is not { } o) return null;
