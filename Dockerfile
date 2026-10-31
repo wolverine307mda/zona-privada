@@ -1,7 +1,7 @@
 # Imagen única: compila el front de Angular, lo mete en wwwroot y publica la API de .NET.
 
 # 1) Front
-FROM node:24-alpine AS web
+FROM node:25-alpine AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --ignore-scripts
