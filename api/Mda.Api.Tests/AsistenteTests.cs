@@ -328,6 +328,17 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
     }
 
     [Fact]
+    public void Avisame_por_un_canal_no_convierte_la_cita_en_recordatorio()
+    {
+        var p = E("dentista el jueves de 10 a 11:30 en la clínica, avísame por whatsapp");
+        var e = p.Evento!;
+        Assert.Equal(TipoEvento.Evento, e.Tipo);
+        Assert.Equal("Dentista", e.Titulo);
+        Assert.Equal("Clínica", e.Lugar);
+        Assert.True(e.PorWhatsApp);
+    }
+
+    [Fact]
     public void Un_evento_nuevo_avisa_por_whatsapp_si_se_pide()
     {
         var p = E("nuevo evento el sábado a las 21 cena con Laura por whatsapp");

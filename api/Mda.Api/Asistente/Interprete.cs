@@ -162,7 +162,8 @@ public static partial class Interprete
         var f = new Frase(texto);
         var hoy = DateOnly.FromDateTime(ctx.Ahora);
 
-        var recordatorio = ReRecordatorio().IsMatch(f.Plano);
+        // «avísame por whatsapp» dice por dónde avisar, no que sea un recordatorio
+        var recordatorio = ReRecordatorio().IsMatch(ReCanales().Replace(f.Plano, " "));
         // «¿qué tengo mañana?», «¿estoy libre el jueves?»
         if (!recordatorio && RePreguntaAgenda().IsMatch(f.Plano))
         {
