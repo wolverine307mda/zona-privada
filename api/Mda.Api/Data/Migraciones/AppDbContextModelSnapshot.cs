@@ -286,10 +286,23 @@ namespace Mda.Api.Data.Migraciones
                         .HasMaxLength(400)
                         .HasColumnType("character varying(400)");
 
+                    b.Property<bool>("EnGlobo")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<double?>("Lat")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Lon")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Lugar")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Orden")
                         .HasColumnType("integer");

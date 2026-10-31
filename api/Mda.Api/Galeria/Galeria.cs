@@ -24,6 +24,12 @@ public class FotoPublica
     // cambia si cambia el archivo: va en la URL y permite cachearla «para siempre»
     public string Hash { get; set; } = "";
     public bool Publicada { get; set; } = true;
+    // Globo del portfolio: solo si lo marcas. La posición que se guarda es la que tú pones (o la del archivo, que solo ves tú);
+    // al público siempre le llega redondeada a ~10 km, y nunca si cae dentro de la zona excluida alrededor de tu casa.
+    public bool EnGlobo { get; set; }
+    public double? Lat { get; set; }
+    public double? Lon { get; set; }
+    public string Lugar { get; set; } = "";
     public DateTimeOffset Creada { get; set; } = DateTimeOffset.UtcNow;
 }
 
@@ -93,6 +99,17 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
     {
         try { foreach (var a in Directory.EnumerateFiles(Directorio, $"{id}-*")) File.Delete(a); }
         catch (Exception e) when (e is IOException or DirectoryNotFoundException or UnauthorizedAccessException) { /* ya no estaban */ }
+    }
+
+    // El GPS del archivo original, si lo tiene. SOLO se enseña a ti en la privada; nunca sale hacia la web.
+    public static (double Lat, double Lon)? LeerGps(string ruta)
+    {
+        try
+        {
+            var g = MetadataExtractor.ImageMetadataReader.ReadMetadata(ruta).OfType<MetadataExtractor.Formats.Exif.GpsDirectory>().FirstOrDefault();
+            return g?.GetGeoLocation() is { } l && !l.IsZero ? (l.Latitude, l.Longitude) : null;
+        }
+        catch (Exception e) when (e is MetadataExtractor.ImageProcessingException or IOException) { return null; }
     }
 
     // Decodifica, aplica la orientación y reduce para que el lado largo no pase de «lado» (sin agrandar)

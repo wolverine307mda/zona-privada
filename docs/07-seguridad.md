@@ -35,6 +35,9 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - `AllowedHosts` limita la cabecera `Host` (`ALLOWED_HOSTS` en `.env`).
 - CORS: solo `GET` desde la web pública, en `/api/salud` y `/api/publico/*` (galería y estado en vivo), con límite de ritmo propio.
 - **Galería pública**: nada sale sin activar el interruptor y marcar cada foto; el id es aleatorio, la ruta real nunca viaja y siempre se sirve una copia WebP recomprimida (el codificador no copia EXIF: sin GPS ni cámara) con caché inmutable.
+- **Globo 3D**: cada foto decide si sale; al público solo llegan el nombre y la posición **redondeada a ~10 km**, y nunca nada dentro del radio excluido alrededor de tu casa. El GPS exacto del archivo solo lo ve el dueño en la privada.
+- **Atajos de iOS**: tokens con alcance (gasto, pago, lectura), guardados como hash SHA-256, revocables, sin cookie y sin acceso al resto de la app; aviso por Telegram desde una red nueva.
+- **Señuelos**: archivos falsos en Documentos; abrirlos o descargarlos avisa y cierra la sesión.
 - **Estado en vivo**: apagado por defecto; solo números redondeados (nunca equipo, discos, red ni IP); el directo se corta a los 10 min y con ≤ 20 visitantes a la vez.
 - Markdown de notas: renderizador propio que escapa HTML.
 - Documentos abiertos en línea: texto como `text/plain`, sin ejecutar nada.

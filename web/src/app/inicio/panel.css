@@ -10,7 +10,7 @@
 .asis-inicio { flex: 1 1 100%; display: flex; gap: 10px; }
 .asis-inicio__campo { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 18px; border-radius: 18px; cursor: text; text-align: left;
   border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: var(--desenfoque); color: var(--soft); font: 500 16px/1.2 var(--font-text); transition: border-color 160ms ease, box-shadow 160ms ease; }
-.asis-inicio__campo .icon { flex: none; width: 20px; height: 20px; color: var(--brand); }
+.asis-inicio__campo .icon { flex: none; width: 20px; height: 20px; color: var(--acento); }
 .asis-inicio__campo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .asis-inicio__campo em { font-style: normal; opacity: 0.65; }
 .asis-inicio__mic { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border: 0; border-radius: 18px; background: var(--brand); color: var(--on-brand); cursor: pointer;

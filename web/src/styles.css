@@ -17,7 +17,9 @@
 
 /* ---------- Tokens: noche por defecto ---------- */
 :root {
-  --brand: #ff7a1f; --on-brand: #050f16; --acento: var(--brand);
+  --brand: #ff7a1f; --on-brand: #050f16;
+  /* el color de marca como TEXTO: se mezcla con el color del texto para llegar a 4,5:1 en cualquier tema y color (el naranja puro sobre blanco daba 2,6) */
+  --acento: color-mix(in srgb, var(--brand) 60%, var(--texto));
 
   --fondo: #070d12;
   --lateral: #0a1218;
@@ -45,6 +47,8 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  /* duraciones y escalonado: usar estos en lugar de números sueltos */
+  --dur-1: 160ms; --dur-2: 240ms; --dur-3: 420ms; --dur-4: 700ms; --stagger: 40ms;
 
   /* vidrio: tarjetas y barras translúcidas sobre el fondo con degradado del color elegido */
   --vidrio: color-mix(in srgb, var(--tarjeta) 68%, transparent);
@@ -82,7 +86,7 @@
 [data-color="rosa"]    { --brand: #ff5fa2; --on-brand: #1a0510; }
 [data-color="rojo"]    { --brand: #e62429; --on-brand: #ffffff; }
 /* la lima sobre blanco no se lee: en día, el texto de acento va más oscuro */
-[data-mode="light"][data-color="lima"] { --acento: #3f7d1c; }
+
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--fondo); color: var(--texto); overflow-x: clip; }
@@ -157,7 +161,13 @@ a { color: inherit; }
 @keyframes vt-entra { from { opacity: 0; } }
 @keyframes tema-circulo { from { clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%)); } to { clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 50%)); } }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } [data-inclina] { transform: none !important; } }
+/* sin movimiento: se apagan las animaciones decorativas, pero no los indicadores de carga (si no, no se sabe que algo está cargando) */
+@media (prefers-reduced-motion: reduce) {
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *),
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *)::before,
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *)::after { animation: none !important; transition: none !important; }
+  [data-inclina] { transform: none !important; }
+}
 
 /* app instalada (PWA): sin rebote al tirar de la página y sin seleccionar textos de la interfaz por accidente */
 @media (display-mode: standalone) {
@@ -215,3 +225,6 @@ html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
 .md blockquote { padding-left: 10px; border-left: 3px solid var(--c, var(--brand)); color: var(--soft); }
 .md a { color: var(--acento); }
 .md hr { border: 0; border-top: 1px solid var(--linea); margin: 10px 0; }
+
+/* solo para lectores de pantalla (y para que un campo oculto siga recibiendo el foco del teclado) */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

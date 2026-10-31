@@ -54,7 +54,7 @@
 .items.is-cargando { opacity: 0.55; }
 .item {
   position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: var(--radio);
-  border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque); box-shadow: var(--sombra);
+  border: 1px solid var(--vidrio-borde); background: var(--vidrio); box-shadow: var(--sombra);
   animation: item-entra 520ms var(--ease-expo) both; animation-delay: calc(var(--i) * 22ms);
   transition: transform 320ms var(--ease-out), border-color 200ms ease, box-shadow 320ms ease;
 }
@@ -130,7 +130,7 @@
 /* ---------- soltar, subidas, reproductor y avisos ---------- */
 .soltar { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--brand) 14%, rgba(3, 8, 11, 0.55)); backdrop-filter: blur(6px); pointer-events: none; animation: aparece-suave 200ms ease; }
 .soltar__caja { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 56px; border-radius: 28px; border: 2px dashed var(--brand); background: var(--vidrio); color: var(--texto); animation: soltar-flota 1.4s var(--ease-in-out) infinite alternate; }
-.soltar__caja .icon { width: 44px; height: 44px; color: var(--brand); }
+.soltar__caja .icon { width: 44px; height: 44px; color: var(--acento); }
 .soltar__caja strong { font: 700 var(--step-lead)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
 .soltar__caja span { color: var(--soft); }
 @keyframes soltar-flota { from { transform: perspective(800px) rotateX(8deg) translateY(4px); } to { transform: perspective(800px) rotateX(-6deg) translateY(-4px); } }

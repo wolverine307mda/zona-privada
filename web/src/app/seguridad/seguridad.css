@@ -115,6 +115,6 @@
 .token-nuevo { display: grid; gap: 8px; padding: 14px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }
 .token { word-break: break-all; font-size: 13px; }
 .guia { margin-top: 12px; }
-.guia summary { cursor: pointer; color: var(--brand); }
+.guia summary { cursor: pointer; color: var(--acento); }
 .guia ol { display: grid; gap: 10px; padding-left: 20px; color: var(--soft); }
 .guia code { word-break: break-all; }

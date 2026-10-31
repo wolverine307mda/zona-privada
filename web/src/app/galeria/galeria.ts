@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; }
+interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; enGlobo?: boolean; lat?: number | null; lon?: number | null; lugar?: string; }
+interface Sitio { nombre: string; lat: number; lon: number; region?: string | null; }
 interface Elemento { nombre: string; ruta: string; carpeta: boolean; tamano: number; soportada: boolean; foto: { id: string; publicada: boolean } | null; }
 interface Ventana { tipo: string; titulo: string; inicio: string; fin: string; puntuacion: number | null; detalle: string; }
 interface AjustesLuz { activa: boolean; umbral: number; antelacionMin: number; amanecer: boolean; astro: boolean; bortle: number; }
@@ -77,6 +78,20 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
     </section>
 
     <section class="caja">
+      <header class="caja__cab"><h3>Zona de mi casa</h3><span class="sub">Las fotos hechas dentro de este radio nunca salen en el globo</span></header>
+      <div class="fila-buscar">
+        <input class="campo__input" placeholder="Buscar mi ciudad…" [value]="consultaCasa()" (input)="consultaCasa.set($any($event.target).value)" (keydown.enter)="buscarCasa($event)">
+        <button class="enlace" type="button" (click)="buscarCasa($event)">Buscar</button>
+      </div>
+      @for (s of sitiosCasa(); track s.lat + ',' + s.lon) {
+        <button class="enlace sitio" type="button" (click)="elegirCasa(s)">{{ s.nombre }}{{ s.region ? ' · ' + s.region : '' }}</button>
+      }
+      <p class="sub">{{ casa().lat != null ? 'Centro: ' + casa().lat!.toFixed(2) + ', ' + casa().lon!.toFixed(2) : 'Sin zona excluida todavía' }}</p>
+      <label class="campo"><span class="campo__etiqueta">Radio: {{ casa().radioKm }} km</span>
+        <input type="range" min="0" max="100" step="5" [value]="casa().radioKm" (change)="radioCasa($any($event.target).value)"></label>
+    </section>
+
+    <section class="caja">
       <header class="caja__cab"><h3>En el portfolio</h3><span class="sub">El orden de aquí es el de la web</span></header>
       @if (fotos().length === 0) {
         <p class="vacio">Aún no has publicado nada. Elige fotos de tu carpeta de abajo.</p>
@@ -144,6 +159,23 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
           @if (a.id) {
             <label class="interruptor"><input type="checkbox" [checked]="a.publicada" (change)="a.publicada = $any($event.target).checked">
               <span><strong>Visible en la web</strong></span></label>
+            <fieldset class="lugar">
+              <legend>Globo 3D del portfolio</legend>
+              <label class="interruptor"><input type="checkbox" [checked]="a.enGlobo" (change)="a.enGlobo = $any($event.target).checked">
+                <span><strong>Mostrar en el globo</strong>
+                  <small>La web solo recibe la posición redondeada (~10 km) y el nombre del sitio; nunca el GPS exacto ni el de tu casa.</small></span></label>
+              <div class="fila-buscar">
+                <input class="campo__input" placeholder="Buscar una ciudad o sitio…" [value]="consulta()" (input)="consulta.set($any($event.target).value)" (keydown.enter)="buscar($event)">
+                <button class="enlace" type="button" (click)="buscar($event)">Buscar</button>
+                <button class="enlace" type="button" (click)="usarGps()">Usar el GPS del archivo</button>
+              </div>
+              @for (s of sitios(); track s.lat + ',' + s.lon) {
+                <button class="enlace sitio" type="button" (click)="elegirSitio(s)">{{ s.nombre }}{{ s.region ? ' · ' + s.region : '' }}</button>
+              }
+              @if (a.lat != null && a.lon != null) { <p class="sub">{{ a.lugar || 'Sin nombre' }} · {{ a.lat!.toFixed(2) }}, {{ a.lon!.toFixed(2) }}</p> }
+              <label class="campo"><span class="campo__etiqueta">Nombre que se enseña</span>
+                <input class="campo__input" maxlength="80" [value]="a.lugar ?? ''" (input)="a.lugar = $any($event.target).value"></label>
+            </fieldset>
           }
           @if (errorForm()) { <p class="error">{{ errorForm() }}</p> }
           <footer class="pie">
@@ -165,6 +197,11 @@ export class Galeria implements OnInit {
   protected readonly estado = signal<Estado | null>(null);
   protected readonly publico = signal({ estado: false, cpu: false });
   protected readonly luz = signal<Luz | null>(null);
+  protected readonly consulta = signal('');
+  protected readonly sitios = signal<Sitio[]>([]);
+  protected readonly consultaCasa = signal('');
+  protected readonly sitiosCasa = signal<Sitio[]>([]);
+  protected readonly casa = signal<{ lat: number | null; lon: number | null; radioKm: number }>({ lat: null, lon: null, radioKm: 0 });
   protected readonly fotos = signal<Foto[]>([]);
   protected readonly ruta = signal('');
   protected readonly elementos = signal<Elemento[]>([]);
@@ -192,9 +229,49 @@ export class Galeria implements OnInit {
     this.estado.set(e);
     this.fotos.set(f);
     this.publico.set(p);
+    firstValueFrom(this.http.get<{ lat: number | null; lon: number | null; radioKm: number }>('/api/galeria/globo')).then((c) => this.casa.set(c)).catch(() => {});
     // la luz depende de la previsión (Open-Meteo): si falla, el resto de la pantalla sigue
     firstValueFrom(this.http.get<Luz>('/api/luz')).then((l) => this.luz.set(l)).catch(() => this.luz.set(null));
   }
+
+  private async sitiosDe(q: string): Promise<Sitio[]> {
+    if (q.trim().length < 2) return [];
+    try { return await firstValueFrom(this.http.get<Sitio[]>(`/api/tiempo/buscar?q=${encodeURIComponent(q.trim())}`)); } catch { return []; }
+  }
+
+  protected async buscar(e: Event): Promise<void> { e.preventDefault(); this.sitios.set(await this.sitiosDe(this.consulta())); }
+  protected async buscarCasa(e: Event): Promise<void> { e.preventDefault(); this.sitiosCasa.set(await this.sitiosDe(this.consultaCasa())); }
+
+  protected elegirSitio(s: Sitio): void {
+    const a = this.actual();
+    if (!a) return;
+    // se guarda la ciudad (no un punto exacto): da igual dónde estuvieras dentro de ella
+    this.actual.set({ ...a, lat: s.lat, lon: s.lon, lugar: s.nombre, enGlobo: true });
+    this.sitios.set([]);
+  }
+
+  // el GPS que lleva el archivo (solo lo ves tú); pide el nombre del sitio a mano
+  protected async usarGps(): Promise<void> {
+    const a = this.actual();
+    if (!a?.id) return;
+    const r = await firstValueFrom(this.http.get<{ lat: number; lon: number } | null>(`/api/galeria/fotos/${a.id}/gps`));
+    if (!r) { this.errorForm.set('Esta foto no lleva GPS: busca el sitio a mano.'); return; }
+    this.errorForm.set('');
+    this.actual.set({ ...a, lat: r.lat, lon: r.lon, enGlobo: true });
+  }
+
+  protected async elegirCasa(s: Sitio): Promise<void> {
+    this.casa.set({ ...this.casa(), lat: s.lat, lon: s.lon, radioKm: this.casa().radioKm || 25 });
+    this.sitiosCasa.set([]);
+    await this.guardarCasa();
+  }
+
+  protected async radioCasa(v: string): Promise<void> {
+    this.casa.set({ ...this.casa(), radioKm: +v });
+    await this.guardarCasa();
+  }
+
+  private guardarCasa(): Promise<unknown> { return firstValueFrom(this.http.put('/api/galeria/globo', this.casa())); }
 
   protected hora(iso: string): string {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -262,7 +339,7 @@ export class Galeria implements OnInit {
     this.errorForm.set('');
     try {
       if (a.id) {
-        await firstValueFrom(this.http.put(`/api/galeria/fotos/${a.id}`, { titulo: a.titulo, descripcion: a.descripcion, alt: a.alt, categoria: a.categoria, publicada: a.publicada }));
+        await firstValueFrom(this.http.put(`/api/galeria/fotos/${a.id}`, { titulo: a.titulo, descripcion: a.descripcion, alt: a.alt, categoria: a.categoria, publicada: a.publicada, enGlobo: !!a.enGlobo, lat: a.lat ?? null, lon: a.lon ?? null, lugar: a.lugar ?? '' }));
       } else {
         await firstValueFrom(this.http.post('/api/galeria/fotos', { ruta: a.ruta, titulo: a.titulo, descripcion: a.descripcion, alt: a.alt, categoria: a.categoria }));
       }

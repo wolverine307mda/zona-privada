@@ -7,7 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Galeria;
 
 public record FotoEntrada(string Ruta, string? Titulo, string? Descripcion, string? Alt, string? Categoria);
-public record FotoCambio(string? Titulo, string? Descripcion, string? Alt, string? Categoria, bool Publicada);
+public record FotoCambio(string? Titulo, string? Descripcion, string? Alt, string? Categoria, bool Publicada,
+    bool EnGlobo = false, double? Lat = null, double? Lon = null, string? Lugar = null);
+public record ExclusionEntrada(double? Lat, double? Lon, double RadioKm);
 public record OrdenEntrada(string[] Ids);
 public record EstadoEntrada(bool Activa);
 
@@ -18,6 +20,32 @@ public static class GaleriaEndpoints
     public const string Activa = "galeria-activa";
     public const string WebPublica = "web-publica";
     private const int MaxFotos = 200;
+
+    public const string ClaveExclusion = "globo-excluir";
+    private static readonly System.Text.Json.JsonSerializerOptions Json = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    // distancia en km entre dos puntos
+    internal static double Km(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371, Rad = Math.PI / 180;
+        var dLat = (lat2 - lat1) * Rad; var dLon = (lon2 - lon1) * Rad;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) + Math.Cos(lat1 * Rad) * Math.Cos(lat2 * Rad) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return 2 * R * Math.Asin(Math.Sqrt(a));
+    }
+
+    // lo que sabe el público de dónde está una foto: redondeado a 0,1° (~10 km), y nada si cae en la zona de tu casa
+    internal static object? LugarPublico(FotoPublica f, ExclusionEntrada? x)
+    {
+        if (!f.EnGlobo || f.Lat is not { } lat || f.Lon is not { } lon) return null;
+        if (x is { Lat: { } xl, Lon: { } xo, RadioKm: > 0 } && Km(lat, lon, xl, xo) <= x.RadioKm) return null;
+        return new { lat = Math.Round(lat, 1), lon = Math.Round(lon, 1), nombre = f.Lugar };
+    }
+
+    private static async Task<ExclusionEntrada?> Exclusion(AppDbContext db, CancellationToken ct)
+    {
+        var v = (await db.Ajustes.AsNoTracking().FirstOrDefaultAsync(a => a.Clave == ClaveExclusion, ct))?.Valor;
+        try { return v is null ? null : System.Text.Json.JsonSerializer.Deserialize<ExclusionEntrada>(v, Json); } catch (System.Text.Json.JsonException) { return null; }
+    }
 
     private static IResult Invalido(string campo, string msg) => Results.ValidationProblem(new Dictionary<string, string[]> { [campo] = [msg] });
 
@@ -70,7 +98,7 @@ public static class GaleriaEndpoints
 
         g.MapGet("/fotos", async (AppDbContext db, CancellationToken ct) =>
             Results.Ok(await db.FotosPublicas.AsNoTracking().OrderBy(f => f.Orden).ThenBy(f => f.Creada)
-                .Select(f => new { f.Id, f.Ruta, f.Titulo, f.Descripcion, f.Alt, f.Categoria, f.Orden, f.Ancho, f.Alto, f.Tono, f.Hash, f.Publicada }).ToListAsync(ct)));
+                .Select(f => new { f.Id, f.Ruta, f.Titulo, f.Descripcion, f.Alt, f.Categoria, f.Orden, f.Ancho, f.Alto, f.Tono, f.Hash, f.Publicada, f.EnGlobo, f.Lat, f.Lon, f.Lugar }).ToListAsync(ct)));
 
         // añade una foto a la galería (o la devuelve si ya estaba)
         g.MapPost("/fotos", async (FotoEntrada e, Carpetas c, Derivados d, AppDbContext db, CancellationToken ct) =>
@@ -112,6 +140,10 @@ public static class GaleriaEndpoints
             f.Alt = Recortar(e.Alt, 200);
             f.Categoria = Recortar(e.Categoria, 30).ToLowerInvariant();
             f.Publicada = e.Publicada;
+            if (e.Lat is { } la && (la is < -90 or > 90) || e.Lon is { } lo && (lo is < -180 or > 180)) return Invalido("lat", "Esa posición no es válida.");
+            f.EnGlobo = e.EnGlobo && e.Lat is not null && e.Lon is not null;
+            f.Lat = e.Lat; f.Lon = e.Lon;
+            f.Lugar = Recortar(e.Lugar, 80);
             // si el archivo cambió en disco, se vuelve a medir y las URLs nuevas llevan otro hash
             if (d.RutaReal(f) is { } real && Derivados.HashDe(new FileInfo(real)) is var h && h != f.Hash && d.Medir(real) is { } m)
             {
@@ -120,6 +152,25 @@ public static class GaleriaEndpoints
             }
             await db.SaveChangesAsync(ct);
             return Results.Ok(f);
+        });
+
+        // el GPS que lleva el archivo original (solo lo ves tú, para elegir si lo usas)
+        g.MapGet("/fotos/{id}/gps", async (string id, Derivados d, AppDbContext db, CancellationToken ct) =>
+        {
+            var f = await db.FotosPublicas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (f is null || d.RutaReal(f) is not { } real) return Results.NotFound();
+            return Derivados.LeerGps(real) is { } p ? Results.Ok(new { lat = p.Lat, lon = p.Lon }) : Results.NoContent();
+        });
+
+        // la zona de tu casa: las fotos que caigan dentro nunca salen en el globo
+        g.MapGet("/globo", async (AppDbContext db, CancellationToken ct) => Results.Ok(await Exclusion(db, ct) ?? new ExclusionEntrada(null, null, 0)));
+        g.MapPut("/globo", async (ExclusionEntrada e, AppDbContext db, CancellationToken ct) =>
+        {
+            var a = await db.Ajustes.FindAsync([ClaveExclusion], ct);
+            if (a is null) db.Ajustes.Add(a = new Ajuste { Clave = ClaveExclusion });
+            a.Valor = System.Text.Json.JsonSerializer.Serialize(e with { RadioKm = Math.Clamp(e.RadioKm, 0, 200) }, Json);
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
         });
 
         g.MapDelete("/fotos/{id}", async (string id, Derivados d, AppDbContext db, CancellationToken ct) =>
@@ -156,11 +207,12 @@ public static class GaleriaEndpoints
         {
             if (!await EstaActiva(db, ct)) return Results.NotFound();
             var lista = await db.FotosPublicas.AsNoTracking().Where(f => f.Publicada).OrderBy(f => f.Orden).ThenBy(f => f.Creada).ToListAsync(ct);
+            var exclusion = await Exclusion(db, ct);
             // si el archivo ya no está en el equipo, no se anuncia
             var fotos = lista.Where(f => d.RutaReal(f) is not null).Select(f => new
             {
                 id = f.Id, titulo = f.Titulo, descripcion = f.Descripcion, alt = f.Alt.Length > 0 ? f.Alt : f.Titulo, categoria = f.Categoria,
-                ancho = f.Ancho, alto = f.Alto, tono = f.Tono,
+                ancho = f.Ancho, alto = f.Alto, tono = f.Tono, lugar = LugarPublico(f, exclusion),
                 mini = $"/api/publico/galeria/{f.Id}/mini?v={f.Hash}", grande = $"/api/publico/galeria/{f.Id}/grande?v={f.Hash}",
             }).ToList();
             ctx.Response.Headers.CacheControl = "public, max-age=60";

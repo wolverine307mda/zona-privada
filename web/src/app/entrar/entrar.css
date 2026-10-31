@@ -6,7 +6,7 @@
 }
 
 .top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 20px var(--margin); font-size: var(--step-small); font-weight: 500; }
-.marca { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.04em; color: var(--brand); }
+.marca { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.04em; color: var(--acento); }
 .volver { text-underline-offset: 0.2em; }
 
 .main {
@@ -46,10 +46,10 @@
 .campo--codigo { animation: entra 600ms var(--ease-expo) both; }
 .campo--codigo .entrada { letter-spacing: 0.4em; font-family: var(--font-code); }
 .ojo { position: absolute; right: 0; bottom: 6px; display: grid; place-items: center; width: 40px; height: 40px; background: none; border: 0; color: var(--soft); cursor: pointer; border-radius: 50%; }
-.ojo[aria-pressed="true"] { color: var(--brand); }
+.ojo[aria-pressed="true"] { color: var(--acento); }
 
 .entrar { justify-content: space-between; margin-top: 6px; }
-.mensaje { min-height: 1.5em; font-weight: 500; color: var(--brand); }
+.mensaje { min-height: 1.5em; font-weight: 500; color: var(--acento); }
 
 @media (max-width: 860px) {
   .main { grid-template-columns: minmax(0, 1fr); align-items: end; padding-top: 32vh; }

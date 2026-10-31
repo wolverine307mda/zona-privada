@@ -3,6 +3,7 @@ using Mda.Api.Data;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Mda.Api.Galeria;
 
@@ -27,7 +28,14 @@ public static class EstadoPublico
     }
 
     // lo que ve la web: sin el interruptor general no hay nada; sin el de la carga, solo «en línea»
-    internal static object Foto(AjustesPublicos a, EstadoSistema estado, TimeProvider reloj)
+    // ¿es de día donde vive el equipo? (solo un sí/no: sirve para que el gemelo 3D tenga luz de día o de noche)
+    internal static async Task<bool?> EsDeDia(Mda.Api.Tiempo.ServicioTiempo tiempo, Microsoft.Extensions.Caching.Memory.IMemoryCache cache, TimeProvider reloj, CancellationToken ct)
+    {
+        var lugar = await cache.GetOrCreateAsync("estado:lugar", async e => { e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5); return await tiempo.LugarGuardado(ct); });
+        return lugar is null ? null : Mda.Api.Luz.Astro.AlturaSol(reloj.GetUtcNow(), lugar.Lat, lugar.Lon) > -0.833;
+    }
+
+    internal static object Foto(AjustesPublicos a, EstadoSistema estado, TimeProvider reloj, bool? dia = null)
     {
         var h = estado.Historial();
         var u = h.LastOrDefault();
@@ -40,6 +48,7 @@ public static class EstadoPublico
             ram = u.MemoriaTotal > 0 ? (int)Math.Round(100.0 * u.MemoriaUsada / u.MemoriaTotal) : 0,
             encendidoMinutos = (long)(u.EncendidoSegundos / 60),
             serie = h.TakeLast(30).Select(m => (int)Math.Round(m.Cpu)).ToArray(),
+            dia,
         };
     }
 
@@ -63,14 +72,14 @@ public static class EstadoPublico
         var p = app.MapGroup("/api/publico/estado").AllowAnonymous().RequireCors(GaleriaEndpoints.WebPublica).RequireRateLimiting(Limites.Publico);
 
         // una lectura suelta (si la conexión en directo no funciona, la web pregunta cada pocos segundos)
-        p.MapGet("/", async (AppDbContext db, EstadoSistema estado, TimeProvider reloj, CancellationToken ct) =>
+        p.MapGet("/", async (AppDbContext db, EstadoSistema estado, TimeProvider reloj, Mda.Api.Tiempo.ServicioTiempo tiempo, Microsoft.Extensions.Caching.Memory.IMemoryCache cache, CancellationToken ct) =>
         {
             var a = await Leer(db, ct);
-            return a.Estado ? Results.Ok(Foto(a, estado, reloj)) : Results.NotFound();
+            return a.Estado ? Results.Ok(Foto(a, estado, reloj, a.Cpu ? await EsDeDia(tiempo, cache, reloj, ct) : null)) : Results.NotFound();
         });
 
         // en directo (Server-Sent Events): una lectura cada 3 s; tope de visitantes y de duración
-        p.MapGet("/vivo", async (HttpContext ctx, AppDbContext db, EstadoSistema estado, TimeProvider reloj, CancellationToken ct) =>
+        p.MapGet("/vivo", async (HttpContext ctx, AppDbContext db, EstadoSistema estado, TimeProvider reloj, Mda.Api.Tiempo.ServicioTiempo tiempo, Microsoft.Extensions.Caching.Memory.IMemoryCache cache, CancellationToken ct) =>
         {
             if (!(await Leer(db, ct)).Estado) { ctx.Response.StatusCode = StatusCodes.Status404NotFound; return; }
             if (Interlocked.Increment(ref _conexiones) > MaxConexiones)
@@ -92,7 +101,7 @@ public static class EstadoPublico
                     using var scope = ctx.RequestServices.CreateScope();
                     var a = await Leer(scope.ServiceProvider.GetRequiredService<AppDbContext>(), ct);
                     if (!a.Estado) return;
-                    await ctx.Response.WriteAsync($"data: {JsonSerializer.Serialize(Foto(a, estado, reloj), JsonSerializerOptions.Web)}\n\n", ct);
+                    await ctx.Response.WriteAsync($"data: {JsonSerializer.Serialize(Foto(a, estado, reloj, a.Cpu ? await EsDeDia(tiempo, cache, reloj, ct) : null), JsonSerializerOptions.Web)}\n\n", ct);
                     await ctx.Response.Body.FlushAsync(ct);
                 } while (reloj.GetUtcNow() < fin && await t.WaitForNextTickAsync(ct));
             }

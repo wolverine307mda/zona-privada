@@ -152,3 +152,14 @@
 | PUT | `/api/galeria/orden` | `{ ids: [...] }` |
 | GET | `/api/galeria/fotos/{id}/{tam}` | vista previa con sesión |
 | GET/PUT | `/api/publico-ajustes` | `{ estado, cpu }`: qué ve el público del equipo (apagado por defecto) |
+
+## Más módulos (luz, señuelos, atajos, globo)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/luz` · PUT `/api/luz/ajustes` | hora dorada y noches de Vía Láctea de hoy y mañana con su nota; ajustes de los avisos |
+| GET/POST | `/api/senuelos` · PUT/DELETE `/{id}` · POST `/{id}/probar` · PUT `/ajustes` | archivos señuelo en Documentos |
+| GET/POST/DELETE | `/api/atajos-tokens` | tokens para Atajos de iOS (con sesión); el token solo sale al crearlo |
+| GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |
+| GET/PUT | `/api/galeria/globo` | zona excluida alrededor de casa `{ lat, lon, radioKm }` |
+| GET | `/api/galeria/fotos/{id}/gps` | el GPS del archivo original (solo para ti); 204 si no tiene |

@@ -48,11 +48,15 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
         }
       </section>
     } @empty {
+      @if (!cargado()) {
+        <ul class="esqueleto caja" aria-label="Cargando movimientos" aria-busy="true"><li><i></i></li><li><i style="width: 70%"></i></li><li><i></i></li><li><i style="width: 55%"></i></li></ul>
+      } @else {
       <div class="caja vacio">
         <strong [class.esta-cargando]="!cargado()">{{ fallo() ? 'No se pudo cargar' : cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
         @if (fallo()) { El equipo no responde: comprueba la conexión y vuelve a intentarlo. }
         @else if (cargado()) { {{ q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».' }} }
       </div>
+      }
     }
   `,
   styleUrls: ['./comun.css'],

@@ -16,7 +16,7 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
         <label class="foto__cambiar" title="Cambiar la foto">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /></svg>
           <span class="sr">Cambiar la foto</span>
-          <input type="file" accept="image/*" (change)="elegirFoto($event)" hidden>
+          <input class="sr" type="file" accept="image/*" (change)="elegirFoto($event)">
         </label>
       </div>
       <div class="identidad">
@@ -89,6 +89,7 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
     .tarjeta-perfil::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1.2px, transparent 1.5px) 0 0 / 16px 16px; mask: linear-gradient(110deg, transparent 35%, #000); pointer-events: none; }
     .foto { position: relative; flex: none; z-index: 1; }
     .foto img { width: clamp(96px, 16vw, 140px); height: clamp(96px, 16vw, 140px); border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 20px 40px -12px rgba(0, 0, 0, 0.6); background: var(--brand); }
+    .foto__cambiar:focus-within { outline: 3px solid var(--acento); outline-offset: 3px; }
     .foto__cambiar { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #0a1016; cursor: pointer; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); transition: transform 160ms var(--ease-out); }
     .foto__cambiar:active { transform: scale(0.9); }
     .foto__cambiar .icon { width: 19px; height: 19px; }

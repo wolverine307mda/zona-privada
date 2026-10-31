@@ -38,3 +38,9 @@
 .pie { display: flex; gap: 12px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
 .peligro { color: var(--bad); margin-right: auto; }
 @media (max-width: 640px) { .fila { grid-template-columns: 56px 1fr; } .acciones { grid-column: 1 / -1; justify-content: flex-end; } }
+
+.lugar { border: 1px solid color-mix(in srgb, var(--texto) 14%, transparent); border-radius: 14px; padding: 12px 14px; display: grid; gap: 10px; }
+.lugar legend { padding: 0 6px; color: var(--soft); }
+.fila-buscar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+.fila-buscar .campo__input { flex: 1 1 200px; }
+.sitio { text-align: left; }
