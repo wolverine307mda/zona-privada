@@ -89,7 +89,7 @@
             }
           </span>
         </span>
-        <time class="reloj" [attr.datetime]="hora()" [attr.aria-label]="hora()">@for (c of hora(); track $index) {<span [class.reloj__dos]="c === ':'" aria-hidden="true">{{ c }}</span>}</time>
+        <time class="reloj" [attr.datetime]="hora()">{{ hora() }}</time>
       </div>
     </header>
 

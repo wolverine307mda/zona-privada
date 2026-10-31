@@ -26,7 +26,7 @@ export function velocidad(b: number): string {
 })
 export class Inicio implements OnDestroy {
   private readonly sesion = inject(SesionService);
-  private readonly perfil = inject(PerfilService);
+  protected readonly perfil = inject(PerfilService);
   private readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);
 

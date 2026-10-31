@@ -1,5 +1,5 @@
 <section class="hola tarjeta">
-  <img class="hola__foto" src="img/avatar.webp" width="72" height="72" alt="">
+  <img class="hola__foto" [src]="perfil.foto()" width="72" height="72" alt="">
   <div class="hola__texto">
     <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time class="hola__hora">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</time></p>
     <h2 class="hola__titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h2>

@@ -97,9 +97,8 @@
 .barra__asis .icon { width: 17px; height: 17px; }
 @media (hover: hover) { .barra__asis:hover { transform: translateY(-1px); box-shadow: 0 10px 26px color-mix(in srgb, var(--brand) 42%, transparent); } }
 /* cada cifra en una caja del mismo ancho: la fuente no tiene números de ancho fijo y, al cambiar los segundos, empujaría los botones */
-.reloj { display: inline-flex; flex: none; font: 700 var(--step-body)/1 var(--font-display); }
-.reloj span { display: inline-block; width: 0.66em; text-align: center; }
-.reloj .reloj__dos { width: 0.42em; }
+/* monoespaciada: cada cifra ocupa lo mismo y el reloj no empuja los botones al cambiar los segundos */
+.reloj { flex: none; font: 600 var(--step-body)/1 var(--font-code); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; }
 
 .pantalla { padding: clamp(20px, 3vw, 36px) var(--margin) 64px; max-width: 1440px; width: 100%; view-transition-name: pantalla; }
 .barra { view-transition-name: barra; }
