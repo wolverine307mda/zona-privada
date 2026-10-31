@@ -76,28 +76,25 @@ public static class Sesiones
         return s;
     }
 
-    // En cada petición: la sesión tiene que seguir abierta. Las cookies de antes de esto se adoptan con una sesión nueva.
+    // Una sesión vale como mucho 30 días aunque se use a diario: pasado ese tiempo hay que volver a entrar
+    public static readonly TimeSpan Maxima = TimeSpan.FromDays(30);
+
+    // En cada petición: la sesión tiene que seguir abierta. Una cookie sin id de sesión no se acepta: la firma sola
+    // no basta (si se filtraran las claves de firma, se podrían fabricar cookies válidas para siempre).
     public static async Task AlValidar(CookieValidatePrincipalContext ctx)
     {
         if (ctx.Principal?.Identity is not ClaimsIdentity { IsAuthenticated: true } id) return;
         var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
         var sid = id.FindFirst(Claim)?.Value;
-        if (sid is null)
+        var ahora = DateTimeOffset.UtcNow;
+        var sesion = sid is null ? null : await db.Sesiones.FindAsync(sid);
+        if (sesion is null || sesion.Cerrada is not null || ahora - sesion.Creada > Maxima)
         {
-            var s = await Nueva(ctx.HttpContext, ctx.Principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? "");
-            id.AddClaim(new Claim(Claim, s.Id));
-            ctx.ReplacePrincipal(ctx.Principal);
-            ctx.ShouldRenew = true;
-            return;
-        }
-        var sesion = await db.Sesiones.FindAsync(sid);
-        if (sesion is null || sesion.Cerrada is not null)
-        {
+            if (sesion is { Cerrada: null }) { sesion.Cerrada = ahora; await db.SaveChangesAsync(); }
             ctx.RejectPrincipal();
             await ctx.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
             return;
         }
-        var ahora = DateTimeOffset.UtcNow;
         if (ahora - sesion.UltimaVez > Refresco)
         {
             sesion.UltimaVez = ahora;

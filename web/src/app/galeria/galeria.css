@@ -1,0 +1,34 @@
+:host { display: grid; gap: 18px; }
+.interruptor { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.interruptor input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--brand); }
+.interruptor small { display: block; color: var(--soft); margin-top: 2px; }
+.interruptor.apagado { opacity: .5; }
+.vacio { color: var(--soft); padding: 12px 4px; }
+
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fila { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 8px; border-radius: 14px; background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.fila.oculta { opacity: .55; }
+.mini { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+.texto { min-width: 0; display: grid; gap: 2px; }
+.texto strong, .texto small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.texto small { color: var(--soft); }
+.acciones { display: flex; gap: 6px; align-items: center; }
+.icono { width: 34px; height: 34px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--texto) 16%, transparent); background: transparent; color: var(--texto); cursor: pointer; }
+.icono:disabled { opacity: .3; cursor: default; }
+
+.rejilla { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.carpeta { width: 100%; padding: 22px 12px; border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--texto) 25%, transparent); background: transparent; color: var(--texto); cursor: pointer; text-align: left; }
+.foto { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: 2px solid transparent; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--texto) 8%, transparent); cursor: pointer; }
+.foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto.puesta { border-color: var(--brand); }
+.foto:disabled { opacity: .4; cursor: not-allowed; }
+.marca { position: absolute; left: 8px; bottom: 8px; padding: 3px 9px; border-radius: 999px; font-size: 12px; background: rgb(0 0 0 / .6); color: #fff; }
+.foto.puesta .marca { background: var(--brand); color: var(--on-brand, #000); }
+
+.dlg { width: min(520px, 94vw); border: 0; border-radius: 20px; padding: 0; background: var(--tarjeta); color: var(--texto); }
+.dlg::backdrop { background: rgb(0 0 0 / .55); backdrop-filter: blur(4px); }
+.dlg .formulario { display: grid; gap: 14px; padding: 22px; }
+.dlg textarea { resize: vertical; font: inherit; }
+.pie { display: flex; gap: 12px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.peligro { color: var(--bad); margin-right: auto; }
+@media (max-width: 640px) { .fila { grid-template-columns: 56px 1fr; } .acciones { grid-column: 1 / -1; justify-content: flex-end; } }

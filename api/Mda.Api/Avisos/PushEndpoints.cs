@@ -9,6 +9,12 @@ public record SuscripcionEntrada(string Endpoint, string P256dh, string Auth);
 // Suscribir este dispositivo a las notificaciones y probarlas
 public static class PushEndpoints
 {
+    // el servidor hace POST al «endpoint» que da el navegador: solo se acepta el de los servicios de push reales (no una URL cualquiera)
+    private static readonly string[] Servicios =
+        ["fcm.googleapis.com", "push.apple.com", "updates.push.services.mozilla.com", "push.services.mozilla.com", "notify.windows.com", "wns2-par02p.notify.windows.com"];
+    internal static bool ServicioPushConocido(string host) =>
+        Servicios.Any(s => host.Equals(s, StringComparison.OrdinalIgnoreCase) || host.EndsWith("." + s, StringComparison.OrdinalIgnoreCase));
+
     public static void MapPush(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/api/push").RequireAuthorization();
@@ -20,7 +26,7 @@ public static class PushEndpoints
 
         g.MapPost("/", async (SuscripcionEntrada e, HttpRequest req, AppDbContext db, CancellationToken ct) =>
         {
-            if (!Uri.TryCreate(e.Endpoint, UriKind.Absolute, out var u) || u.Scheme != "https" || e.Endpoint.Length > 1000
+            if (!Uri.TryCreate(e.Endpoint, UriKind.Absolute, out var u) || u.Scheme != "https" || !ServicioPushConocido(u.Host) || e.Endpoint.Length > 1000
                 || string.IsNullOrWhiteSpace(e.P256dh) || e.P256dh.Length > 200 || string.IsNullOrWhiteSpace(e.Auth) || e.Auth.Length > 100)
                 return Results.BadRequest();
             var s = await db.Push.FirstOrDefaultAsync(p => p.Endpoint == e.Endpoint, ct);

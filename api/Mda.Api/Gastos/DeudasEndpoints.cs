@@ -1,3 +1,4 @@
+using Mda.Api.Agenda;
 using Mda.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,12 +14,12 @@ public static class DeudasEndpoints
     {
         var g = app.MapGroup("/api/gastos/deudas").RequireAuthorization();
 
-        g.MapGet("/", async (AppDbContext db) =>
+        g.MapGet("/", async (AppDbContext db, TimeProvider reloj, Zona zona) =>
         {
             var deudas = await db.Deudas.AsNoTracking().OrderBy(d => d.Inicio).ToListAsync();
             var ids = deudas.Select(d => d.Id).ToList();
             var pagos = await db.Movimientos.AsNoTracking().Where(m => m.DeudaId != null && ids.Contains(m.DeudaId.Value)).ToListAsync();
-            var hoy = DateOnly.FromDateTime(DateTime.Today);
+            var hoy = Cartera.Hoy(reloj, zona);
             // lo que se lleva gastado en cada grupo (para «el coche te ha costado…»: pagos, seguro, gasolina, papeleo)
             var grupos = deudas.Select(d => Categorias.Todas.GetValueOrDefault(d.Categoria).Grupo).Where(x => x is not null).Distinct().ToList();
             var cats = Categorias.Todas.Where(c => grupos.Contains(c.Value.Grupo)).Select(c => c.Key).ToList();
@@ -67,15 +68,15 @@ public static class DeudasEndpoints
             return Results.NoContent();
         });
 
-        g.MapPost("/{id:int}/pagos", async (int id, PagoEntrada e, AppDbContext db) =>
+        g.MapPost("/{id:int}/pagos", async (int id, PagoEntrada e, AppDbContext db, TimeProvider reloj, Zona zona) =>
         {
             var d = await db.Deudas.FindAsync(id);
             if (d is null) return Results.NotFound();
-            if (e.Importe <= 0 || e.Importe > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["El importe tiene que ser mayor que 0."] });
+            if (Math.Round(e.Importe, 2, MidpointRounding.AwayFromZero) <= 0 || e.Importe > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["El importe tiene que ser mayor que 0."] });
             if (e.Concepto?.Length > 120 || e.Notas?.Length > 500) return Results.ValidationProblem(new Dictionary<string, string[]> { ["concepto"] = ["Texto demasiado largo."] });
             var m = new Movimiento
             {
-                Tipo = TipoMovimiento.Gasto, Fecha = e.Fecha ?? DateOnly.FromDateTime(DateTime.Today), Importe = e.Importe,
+                Tipo = TipoMovimiento.Gasto, Fecha = e.Fecha ?? Cartera.Hoy(reloj, zona), Importe = Math.Round(e.Importe, 2, MidpointRounding.AwayFromZero),
                 Categoria = d.Categoria, Concepto = string.IsNullOrWhiteSpace(e.Concepto) ? $"Pago: {d.Nombre}" : e.Concepto.Trim(),
                 Notas = string.IsNullOrWhiteSpace(e.Notas) ? null : e.Notas.Trim(), DeudaId = d.Id,
             };

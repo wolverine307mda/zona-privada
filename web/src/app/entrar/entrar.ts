@@ -29,11 +29,23 @@ export class Entrar implements OnDestroy {
   protected readonly ocupado = signal(false);
   protected readonly error = signal('');
   protected readonly sacude = signal(false);
+  // «en línea» solo si /api/salud contesta (con la app guardada por el service worker, la página puede cargar sin servidor)
+  protected readonly servidor = signal<'comprobando' | 'en-linea' | 'apagado'>('comprobando');
 
   constructor() {
     afterNextRender(() => {
+      void this.comprobarServidor();
       try { this.escena = crearCandado(this.canvas().nativeElement); } catch { /* sin WebGL: solo la tarjeta */ }
     });
+  }
+
+  private async comprobarServidor(): Promise<void> {
+    try {
+      const r = await fetch('/api/salud', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      this.servidor.set(r.ok ? 'en-linea' : 'apagado');
+    } catch {
+      this.servidor.set('apagado');
+    }
   }
 
   protected valor(e: Event): string {

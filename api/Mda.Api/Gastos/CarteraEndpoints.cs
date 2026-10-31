@@ -173,7 +173,7 @@ public static class Cartera
         if (h.Fecha is { } f && f > hoy && h.Ahorrado < h.Objetivo)
         {
             var meses = Math.Max(1, (f.Year - hoy.Year) * 12 + f.Month - hoy.Month);
-            alMes = Math.Round((h.Objetivo - h.Ahorrado) / meses, 2);
+            alMes = Math.Round((h.Objetivo - h.Ahorrado) / meses, 2, MidpointRounding.AwayFromZero);
         }
         return new EstadoHucha(h.Id, h.Nombre, h.Objetivo, h.Ahorrado, h.Color, h.Emoji, h.Fecha,
             h.Objetivo > 0 ? Math.Min(100, Math.Round((double)(h.Ahorrado / h.Objetivo) * 100, 1)) : 0, alMes);
@@ -191,7 +191,7 @@ public static class Cartera
 
         // lo que queda para gastar cada día sin tocar las huchas, contando con los fijos que faltan
         var disponible = saldo - huchas + pendienteNeto;
-        var porDia = Math.Round(disponible / restantes, 2);
+        var porDia = Math.Round(disponible / restantes, 2, MidpointRounding.AwayFromZero);
 
         // gasto del mes al ritmo actual: lo variable (no fijo) se extrapola; los fijos pendientes se suman
         var gastoMes = delMes.Where(m => m.Tipo == TipoMovimiento.Gasto).Sum(m => m.Importe);
@@ -258,20 +258,25 @@ public static class Cartera
                            : $"Lo recomendable es tener 3 meses de gastos ({Euros(Math.Round(gastoMedio * 3, 0))}) para imprevistos. Una hucha «Colchón» te ayuda a llegar.", cubre >= 3 ? "bueno" : "info"));
         }
 
-        return new Consejos(porDia, restantes, Math.Round(disponible, 2), proyeccion, regla, lista);
+        return new Consejos(porDia, restantes, Math.Round(disponible, 2, MidpointRounding.AwayFromZero), proyeccion, regla, lista);
     }
 
     // Tras apuntar un gasto: si cruza el 80 % o el 100 % del presupuesto de su categoría, avisa (una vez por nivel y mes)
     // meter (importe positivo) o sacar (negativo) dinero de una hucha (lo usan la API y el bot de Telegram)
     internal static async Task<IResult> Aportar(int id, Aportacion a, AppDbContext db, CancellationToken ct)
     {
-        var h = await db.Huchas.FindAsync([id], ct);
-        if (h is null) return Results.NotFound();
-        if (a.Importe == 0 || Math.Abs(a.Importe) > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["Pon un importe."] });
-        if (h.Ahorrado + a.Importe < 0) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = [$"En la hucha solo hay {Euros(h.Ahorrado)}."] });
-        h.Ahorrado += a.Importe;
-        await db.SaveChangesAsync(ct);
-        return Results.Ok(h);
+        var importe = Math.Round(a.Importe, 2, MidpointRounding.AwayFromZero);
+        if (importe == 0 || Math.Abs(importe) > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["Pon un importe."] });
+        // Ahorrado es un token de concurrencia: si otra aportación entra a la vez, se vuelve a leer y se reintenta
+        for (var intento = 0; ; intento++)
+        {
+            var h = await db.Huchas.FindAsync([id], ct);
+            if (h is null) return Results.NotFound();
+            if (h.Ahorrado + importe < 0) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = [$"En la hucha solo hay {Euros(h.Ahorrado)}."] });
+            h.Ahorrado += importe;
+            try { await db.SaveChangesAsync(ct); return Results.Ok(h); }
+            catch (DbUpdateConcurrencyException) when (intento < 6) { db.ChangeTracker.Clear(); }
+        }
     }
 
     public static async Task ComprobarPresupuesto(AppDbContext db, IAvisos avisos, string categoria, DateOnly fecha, ILogger log, CancellationToken ct)

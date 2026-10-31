@@ -43,10 +43,20 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         if (Local.Hour < 9 || Local.Hour >= 23) return;
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await Resumen(db, ct);
-        await Coche(db, ct);
-        await Copias(db, ct);
-        if (Local.Hour >= 20) await Tiempo(db, ct);
+        // cada comprobación por separado: si una falla, las demás se hacen igual
+        await Aislada(() => Resumen(db, ct), "el resumen semanal");
+        await Aislada(() => Coche(db, ct), "el coche");
+        await Aislada(() => Copias(db, ct), "las copias");
+        if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
+    }
+
+    private async Task Aislada(Func<Task> paso, string nombre)
+    {
+        try { await paso(); }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            log.LogError(e, "Fallo en la vigilancia de {Paso}", nombre);
+        }
     }
 
     // ---- copia de seguridad ----

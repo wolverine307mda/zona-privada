@@ -8,6 +8,7 @@ using Mda.Api.Auth;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
 using Mda.Api.Data;
+using Mda.Api.Galeria;
 using Mda.Api.Gastos;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
@@ -21,6 +22,9 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// sin la cabecera «Server: Kestrel»
+builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
 
 // ---- Registros: consola siempre y Seq si hay dirección configurada ----
 builder.Host.UseSerilog((ctx, cfg) =>
@@ -43,9 +47,9 @@ builder.Services.AddAuthorization();
 builder.Services
     .AddIdentityApiEndpoints<IdentityUser>(o =>
     {
-        // contraseña a elección del dueño (la única cuenta): mínimo 8 caracteres, sin reglas de símbolos.
-        // La protegen el bloqueo tras 5 fallos, el límite por IP y, en Internet, Cloudflare Access.
-        o.Password.RequiredLength = 8;
+        // contraseña a elección del dueño (la única cuenta): mínimo 12 caracteres, sin reglas de símbolos (mejor una frase larga).
+        // La protegen el bloqueo tras 5 fallos, el límite por IP y el 2FA.
+        o.Password.RequiredLength = 12;
         o.Password.RequireDigit = false;
         o.Password.RequireLowercase = false;
         o.Password.RequireUppercase = false;
@@ -62,7 +66,7 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.Name = "mda.sesion";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict;
-    // en producción la cookie solo viaja por HTTPS (Cloudflare Tunnel avisa con X-Forwarded-Proto)
+    // en producción la cookie solo viaja por HTTPS (el proxy, Tailscale Funnel, avisa con X-Forwarded-Proto)
     o.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
     o.SlidingExpiration = true;
@@ -91,13 +95,29 @@ var claves = builder.Configuration["DataProtection:Ruta"];
 var proteccion = builder.Services.AddDataProtection().SetApplicationName("zona-privada");
 if (!string.IsNullOrWhiteSpace(claves)) proteccion.PersistKeysToFileSystem(new DirectoryInfo(claves));
 
-// ---- Límite de intentos de inicio de sesión por IP ----
+// ---- Límites por IP: intentos de entrar, acciones sensibles y un tope general ----
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     o.AddPolicy(Limites.Acceso, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // avisos de prueba (mandan correo, WhatsApp, Telegram) y cambio de contraseña
+    o.AddPolicy(Limites.Sensible, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
+    o.AddPolicy(Limites.Publico, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 300, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    o.AddPolicy(Limites.Agente, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // tope general por IP; los archivos (una cuadrícula de fotos pide muchas a la vez) y SignalR quedan fuera
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+        ctx.Request.Path.StartsWithSegments("/api/archivos/archivo") || ctx.Request.Path.StartsWithSegments("/hubs")
+            ? RateLimitPartition.GetNoLimiter("libre")
+            : RateLimitPartition.GetFixedWindowLimiter(IpCliente.De(ctx),
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 // ---- La web pública (GitHub Pages) solo puede preguntar si el equipo está encendido: GET /api/salud ----
@@ -106,11 +126,12 @@ builder.Services.AddCors(o => o.AddPolicy(WebPublica, p => p
     .WithOrigins(builder.Configuration.GetSection("WebPublica:Origenes").Get<string[]>() ?? ["https://wolverine307mda.github.io"])
     .WithMethods("GET")));
 
-// ---- Detrás de Cloudflare Tunnel: respetar el esquema y la IP originales ----
+// ---- Detrás de Tailscale Funnel: respetar el esquema y la IP originales ----
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // la API solo es accesible desde la red interna de Docker (cloudflared), así que se confía en el proxy
+    // la API solo es accesible desde la red interna de Docker (tailscale) y desde 127.0.0.1, así que se confía en el proxy.
+    // ForwardLimit=1 (por defecto): se toma la IP que añadió el último proxy, no la que escriba el visitante
     o.KnownIPNetworks.Clear();
     o.KnownProxies.Clear();
 });
@@ -128,6 +149,8 @@ builder.Services.AddHostedService<MonitorSistema>();
 
 // ---- Documentos: las carpetas del equipo montadas en Archivos:Base ----
 builder.Services.AddSingleton<Carpetas>();
+// miniaturas WebP de la galería pública (sin EXIF)
+builder.Services.AddSingleton<Derivados>();
 
 // ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
 // (va antes que los demás servicios de fondo: el host los arranca en orden y así ya tienen las tablas)
@@ -135,7 +158,8 @@ builder.Services.AddHostedService<SemillaAdmin>();
 
 // ---- Avisos (correo, WhatsApp), cuentas enlazadas (Spotify, Google) y agenda con recordatorios ----
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20));
+// sin registros de cada petición: la URL de CallMeBot lleva la apikey
+builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20)).RemoveAllLoggers();
 builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
 // sin registros de cada petición: el token del bot va en la propia URL y acabaría en los logs y en Seq
 builder.Services.AddHttpClient("telegram", c => c.Timeout = TimeSpan.FromSeconds(20)).RemoveAllLoggers();
@@ -179,6 +203,8 @@ app.MapAuth();
 app.MapSistema();
 app.MapGastos();
 app.MapArchivos();
+app.MapGaleria();
+app.MapEstadoPublico();
 app.MapDeudas();
 app.MapNotas();
 app.MapAgenda();

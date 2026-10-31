@@ -109,6 +109,6 @@ public static class SeguridadEndpoints
             };
             return ok is null ? Results.NotFound() : ok.Value ? Results.NoContent()
                 : Results.Problem(canal == "push" ? "No hay ningún dispositivo con las notificaciones activadas." : "No se pudo enviar: revisa la configuración en el .env.", statusCode: 502);
-        });
+        }).RequireRateLimiting(Limites.Sensible);
     }
 }

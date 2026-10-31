@@ -49,8 +49,9 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
       </section>
     } @empty {
       <div class="caja vacio">
-        <strong [class.esta-cargando]="!cargado()">{{ cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
-        @if (cargado()) { {{ q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».' }} }
+        <strong [class.esta-cargando]="!cargado()">{{ fallo() ? 'No se pudo cargar' : cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
+        @if (fallo()) { El equipo no responde: comprueba la conexión y vuelve a intentarlo. }
+        @else if (cargado()) { {{ q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».' }} }
       </div>
     }
   `,
@@ -80,6 +81,7 @@ export class Movimientos {
   protected readonly g = inject(GastosService);
   protected readonly lista = signal<Movimiento[]>([]);
   protected readonly cargado = signal(false);
+  protected readonly fallo = signal(false);
   protected readonly q = signal('');
   protected readonly tipo = signal<'todos' | Tipo>('todos');
   protected readonly cat = signal('');
@@ -116,7 +118,7 @@ export class Movimientos {
         const desde = `${anio}-${String(mes).padStart(2, '0')}-01`;
         const ultimo = new Date(anio, mes, 0).getDate();
         const hasta = `${anio}-${String(mes).padStart(2, '0')}-${ultimo}`;
-        try { this.lista.set(await this.g.movimientos({ desde, hasta })); } finally { this.cargado.set(true); }
+        try { this.lista.set(await this.g.movimientos({ desde, hasta })); this.fallo.set(false); } catch { this.fallo.set(true); } finally { this.cargado.set(true); }
       });
     });
   }

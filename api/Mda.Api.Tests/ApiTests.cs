@@ -15,7 +15,7 @@ public class ApiFactory : WebApplicationFactory<Program>
     public const string Usuario = "wolve";
     public const string Email = "admin@prueba.local";
     public const string Password = "clave-de-prueba";
-    public const string Token = "token-del-agente-de-prueba";
+    public const string Token = "token-del-agente-de-prueba-0123456789"; // 32 o más caracteres
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

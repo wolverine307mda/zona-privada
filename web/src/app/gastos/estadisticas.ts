@@ -55,7 +55,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
         </ul>
       </section>
     } @else {
-      <p class="cargando">Cargando…</p>
+      <p class="cargando">{{ fallo() ? 'El equipo no responde: comprueba la conexión.' : 'Cargando…' }}</p>
     }
   `,
   styleUrls: ['./comun.css'],
@@ -103,6 +103,7 @@ export class Estadisticas implements OnDestroy {
   protected readonly periodos = [6, 12, 24];
   protected readonly meses = signal(12);
   protected readonly datos = signal<Datos | null>(null);
+  protected readonly fallo = signal(false);
   protected readonly euros = euros;
   protected readonly eurosCorto = eurosCorto;
   protected readonly mesLargo = mesLargo;
@@ -118,7 +119,9 @@ export class Estadisticas implements OnDestroy {
     effect(() => {
       const n = this.meses(), anio = this.g.anio(), mes = this.g.mes();
       this.g.version();
-      untracked(async () => this.datos.set(await this.g.estadisticas(n, anio, mes)));
+      untracked(async () => {
+        try { this.datos.set(await this.g.estadisticas(n, anio, mes)); this.fallo.set(false); } catch { this.fallo.set(true); }
+      });
     });
     effect(() => {
       this.tema.cambio();

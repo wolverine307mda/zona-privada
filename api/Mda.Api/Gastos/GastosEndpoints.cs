@@ -1,3 +1,4 @@
+using Mda.Api.Agenda;
 using Mda.Api.Avisos;
 using Mda.Api.Data;
 using Microsoft.EntityFrameworkCore;
@@ -39,9 +40,10 @@ public static class GastosEndpoints
         });
 
         // ---- Estadísticas de los últimos N meses ----
-        g.MapGet("/estadisticas", async (int? meses, int? anio, int? mes, AppDbContext db) =>
+        g.MapGet("/estadisticas", async (int? meses, int? anio, int? mes, AppDbContext db, TimeProvider reloj, Zona zona) =>
         {
-            var hoy = DateOnly.FromDateTime(DateTime.Today);
+            var hoy = Cartera.Hoy(reloj, zona);
+            if (anio is < 2000 or > 2100 || mes is < 1 or > 12) return Results.BadRequest();
             var n = Math.Clamp(meses ?? 12, 1, 60);
             var hasta = new DateOnly(anio ?? hoy.Year, mes ?? hoy.Month, 1);
             var desde = hasta.AddMonths(-(n - 1));
@@ -50,10 +52,10 @@ public static class GastosEndpoints
         });
 
         // ---- Gasolina ----
-        g.MapGet("/gasolina", async (AppDbContext db) =>
+        g.MapGet("/gasolina", async (AppDbContext db, TimeProvider reloj, Zona zona) =>
         {
             var repostajes = await db.Movimientos.AsNoTracking().Where(m => m.Categoria == "gasolina").ToListAsync();
-            return Results.Ok(Calculos.GasolinaDe(repostajes, DateTime.Today.Year));
+            return Results.Ok(Calculos.GasolinaDe(repostajes, Cartera.Hoy(reloj, zona).Year));
         });
 
         // ---- Apuntes ----
@@ -63,10 +65,13 @@ public static class GastosEndpoints
             if (desde is { } d) consulta = consulta.Where(m => m.Fecha >= d);
             if (hasta is { } h) consulta = consulta.Where(m => m.Fecha <= h);
             if (!string.IsNullOrWhiteSpace(categoria)) consulta = consulta.Where(m => m.Categoria == categoria);
-            var lista = await consulta.OrderByDescending(m => m.Fecha).ThenByDescending(m => m.Id).Take(1000).ToListAsync();
+            // la búsqueda va en la base de datos (antes se cortaba a 1000 y se filtraba después: no encontraba lo antiguo)
             if (!string.IsNullOrWhiteSpace(q))
-                lista = lista.Where(m => m.Concepto.Contains(q, StringComparison.OrdinalIgnoreCase) || (m.Notas ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
-            return Results.Ok(lista);
+            {
+                var ql = q.Trim().ToLowerInvariant();
+                consulta = consulta.Where(m => m.Concepto.ToLower().Contains(ql) || (m.Notas != null && m.Notas.ToLower().Contains(ql)));
+            }
+            return Results.Ok(await consulta.OrderByDescending(m => m.Fecha).ThenByDescending(m => m.Id).Take(1000).ToListAsync());
         });
 
         g.MapPost("/movimientos", (MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) => Crear(e, db, avisos, log, ct));
@@ -74,6 +79,7 @@ public static class GastosEndpoints
         g.MapPut("/movimientos/{id:int}", async (int id, MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger<Movimiento> log, CancellationToken ct) =>
         {
             if (Validar(e) is { } error) return error;
+            if (await FijoInexistente(e, db, ct) is { } sinFijo) return sinFijo;
             var m = await db.Movimientos.FindAsync([id], ct);
             if (m is null) return Results.NotFound();
             Copiar(e, m);
@@ -162,11 +168,11 @@ public static class GastosEndpoints
         });
 
         // Apunta el fijo en su mes (con el importe real si es variable)
-        g.MapPost("/recurrentes/{id:int}/registrar", async (int id, Registro reg, AppDbContext db) =>
+        g.MapPost("/recurrentes/{id:int}/registrar", async (int id, Registro reg, AppDbContext db, TimeProvider reloj, Zona zona) =>
         {
             var r = await db.Recurrentes.FindAsync(id);
             if (r is null) return Results.NotFound();
-            var fecha = reg.Fecha ?? DateOnly.FromDateTime(DateTime.Today);
+            var fecha = reg.Fecha ?? Cartera.Hoy(reloj, zona);
             var importe = reg.Importe ?? r.Importe;
             if (importe <= 0 || importe > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["El importe tiene que ser mayor que 0."] });
             var desde = new DateOnly(fecha.Year, fecha.Month, 1);
@@ -185,6 +191,7 @@ public static class GastosEndpoints
     internal static async Task<IResult> Crear(MovimientoEntrada e, AppDbContext db, IAvisos avisos, ILogger log, CancellationToken ct)
     {
         if (Validar(e) is { } error) return error;
+        if (await FijoInexistente(e, db, ct) is { } sinFijo) return sinFijo;
         var m = new Movimiento();
         Copiar(e, m);
         if (e.Repite is { } f && e.RecurrenteId is null)
@@ -202,6 +209,12 @@ public static class GastosEndpoints
         if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
         return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
     }
+
+    // un RecurrenteId que no existe daría un error de clave foránea (500): se avisa como validación
+    private static async Task<IResult?> FijoInexistente(MovimientoEntrada e, AppDbContext db, CancellationToken ct) =>
+        e.RecurrenteId is { } rid && !await db.Recurrentes.AnyAsync(r => r.Id == rid, ct)
+            ? Results.ValidationProblem(new Dictionary<string, string[]> { ["recurrenteId"] = ["Ese fijo no existe."] })
+            : null;
 
     private static IResult? Validar(MovimientoEntrada e)
     {
@@ -229,8 +242,9 @@ public static class GastosEndpoints
     }
 
     // en la gasolina, si no hay importe se calcula con litros × precio
-    private static decimal Importe(MovimientoEntrada e) =>
-        e.Importe > 0 ? e.Importe : e.Litros is { } l && e.PrecioLitro is { } p ? Math.Round(l * p, 2) : e.Importe;
+    // (siempre a céntimos: 0,001 € no es un importe válido)
+    private static decimal Importe(MovimientoEntrada e) => Math.Round(
+        e.Importe > 0 ? e.Importe : e.Litros is { } l && e.PrecioLitro is { } p ? l * p : e.Importe, 2, MidpointRounding.AwayFromZero);
 
     private static void Copiar(MovimientoEntrada e, Movimiento m)
     {
@@ -243,7 +257,7 @@ public static class GastosEndpoints
         m.RecurrenteId = e.RecurrenteId;
         var gasolina = e.Categoria == "gasolina";
         m.Litros = gasolina ? e.Litros : null;
-        m.PrecioLitro = gasolina ? e.PrecioLitro ?? (e.Litros is > 0 ? Math.Round(m.Importe / e.Litros.Value, 3) : null) : null;
+        m.PrecioLitro = gasolina ? e.PrecioLitro ?? (e.Litros is > 0 ? Math.Round(m.Importe / e.Litros.Value, 3, MidpointRounding.AwayFromZero) : null) : null;
         m.Kilometros = gasolina ? e.Kilometros : null;
     }
 

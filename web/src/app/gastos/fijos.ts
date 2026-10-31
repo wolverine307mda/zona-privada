@@ -52,8 +52,9 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
       </section>
     } @empty {
       <div class="caja vacio">
-        <strong [class.esta-cargando]="!cargado()">{{ cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
-        @if (cargado()) { Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen. }
+        <strong [class.esta-cargando]="!cargado()">{{ fallo() ? 'No se pudo cargar' : cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
+        @if (fallo()) { El equipo no responde: comprueba la conexión y vuelve a intentarlo. }
+        @else if (cargado()) { Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen. }
       </div>
     }
   `,
@@ -99,6 +100,7 @@ export class Fijos {
   protected readonly g = inject(GastosService);
   protected readonly lista = signal<Recurrente[]>([]);
   protected readonly cargado = signal(false);
+  protected readonly fallo = signal(false);
   protected readonly categoria = categoria;
   protected readonly euros = euros;
   protected readonly eurosCorto = eurosCorto;
@@ -132,7 +134,7 @@ export class Fijos {
     effect(() => {
       this.g.version();
       untracked(async () => {
-        try { this.lista.set(await this.g.recurrentes()); } finally { this.cargado.set(true); }
+        try { this.lista.set(await this.g.recurrentes()); this.fallo.set(false); } catch { this.fallo.set(true); } finally { this.cargado.set(true); }
       });
     });
   }

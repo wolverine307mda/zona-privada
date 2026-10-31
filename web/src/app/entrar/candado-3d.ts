@@ -76,6 +76,7 @@ export function crearCandado(canvas: HTMLCanvasElement) {
     (grid.material as THREE.LineBasicMaterial).color.copy(brand);
     rings.forEach((r, i) => (r.material as THREE.PointsMaterial).color.copy(i ? brand : light));
     starMat.color.copy(light);
+    if (reduced && typeof render === 'function') render(4000);
   };
 
   const resize = () => {
@@ -84,6 +85,7 @@ export function crearCandado(canvas: HTMLCanvasElement) {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
     lock.scale.setScalar(small() ? 0.6 : 1);
     lock.position.set(small() ? 0 : -2.2, small() ? 1.45 : 0.6, 0);
+    if (reduced) render(4000); // cambiar el tamaño borra el canvas y sin animación nadie lo vuelve a pintar
   };
 
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };

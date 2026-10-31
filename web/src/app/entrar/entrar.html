@@ -12,7 +12,10 @@
   </section>
 
   <form class="tarjeta vineta" [class.sacude]="sacude()" (submit)="entrar($event)" novalidate aria-labelledby="titulo">
-    <p class="chip"><span class="punto" aria-hidden="true"></span><code>servidor de casa · en línea</code></p>
+    <p class="chip" [class.caido]="servidor() === 'apagado'" role="status">
+      <span class="punto" aria-hidden="true"></span>
+      <code>{{ servidor() === 'apagado' ? 'servidor de casa · sin respuesta' : servidor() === 'comprobando' ? 'servidor de casa · comprobando…' : 'servidor de casa · en línea' }}</code>
+    </p>
     <h1 class="titulo" id="titulo">Área privada</h1>
 
     <label class="campo">

@@ -24,7 +24,7 @@ COPY --from=api /app ./
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
-# carpeta para las claves de las cookies: el volumen las conserva entre reinicios
-RUN mkdir -p /claves && chown $APP_UID /claves
+# carpeta para las claves de las cookies (el volumen las conserva entre reinicios) y para las miniaturas de la galería
+RUN mkdir -p /claves /derivados && chown $APP_UID /claves /derivados
 USER $APP_UID
 ENTRYPOINT ["dotnet", "Mda.Api.dll"]

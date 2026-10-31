@@ -47,6 +47,7 @@ export class SistemaService {
 
     this.hub = new HubConnectionBuilder()
       .withUrl('/hubs/sistema')
+      // reintentos por defecto (0, 2, 10, 30 s) y, si se agotan, uno cada 30 s para siempre (ver reintentar)
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();
@@ -56,16 +57,30 @@ export class SistemaService {
     });
     this.hub.onreconnecting(() => this.estado.set('reconectando'));
     this.hub.onreconnected(() => this.estado.set('en-vivo'));
-    this.hub.onclose(() => this.estado.set('sin-conexion'));
+    this.hub.onclose(() => { this.estado.set('sin-conexion'); this.reintentar(); });
     try {
       await this.hub.start();
       this.estado.set('en-vivo');
     } catch {
       this.estado.set('sin-conexion');
+      this.reintentar();
     }
   }
 
+  private temporizador?: ReturnType<typeof setTimeout>;
+
+  // sin red o con el equipo apagado: cada 30 s hasta que vuelva (antes se quedaba en «Sin conexión» hasta recargar)
+  private reintentar(): void {
+    clearTimeout(this.temporizador);
+    this.temporizador = setTimeout(async () => {
+      const hub = this.hub;
+      if (!hub || hub.state !== HubConnectionState.Disconnected) return;
+      try { await hub.start(); this.estado.set('en-vivo'); } catch { this.reintentar(); }
+    }, 30_000);
+  }
+
   async parar(): Promise<void> {
+    clearTimeout(this.temporizador);
     if (this.hub && this.hub.state !== HubConnectionState.Disconnected) await this.hub.stop();
     this.hub = undefined;
     this.historial.set([]);

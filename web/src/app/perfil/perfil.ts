@@ -58,8 +58,8 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
         <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="current-password" [value]="actual()" (input)="actual.set(valor($event))"></label>
       @if (erroresClave()['actual']) { <p class="error">{{ erroresClave()['actual'][0] }}</p> }
       <div class="fila2">
-        <label class="campo"><span class="campo__etiqueta">Nueva (mínimo 8)</span>
-          <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="new-password" minlength="8" [value]="nueva()" (input)="nueva.set(valor($event))"></label>
+        <label class="campo"><span class="campo__etiqueta">Nueva (mínimo 12)</span>
+          <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="new-password" minlength="12" [value]="nueva()" (input)="nueva.set(valor($event))"></label>
         <label class="campo"><span class="campo__etiqueta">Repite la nueva</span>
           <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="new-password" [value]="repetida()" (input)="repetida.set(valor($event))"></label>
       </div>

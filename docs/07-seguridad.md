@@ -15,21 +15,27 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 
 | Medida | Detalle |
 |---|---|
-| Sin registro | `/register`, `/forgotPassword`, `/resetPassword`, `/resendConfirmationEmail` → 404 |
+| Sin registro | `/register`, `/forgotPassword`, `/resetPassword`, `/resendConfirmationEmail`, `/refresh`, `/confirmEmail` → 404 |
+| Solo cookie | `/login` sin `useCookies=true` → 400: no se emiten tokens Bearer (no se verían en Sesiones) |
+| Contraseña | mínimo 12 caracteres; la de `.env` solo se impone cuando cambia en el `.env` (una cambiada desde Perfil no se deshace) |
 | Cookie | `mda.sesion`, `HttpOnly`, `SameSite=Strict`, `Secure` en producción, 8 h deslizantes |
 | 2FA | TOTP con app autenticadora + códigos de recuperación |
 | Bloqueo | 5 fallos → 15 min |
-| Límite por IP | 10 intentos/min en `/api/auth/*` (429) |
-| Sesiones revocables | cada cookie lleva un id de sesión comprobado en cada petición; se cierran desde Seguridad |
+| Límite por IP | 10 intentos/min en `/api/auth/*`; 10 cada 5 min en avisos de prueba y cambio de contraseña; tope general de 600/min (429). La IP sale de la conexión (`X-Forwarded-For` del proxy), nunca de una cabecera que escriba el visitante; `CF-Connecting-IP` solo con `Proxy:Cloudflare=true` |
+| Sesiones revocables | cada cookie lleva un id de sesión comprobado en cada petición; se cierran desde Seguridad. Una cookie sin id no vale y ninguna sesión pasa de 30 días |
 | Accesos | registro de cada intento de login (IP, dispositivo, motivo), 300 últimos |
-| Aviso de inicio | opcional por correo / push / Telegram con hora local |
+| Aviso de inicio | opcional por correo / Telegram con hora local |
 | Claves de cookie | Data Protection persistido en el volumen `claves` |
 
 ## Navegador
 
 - **CSP** estricta: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
 - Sin iframes (`frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, sin scripts de terceros (fuentes locales).
-- CORS: solo `GET /api/salud` desde la web pública.
+- `Strict-Transport-Security` (solo por HTTPS), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin` (salvo `/api/salud` y `/api/publico`), `Cache-Control: no-store` en `/api/*`, `Permissions-Policy` con `geolocation=(self)` y sin cabecera `Server`.
+- `AllowedHosts` limita la cabecera `Host` (`ALLOWED_HOSTS` en `.env`).
+- CORS: solo `GET` desde la web pública, en `/api/salud` y `/api/publico/*` (galería y estado en vivo), con límite de ritmo propio.
+- **Galería pública**: nada sale sin activar el interruptor y marcar cada foto; el id es aleatorio, la ruta real nunca viaja y siempre se sirve una copia WebP recomprimida (el codificador no copia EXIF: sin GPS ni cámara) con caché inmutable.
+- **Estado en vivo**: apagado por defecto; solo números redondeados (nunca equipo, discos, red ni IP); el directo se corta a los 10 min y con ≤ 20 visitantes a la vez.
 - Markdown de notas: renderizador propio que escapa HTML.
 - Documentos abiertos en línea: texto como `text/plain`, sin ejecutar nada.
 
@@ -40,10 +46,11 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - Tokens OAuth (Spotify/Google) cifrados con Data Protection; el secreto del cliente nunca llega al navegador; `state` de un solo uso.
 - Token de Telegram fuera de los registros (`RemoveAllLoggers()` en sus HttpClients).
 - El bot solo responde al chat vinculado con un código de un solo uso.
-- El agente usa un token compartido (`X-Agente-Token`); sin token la ruta no existe.
+- El agente usa un token compartido (`X-Agente-Token`, mínimo 32 caracteres); sin token válido la ruta no existe. Se rechaza lo que llegue por el proxy (`X-Forwarded-For`/`X-Original-For`: el agente va directo a la API), el cuerpo no puede pasar de 16 KB y tiene límite de ritmo.
 - Documentos: rutas confinadas a cada raíz, sin `..`, sin enlaces simbólicos, borrado a papelera recuperable,
-  subidas escritas con nombre temporal.
-- Contenedor de la API con usuario sin privilegios.
+  subidas escritas con nombre temporal. No se pueden subir ni renombrar a programas o scripts (`.exe`, `.bat`, `.ps1`, `.lnk`…; `PERMITIR_EJECUTABLES=true` lo permite) y se deja una reserva de 2 GB libres en el disco.
+  `MODO_<CARPETA>=ro` en `.env` deja una carpeta de solo lectura.
+- Contenedor de la API con usuario sin privilegios, sistema de archivos de solo lectura (salvo `/tmp`, `/claves` y las carpetas montadas), sin capacidades de Linux ni escalada de privilegios, y con tope de memoria y procesos. Registros de Docker con rotación.
 
 ## Continuidad
 

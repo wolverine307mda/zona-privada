@@ -31,7 +31,7 @@ public class GoogleCalendar(ServicioConexiones conexiones, IMemoryCache cache, Z
             cache.Set(clave, (IReadOnlyList<EventoGoogle>)lista, TimeSpan.FromSeconds(60));
             return lista;
         }
-        catch (Exception e) when (e is HttpRequestException or JsonException or KeyNotFoundException)
+        catch (Exception e) when (e is HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
         {
             log.LogWarning(e, "No se pudieron leer los eventos de Google");
             return null;

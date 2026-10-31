@@ -53,7 +53,8 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
             var de = C("Correo:De") ?? C("Correo:Usuario") ?? C("Correo:Para")!;
             using var msg = new MailMessage(new MailAddress(de, "Zona privada MDA"), new MailAddress(C("Correo:Para")!))
             {
-                Subject = asunto, Body = texto, IsBodyHtml = false,
+                // un salto de línea en el asunto (un título pegado desde Telegram) hace que SMTP lo rechace
+                Subject = asunto.ReplaceLineEndings(" "), Body = texto, IsBodyHtml = false,
             };
             var resumen = texto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
             var pagina = Plantilla.Correo(asunto, html ?? Plantilla.DeTexto(texto), C("App:UrlPublica"), ruta, resumen);
@@ -61,7 +62,7 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
             await smtp.SendMailAsync(msg, ct);
             return true;
         }
-        catch (Exception e) when (e is SmtpException or InvalidOperationException or FormatException)
+        catch (Exception e) when (e is SmtpException or InvalidOperationException or FormatException or ArgumentException or TaskCanceledException)
         {
             log.LogWarning(e, "No se pudo mandar el correo «{Asunto}»", asunto);
             return false;
@@ -79,9 +80,10 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
             if (!res.IsSuccessStatusCode) log.LogWarning("CallMeBot respondió {Codigo}", (int)res.StatusCode);
             return res.IsSuccessStatusCode;
         }
-        catch (HttpRequestException e)
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
         {
-            log.LogWarning(e, "No se pudo mandar el WhatsApp");
+            // la URL lleva la apikey: no se registra la excepción entera, solo el motivo
+            log.LogWarning("No se pudo mandar el WhatsApp: {Motivo}", e.GetType().Name);
             return false;
         }
     }

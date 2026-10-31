@@ -24,10 +24,37 @@ public sealed class Carpetas
 
     private static readonly char[] Prohibidos = ['<', '>', ':', '"', '|', '?', '*', '/', '\\'];
 
-    public string Base { get; }
+    // Lo que Windows ejecuta al abrirlo: con una sesión robada, subir un .exe al Escritorio o a Descargas sería una puerta al PC.
+    // Archivos:PermitirEjecutables=true lo desactiva (por ejemplo, para guardar instaladores a propósito).
+    private static readonly HashSet<string> Ejecutables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".exe", ".com", ".scr", ".bat", ".cmd", ".ps1", ".psm1", ".vbs", ".vbe", ".jse", ".wsf", ".wsh", ".msi", ".msp",
+        ".lnk", ".hta", ".jar", ".reg", ".dll", ".cpl", ".scf", ".url", ".pif", ".msc", ".application", ".gadget",
+    };
 
-    public Carpetas(IConfiguration config) =>
+    public string Base { get; }
+    public bool PermitirEjecutables { get; }
+
+    public Carpetas(IConfiguration config)
+    {
         Base = Path.GetFullPath(config["Archivos:Base"] ?? "/carpetas");
+        PermitirEjecutables = config.GetValue<bool>("Archivos:PermitirEjecutables");
+    }
+
+    // ¿Se puede crear un archivo con este nombre? (subir, renombrar). Mantener la extensión que ya tenía no cuenta.
+    public bool ExtensionBloqueada(string nombre, string? nombreAnterior = null)
+    {
+        if (PermitirEjecutables) return false;
+        var ext = Path.GetExtension(nombre);
+        return Ejecutables.Contains(ext) && !string.Equals(ext, nombreAnterior is null ? null : Path.GetExtension(nombreAnterior), StringComparison.OrdinalIgnoreCase);
+    }
+
+    // espacio libre en el disco de la carpeta (null si el sistema de archivos no lo dice, como en algunos montajes)
+    public static long? EspacioLibre(string carpeta)
+    {
+        try { return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(carpeta)) ?? "/").AvailableFreeSpace; }
+        catch (Exception e) when (e is ArgumentException or IOException or UnauthorizedAccessException) { return null; }
+    }
 
     public IEnumerable<Raiz> Disponibles() => Todas.Where(r => Directory.Exists(RutaRaiz(r.Id)));
 

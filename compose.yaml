@@ -1,7 +1,15 @@
-# Zona privada en el equipo de casa: base de datos, API (con el front dentro), registros y túnel de Cloudflare.
-#   docker compose up -d --build                 -> todo menos el túnel (prueba en http://localhost:8080)
-#   docker compose --profile tunel up -d --build -> también el túnel: la app sale por Internet con HTTPS
+# Zona privada en el equipo de casa: base de datos, API (con el front dentro), registros y Tailscale Funnel (o Cloudflare Tunnel).
+#   docker compose up -d --build                    -> todo menos la salida a Internet (prueba en http://localhost:8080)
+#   docker compose --profile publico up -d --build  -> también Tailscale Funnel: la app sale por Internet con HTTPS
+#   docker compose --profile tunel up -d --build    -> alternativa con Cloudflare Tunnel
 name: zona-privada
+
+# registros de Docker con tope: sin esto el json-file crece sin límite
+x-registros: &registros
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   db:
@@ -11,6 +19,7 @@ services:
       POSTGRES_DB: zonaprivada
       POSTGRES_USER: mda
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+    logging: *registros
     volumes:
       - db:/var/lib/postgresql/data
     healthcheck:
@@ -27,13 +36,30 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # endurecimiento: sin escribir en el sistema de archivos del contenedor (solo /tmp, /claves y las carpetas montadas),
+    # sin capacidades de Linux ni escalada de privilegios, y con tope de memoria y procesos
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    pids_limit: 512
+    logging: *registros
     environment:
+      # solo se aceptan estos nombres de host (la cabecera Host); separados por «;»
+      AllowedHosts: ${ALLOWED_HOSTS:-*.ts.net;localhost;127.0.0.1;api;equipo-de-casa}
+      # true = se pueden subir .exe, .bat, .ps1… a Documentos (por defecto, no)
+      Archivos__PermitirEjecutables: ${PERMITIR_EJECUTABLES:-false}
       ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD};Gss Encryption Mode=Disable
       Admin__Usuario: ${ADMIN_USUARIO:-}
       Admin__Email: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env}
       Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env}
       Seq__Url: http://seq:5341
       DataProtection__Ruta: /claves
+      # miniaturas WebP de la galería pública (se pueden borrar: se regeneran)
+      Galeria__Derivados: /derivados
       Agente__Token: ${AGENTE_TOKEN:-}
       Archivos__Base: /carpetas
       App__UrlPublica: ${URL_PUBLICA:-}
@@ -57,14 +83,16 @@ services:
       Copias__Ruta: /copias
     volumes:
       - claves:/claves
+      - derivados:/derivados
       - ./copias:/copias:ro
       # «Documentos»: las carpetas del equipo (rutas de Windows en .env; sin ellas, carpetas vacías en ./carpetas)
-      - ${CARPETA_DOCUMENTOS:-./carpetas/documentos}:/carpetas/documentos
-      - ${CARPETA_ESCRITORIO:-./carpetas/escritorio}:/carpetas/escritorio
-      - ${CARPETA_DESCARGAS:-./carpetas/descargas}:/carpetas/descargas
-      - ${CARPETA_IMAGENES:-./carpetas/imagenes}:/carpetas/imagenes
-      - ${CARPETA_MUSICA:-./carpetas/musica}:/carpetas/musica
-      - ${CARPETA_VIDEOS:-./carpetas/videos}:/carpetas/videos
+      # MODO_<carpeta>=ro la deja de solo lectura (no se puede subir, renombrar ni borrar desde la app); por defecto rw
+      - ${CARPETA_DOCUMENTOS:-./carpetas/documentos}:/carpetas/documentos:${MODO_DOCUMENTOS:-rw}
+      - ${CARPETA_ESCRITORIO:-./carpetas/escritorio}:/carpetas/escritorio:${MODO_ESCRITORIO:-rw}
+      - ${CARPETA_DESCARGAS:-./carpetas/descargas}:/carpetas/descargas:${MODO_DESCARGAS:-rw}
+      - ${CARPETA_IMAGENES:-./carpetas/imagenes}:/carpetas/imagenes:${MODO_IMAGENES:-rw}
+      - ${CARPETA_MUSICA:-./carpetas/musica}:/carpetas/musica:${MODO_MUSICA:-rw}
+      - ${CARPETA_VIDEOS:-./carpetas/videos}:/carpetas/videos:${MODO_VIDEOS:-rw}
     # solo en este equipo: desde fuera se entra por el túnel, nunca por un puerto abierto
     ports:
       - "127.0.0.1:8080:8080"
@@ -75,6 +103,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_PASSWORD:?Falta SEQ_PASSWORD en .env}
+    logging: *registros
     volumes:
       - seq:/data
     ports:
@@ -139,4 +168,5 @@ volumes:
   db:
   seq:
   claves:
+  derivados:
   tailscale:

@@ -218,7 +218,7 @@ public static partial class Interprete
         Hora(f, ctx); // la hora no pinta nada en un apunte, pero no debe quedarse en el concepto (y «esta mañana» no es mañana)
         var fecha = Fecha(f, hoy, futuro: false) ?? hoy;
         if (importe is null && f.Coger(ReNumeroSuelto()) is { } ns) importe = Numero(ns.Groups[1].Value);
-        if (importe is null && litros is { } li && precioLitro is { } pr) importe = Math.Round(li * pr, 2);
+        if (importe is null && litros is { } li && precioLitro is { } pr) importe = Math.Round(li * pr, 2, MidpointRounding.AwayFromZero);
         if (importe is not { } euros || euros <= 0) return new("nada", "No veo cuánto ha costado. Prueba con «12 € en el Mercadona».");
 
         var cat = CategoriaDe(f.Plano, ctx);
@@ -236,7 +236,7 @@ public static partial class Interprete
         if (cat == "gasolina" && litros is { } lt && precioLitro is null) precioLitro = Math.Round(euros / lt, 3);
         if (fecha > hoy) dudas.Add("Es de un día que aún no ha llegado: no contará en el saldo hasta entonces.");
 
-        var m = new MovimientoEntrada(tipo, fecha, Math.Round(euros, 2), cat, concepto, null, null,
+        var m = new MovimientoEntrada(tipo, fecha, Math.Round(euros, 2, MidpointRounding.AwayFromZero), cat, concepto, null, null,
             cat == "gasolina" ? litros : null, cat == "gasolina" ? precioLitro : null, cat == "gasolina" ? km : null,
             frecuencia, frecuencia is not null && variable);
         var que = tipo == TipoMovimiento.Gasto ? "Gasto" : "Ingreso";

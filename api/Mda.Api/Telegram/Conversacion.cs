@@ -43,6 +43,8 @@ public class Conversacion(
         if (u.TryGetProperty("callback_query", out var cb)) { await Boton(cb, ct); return; }
         if (!u.TryGetProperty("message", out var m) || !m.TryGetProperty("chat", out var chat)) return;
         var id = chat.GetProperty("id").GetInt64();
+        // solo chats privados con el bot: en un grupo escribiría cualquiera de sus miembros
+        if (chat.TryGetProperty("type", out var tipoChat) && tipoChat.GetString() != "private") return;
         var texto = m.TryGetProperty("text", out var t) ? t.GetString()?.Trim() ?? "" : "";
         var quien = m.TryGetProperty("from", out var de) && de.TryGetProperty("first_name", out var n) ? n.GetString() ?? "" : "";
 
@@ -91,6 +93,8 @@ public class Conversacion(
         await bot.Enviar(sb.ToString(), Botones(("✅ Guardar", $"si:{clave}"), ("✖️ Cancelar", $"no:{clave}")), html: true, ct: ct);
     }
 
+    private static readonly HashSet<(long Chat, long Mensaje)> Deshechos = [];
+
     private async Task Boton(JsonElement cb, CancellationToken ct)
     {
         var datos = cb.TryGetProperty("data", out var d) ? d.GetString() ?? "" : "";
@@ -98,7 +102,7 @@ public class Conversacion(
         var mensaje = cb.TryGetProperty("message", out var m) ? m : default;
         var chat = mensaje.ValueKind == JsonValueKind.Object ? mensaje.GetProperty("chat").GetProperty("id").GetInt64() : desde;
         var idMensaje = mensaje.ValueKind == JsonValueKind.Object ? mensaje.GetProperty("message_id").GetInt64() : 0;
-        if (bot.Chat != chat) { await Contestar(cb, "Este bot es privado.", ct); return; }
+        if (bot.Chat != chat || desde != chat) { await Contestar(cb, "Este bot es privado.", ct); return; }
 
         var partes = datos.Split(':', 2);
         var (accion, clave) = (partes[0], partes.ElementAtOrDefault(1) ?? "");
@@ -121,7 +125,10 @@ public class Conversacion(
                 await Contestar(cb, ok ? "Guardado" : null, ct);
                 return;
             case "dm" or "de" or "dh":
-                var hecho = await Deshacer(accion, clave, ct);
+                // un segundo toque antes de que desaparezca el botón no deshace otra vez (restaría dos veces de una hucha)
+                bool primera;
+                lock (Deshechos) primera = Deshechos.Add((chat, idMensaje));
+                var hecho = primera && await Deshacer(accion, clave, ct);
                 await Editar(chat, idMensaje, hecho ? "↩️ Deshecho: no se ha guardado nada." : "Ya no se puede deshacer.", null, ct);
                 await Contestar(cb, null, ct);
                 return;

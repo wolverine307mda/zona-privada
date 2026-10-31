@@ -72,7 +72,7 @@ public class Push(IServiceScopeFactory scopes, IConfiguration config, ILogger<Pu
             {
                 db.Push.Remove(s);
             }
-            catch (Exception e) when (e is WebPushException or HttpRequestException)
+            catch (Exception e) when (e is WebPushException or HttpRequestException or TaskCanceledException)
             {
                 log.LogWarning(e, "No se pudo mandar la notificación a {Dispositivo}", s.Dispositivo);
             }

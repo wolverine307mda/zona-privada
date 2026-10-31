@@ -178,3 +178,9 @@ archivada, fechas. CRUD en `/api/notas`.
 - `SeguridadEndpoints.cs`: sesiones (con «en línea»), latido, cerrar una / todas menos esta, accesos, estado
   (2FA, canales), ajustes de avisos, aviso de prueba por canal (`correo`, `whatsapp`, `push`, `telegram`).
 - `Perfil.cs`: nombre, apellidos, correo, teléfono, foto (`adjuntos/avatar`), cambio de contraseña.
+
+### Galería y estado público (`Galeria/`)
+
+- `Galeria.cs`: `FotoPublica` (tabla `fotos_publicas`) y `Derivados` (SkiaSharp: decodifica, aplica la orientación EXIF, reduce a 480/1600 px, codifica WebP y lo guarda en `Galeria:Derivados`; hasta dos a la vez). Solo JPG, PNG, WebP, GIF y BMP; HEIC hay que convertirlo.
+- `GaleriaEndpoints.cs`: gestión con sesión (`/api/galeria`) y lectura pública (`/api/publico/galeria`).
+- `EstadoPublico.cs`: ajustes `publico-estado` y `publico-cpu` y los endpoints públicos `/api/publico/estado` (+ SSE `/vivo`).

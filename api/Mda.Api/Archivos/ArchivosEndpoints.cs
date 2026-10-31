@@ -52,6 +52,11 @@ public static class ArchivosEndpoints
     private static IResult NoValida() => Results.Problem("Esa ruta no existe o no es válida.", statusCode: 404);
     private static IResult NombreMal() => Results.ValidationProblem(new Dictionary<string, string[]>
         { ["nombre"] = ["El nombre no es válido: sin / \\ : * ? \" < > | y sin acabar en punto."] });
+    private static IResult Ejecutable() => Results.ValidationProblem(new Dictionary<string, string[]>
+        { ["nombre"] = ["Por seguridad no se pueden subir ni crear programas o scripts (.exe, .bat, .ps1, .lnk…)."] });
+
+    // dejar siempre 2 GB libres en el disco: una subida de 4 GB no debe llenar el C: del equipo
+    private const long Reserva = 2L * 1024 * 1024 * 1024;
 
     public static void MapArchivos(this IEndpointRouteBuilder app)
     {
@@ -121,6 +126,8 @@ public static class ArchivosEndpoints
         {
             var real = c.Resolver(raiz, ruta);
             if (real is null || !Directory.Exists(real)) return NoValida();
+            if (req.ContentLength is { } tam && Carpetas.EspacioLibre(real) is { } libre && tam > libre - Reserva)
+                return Results.Problem("No hay espacio suficiente en el disco del equipo.", statusCode: StatusCodes.Status507InsufficientStorage);
             var limite = req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>();
             if (limite is { IsReadOnly: false }) limite.MaxRequestBodySize = MaxSubida;
             var frontera = HeaderUtilities.RemoveQuotes(MediaTypeHeaderValue.Parse(req.ContentType ?? "").Boundary).Value;
@@ -134,6 +141,7 @@ public static class ArchivosEndpoints
                 if (!ContentDispositionHeaderValue.TryParse(seccion.ContentDisposition, out var cd) || !cd.IsFileDisposition()) continue;
                 var nombre = Path.GetFileName((cd.FileNameStar.Value ?? cd.FileName.Value ?? "").Trim('"'));
                 if (!Carpetas.NombreValido(nombre)) return NombreMal();
+                if (c.ExtensionBloqueada(nombre)) return Ejecutable();
                 // se escribe con un nombre oculto y solo al terminar toma el suyo: nunca queda un archivo a medias
                 var temporal = Path.Combine(real, $".{Guid.NewGuid():N}.subiendo");
                 string destino;
@@ -174,6 +182,7 @@ public static class ArchivosEndpoints
             var real = c.Resolver(e.Raiz, e.Ruta);
             if (real is null || real == Path.GetFullPath(c.RutaRaiz(e.Raiz)) || (!File.Exists(real) && !Directory.Exists(real))) return NoValida();
             if (!Carpetas.NombreValido(e.Nombre)) return NombreMal();
+            if (File.Exists(real) && c.ExtensionBloqueada(e.Nombre, Path.GetFileName(real))) return Ejecutable();
             var destino = Path.Combine(Path.GetDirectoryName(real)!, e.Nombre);
             if (destino == real) return Results.Ok();
             if (File.Exists(destino) || Directory.Exists(destino))

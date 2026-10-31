@@ -30,21 +30,31 @@ public class Sondeo(Bot bot, IServiceScopeFactory scopes, ILogger<Sondeo> log) :
             long desde = 0;
             while (!ct.IsCancellationRequested)
             {
-                var r = await bot.Llamar("getUpdates", new { offset = desde, timeout = 50, allowed_updates = new[] { "message", "callback_query" } }, ct, TimeSpan.FromSeconds(70));
-                if (r is not { ValueKind: JsonValueKind.Array } lista)
+                // cualquier fallo de una vuelta (red cortada a medias, respuesta rara) se registra y se reintenta:
+                // si saliera de aquí, el host entero se pararía
+                try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(15), ct); // sin red o token mal puesto: se reintenta con calma
-                    continue;
-                }
-                foreach (var u in lista.EnumerateArray())
-                {
-                    desde = u.GetProperty("update_id").GetInt64() + 1;
-                    try
+                    var r = await bot.Llamar("getUpdates", new { offset = desde, timeout = 50, allowed_updates = new[] { "message", "callback_query" } }, ct, TimeSpan.FromSeconds(70));
+                    if (r is not { ValueKind: JsonValueKind.Array } lista)
                     {
-                        using var scope = scopes.CreateScope();
-                        await scope.ServiceProvider.GetRequiredService<Conversacion>().Atender(u, ct);
+                        await Task.Delay(TimeSpan.FromSeconds(15), ct); // sin red o token mal puesto: se reintenta con calma
+                        continue;
                     }
-                    catch (Exception e) when (e is not OperationCanceledException) { log.LogError(e, "Fallo atendiendo un mensaje de Telegram"); }
+                    foreach (var u in lista.EnumerateArray())
+                    {
+                        desde = u.GetProperty("update_id").GetInt64() + 1;
+                        try
+                        {
+                            using var scope = scopes.CreateScope();
+                            await scope.ServiceProvider.GetRequiredService<Conversacion>().Atender(u, ct);
+                        }
+                        catch (Exception e) when (e is not OperationCanceledException) { log.LogError(e, "Fallo atendiendo un mensaje de Telegram"); }
+                    }
+                }
+                catch (Exception e) when (!ct.IsCancellationRequested)
+                {
+                    log.LogWarning("El sondeo de Telegram ha fallado ({Motivo}); se reintenta", e.GetType().Name);
+                    await Task.Delay(TimeSpan.FromSeconds(15), ct);
                 }
             }
         }

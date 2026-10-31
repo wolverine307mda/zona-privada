@@ -17,9 +17,9 @@ export const INICIO: Modulo = {
 
 export const MODULOS: Modulo[] = [
   {
-    id: 'fotos', titulo: 'Fotos', resumen: 'Mi laboratorio de fotografía.', listo: false,
+    id: 'fotos', titulo: 'Galería', resumen: 'Qué fotos se ven en el portfolio, con su descripción.', listo: true,
     icono: 'M4 7h3l2-3h6l2 3h3v12H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
-    planes: ['Subir fotos desde el móvil', 'Convertir a WebP y sacar los datos de la cámara', 'Publicar en la galería de la web con un botón'],
+    planes: ['Elegir qué fotos de «Imágenes» se publican', 'Descripción, texto alternativo y orden de cada una', 'Miniaturas WebP sin los datos de la cámara ni el GPS'],
   },
   {
     id: 'musica', titulo: 'Música', resumen: 'Lo que suena, con estadísticas de Spotify.', listo: true,

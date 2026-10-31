@@ -18,7 +18,7 @@ docker compose down                              # parar (los volúmenes y datos
 ```
 
 > Cambiar el `.env` → `docker compose up -d api` (recrea el contenedor con las variables nuevas).
-> La contraseña del administrador se resincroniza con `ADMIN_PASSWORD` en cada arranque.
+> La contraseña del administrador se resincroniza con `ADMIN_PASSWORD` solo cuando **cambia en el `.env`**; una cambiada desde Perfil no se deshace al reiniciar.
 
 ## Variables de entorno
 
@@ -97,7 +97,7 @@ select "Fecha", "Ip", "Exito", "Motivo" from accesos order by "Id" desc limit 20
 
 - **Desactivar el 2FA** si se pierde el móvil: usar un código de recuperación al entrar, o
   `update "AspNetUsers" set "TwoFactorEnabled" = false;`.
-- **Cambiar la contraseña**: cambia `ADMIN_PASSWORD` en `.env` y `docker compose up -d api`.
+- **Cambiar la contraseña**: desde Perfil, o cambia `ADMIN_PASSWORD` en `.env` (mínimo 12 caracteres) y `docker compose up -d api`.
 
 ## Agente de Windows
 

@@ -111,9 +111,10 @@ public class Bot(IConfiguration config, IHttpClientFactory http, IServiceScopeFa
             log.LogWarning("Telegram {Metodo}: {Error}", metodo, j.TryGetProperty("description", out var d) ? d.GetString() : res.StatusCode.ToString());
             return null;
         }
-        catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException && !ct.IsCancellationRequested)
+        catch (Exception e) when (e is HttpRequestException or JsonException or IOException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            log.LogWarning(e, "Telegram {Metodo} no responde", metodo);
+            // sin la excepción entera: el mensaje de HttpRequestException puede llevar la URL con el token del bot
+            log.LogWarning("Telegram {Metodo} no responde ({Motivo})", metodo, e.GetType().Name);
             return null;
         }
     }

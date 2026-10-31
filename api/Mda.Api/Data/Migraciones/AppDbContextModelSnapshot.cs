@@ -206,6 +206,77 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("adjuntos", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Galeria.FotoPublica", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Alt")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Alto")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Ancho")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTimeOffset>("Creada")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Publicada")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Raiz")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Tono")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Orden");
+
+                    b.HasIndex("Ruta")
+                        .IsUnique();
+
+                    b.ToTable("fotos_publicas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Gastos.Deuda", b =>
                 {
                     b.Property<int>("Id")
@@ -252,6 +323,7 @@ namespace Mda.Api.Data.Migraciones
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Ahorrado")
+                        .IsConcurrencyToken()
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
 

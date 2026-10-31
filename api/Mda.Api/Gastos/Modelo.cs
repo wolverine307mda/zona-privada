@@ -69,8 +69,8 @@ public class Recurrente
     // Lo que cuesta al mes, repartiendo los trimestrales y anuales
     public decimal Mensual => Frecuencia switch
     {
-        Frecuencia.Trimestral => Math.Round(Importe / 3, 2),
-        Frecuencia.Anual => Math.Round(Importe / 12, 2),
+        Frecuencia.Trimestral => Math.Round(Importe / 3, 2, MidpointRounding.AwayFromZero),
+        Frecuencia.Anual => Math.Round(Importe / 12, 2, MidpointRounding.AwayFromZero),
         _ => Importe,
     };
 }

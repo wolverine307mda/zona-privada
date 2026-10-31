@@ -56,7 +56,7 @@ import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, nume
         </div>
       </section>
     } @else {
-      <p class="cargando">Cargando…</p>
+      <p class="cargando">{{ fallo() ? 'El equipo no responde: comprueba la conexión.' : 'Cargando…' }}</p>
     }
   `,
   styleUrls: ['./comun.css'],
@@ -103,14 +103,18 @@ export class Gasolina implements OnDestroy {
   protected readonly euros = euros;
   protected readonly numero = numero;
   protected readonly diaCorto = diaCorto;
+  protected readonly fallo = signal(false);
 
   constructor() {
     effect(() => {
       this.g.version();
       untracked(async () => {
-        const [d, crudos] = await Promise.all([this.g.gasolina(), this.g.movimientos({ categoria: 'gasolina' })]);
-        this.crudos = crudos;
-        this.datos.set(d);
+        try {
+          const [d, crudos] = await Promise.all([this.g.gasolina(), this.g.movimientos({ categoria: 'gasolina' })]);
+          this.crudos = crudos;
+          this.datos.set(d);
+          this.fallo.set(false);
+        } catch { this.fallo.set(true); }
       });
     });
     effect(() => {

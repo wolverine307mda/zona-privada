@@ -11,6 +11,9 @@
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/salud` | `{ estado: "ok", hora }`. CORS solo GET para la web pública (GitHub Pages) |
+| GET | `/api/publico/galeria` | fotos publicadas (id, título, descripción, alt, categoría, tamaño, color, URLs). 404 si la galería está apagada. CORS GET, 300/min por IP |
+| GET | `/api/publico/galeria/{id}/{mini\|grande}` | la foto en WebP sin EXIF (480 px / 1600 px), `Cache-Control: public, immutable` |
+| GET | `/api/publico/estado` · `/api/publico/estado/vivo` | «en línea» y, si está activado, CPU/RAM redondeadas, minutos encendido y serie de CPU; `/vivo` es SSE cada 3 s (máx. 20 visitantes, 10 min). 404 si está apagado |
 | POST | `/api/auth/login?useCookies=true` | `{ email: <usuario>, password, twoFactorCode? , twoFactorRecoveryCode? }` → pone la cookie. 10/min por IP |
 | POST | `/api/sistema/agente` | agente de Windows; cabecera `X-Agente-Token`. Solo existe si hay `Agente:Token` |
 | GET | `/api/conexiones/{id}/vuelta` | vuelta de OAuth (protegida por `state` de un solo uso) |
@@ -136,3 +139,16 @@
 | GET | `/api/tiempo/buscar?q=` | buscar ciudad |
 | PUT | `/api/tiempo/lugar` | guardar ciudad (también desde geolocalización) |
 | PUT | `/api/tiempo/avisos` | activar/desactivar el aviso de la víspera |
+
+
+## Galería y lo que ve el público (`/api/galeria`, `/api/publico-ajustes`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET/PUT | `/api/galeria/estado` | interruptor general `{ activa }` (por defecto apagado), nº de fotos |
+| GET | `/api/galeria/carpeta?ruta` | fotos de la carpeta «Imágenes» con su estado de publicación |
+| GET/POST | `/api/galeria/fotos` | lista / publica `{ ruta, titulo?, descripcion?, alt?, categoria? }` |
+| PUT/DELETE | `/api/galeria/fotos/{id}` | edita (`publicada`…) / quita de la galería (el original no se toca) |
+| PUT | `/api/galeria/orden` | `{ ids: [...] }` |
+| GET | `/api/galeria/fotos/{id}/{tam}` | vista previa con sesión |
+| GET/PUT | `/api/publico-ajustes` | `{ estado, cpu }`: qué ve el público del equipo (apagado por defecto) |

@@ -1,0 +1,64 @@
+# Integración continua: compila y prueba la API y el front, y revisa dependencias, secretos y la imagen.
+# (Solo corre si el repositorio está en GitHub; en un repo privado entra en las horas gratuitas.)
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test ZonaPrivada.slnx --nologo
+      - name: Paquetes con vulnerabilidades conocidas
+        run: |
+          dotnet list api/Mda.Api/Mda.Api.csproj package --vulnerable --include-transitive | tee vulnerables.txt
+          ! grep -q "has the following vulnerable packages" vulnerables.txt
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npx ng build
+      - run: npx ng test --watch=false
+      - run: npm audit --omit=dev --audit-level=high
+
+  secretos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  imagen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t zona-privada:ci .
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: zona-privada:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

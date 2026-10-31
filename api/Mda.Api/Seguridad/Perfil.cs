@@ -70,8 +70,8 @@ public static partial class Perfil
         {
             var u = await users.GetUserAsync(user);
             if (u is null) return Results.Unauthorized();
-            if (string.IsNullOrEmpty(e.Nueva) || e.Nueva.Length < 8)
-                return Results.ValidationProblem(new Dictionary<string, string[]> { ["nueva"] = ["La nueva contraseña tiene que tener al menos 8 caracteres."] });
+            if (string.IsNullOrEmpty(e.Nueva) || e.Nueva.Length < 12)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["nueva"] = ["La nueva contraseña tiene que tener al menos 12 caracteres (mejor una frase larga)."] });
             if (e.Nueva == e.Actual)
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["nueva"] = ["La nueva contraseña es igual que la actual."] });
             var r = await users.ChangePasswordAsync(u, e.Actual ?? "", e.Nueva);
@@ -84,7 +84,7 @@ public static partial class Perfil
             await db.SaveChangesAsync(ct);
             await signIn.RefreshSignInAsync(u); // cookie nueva (y una sesión nueva) para este dispositivo
             return Results.Ok(new { cerradas = Math.Max(0, abiertas.Count - 1) });
-        });
+        }).RequireRateLimiting(Limites.Sensible); // ChangePasswordAsync no cuenta fallos: sin esto se podría probar la actual sin límite
 
         g.MapGet("/foto", async (AppDbContext db, CancellationToken ct) =>
             await db.Adjuntos.AsNoTracking().FirstOrDefaultAsync(a => a.Clave == "avatar", ct) is { } a ? Results.File(a.Datos, a.Tipo) : Results.NotFound());

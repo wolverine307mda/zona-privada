@@ -29,7 +29,7 @@ recurrentes, gasolina, deudas del coche), la **agenda** (eventos, recordatorios,
 ```bash
 # 1. Configuración (una vez): copia la plantilla y rellena los valores
 cp .env.example .env          # en Windows: copy .env.example .env
-#    obligatorios: POSTGRES_PASSWORD, ADMIN_USUARIO, ADMIN_EMAIL, ADMIN_PASSWORD (8+), SEQ_PASSWORD
+#    obligatorios: POSTGRES_PASSWORD, ADMIN_USUARIO, ADMIN_EMAIL, ADMIN_PASSWORD (12+, mejor una frase larga), SEQ_PASSWORD
 #    opcionales:   TS_AUTHKEY, URL_PUBLICA, AGENTE_TOKEN, CARPETA_*, CORREO_*, WHATSAPP_*, TELEGRAM_TOKEN, SPOTIFY_*, GOOGLE_*
 
 # 2. Todo (base de datos, API con el front dentro, Seq, copias diarias) + Tailscale Funnel (HTTPS público)

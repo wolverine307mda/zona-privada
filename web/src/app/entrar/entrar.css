@@ -27,6 +27,7 @@
 @keyframes sacude { 0%, 100% { translate: 0; } 20% { translate: -10px; } 40% { translate: 9px; } 60% { translate: -6px; } 80% { translate: 3px; } }
 
 .chip { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: var(--dark-2); font-size: var(--step-small); }
+.chip.caido .punto { background: var(--bad); animation: none; }
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: late 2s var(--ease-out) infinite; }
 @keyframes late { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
 .titulo { font: 700 clamp(1.8rem, 1.2rem + 2vw, 2.6rem)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: -0.04em; }

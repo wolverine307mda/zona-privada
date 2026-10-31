@@ -121,8 +121,23 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var c = await db.Conexiones.FindAsync([p.Id], ct);
             if (c is null) return null;
-            if (c.AccessToken is not null && c.Caduca > DateTimeOffset.UtcNow) return cifra.Unprotect(c.AccessToken);
-            var t = await PedirToken(p, new() { ["grant_type"] = "refresh_token", ["refresh_token"] = cifra.Unprotect(c.RefreshToken) }, ct);
+            try
+            {
+                if (c.AccessToken is not null && c.Caduca > DateTimeOffset.UtcNow) return cifra.Unprotect(c.AccessToken);
+            }
+            catch (System.Security.Cryptography.CryptographicException e)
+            {
+                log.LogError(e, "El token de {Proveedor} no se puede descifrar (¿se perdió el volumen «claves»?): hay que volver a conectar la cuenta", p.Nombre);
+                return null;
+            }
+            string refresco;
+            try { refresco = cifra.Unprotect(c.RefreshToken); }
+            catch (System.Security.Cryptography.CryptographicException e)
+            {
+                log.LogError(e, "El token de {Proveedor} no se puede descifrar (¿se perdió el volumen «claves»?): hay que volver a conectar la cuenta", p.Nombre);
+                return null;
+            }
+            var t = await PedirToken(p, new() { ["grant_type"] = "refresh_token", ["refresh_token"] = refresco }, ct);
             if (t is null) return null;
             c.AccessToken = cifra.Protect(t.Value.Access);
             c.Caduca = DateTimeOffset.UtcNow.AddSeconds(t.Value.Segundos - 60);
@@ -162,10 +177,16 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
     {
         var token = await Token(p, ct);
         if (token is null) return null;
-        var req = new HttpRequestMessage(metodo, url);
+        using var req = new HttpRequestMessage(metodo, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (cuerpo is not null) req.Content = JsonContent.Create(cuerpo);
-        return await http.CreateClient("conexiones").SendAsync(req, ct);
+        try { return await http.CreateClient("conexiones").SendAsync(req, ct); }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            // sin red o proveedor caído: igual que «no conectado» para el que llama (la agenda sigue cargando sin Google)
+            log.LogWarning("{Proveedor} no responde ({Motivo})", p.Nombre, e.GetType().Name);
+            return null;
+        }
     }
 }
 

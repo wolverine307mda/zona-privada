@@ -29,23 +29,43 @@ public class Recordatorios(IServiceScopeFactory scopes, IAvisos avisos, Zona zon
         var tocan = await db.Eventos.Where(e => e.ProximoAviso != null && e.ProximoAviso <= ahora).ToListAsync(ct);
         foreach (var e in tocan)
         {
-            var de = e.AvisoDe ?? e.Inicio;
-            if (ahora - e.ProximoAviso!.Value < TimeSpan.FromHours(12))
+            // cada evento por separado y guardado al momento: si un canal falla, ni se repite el aviso ni se bloquean los demás
+            try
             {
-                var texto = Texto(e, de);
-                var ok = false;
-                if (e.PorCorreo) ok |= await avisos.PorCorreo($"⏰ {e.Titulo}", texto, "/agenda", ct);
-                if (e.PorWhatsApp) ok |= await avisos.PorWhatsApp(texto, ct);
-                if (e.PorTelegram) ok |= await avisos.PorTelegram(texto, ct);
-                if (e.PorPush) ok |= await avisos.PorPush($"⏰ {e.Titulo}", Cuando(e, de), "/agenda", ct);
-                if (ok) e.UltimoAviso = ahora;
-                log.LogInformation("Aviso de «{Titulo}»: {Resultado}", e.Titulo, ok ? "enviado" : "sin canal que funcione");
+                var de = e.AvisoDe ?? e.Inicio;
+                if (ahora - e.ProximoAviso!.Value < TimeSpan.FromHours(12))
+                {
+                    var texto = Texto(e, de);
+                    var ok = false;
+                    if (e.PorCorreo) ok |= await Canal(() => avisos.PorCorreo($"⏰ {e.Titulo}", texto, "/agenda", ct), "correo", e);
+                    if (e.PorWhatsApp) ok |= await Canal(() => avisos.PorWhatsApp(texto, ct), "WhatsApp", e);
+                    if (e.PorTelegram) ok |= await Canal(() => avisos.PorTelegram(texto, ct), "Telegram", e);
+                    if (e.PorPush) ok |= await Canal(() => avisos.PorPush($"⏰ {e.Titulo}", Cuando(e, de), "/agenda", ct), "push", e);
+                    if (ok) e.UltimoAviso = ahora;
+                    log.LogInformation("Aviso de «{Titulo}»: {Resultado}", e.Titulo, ok ? "enviado" : "sin canal que funcione");
+                }
+                var p = Ocurrencias.ProximoAviso(e, de.AddSeconds(1), ahora, zona.Info);
+                e.ProximoAviso = p?.Aviso;
+                e.AvisoDe = p?.De;
+                await db.SaveChangesAsync(ct);
             }
-            var p = Ocurrencias.ProximoAviso(e, de.AddSeconds(1), ahora, zona.Info);
-            e.ProximoAviso = p?.Aviso;
-            e.AvisoDe = p?.De;
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+            {
+                log.LogError(ex, "No se pudo avisar de «{Titulo}»", e.Titulo);
+                db.ChangeTracker.Clear();
+            }
         }
-        if (tocan.Count > 0) await db.SaveChangesAsync(ct);
+    }
+
+    // un canal que explota (tiempo agotado, asunto raro…) cuenta como «no enviado», sin tumbar a los otros
+    private async Task<bool> Canal(Func<Task<bool>> enviar, string nombre, Evento e)
+    {
+        try { return await enviar(); }
+        catch (Exception ex) when (ex is not OperationCanceledException || ex is TaskCanceledException)
+        {
+            log.LogWarning(ex, "El aviso de «{Titulo}» por {Canal} ha fallado", e.Titulo, nombre);
+            return false;
+        }
     }
 
     private string Cuando(Evento e, DateTimeOffset de)

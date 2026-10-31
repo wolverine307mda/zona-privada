@@ -1,6 +1,7 @@
 using Mda.Api.Agenda;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
+using Mda.Api.Galeria;
 using Mda.Api.Gastos;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
@@ -27,6 +28,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
+    public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
 
     // PostgreSQL guarda «timestamp with time zone» en UTC y Npgsql no acepta otro desfase:
     // toda fecha con hora pasa a UTC al escribirla o al usarla en una consulta
@@ -125,12 +127,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Valor).HasMaxLength(2000);
         });
 
+        b.Entity<FotoPublica>(e =>
+        {
+            e.ToTable("fotos_publicas");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(16);
+            e.Property(x => x.Raiz).HasMaxLength(20);
+            e.Property(x => x.Ruta).HasMaxLength(500);
+            e.Property(x => x.Titulo).HasMaxLength(80);
+            e.Property(x => x.Descripcion).HasMaxLength(400);
+            e.Property(x => x.Alt).HasMaxLength(200);
+            e.Property(x => x.Categoria).HasMaxLength(30);
+            e.Property(x => x.Tono).HasMaxLength(9);
+            e.Property(x => x.Hash).HasMaxLength(20);
+            e.HasIndex(x => x.Ruta).IsUnique();
+            e.HasIndex(x => x.Orden);
+        });
+
         b.Entity<Hucha>(e =>
         {
             e.ToTable("huchas");
             e.Property(x => x.Nombre).HasMaxLength(80);
             e.Property(x => x.Objetivo).HasPrecision(12, 2);
-            e.Property(x => x.Ahorrado).HasPrecision(12, 2);
+            e.Property(x => x.Ahorrado).HasPrecision(12, 2).IsConcurrencyToken(); // dos aportaciones a la vez no se pisan
             e.Property(x => x.Color).HasMaxLength(20);
             e.Property(x => x.Emoji).HasMaxLength(16);
         });

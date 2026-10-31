@@ -87,7 +87,7 @@ public static class Calculos
         var conDatos = serie.Where(p => p.Ingresos > 0 || p.Gastos > 0).ToList();
         var n = Math.Max(1, conDatos.Count);
         return new Estadisticas(serie, total.Ingresos, total.Gastos, total.Ahorro, Tasa(total.Ingresos, total.Ahorro),
-            Math.Round(conDatos.Sum(p => p.Gastos) / n, 2), Math.Round(conDatos.Sum(p => p.Ingresos) / n, 2),
+            Math.Round(conDatos.Sum(p => p.Gastos) / n, 2, MidpointRounding.AwayFromZero), Math.Round(conDatos.Sum(p => p.Ingresos) / n, 2, MidpointRounding.AwayFromZero),
             conDatos.MaxBy(p => p.Ahorro), conDatos.MinBy(p => p.Ahorro), PorCategoria(movimientos));
     }
 
@@ -155,9 +155,9 @@ public static class CalculosDeuda
             if (ultimo < primero) ultimo = primero;
             for (var m = primero; m <= ultimo; m = m.AddMonths(1))
                 porMes.Add(new MesPagado(m.Year, m.Month, lista.Where(p => p.Fecha.Year == m.Year && p.Fecha.Month == m.Month).Sum(p => p.Importe)));
-            media = Math.Round(pagado / porMes.Count, 2);
+            media = Math.Round(pagado / porMes.Count, 2, MidpointRounding.AwayFromZero);
             if (restante == 0) fin = lista[^1].Fecha;
-            else if (media > 0) fin = hoy.AddMonths((int)Math.Ceiling(restante / media.Value));
+            else if (media > 0 && Math.Ceiling(restante / media.Value) is <= 1200 and var meses) fin = hoy.AddMonths((int)meses); // más de 100 años = sin fecha estimada
         }
         return new EstadoDeuda(d.Id, d.Nombre, d.Total, d.Categoria, d.Inicio, d.Notas,
             pagado, restante, d.Total > 0 ? Math.Round((double)(pagado / d.Total) * 100, 1) : 0, lista.Count, media, fin,

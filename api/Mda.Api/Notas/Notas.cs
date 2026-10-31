@@ -31,11 +31,14 @@ public static class NotasEndpoints
         g.MapGet("/", async (bool? archivadas, string? q, AppDbContext db) =>
         {
             var arch = archivadas ?? false;
-            var lista = await db.Notas.AsNoTracking().Where(n => n.Archivada == arch)
-                .OrderByDescending(n => n.Fijada).ThenByDescending(n => n.Modificado).Take(500).ToListAsync();
+            var consulta = db.Notas.AsNoTracking().Where(n => n.Archivada == arch);
+            // la búsqueda va en la base de datos: antes se cortaba a 500 y se filtraba después
             if (!string.IsNullOrWhiteSpace(q))
-                lista = lista.Where(n => n.Titulo.Contains(q, StringComparison.OrdinalIgnoreCase) || n.Contenido.Contains(q, StringComparison.OrdinalIgnoreCase)
-                    || n.Etiquetas.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+            {
+                var ql = q.Trim().ToLowerInvariant();
+                consulta = consulta.Where(n => n.Titulo.ToLower().Contains(ql) || n.Contenido.ToLower().Contains(ql) || n.Etiquetas.ToLower().Contains(ql));
+            }
+            var lista = await consulta.OrderByDescending(n => n.Fijada).ThenByDescending(n => n.Modificado).Take(500).ToListAsync();
             return Results.Ok(lista.Select(Salida));
         });
 

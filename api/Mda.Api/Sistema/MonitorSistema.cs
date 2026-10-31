@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using Mda.Api.Seguridad;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Mda.Api.Sistema;
@@ -78,6 +80,7 @@ public class MonitorSistema(ILectorSistema lector, EstadoSistema estado, EstadoA
 
 public static class SistemaEndpoints
 {
+    public const int TokenMinimo = 32; // openssl rand -hex 32
     public static void MapSistema(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/sistema", (EstadoSistema estado) =>
@@ -87,17 +90,29 @@ public static class SistemaEndpoints
         }).RequireAuthorization();
 
         // El agente de Windows (agente/Mda.Agente) envía aquí sus lecturas con un token compartido (Agente:Token).
-        // Sin token configurado la ruta no existe.
-        app.MapPost("/api/sistema/agente", (HttpRequest req, MetricasSistema m, EstadoAgente agente, IConfiguration config) =>
+        // Sin token configurado (o con menos de 32 caracteres) la ruta no existe. El agente llama directo a la API, nunca
+        // por el proxy: lo que llega con X-Forwarded-For viene de Internet y se rechaza. Cuerpo pequeño y comprobado
+        // después del token (nada de leer 30 MB de JSON de quien no tiene permiso).
+        app.MapPost("/api/sistema/agente", async (HttpRequest req, EstadoAgente agente, IConfiguration config) =>
         {
             var esperado = config["Agente:Token"];
-            if (string.IsNullOrWhiteSpace(esperado)) return Results.NotFound();
+            // UseForwardedHeaders retira X-Forwarded-For al procesarlo y deja la copia en X-Original-For
+            var porProxy = req.Headers.ContainsKey("X-Forwarded-For") || req.Headers.ContainsKey("X-Original-For");
+            if (esperado is not { Length: >= TokenMinimo } || porProxy) return Results.NotFound();
             var recibido = req.Headers["X-Agente-Token"].ToString();
             var ok = CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(recibido), Encoding.UTF8.GetBytes(esperado));
             if (!ok) return Results.Unauthorized();
+            // una lectura del PC ocupa ~1 KB: nada de cuerpos grandes
+            const int MaxCuerpo = 16 * 1024;
+            if (req.ContentLength > MaxCuerpo) return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+            if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limite) limite.MaxRequestBodySize = MaxCuerpo;
+            MetricasSistema? m;
+            try { m = await req.ReadFromJsonAsync<MetricasSistema>(); }
+            catch (Exception e) when (e is System.Text.Json.JsonException or BadHttpRequestException) { return Results.BadRequest(); }
+            if (m is null) return Results.BadRequest();
             agente.Recibir(m);
             return Results.NoContent();
-        }).AllowAnonymous();
+        }).AllowAnonymous().RequireRateLimiting(Limites.Agente);
 
         app.MapHub<SistemaHub>("/hubs/sistema");
     }

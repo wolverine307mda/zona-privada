@@ -7,7 +7,8 @@ namespace Mda.Api.Auth;
 public static class AuthEndpoints
 {
     // Rutas de Identity que no se ofrecen: la zona es solo mía, nadie se registra desde fuera.
-    private static readonly string[] Cerradas = ["/register", "/forgotPassword", "/resetPassword", "/resendConfirmationEmail"];
+    // (/refresh y /confirmEmail también: sin sesión por cookie no se emiten ni se renuevan tokens)
+    private static readonly string[] Cerradas = ["/register", "/forgotPassword", "/resetPassword", "/resendConfirmationEmail", "/refresh", "/confirmEmail"];
 
     public static void MapAuth(this IEndpointRouteBuilder app)
     {
@@ -18,10 +19,13 @@ public static class AuthEndpoints
             .RequireRateLimiting(Limites.Acceso)
             .AddEndpointFilter(async (ctx, next) =>
             {
-                var ruta = ctx.HttpContext.Request.Path.Value ?? "";
-                return Cerradas.Any(c => ruta.EndsWith(c, StringComparison.OrdinalIgnoreCase))
-                    ? Results.NotFound()
-                    : await next(ctx);
+                var peticion = ctx.HttpContext.Request;
+                var ruta = peticion.Path.Value ?? "";
+                if (Cerradas.Any(c => ruta.EndsWith(c, StringComparison.OrdinalIgnoreCase))) return Results.NotFound();
+                // sin cookie Identity daría un token Bearer que no aparece en Seguridad › Sesiones ni se puede cerrar
+                if (ruta.EndsWith("/login", StringComparison.OrdinalIgnoreCase) && !string.Equals(peticion.Query["useCookies"], "true", StringComparison.OrdinalIgnoreCase))
+                    return Results.Problem("Solo se entra con cookie de sesión.", statusCode: StatusCodes.Status400BadRequest);
+                return await next(ctx);
             });
 
         var sesion = app.MapGroup("/api/sesion").RequireAuthorization();
