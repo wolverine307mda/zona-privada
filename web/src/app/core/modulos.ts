@@ -51,6 +51,10 @@ export const MODULOS: Modulo[] = [
     planes: ['Documentos, música, imágenes y vídeos del equipo', 'Subir y descargar desde el móvil', 'Papelera para recuperar lo borrado'],
   },
   {
+    id: 'pc', titulo: 'Mi PC', resumen: 'Salud del equipo y órdenes: bloquear, mantener despierto, reiniciar.', listo: true,
+    icono: 'M4 5h16v10H4zM9 19h6M12 15v4',
+  },
+  {
     id: 'seguridad', titulo: 'Seguridad', resumen: 'Sesiones abiertas, accesos y verificación en dos pasos.', listo: true,
     icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',
     planes: ['Activar la verificación en dos pasos con el móvil', 'Cambiar la contraseña', 'Ver y cerrar sesiones abiertas'],

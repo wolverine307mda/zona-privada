@@ -163,3 +163,16 @@
 | GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |
 | GET/PUT | `/api/galeria/globo` | zona excluida alrededor de casa `{ lat, lon, radioKm }` |
 | GET | `/api/galeria/fotos/{id}/gps` | el GPS del archivo original (solo para ti); 204 si no tiene |
+
+## Passkeys, «Mi PC» y reautenticación
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/auth/passkey/entrada/opciones` · `/entrada` | entrar con un passkey (sin sesión); el segundo recibe `{ credencial }` y pone la cookie. 10/min por IP |
+| GET/POST/DELETE | `/api/passkeys` · `/opciones` · `/{id}` | gestionar los passkeys de la cuenta (con sesión, máx. 5) |
+| POST | `/api/seguridad/reautenticar` | `{ password, codigo? }`: vale 2 min para esta sesión |
+| GET | `/api/pc` | salud del PC, si el agente está conectado, si la reautenticación vale y las últimas órdenes |
+| POST | `/api/pc/ordenes` · GET `/api/pc/ordenes/{id}` | `{ tipo, parametro? }` (`bloquear`, `despierto`, `reiniciar`, `suspender`, `apagar`, `cancelar`); pide reautenticar (403 `reautenticar:true`) y avisa a Telegram |
+| POST | `/api/sistema/agente/salud` | el agente manda discos, volúmenes y reinicio pendiente (token) |
+| GET | `/api/sistema/agente/ordenes` | el agente pregunta (espera hasta 20 s) y recibe las órdenes firmadas con HMAC-SHA256 |
+| POST | `/api/sistema/agente/ordenes/{id}` | el agente cuenta el resultado `{ ok, resultado }` |

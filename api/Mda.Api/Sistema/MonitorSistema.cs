@@ -43,6 +43,11 @@ public class EstadoAgente(TimeProvider reloj)
         _recibida = reloj.GetUtcNow();
     }
 
+    private DateTimeOffset _visto;
+    // el agente ha hablado hace poco (métricas, salud o preguntando por órdenes)
+    public void Visto() => _visto = reloj.GetUtcNow();
+    public bool Conectado(TimeSpan margen) => reloj.GetUtcNow() - (_visto > _recibida ? _visto : _recibida) < margen && (_visto != default || _recibida != default);
+
     public MetricasSistema? Reciente() =>
         _ultima is not null && reloj.GetUtcNow() - _recibida < Caducidad ? _ultima with { Hora = reloj.GetUtcNow() } : null;
 }
@@ -111,6 +116,7 @@ public static class SistemaEndpoints
             catch (Exception e) when (e is System.Text.Json.JsonException or BadHttpRequestException) { return Results.BadRequest(); }
             if (m is null) return Results.BadRequest();
             agente.Recibir(m);
+            agente.Visto();
             return Results.NoContent();
         }).AllowAnonymous().RequireRateLimiting(Limites.Agente);
 

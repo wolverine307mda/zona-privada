@@ -24,6 +24,7 @@ public class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Admin:Password", Password);
         builder.UseSetting("Seq:Url", "");
         builder.UseSetting("Agente:Token", Token);
+        builder.UseSetting("Agente:EsperaSegundos", "1"); // el agente espera 20 s órdenes; en las pruebas, 1
         builder.ConfigureServices(services =>
         {
             foreach (var d in services.Where(d =>

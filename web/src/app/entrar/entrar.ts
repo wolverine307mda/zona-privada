@@ -1,5 +1,8 @@
 import { Component, ElementRef, OnDestroy, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { pedirCredencial, soportaPasskeys } from '../core/passkey';
 import { ResultadoEntrar, SesionService } from '../core/sesion.service';
 import { crearCandado } from './candado-3d';
 
@@ -18,6 +21,8 @@ const MENSAJES: Record<Exclude<ResultadoEntrar, 'ok' | 'segundo-factor'>, string
 export class Entrar implements OnDestroy {
   private readonly sesion = inject(SesionService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+  protected readonly conPasskey = soportaPasskeys();
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('escena');
   private escena?: ReturnType<typeof crearCandado>;
 
@@ -71,6 +76,29 @@ export class Entrar implements OnDestroy {
       this.error.set('Falta el código de tu app de autenticación.');
     } else {
       this.fallo(MENSAJES[r]);
+    }
+  }
+
+  // Face ID / Windows Hello: el dispositivo guarda el passkey y solo hay que mirar a la cámara
+  protected async entrarConPasskey(): Promise<void> {
+    if (this.ocupado()) return;
+    this.ocupado.set(true);
+    this.error.set('');
+    this.escena?.intento();
+    try {
+      const opciones = await firstValueFrom(this.http.post<unknown>('/api/auth/passkey/entrada/opciones', null));
+      const credencial = await pedirCredencial(opciones);
+      await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
+      if (await this.sesion.trasPasskey()) {
+        this.escena?.abrir();
+        setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
+      }
+    } catch (e) {
+      // cancelar el diálogo del sistema no es un error que haya que gritar
+      const cancelado = e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+      if (!cancelado) this.fallo('Ese passkey no sirve aquí. Entra con tu contraseña y registra uno nuevo en Seguridad.');
+    } finally {
+      this.ocupado.set(false);
     }
   }
 

@@ -63,6 +63,12 @@ export class SesionService {
     }
   }
 
+  // tras entrar con un passkey la cookie ya está puesta: se vuelve a preguntar quién eres
+  async trasPasskey(): Promise<boolean> {
+    this.comprobada = false;
+    return this.comprobar();
+  }
+
   async salir(): Promise<void> {
     try { await firstValueFrom(this.http.post('/api/sesion/salir', null)); } catch { /* la cookie ya no vale */ }
     this.nombre.set(null);

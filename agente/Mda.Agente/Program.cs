@@ -23,6 +23,20 @@ using var cancelar = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancelar.Cancel(); };
 
 Console.WriteLine($"Enviando las métricas de {Environment.MachineName} a {url} cada 2 s. Ctrl+C para parar.");
+
+// La salud del PC (discos, espacio, reinicio pendiente) cada 5 minutos, y las órdenes que mande la zona privada (conexión saliente)
+using var esperaLarga = new HttpClient { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(45) };
+esperaLarga.DefaultRequestHeaders.Add("X-Agente-Token", token);
+_ = Task.Run(async () =>
+{
+    using var cada5 = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    do
+    {
+        try { await http.PostAsJsonAsync("/api/sistema/agente/salud", Salud.Leer(), cancelar.Token); }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { /* la API no está: en 5 min otra vez */ }
+    } while (await cada5.WaitForNextTickAsync(cancelar.Token));
+});
+_ = Ordenes.Bucle(esperaLarga, token, cancelar.Token);
 string? ultimoEstado = null;
 using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
 try

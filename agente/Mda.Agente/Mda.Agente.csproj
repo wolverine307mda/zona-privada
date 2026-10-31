@@ -3,15 +3,19 @@
   <!-- Agente de Windows: mide el PC de verdad (no la máquina virtual de Docker) y se lo manda a la API -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>mda-agente</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!-- El mismo lector que usa la API, sin duplicar código -->
   <ItemGroup>
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Sistema\LectorSistema.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>
 
 </Project>

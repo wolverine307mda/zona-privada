@@ -20,6 +20,8 @@ public class SesionAbierta
     public string Agente { get; set; } = "";
     public bool App { get; set; }
     public DateTimeOffset? Cerrada { get; set; }
+    // hasta cuándo vale la «contraseña otra vez» para acciones delicadas (órdenes al PC)
+    public DateTimeOffset? ReautenticadaHasta { get; set; }
 }
 
 // Cada intento de entrar, bien o mal

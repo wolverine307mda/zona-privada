@@ -3,6 +3,7 @@ using Mda.Api.Atajos;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
 using Mda.Api.Galeria;
+using Mda.Api.Pc;
 using Mda.Api.Gastos;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
@@ -31,6 +32,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
+    public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
 
     // PostgreSQL guarda «timestamp with time zone» en UTC y Npgsql no acepta otro desfase:
@@ -139,6 +141,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.UltimaIp).HasMaxLength(64);
             e.Property(x => x.Redes).HasMaxLength(400);
             e.HasIndex(x => x.Hash).IsUnique();
+        });
+
+        b.Entity<OrdenPc>(e =>
+        {
+            e.ToTable("ordenes_pc");
+            e.Property(x => x.Tipo).HasMaxLength(20);
+            e.Property(x => x.Parametro).HasMaxLength(20);
+            e.Property(x => x.Estado).HasMaxLength(12);
+            e.Property(x => x.Resultado).HasMaxLength(200);
+            e.Property(x => x.Desde).HasMaxLength(200);
         });
 
         b.Entity<Senuelo>(e =>

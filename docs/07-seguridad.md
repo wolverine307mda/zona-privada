@@ -37,6 +37,9 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - **Galería pública**: nada sale sin activar el interruptor y marcar cada foto; el id es aleatorio, la ruta real nunca viaja y siempre se sirve una copia WebP recomprimida (el codificador no copia EXIF: sin GPS ni cámara) con caché inmutable.
 - **Globo 3D**: cada foto decide si sale; al público solo llegan el nombre y la posición **redondeada a ~10 km**, y nunca nada dentro del radio excluido alrededor de tu casa. El GPS exacto del archivo solo lo ve el dueño en la privada.
 - **Atajos de iOS**: tokens con alcance (gasto, pago, lectura), guardados como hash SHA-256, revocables, sin cookie y sin acceso al resto de la app; aviso por Telegram desde una red nueva.
+- **Passkeys (Face ID / Windows Hello)**: entrar sin contraseña ni código (un passkey ya es «algo que tienes + tu cara»); atados al dominio de `App:UrlPublica`, máx. 5, revocables. La contraseña y los dos pasos siguen como respaldo.
+- **Reautenticación**: las órdenes al PC piden la contraseña (y el código si hay dos pasos) otra vez; vale 2 min y solo para esa sesión.
+- **Órdenes al PC**: lista cerrada, firmadas con HMAC-SHA256 con el secreto del agente, caducan a los 60 s, avisan a Telegram y las ejecuta el agente, que pregunta él (sin abrir puertos). Suspender o apagar dejan el PC inalcanzable hasta que lo enciendas tú.
 - **Señuelos**: archivos falsos en Documentos; abrirlos o descargarlos avisa y cierra la sesión.
 - **Estado en vivo**: apagado por defecto; solo números redondeados (nunca equipo, discos, red ni IP); el directo se corta a los 10 min y con ≤ 20 visitantes a la vez.
 - Markdown de notas: renderizador propio que escapa HTML.

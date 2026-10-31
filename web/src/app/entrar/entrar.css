@@ -56,3 +56,5 @@
   .intro { display: none; }
   .tarjeta { rotate: none; box-shadow: 6px 6px 0 var(--brand); }
 }
+
+.entrar--passkey { margin-top: 10px; background: transparent; color: inherit; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }

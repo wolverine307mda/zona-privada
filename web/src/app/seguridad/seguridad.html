@@ -303,3 +303,24 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
     </ol>
   </details>
 </section>
+
+<section class="caja">
+  <header class="caja__cab"><h3>Face ID y passkeys</h3><span class="sub">Entrar con la cara o la huella, sin escribir la contraseña</span></header>
+  @if (!conPasskey) { <p class="nada">Este navegador no admite passkeys. Prueba con Safari o Chrome actualizados.</p> }
+  <ul class="accesos">
+    @for (p of passkeys(); track p.id) {
+      <li>
+        <span class="acceso__marca" aria-hidden="true">🔐</span>
+        <span class="acceso__texto"><strong>{{ p.nombre }}</strong><span>añadido {{ fecha(p.creado) }}</span></span>
+        <button class="enlace" type="button" (click)="quitarPasskey(p.id)">Quitar</button>
+      </li>
+    } @empty { <p class="nada">Aún no tienes ninguno.</p> }
+  </ul>
+  @if (conPasskey) {
+    <div class="fila-senuelo">
+      <input class="campo__input" maxlength="40" placeholder="Nombre (p. ej. iPhone)" [value]="nombrePasskey()" (input)="nombrePasskey.set($any($event.target).value)">
+      <button class="button" type="button" (click)="registrarPasskey()" [disabled]="ocupadoPasskey()">{{ ocupadoPasskey() ? 'Esperando…' : 'Añadir este dispositivo' }}</button>
+    </div>
+    <p class="nada">Se registra desde la dirección pública de la app (no desde localhost) y no se puede usar desde otra. Los dos pasos y la contraseña siguen valiendo como respaldo.</p>
+  }
+</section>

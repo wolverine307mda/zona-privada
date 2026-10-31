@@ -12,6 +12,7 @@ using Mda.Api.Data;
 using Mda.Api.Galeria;
 using Mda.Api.Gastos;
 using Mda.Api.Luz;
+using Mda.Api.Pc;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
@@ -57,11 +58,19 @@ builder.Services
         o.Password.RequireUppercase = false;
         o.Password.RequireNonAlphanumeric = false;
         o.User.RequireUniqueEmail = true;
+        // passkeys (Face ID, Windows Hello): necesitan el esquema 3 de Identity y ir atados al dominio público de la app
+        o.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
         o.Lockout.MaxFailedAccessAttempts = 5;
         o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         o.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<AppDbContext>();
+
+// el passkey queda atado al dominio público: registrado desde otra dirección (localhost) no vale y se avisa
+if (Uri.TryCreate(builder.Configuration["App:UrlPublica"], UriKind.Absolute, out var publica))
+    builder.Services.Configure<IdentityPasskeyOptions>(o => o.ServerDomain = publica.Host);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ClaimsPrincipalAccessor>();
 
 builder.Services.ConfigureApplicationCookie(o =>
 {
@@ -114,6 +123,9 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(Limites.Atajos, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    o.AddPolicy(Limites.Reauth, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Limites.Agente, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -150,6 +162,10 @@ builder.Services.AddSingleton<ILectorSistema>(_ => LectorSistema.ParaEsteEquipo(
 builder.Services.AddSingleton<EstadoSistema>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<EstadoAgente>();
+// salud del PC y órdenes al agente
+builder.Services.AddSingleton<EstadoSalud>();
+builder.Services.AddSingleton<AvisosSalud>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<AvisosSalud>());
 builder.Services.AddHostedService<MonitorSistema>();
 
 // ---- Documentos: las carpetas del equipo montadas en Archivos:Base ----
@@ -209,12 +225,15 @@ app.UseAuthorization();
 
 app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous().RequireCors(WebPublica);
 app.MapAuth();
+app.MapPasskeys();
+app.MapReautenticar();
 app.MapSistema();
 app.MapGastos();
 app.MapArchivos();
 app.MapGaleria();
 app.MapSenuelos();
 app.MapAtajos();
+app.MapPc();
 app.MapEstadoPublico();
 app.MapDeudas();
 app.MapNotas();

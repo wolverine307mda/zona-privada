@@ -1,0 +1,20 @@
+:host { display: grid; gap: 18px; }
+.vacio, .sub { color: var(--soft); }
+.vol { display: grid; gap: 6px; margin: 12px 0; }
+.barra { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--texto) 10%, transparent); overflow: hidden; }
+.barra i { display: block; height: 100%; border-radius: inherit; background: var(--brand); transition: width var(--dur-3, 420ms) var(--ease-out); }
+.barra i.aviso { background: #f5a623; }
+.barra i.rojo { background: var(--bad, #e5484d); }
+.vol small, .disco small { color: var(--soft); display: block; }
+.disco { display: flex; gap: 12px; align-items: center; margin: 10px 0; }
+.disco.mal { color: var(--bad, #e5484d); }
+.ordenes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); margin: 12px 0; }
+.orden { padding: 12px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--texto) 16%, transparent); background: transparent; color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
+.orden.peligro { border-color: color-mix(in srgb, var(--bad, #e5484d) 55%, transparent); }
+.orden:disabled { opacity: .4; cursor: not-allowed; }
+.msg { padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.reauth { display: grid; gap: 12px; padding: 14px; margin-top: 8px; border-radius: 14px; border: 1px solid var(--brand); }
+.pie { display: flex; gap: 12px; justify-content: flex-end; }
+.historial { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; }
+.historial li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.historial small { color: var(--soft); }

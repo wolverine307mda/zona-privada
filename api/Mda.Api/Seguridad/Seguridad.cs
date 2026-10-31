@@ -13,6 +13,8 @@ public static class Limites
     public const string Publico = "publico";
     // el iPhone con su token (Atajos, Apple Pay)
     public const string Atajos = "atajos";
+    // «contraseña otra vez» para acciones delicadas: el bloqueo de la cuenta (5 fallos) ya frena la fuerza bruta
+    public const string Reauth = "reauth";
 }
 
 public static class IpCliente
