@@ -1,105 +1,260 @@
 # Zona privada · MDA
 
-Mi app personal, alojada en el equipo de casa y accesible desde la web
-(`wolverine307mda.github.io` → icono de persona → «Entrar»).
+App personal de Mario («zona privada»): un panel que corre en el **equipo de casa** (Windows + Docker Desktop)
+y se usa desde el móvil (PWA en el iPhone) y el PC a través de Internet con HTTPS, sin abrir puertos del router.
 
-| Parte | Tecnología |
-|---|---|
-| Front | Angular 22 (standalone, signals, zoneless), Three.js, ECharts |
-| API | ASP.NET Core 10 (C#, Minimal APIs), SignalR |
-| Datos | PostgreSQL 17 + Entity Framework Core |
-| Usuarios | ASP.NET Core Identity: cookie `HttpOnly` + `SameSite=Strict`, 2FA, bloqueo tras 5 fallos, sin registro público |
-| Registros | Serilog + Seq |
-| Despliegue | Docker Compose + Cloudflare Tunnel (+ Cloudflare Access) |
+Junta en un solo sitio: el estado del PC en directo, la **cartera** (gastos, ingresos, saldo, huchas, presupuestos,
+recurrentes, gasolina, deudas del coche), la **agenda** (eventos, recordatorios, horario de trabajo, Google Calendar),
+**notas**, **documentos** del PC, **música** (Spotify), **el tiempo**, un **asistente** que entiende frases en español
+(«ayer 12 € en el Mercadona», «dentista el martes de 10 a 11:30») y un **bot de Telegram** que hace lo mismo desde el chat.
 
-## Estructura
+> 📚 Documentación detallada en [`docs/`](docs/) — empieza por [docs/README.md](docs/README.md).
+> Si eres un asistente de IA ayudando con este repo, lee también [CLAUDE.md](CLAUDE.md).
 
-```
-api/Mda.Api          API: Program.cs, Auth/, Sistema/ (monitor en tiempo real), Data/ (EF Core + migraciones)
-api/Mda.Api.Tests    xUnit: lectores del sistema y la API completa en memoria
-agente/Mda.Agente    agente de Windows: métricas reales del PC hacia la API
-web/                 Angular: entrar/ (candado 3D), shell/ (menú lateral y tema), inicio/ (el equipo en directo),
-                     pronto/ (secciones por venir), core/ (sesión, tema, guards)
-compose.yaml         db, api, seq, copias diarias y el túnel (perfil «tunel»)
-```
+---
 
-## Desarrollo
+## 🚀 Cómo levantarlo todo
 
-Requisitos: .NET SDK 10, Node 24+, Docker Desktop.
+### Requisitos
+
+| Herramienta | Versión | Para qué |
+|---|---|---|
+| Docker Desktop | reciente (con WSL 2 en Windows) | producción: PostgreSQL, API, Seq, copias, Tailscale |
+| .NET SDK | 10.0 | desarrollo de la API, tests, agente de Windows |
+| Node.js | 24+ (npm 11) | desarrollo del front (Angular 22) |
+| Git | cualquiera | — |
+
+### A) Producción en el equipo de casa (lo que está en marcha)
 
 ```bash
-# 1. Base de datos y Seq
-cp .env.example .env        # y rellena las contraseñas
-docker compose up -d db seq
+# 1. Configuración (una vez): copia la plantilla y rellena los valores
+cp .env.example .env          # en Windows: copy .env.example .env
+#    obligatorios: POSTGRES_PASSWORD, ADMIN_USUARIO, ADMIN_EMAIL, ADMIN_PASSWORD (8+), SEQ_PASSWORD
+#    opcionales:   TS_AUTHKEY, URL_PUBLICA, AGENTE_TOKEN, CARPETA_*, CORREO_*, WHATSAPP_*, TELEGRAM_TOKEN, SPOTIFY_*, GOOGLE_*
 
-# 2. Secretos de la API en desarrollo (no van al repo)
+# 2. Todo (base de datos, API con el front dentro, Seq, copias diarias) + Tailscale Funnel (HTTPS público)
+docker compose --profile publico up -d --build
+
+# 3. Comprobar
+docker compose ps
+curl http://localhost:8080/api/salud          # {"estado":"ok",...}
+```
+
+- App en local: **http://localhost:8080** · en Internet: **https://equipo-de-casa.tail77819b.ts.net** (Tailscale Funnel).
+- Registros (Seq): **http://localhost:5341** (usuario `admin`, contraseña `SEQ_PASSWORD`).
+- El usuario administrador se crea (o se actualiza su contraseña) al arrancar la API con `ADMIN_*` del `.env`.
+- Las **migraciones** de la base de datos se aplican solas al arrancar.
+- Para que el panel muestre el **PC real** (no la VM de Docker), arranca el agente de Windows: doble clic en
+  `agente/arrancar.cmd` (necesita `AGENTE_TOKEN` en `.env`). Ver [docs/06-despliegue-y-operacion.md](docs/06-despliegue-y-operacion.md).
+
+**Actualizar tras cambiar código** (lo habitual):
+
+```bash
+docker compose up -d --build api              # recompila front + API y reinicia solo la API
+```
+
+Sin Tailscale (solo en este equipo): `docker compose up -d --build`. Con Cloudflare Tunnel en vez de Tailscale:
+`docker compose --profile tunel up -d --build` (necesita `CLOUDFLARE_TUNNEL_TOKEN`).
+
+### B) Desarrollo rápido sin Docker (base de datos en memoria)
+
+Dos terminales. Los datos se pierden al parar la API.
+
+```bash
+# Terminal 1 — API en http://localhost:5195 con base de datos en memoria y un usuario de prueba
 cd api
-dotnet user-secrets --project Mda.Api set "ConnectionStrings:Postgres" "Host=localhost;Port=5432;Database=zonaprivada;Username=mda;Password=LA_DE_.ENV"
-dotnet user-secrets --project Mda.Api set "Admin:Usuario" "tu-usuario"
-dotnet user-secrets --project Mda.Api set "Admin:Email" "tu@email.com"
-dotnet user-secrets --project Mda.Api set "Admin:Password" "una-contraseña-larga"
-dotnet run --project Mda.Api            # http://localhost:5195
-
-# 3. Front con recarga en caliente (pide /api y /hubs a la API por el proxy)
-cd ../web && npm start                  # http://localhost:4200
+ASPNETCORE_ENVIRONMENT=Development Datos__EnMemoria=true \
+Admin__Usuario=wolve Admin__Email=prueba@local.test Admin__Password=clave-de-prueba \
+dotnet run --project Mda.Api --urls http://localhost:5195
 ```
 
-> Para el desarrollo, la base de datos necesita el puerto 5432: añade `ports: ["127.0.0.1:5432:5432"]` al servicio `db`
-> en un `compose.override.yaml` (ignorado por git si quieres).
-
-**Sin Docker** (prueba rápida con base de datos en memoria; se borra al parar):
+```powershell
+# (lo mismo en PowerShell)
+cd api
+$env:ASPNETCORE_ENVIRONMENT='Development'; $env:Datos__EnMemoria='true'
+$env:Admin__Usuario='wolve'; $env:Admin__Email='prueba@local.test'; $env:Admin__Password='clave-de-prueba'
+dotnet run --project Mda.Api --urls http://localhost:5195
+```
 
 ```bash
-cd web && npx ng build && cp -r dist/web/browser ../api/Mda.Api/wwwroot && cd ..
-Datos__EnMemoria=true Admin__Email=yo@prueba.local Admin__Password=una-clave-larga-1   dotnet run --project api/Mda.Api --urls http://localhost:5195   # http://localhost:5195
+# Terminal 2 — front con recarga en caliente en http://localhost:4200 (proxy de /api y /hubs a :5195)
+cd web
+npm install
+npm start
 ```
 
-Tests: `dotnet test ZonaPrivada.slnx` (API) y `npx ng test --watch=false` en `web/`.
+Entra en http://localhost:4200 con `wolve` / `clave-de-prueba`.
 
-Nueva migración: `cd api && dotnet ef migrations add Nombre --project Mda.Api --output-dir Data/Migraciones`
-(se aplican solas al arrancar).
-
-## Producción en el equipo de casa
+### C) Desarrollo contra PostgreSQL real
 
 ```bash
-docker compose up -d --build                    # prueba local en http://localhost:8080
-docker compose --profile tunel up -d --build    # con el túnel: sale a Internet con HTTPS
+docker compose up -d db seq
+# expón el puerto de la base solo en local: crea compose.override.yaml con
+#   services: { db: { ports: ["127.0.0.1:5432:5432"] } }
+cd api
+dotnet user-secrets --project Mda.Api set "ConnectionStrings:Postgres" "Host=localhost;Port=5432;Database=zonaprivada;Username=mda;Password=<POSTGRES_PASSWORD>"
+dotnet user-secrets --project Mda.Api set "Admin:Usuario" "<usuario>"
+dotnet user-secrets --project Mda.Api set "Admin:Email" "<email>"
+dotnet user-secrets --project Mda.Api set "Admin:Password" "<contraseña>"
+dotnet run --project Mda.Api --urls http://localhost:5195
+# y el front como en B)
 ```
 
-> En Docker Desktop (Windows) el panel muestra la máquina virtual de WSL que ejecuta los contenedores
-> (su memoria y su disco), no Windows directamente. La sesión sobrevive a reiniciar la API:
-> las claves de la cookie se guardan en el volumen `claves`.
-
-### Datos reales del PC (agente de Windows)
-
-Dentro de Docker la API solo ve la máquina virtual de WSL. El agente (`agente/Mda.Agente`) corre en Windows,
-lee CPU, memoria, discos y red del PC de verdad y se los manda a la API cada 2 s con el token `AGENTE_TOKEN`
-del `.env`. Si el agente se para, el panel vuelve a mostrar Docker y lo avisa.
+### Tests
 
 ```bash
-agenterrancar.cmd                    # doble clic: lo compila la primera vez y lo deja en segundo plano
-dotnet run --project agente/Mda.Agente  # o en primer plano, para ver su estado
+dotnet test ZonaPrivada.slnx          # API: xUnit + WebApplicationFactory con base en memoria (~130 tests)
+cd web && npx ng test --watch=false   # front: Vitest + jsdom
+cd web && npx ng build                # comprobar que el front compila
 ```
 
-Para que arranque solo al iniciar sesión en Windows: acceso directo a `agenterrancar.cmd` en
-`shell:startup` (Win + R → `shell:startup`).
+---
 
-### Cloudflare (una vez)
+## 🧱 Tecnologías
 
-1. Dominio propio añadido a Cloudflare (p. ej. `mariodedomingo.dev`).
-2. **Zero Trust → Networks → Tunnels → Create tunnel** (tipo *Cloudflared*), copia el token en `.env`
-   (`CLOUDFLARE_TUNNEL_TOKEN`).
-3. En el túnel, **Public hostname**: `app.mariodedomingo.dev` → servicio `http://api:8080`.
-4. **Zero Trust → Access → Applications → Self-hosted** para `app.mariodedomingo.dev` con una política
-   que solo permita tu email. Así nadie llega a la API sin pasar antes por Cloudflare.
-5. En la web pública, el botón «Entrar» de `acceso.html` pasa a apuntar a `https://app.mariodedomingo.dev`.
+| Capa | Tecnología | Detalles |
+|---|---|---|
+| Front | **Angular 22** | componentes *standalone*, **signals**, *zoneless*, control flow `@if/@for`, rutas *lazy* por pantalla |
+| Gráficas | **ECharts 6** | medidores de CPU, historial, estadísticas de gastos |
+| 3D | **Three.js 0.187** | candado 3D de la pantalla de entrar |
+| Tiempo real | **SignalR** (`@microsoft/signalr`) | `/hubs/sistema` emite métricas cada 2 s |
+| Otros front | `qrcode` (QR del 2FA), View Transitions API, Web Push, Service Worker propio (`public/sw.js`) |
+| API | **ASP.NET Core 10** (C#, *Minimal APIs*) | módulos `MapXxx()` por carpeta, `BackgroundService` para tareas periódicas |
+| Datos | **PostgreSQL 17** + **EF Core 10** (Npgsql) | migraciones en `api/Mda.Api/Data/Migraciones`, se aplican al arrancar; InMemory para dev/tests |
+| Usuarios | **ASP.NET Core Identity** (`MapIdentityApi`) | cookie `HttpOnly` + `SameSite=Strict`, 2FA TOTP, bloqueo tras 5 fallos, sin registro público, sesiones revocables |
+| Registros | **Serilog** + **Seq** | consola + Seq en `http://seq:5341` |
+| Notificaciones | **Web Push** (VAPID propio, paquete `WebPush`), correo SMTP, WhatsApp (CallMeBot), **Telegram Bot API** |
+| Integraciones | Spotify (OAuth), Google Calendar (OAuth), **Open-Meteo** (tiempo, sin clave) |
+| Despliegue | **Docker Compose** (imagen única multi-etapa), **Tailscale Funnel** (o Cloudflare Tunnel), copias `pg_dump` diarias |
+| Tests | **xUnit** + `Microsoft.AspNetCore.Mvc.Testing` · **Vitest** + jsdom |
+| Agente | consola .NET 10 en Windows que manda CPU/RAM/discos/red reales a la API |
 
-### Seguridad
+---
 
-- Ningún puerto abierto en el router: la API solo escucha en `127.0.0.1` y el túnel sale hacia Cloudflare.
-- Secretos en `.env` (local) y en *user secrets* (desarrollo); nunca en el repo.
-- Cabeceras de seguridad (CSP sin scripts de terceros, sin iframes) y límite de 10 intentos de login por minuto e IP.
-- Contraseña de 8+ caracteres a tu elección; la cuenta se bloquea 15 min tras 5 fallos. Con una contraseña
-  corta, activa sí o sí Cloudflare Access y el 2FA antes de abrir la app a Internet.
-- Activa el 2FA de tu usuario: `POST /api/auth/manage/2fa` (lo añadiré al panel).
-- Copia de la base de datos cada día en `./copias` (14 últimas). Guárdalas también en otro disco.
+## 🗺️ Arquitectura en una imagen
+
+```mermaid
+flowchart LR
+  subgraph Internet
+    M[iPhone PWA / navegador]
+    TG[Telegram]
+    SP[Spotify / Google / Open-Meteo]
+  end
+  subgraph "Equipo de casa (Windows + Docker Desktop)"
+    TS[tailscale<br/>Funnel :443] --> API
+    API[api<br/>ASP.NET Core 10<br/>+ Angular en wwwroot<br/>127.0.0.1:8080]
+    API --> DB[(db<br/>PostgreSQL 17)]
+    API --> SEQ[seq<br/>127.0.0.1:5341]
+    CP[copias<br/>pg_dump diario] --> DB
+    AG[agente Windows<br/>Mda.Agente] -- POST /api/sistema/agente --> API
+  end
+  M -- HTTPS --> TS
+  API -- long polling --> TG
+  API --> SP
+```
+
+- **Una sola imagen** (`Dockerfile`): compila Angular, lo copia a `wwwroot` y publica la API. La API sirve el front
+  y cualquier ruta que no sea `/api/*` ni `/hubs/*` devuelve `index.html`.
+- **Ningún puerto abierto al exterior**: la API escucha en `127.0.0.1:8080`; Internet entra por Tailscale Funnel.
+- Detalle completo: [docs/01-arquitectura.md](docs/01-arquitectura.md).
+
+---
+
+## 📦 Módulos (qué hace la app)
+
+| Módulo | Front | API | Resumen |
+|---|---|---|---|
+| Inicio | `web/src/app/inicio` | `Sistema/`, varios | saludo, mosaico (dinero del mes, tiempo, música, coche, agenda, recordatorios, notas, seguridad, gasolina, carpetas), KPIs del PC en directo |
+| Cartera | `web/src/app/gastos` | `Gastos/` | movimientos con categorías y foto del ticket, recurrentes, saldo real, huchas, presupuestos con avisos, consejos 50/30/20, gasolina y consumo, deudas (coche) y mantenimiento |
+| Agenda | `web/src/app/agenda` | `Agenda/` | mes en rejilla, día por horas con **horario de trabajo** de fondo, eventos/recordatorios con repetición y avisos (correo, WhatsApp, push, Telegram), Google Calendar |
+| Notas | `web/src/app/notas` | `Notas/` | Markdown, tareas `- [ ]`, colores, etiquetas, fijadas/archivadas |
+| Documentos | `web/src/app/documentos` | `Archivos/` | carpetas del PC montadas en Docker: ver, subir, descargar, mover, renombrar, papelera |
+| Música | `web/src/app/musica` | `Conexiones/` | Spotify: lo que suena, control, recientes, cola, top |
+| Seguridad | `web/src/app/seguridad` | `Seguridad/`, `Auth/` | sesiones abiertas, accesos, 2FA con QR, canales de aviso (correo, WhatsApp, push, Telegram) |
+| Perfil | `web/src/app/perfil` | `Seguridad/Perfil.cs` | nombre, contacto, foto, cambiar contraseña |
+| Asistente | `web/src/app/shell/asistente.ts` | `Asistente/` | intérprete de frases en español por reglas (sin IA externa): gastos, ingresos, huchas, eventos, horario, preguntas |
+| Telegram | Seguridad › Avisos | `Telegram/` | bot vinculado a un solo chat: avisos + asistente desde el chat (/hoy, /tiempo, /saldo) |
+| El tiempo | `web/src/app/inicio/tiempo.ts` | `Tiempo/` | Open-Meteo, previsión por horas y semana, aviso la víspera de lluvia/tormenta/calor/helada |
+
+Detalle por módulo: [docs/02-backend.md](docs/02-backend.md) y [docs/04-frontend.md](docs/04-frontend.md).
+Todas las rutas HTTP: [docs/03-api.md](docs/03-api.md).
+
+---
+
+## 📁 Estructura del repositorio
+
+```
+.
+├── api/
+│   ├── Mda.Api/                 API ASP.NET Core 10
+│   │   ├── Program.cs           arranque: servicios, middleware, MapXxx() de cada módulo
+│   │   ├── Agenda/              eventos, horario de trabajo, recordatorios, Google Calendar
+│   │   ├── Archivos/            Documentos (carpetas del PC) + papelera
+│   │   ├── Asistente/           Interprete.cs (reglas en español) + endpoint /entender
+│   │   ├── Auth/                Identity (login/2FA), semilla del administrador
+│   │   ├── Avisos/              correo, WhatsApp, Web Push, plantilla HTML del correo, Vigilante (tareas periódicas)
+│   │   ├── Conexiones/          OAuth Spotify / Google, música
+│   │   ├── Data/                AppDbContext, Adjunto, Migraciones/
+│   │   ├── Gastos/              movimientos, recurrentes, cartera, huchas, presupuestos, deudas, coche
+│   │   ├── Notas/               notas
+│   │   ├── Seguridad/           cabeceras, sesiones, accesos, ajustes, perfil
+│   │   ├── Sistema/             lectura de CPU/RAM/discos/red, hub SignalR
+│   │   ├── Telegram/            bot (long polling), conversación, vinculación
+│   │   └── Tiempo/              Open-Meteo
+│   └── Mda.Api.Tests/           xUnit (API completa en memoria)
+├── agente/Mda.Agente/           agente de Windows (métricas reales del PC)
+├── web/                         Angular 22
+│   ├── public/                  sw.js, manifest, iconos, fuentes, img/avatar.webp
+│   └── src/app/                 core/, shell/, entrar/, inicio/, gastos/, agenda/, notas/, documentos/, musica/, perfil/, seguridad/, pronto/
+├── tailscale/serve.json         configuración de Tailscale Funnel (proxy a api:8080)
+├── compose.yaml                 db, api, seq, copias, tailscale (perfil publico), tunel (perfil tunel)
+├── Dockerfile                   imagen única: front + API
+├── .env.example                 plantilla de configuración (el .env real NUNCA se sube)
+├── CLAUDE.md                    guía rápida para asistentes de IA
+└── docs/                        documentación detallada
+```
+
+---
+
+## ⚙️ Configuración (`.env`)
+
+Todas las variables y a qué se mapean dentro de la API: [docs/06-despliegue-y-operacion.md#variables-de-entorno](docs/06-despliegue-y-operacion.md#variables-de-entorno).
+Resumen:
+
+| Variable | Obligatoria | Uso |
+|---|---|---|
+| `POSTGRES_PASSWORD` | sí | contraseña de PostgreSQL |
+| `ADMIN_USUARIO`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | sí | la única cuenta; se sincroniza al arrancar |
+| `SEQ_PASSWORD` | sí | panel de registros |
+| `TS_AUTHKEY` | con perfil `publico` | Tailscale (solo la primera vez) |
+| `URL_PUBLICA` | recomendable | enlaces de los correos y vueltas OAuth |
+| `ZONA_HORARIA` | no (`Europe/Madrid`) | repeticiones y avisos en hora local |
+| `AGENTE_TOKEN` | para el agente | token compartido API ↔ agente |
+| `CARPETA_*` | no | carpetas del PC que se ven en Documentos |
+| `CORREO_*` | no | avisos por correo (SMTP) |
+| `WHATSAPP_*` | no | avisos por WhatsApp (CallMeBot) |
+| `TELEGRAM_TOKEN` | no | bot de Telegram (@BotFather) |
+| `SPOTIFY_*`, `GOOGLE_*` | no | cuentas enlazadas por OAuth |
+| `CLOUDFLARE_TUNNEL_TOKEN` | con perfil `tunel` | alternativa a Tailscale |
+
+---
+
+## 🔐 Seguridad en breve
+
+Cookie `HttpOnly`/`SameSite=Strict`/`Secure`, 2FA TOTP, bloqueo 15 min tras 5 fallos, 10 intentos de login por minuto e IP,
+sesiones revocables desde otro equipo, CSP estricta sin scripts de terceros, registro de accesos, tokens OAuth cifrados con
+Data Protection, rutas de Documentos confinadas a sus raíces (sin enlaces simbólicos), secretos solo en `.env`.
+Detalle: [docs/07-seguridad.md](docs/07-seguridad.md).
+
+---
+
+## 📚 Índice de la documentación
+
+1. [Arquitectura](docs/01-arquitectura.md) — piezas, flujo de una petición, autenticación, tareas de fondo, modelo de datos
+2. [Backend](docs/02-backend.md) — cada módulo de la API por dentro (incluido el intérprete del asistente)
+3. [API HTTP](docs/03-api.md) — todas las rutas con método, cuerpo y respuesta
+4. [Frontend](docs/04-frontend.md) — estructura Angular, rutas, servicios, estilos, temas, PWA
+5. [Integraciones](docs/05-integraciones.md) — Telegram, Spotify, Google Calendar, correo, WhatsApp, Web Push, Open-Meteo
+6. [Despliegue y operación](docs/06-despliegue-y-operacion.md) — Docker, Tailscale, variables, copias, restaurar, base de datos, agente, problemas típicos
+7. [Seguridad](docs/07-seguridad.md)
+8. [Desarrollo](docs/08-desarrollo.md) — convenciones, tests, migraciones, cómo añadir un módulo, trucos

@@ -1,0 +1,138 @@
+# 3. Referencia de la API HTTP
+
+- Base: `/api`. Todo exige **sesión** (cookie `mda.sesion`) salvo lo marcado como público.
+- JSON en camelCase; los enums viajan como texto (`"Gasto"`, `"Ingreso"`, `"Mensual"`, `"Evento"`, `"Recordatorio"`).
+- Fechas sin hora: `"2026-10-31"`. Con hora: ISO 8601 con desfase (`"2026-10-31T10:00:00+01:00"`); se guardan en UTC.
+- Errores de validación: `400` con `ValidationProblem` → `{ "errors": { "campo": ["mensaje"] } }`.
+- Sin sesión `401`, recurso inexistente `404`, demasiados intentos `429`.
+
+## Público
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/salud` | `{ estado: "ok", hora }`. CORS solo GET para la web pública (GitHub Pages) |
+| POST | `/api/auth/login?useCookies=true` | `{ email: <usuario>, password, twoFactorCode? , twoFactorRecoveryCode? }` → pone la cookie. 10/min por IP |
+| POST | `/api/sistema/agente` | agente de Windows; cabecera `X-Agente-Token`. Solo existe si hay `Agente:Token` |
+| GET | `/api/conexiones/{id}/vuelta` | vuelta de OAuth (protegida por `state` de un solo uso) |
+
+## Sesión e identidad
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/sesion` | `{ usuario, email }` (el front lo usa para saber si hay sesión) |
+| POST | `/api/sesion/salir` | cierra la sesión (marca la fila y borra la cookie) |
+| POST | `/api/auth/manage/2fa` | Identity: estado / activar (`enable`, `twoFactorCode`) / desactivar / códigos de recuperación |
+| GET | `/api/auth/manage/info` | Identity: info de la cuenta |
+| — | `/api/auth/register`, `/forgotPassword`, `/resetPassword`, `/resendConfirmationEmail` | **cerradas (404)** |
+
+## Sistema
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/sistema` | última lectura + historial (~2 min) + origen (`equipo` = agente, `contenedor`) |
+| WS | `/hubs/sistema` | SignalR; evento `metricas` cada 2 s |
+
+## Gastos / Cartera (`/api/gastos`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/categorias` | `[{ id, nombre, tipo, grupo }]` |
+| GET | `/mes/{anio}/{mes}` | resumen del mes: totales, comparación, reparto, gasto por día, fijos pendientes |
+| GET | `/estadisticas?meses&anio&mes` | serie de los últimos N meses con ahorro acumulado |
+| GET | `/gasolina` | repostajes, consumo medio L/100 km, coste por km, último precio |
+| GET | `/movimientos?desde&hasta&categoria&q` | lista filtrada |
+| POST | `/movimientos` | crea. Cuerpo `MovimientoEntrada`: `{ tipo, fecha, importe, categoria, concepto, notas?, litros?, precioLitro?, kilometros?, recurrenteId?, repite?: "Mensual"\|"Trimestral"\|"Anual", variable? }` |
+| PUT | `/movimientos/{id}` | edita |
+| DELETE | `/movimientos/{id}` | borra (y su ticket) |
+| PUT/GET/DELETE | `/movimientos/{id}/ticket` | foto del ticket (cuerpo = imagen) |
+| GET/POST | `/recurrentes` | lista / crea `{ nombre, tipo, categoria, importe, variable, dia, frecuencia, inicio, fin?, activo }` |
+| PUT/DELETE | `/recurrentes/{id}` | edita / borra (sus movimientos se quedan sin enlace) |
+| POST | `/recurrentes/{id}/registrar` | `{ fecha, importe? }` crea el movimiento del periodo |
+| GET/PUT | `/saldo` | saldo actual, previsto, libre, en huchas / `{ actual }` «ahora mismo tengo X» |
+| GET/POST | `/huchas` | lista / crea `{ nombre, objetivo, color, emoji, fecha? }` |
+| PUT/DELETE | `/huchas/{id}` | edita / borra |
+| POST | `/huchas/{id}/aportar` | `{ importe }` (negativo = sacar) |
+| GET | `/presupuestos` | límite y gastado por categoría este mes |
+| PUT/DELETE | `/presupuestos/{categoria}` | `{ limite }` / quitar |
+| GET | `/consejos` | consejos de ahorro calculados con tus datos |
+| GET/POST | `/deudas` | lista con progreso / crea `{ nombre, total, categoria, inicio, notas? }` |
+| PUT/DELETE | `/deudas/{id}` | edita / borra |
+| POST | `/deudas/{id}/pagos` | registra un pago (crea un movimiento enlazado) |
+| GET/POST | `/mantenimiento` | mantenimientos del coche / crea `{ nombre, cadaKm?, cadaMeses?, ultimaFecha?, ultimoKm?, notas? }` |
+| PUT/DELETE | `/mantenimiento/{id}` | edita / borra |
+| POST | `/mantenimiento/{id}/hecho` | marca hecho (fecha y km) |
+
+## Agenda (`/api/agenda`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/?desde&hasta` | **apariciones** en el rango (repeticiones expandidas + eventos de Google) |
+| GET | `/proximos?dias` | próximos eventos y recordatorios |
+| POST | `/` | crea `EventoEntrada`: `{ tipo, titulo, notas?, lugar?, inicio, fin?, todoElDia, color, repetir, repetirHasta?, avisoMinutos?, porCorreo, porWhatsApp, porPush, porTelegram, enGoogle }` |
+| PUT/DELETE | `/{id}` | edita / borra (también en Google) |
+| POST | `/{id}/hecho?hecho=true` | marca un recordatorio hecho (o deshace) |
+| GET | `/estado` | canales disponibles, Google enlazado, **horario** |
+| GET/PUT | `/horario` | horario de trabajo `{ activo, nombre, dias:[1..7], entrada:"08:30", salida:"17:30" }` |
+
+## Notas (`/api/notas`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/?archivadas&q` | lista |
+| POST | `/` | `{ titulo?, contenido?, color?, etiquetas?: string[], fijada, archivada }` |
+| PUT/DELETE | `/{id}` | edita / borra |
+
+## Documentos (`/api/archivos`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/raices` | carpetas montadas con nº de elementos |
+| GET | `/lista?raiz&ruta` | contenido de una carpeta |
+| GET | `/buscar?raiz&q` | por nombre (máx. 200) |
+| GET | `/archivo?raiz&ruta&ver` | descarga o vista en línea (`ver=true`), admite `Range` |
+| POST | `/subir?raiz&ruta` | multipart, uno o varios archivos |
+| POST | `/carpeta` · `/renombrar` · `/mover` | crear / renombrar / mover dentro de la misma raíz |
+| DELETE | `/?raiz&ruta` | a la papelera |
+| GET | `/papelera` | lo borrado |
+| POST | `/papelera/recuperar` | vuelve a su sitio |
+| DELETE | `/papelera?raiz&id` | borrar definitivamente (uno o vaciar) |
+
+## Conexiones y música
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/conexiones` | proveedores, si están configurados/enlazados y la URL de vuelta a dar de alta |
+| GET | `/api/conexiones/{id}/conectar` | redirige a los permisos del proveedor (`spotify`, `google`) |
+| DELETE | `/api/conexiones/{id}` | desenlaza |
+| GET | `/api/musica/ahora` · `/recientes` · `/cola` · `/top` | Spotify |
+| POST | `/api/musica/control/{accion}` | `play`, `pause`, `next`, `previous` |
+
+## Seguridad y perfil
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/seguridad/sesiones` | sesiones abiertas (actual y «en línea») |
+| POST | `/api/seguridad/latido` | la pestaña sigue abierta |
+| DELETE | `/api/seguridad/sesiones/{id}` · `/api/seguridad/sesiones` | cerrar una / todas menos esta |
+| GET | `/api/seguridad/accesos` | intentos de entrar |
+| GET | `/api/seguridad/estado` | 2FA, canales de aviso configurados, ajustes |
+| PUT | `/api/seguridad/ajustes` | avisar de inicios de sesión, resumen semanal… |
+| POST | `/api/seguridad/avisos/prueba/{canal}` | `correo`, `whatsapp`, `push`, `telegram` |
+| GET/PUT | `/api/perfil` | nombre, apellidos, correo, teléfono |
+| POST | `/api/perfil/clave` | cambiar contraseña |
+| GET/PUT/DELETE | `/api/perfil/foto` | foto de perfil (si no hay, el front usa `img/avatar.webp`) |
+| GET | `/api/push/clave` | clave pública VAPID |
+| GET/POST/DELETE | `/api/push` | dispositivos suscritos / suscribir / darse de baja (`/{id}` para uno) |
+
+## Asistente, Telegram y tiempo
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/asistente/entender` | `{ texto }` (≤ 300) → `Propuesta { clase, resumen, …campos, dudas, pregunta?, respuesta? }` |
+| GET | `/api/telegram` | configurado, nombre del bot, chat vinculado |
+| POST | `/api/telegram/vincular` | `{ enlace: "https://t.me/<bot>?start=<código>" }` |
+| DELETE | `/api/telegram` | desvincular |
+| GET | `/api/tiempo` | lugar, actual, por horas, semana, avisos activados |
+| GET | `/api/tiempo/buscar?q=` | buscar ciudad |
+| PUT | `/api/tiempo/lugar` | guardar ciudad (también desde geolocalización) |
+| PUT | `/api/tiempo/avisos` | activar/desactivar el aviso de la víspera |
