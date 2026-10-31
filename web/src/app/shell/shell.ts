@@ -38,7 +38,6 @@ export class Shell {
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
   protected readonly pestanas = MODULOS.filter((m) => m.listo && m.pestana);
-  protected readonly modulos = MODULOS.filter((m) => !m.listo);
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
   protected readonly usuario = this.sesion.usuario;

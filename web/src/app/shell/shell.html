@@ -27,15 +27,6 @@
           <span>{{ m.titulo }}</span>
         </a>
       }
-
-      <p class="menu__grupo">Próximamente</p>
-      @for (m of modulos; track m.id) {
-        <a class="menu__item menu__item--pronto" [routerLink]="'/pronto/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
-          <span>{{ m.titulo }}</span>
-          <em class="menu__badge">pronto</em>
-        </a>
-      }
     </nav>
 
     <div class="lateral__pie">
@@ -55,7 +46,7 @@
         <a class="perfil__enlace" routerLink="/perfil" title="Editar el perfil">
           <img class="perfil__foto" [src]="perfil.foto()" width="40" height="40" alt="">
           <span class="perfil__datos">
-            <strong>{{ perfil.nombreVisible() ?? usuario() ?? '—' }}</strong>
+            <strong [title]="perfil.nombreVisible() ?? ''">{{ perfil.nombreVisible() ?? usuario() ?? '—' }}</strong>
             <span>&#64;{{ usuario() }} · Editar perfil</span>
           </span>
         </a>

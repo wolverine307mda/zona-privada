@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { PerfilService } from '../core/perfil.service';
 import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
 
@@ -48,8 +50,31 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
       </footer>
     </form>
 
+    <form class="caja formulario" (submit)="cambiarClave($event)" novalidate>
+      <header class="caja__cab"><h3>Contraseña</h3><span class="sub">Al cambiarla se cierra la sesión en tus otros dispositivos</span></header>
+      <!-- campo de usuario oculto para que el gestor de contraseñas sepa de qué cuenta es -->
+      <input type="text" autocomplete="username" [value]="p.datos()?.usuario ?? ''" hidden>
+      <label class="campo"><span class="campo__etiqueta">Contraseña actual</span>
+        <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="current-password" [value]="actual()" (input)="actual.set(valor($event))"></label>
+      @if (erroresClave()['actual']) { <p class="error">{{ erroresClave()['actual'][0] }}</p> }
+      <div class="fila2">
+        <label class="campo"><span class="campo__etiqueta">Nueva (mínimo 8)</span>
+          <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="new-password" minlength="8" [value]="nueva()" (input)="nueva.set(valor($event))"></label>
+        <label class="campo"><span class="campo__etiqueta">Repite la nueva</span>
+          <input class="campo__input" [type]="verClave() ? 'text' : 'password'" autocomplete="new-password" [value]="repetida()" (input)="repetida.set(valor($event))"></label>
+      </div>
+      @if (nueva() && repetida() && nueva() !== repetida()) { <p class="error">Las dos nuevas no coinciden.</p> }
+      @if (erroresClave()['nueva']) { <p class="error">{{ erroresClave()['nueva'][0] }}</p> }
+      @if (erroresClave()['general']) { <p class="error">{{ erroresClave()['general'][0] }}</p> }
+      <footer class="pie">
+        <label class="ver"><input type="checkbox" [checked]="verClave()" (change)="verClave.set(!verClave())"> Ver</label>
+        @if (claveCambiada()) { <span class="ok">✓ Contraseña cambiada</span> }
+        <button class="button" type="submit" [disabled]="cambiando() || !actual() || nueva().length < 8 || nueva() !== repetida()">{{ cambiando() ? 'Cambiando…' : 'Cambiar contraseña' }}</button>
+      </footer>
+    </form>
+
     <section class="caja atajos">
-      <a routerLink="/seguridad"><strong>Contraseña, dos pasos y sesiones</strong><span>En Seguridad</span></a>
+      <a routerLink="/seguridad"><strong>Dos pasos y sesiones</strong><span>En Seguridad</span></a>
       <a routerLink="/seguridad"><strong>Avisos</strong><span>Correo, notificaciones y resumen semanal</span></a>
     </section>
   `,
@@ -79,6 +104,7 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
     .pie { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
     .pie .button { min-height: 46px; padding: 0 24px; }
     .ok { color: var(--ok); font-weight: 500; }
+    .ver { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; font-size: var(--step-small); color: var(--soft); cursor: pointer; }
     .atajos { flex-direction: row; flex-wrap: wrap; gap: 10px; padding: 12px; }
     .atajos a { flex: 1 1 240px; display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 12px; background: var(--tarjeta-2); color: var(--texto); text-decoration: none; }
     .atajos span { font-size: var(--step-small); color: var(--soft); }
@@ -96,6 +122,15 @@ export class Perfil {
   protected readonly errores = signal<Errores>({});
   protected readonly guardando = signal(false);
   protected readonly guardado = signal(false);
+  // cambio de contraseña
+  private readonly http = inject(HttpClient);
+  protected readonly actual = signal('');
+  protected readonly nueva = signal('');
+  protected readonly repetida = signal('');
+  protected readonly verClave = signal(false);
+  protected readonly cambiando = signal(false);
+  protected readonly claveCambiada = signal(false);
+  protected readonly erroresClave = signal<Errores>({});
   protected readonly completo = computed(() => `${this.nombre()} ${this.apellidos()}`.trim());
 
   constructor() {
@@ -125,6 +160,19 @@ export class Perfil {
       this.guardado.set(true);
       setTimeout(() => this.guardado.set(false), 2500);
     } catch (err) { this.errores.set(erroresDe(err)); } finally { this.guardando.set(false); }
+  }
+
+  protected async cambiarClave(e: Event): Promise<void> {
+    e.preventDefault();
+    if (this.nueva() !== this.repetida()) return;
+    this.cambiando.set(true);
+    this.claveCambiada.set(false);
+    this.erroresClave.set({});
+    try {
+      await firstValueFrom(this.http.post('/api/perfil/clave', { actual: this.actual(), nueva: this.nueva() }));
+      this.actual.set(''); this.nueva.set(''); this.repetida.set('');
+      this.claveCambiada.set(true);
+    } catch (err) { this.erroresClave.set(erroresDe(err)); } finally { this.cambiando.set(false); }
   }
 
   protected async elegirFoto(e: Event): Promise<void> {

@@ -14,16 +14,25 @@
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 10h18M7 15h3" /></svg></span><h3>{{ nombreMes }}</h3>
       @if (mes()?.pendientes?.length) { <em class="chip">{{ mes()!.pendientes.length }} fijos por apuntar</em> }</header>
     @if (mes(); as m) {
-      <div class="dinero__cifras">
+      @if (saldo()?.configurado) {
+        <!-- lo que de verdad puedes gastar: el saldo menos lo apartado en huchas -->
+        <div class="disp" [class.rojo]="saldo()!.libre < 0">
+          <span class="etq">Disponible para gastar</span>
+          <strong class="disp__cifra">{{ euros(saldo()!.libre) }}</strong>
+          <small>
+            @if (porDia() != null && porDia()! > 0) { <b>{{ euros(porDia()) }}/día</b> hasta fin de mes }
+            @else if (porDia() != null) { Este mes ya no queda margen }
+            @if (saldo()!.enHuchas > 0) { · tienes {{ euros(saldo()!.actual) }} y {{ euros(saldo()!.enHuchas) }} están en huchas }
+          </small>
+        </div>
+      }
+      <div class="dinero__cifras" [class.dinero__cifras--tres]="saldo()?.configurado">
         <div><span class="etq">Gastado</span><strong class="cifra">{{ eurosCorto(m.gastos) }}</strong>
           @if (diferencia() != null) { <small [class.sube]="diferencia()! > 0" [class.baja]="diferencia()! <= 0">{{ diferencia()! > 0 ? '▲' : '▼' }} {{ diferencia()! > 0 ? diferencia() : -diferencia()! }} % que el mes pasado</small> }</div>
         <div><span class="etq">Ingresos</span><strong class="cifra verde">{{ eurosCorto(m.ingresos) }}</strong></div>
         <div><span class="etq">Ahorro</span><strong class="cifra" [class.rojo]="m.ahorro < 0">{{ eurosCorto(m.ahorro) }}</strong>
           @if (m.tasaAhorro != null) { <small>{{ m.tasaAhorro.toFixed(0) }} % de lo que entra</small> }</div>
       </div>
-      @if (saldo()?.configurado) {
-        <p class="dinero__saldo" [class.rojo]="saldo()!.actual < 0"><span>Dinero ahora</span><b>{{ euros(saldo()!.actual) }}</b></p>
-      }
       <div class="dias" aria-label="Gasto de cada día del mes">
         @for (d of dias(); track $index) { <span [class.futuro]="d.futuro" [class.hoy]="d.hoy" [style.--h.%]="d.h" [style.animation-delay.ms]="$index * 18"></span> }
       </div>

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Seguridad;
 
 public record PerfilEntrada(string? Nombre, string? Apellidos, string? Email, string? Telefono);
+public record CambioClave(string Actual, string Nueva);
 
 // El perfil del dueño: el usuario para entrar no cambia; nombre, apellidos, correo, teléfono y foto, sí.
 // El correo y el teléfono van en la cuenta de Identity; el nombre y los apellidos, en ajustes.
@@ -62,6 +63,27 @@ public static partial class Perfil
             await Guardar(db, ClaveApellidos, apellidos, ct);
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
+        });
+
+        // Cambiar la contraseña: se cierran las demás sesiones y esta se renueva para no echarte a ti también
+        g.MapPost("/clave", async (CambioClave e, ClaimsPrincipal user, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn, AppDbContext db, CancellationToken ct) =>
+        {
+            var u = await users.GetUserAsync(user);
+            if (u is null) return Results.Unauthorized();
+            if (string.IsNullOrEmpty(e.Nueva) || e.Nueva.Length < 8)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["nueva"] = ["La nueva contraseña tiene que tener al menos 8 caracteres."] });
+            if (e.Nueva == e.Actual)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["nueva"] = ["La nueva contraseña es igual que la actual."] });
+            var r = await users.ChangePasswordAsync(u, e.Actual ?? "", e.Nueva);
+            if (!r.Succeeded)
+                return Results.ValidationProblem(r.Errors.Any(x => x.Code == "PasswordMismatch")
+                    ? new Dictionary<string, string[]> { ["actual"] = ["La contraseña actual no es correcta."] }
+                    : new Dictionary<string, string[]> { ["nueva"] = [.. r.Errors.Select(x => x.Description)] });
+            var abiertas = await db.Sesiones.Where(s => s.Cerrada == null).ToListAsync(ct);
+            abiertas.ForEach(s => s.Cerrada = DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync(ct);
+            await signIn.RefreshSignInAsync(u); // cookie nueva (y una sesión nueva) para este dispositivo
+            return Results.Ok(new { cerradas = Math.Max(0, abiertas.Count - 1) });
         });
 
         g.MapGet("/foto", async (AppDbContext db, CancellationToken ct) =>

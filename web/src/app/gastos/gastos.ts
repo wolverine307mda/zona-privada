@@ -52,15 +52,15 @@ import { mesLargo } from './modelo';
     .cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
     .mes { display: flex; align-items: center; gap: 10px; }
     .mes__nombre { min-width: 0; font: 700 clamp(1.5rem, 1rem + 2vw, 2.6rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.045em; }
-    .mes__flecha { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque); color: var(--texto); cursor: pointer; transition: border-color 160ms ease, transform 140ms var(--ease-out); }
+    .mes__flecha { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--linea); background: var(--tarjeta); color: var(--texto); cursor: pointer; transition: border-color 160ms ease, transform 140ms var(--ease-out); }
     .mes__flecha:active { transform: scale(0.92); }
     @media (hover: hover) { .mes__flecha:hover { border-color: var(--brand); } }
     .mes__hoy { min-height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--acento); font-weight: 500; cursor: pointer; }
     .acciones { display: flex; gap: 10px; }
     .acciones .button { min-height: 46px; padding: 0 20px; }
     .acciones .icon { width: 18px; height: 18px; }
-    .accion-ingreso { border-color: color-mix(in srgb, var(--ok) 50%, var(--linea)); }
-    .pestanas { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--vidrio); backdrop-filter: var(--desenfoque); border: 1px solid var(--vidrio-borde); overflow-x: auto; scrollbar-width: none; }
+    .accion-ingreso { border-color: color-mix(in srgb, var(--ok) 55%, var(--linea)); background: var(--tarjeta); }
+    .pestanas { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--tarjeta); border: 1px solid var(--linea); overflow-x: auto; scrollbar-width: none; }
     .pestanas a { flex: none; padding: 10px 16px; border-radius: 10px; color: var(--soft); text-decoration: none; font-weight: 500; white-space: nowrap; transition: background-color 160ms ease, color 160ms ease; }
     .pestanas a.is-activa { background: var(--brand); color: var(--on-brand); }
     @media (hover: hover) { .pestanas a:not(.is-activa):hover { color: var(--texto); background: var(--tarjeta-2); } }

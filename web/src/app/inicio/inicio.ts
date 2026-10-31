@@ -2,6 +2,7 @@ import { Router, RouterLink } from '@angular/router';
 import { GastosService } from '../gastos/gastos.service';
 import { Panel } from './panel';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { PerfilService } from '../core/perfil.service';
 import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
 import { echarts, opcionesCpu, opcionesHistorial } from './graficas';
@@ -25,6 +26,7 @@ export function velocidad(b: number): string {
 })
 export class Inicio implements OnDestroy {
   private readonly sesion = inject(SesionService);
+  private readonly perfil = inject(PerfilService);
   private readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);
 
@@ -37,6 +39,9 @@ export class Inicio implements OnDestroy {
   protected readonly ahora = signal(new Date());
   protected readonly a = computed(() => this.sistema.actual());
   protected readonly nombre = computed(() => {
+    // el nombre de pila del perfil («Mario»); si aún no lo hay, el usuario
+    const n = this.perfil.datos()?.nombre?.trim().split(' ')[0];
+    if (n) return n;
     const u = this.sesion.usuario() ?? '';
     return u ? u[0].toUpperCase() + u.slice(1) : '';
   });
