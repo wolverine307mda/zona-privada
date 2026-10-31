@@ -51,7 +51,20 @@ public static class MusicaEndpoints
                 .Select(x => new { cancion = CancionDe(x.GetProperty("track")), cuando = x.GetProperty("played_at").GetString() }).ToList());
         });
 
-        g.MapGet("/top", async (string? tipo, string? periodo, ServicioConexiones s, CancellationToken ct) =>
+        // lo que va a sonar después (solo canciones, las cinco primeras)
+        g.MapGet("/cola", async (ServicioConexiones s, CancellationToken ct) =>
+        {
+            using var res = await s.Llamar(sp, HttpMethod.Get, "https://api.spotify.com/v1/me/player/queue", ct: ct);
+            if (res is null) return Results.Problem("Spotify no está conectado.", statusCode: 409);
+            if (res.StatusCode == HttpStatusCode.NoContent) return Results.Ok(Array.Empty<Cancion>());
+            if (!res.IsSuccessStatusCode) return Fallo(res);
+            var j = await res.Content.ReadFromJsonAsync<JsonElement>(ct);
+            return Results.Ok(j.TryGetProperty("queue", out var q) && q.ValueKind == JsonValueKind.Array
+                ? q.EnumerateArray().Where(x => x.TryGetProperty("type", out var t) && t.GetString() == "track").Take(5).Select(CancionDe).ToList()
+                : []);
+        });
+
+        g.MapGet("/top",async (string? tipo, string? periodo, ServicioConexiones s, CancellationToken ct) =>
         {
             var t = tipo == "artistas" ? "artists" : "tracks";
             var per = Periodos.Contains(periodo) ? periodo : "short_term";

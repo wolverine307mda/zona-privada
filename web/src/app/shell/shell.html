@@ -39,6 +39,12 @@
     </nav>
 
     <div class="lateral__pie">
+      @if (instalar.disponible()) {
+        <button class="menu__item menu__item--ajustes menu__item--instalar" type="button" (click)="instalarApp()">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 7v7M9 11l3 3 3-3M11 18.5h2" /></svg>
+          <span>Instalar la app</span>
+        </button>
+      }
       <button class="menu__item menu__item--ajustes" type="button" (click)="abrirAjustes()" aria-haspopup="dialog">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
         <span>Ajustes</span>
@@ -147,6 +153,23 @@
         }
       </div>
     </section>
+
+    @if (instalar.disponible()) {
+      <section class="ajustes__seccion instalar" aria-labelledby="ajustes-app">
+        <h3 id="ajustes-app">App en la pantalla de inicio</h3>
+        @if (instalar.puede()) {
+          <p class="ajustes__nota">Se abre a pantalla completa, con su icono y sin la barra del navegador.</p>
+          <button class="button" type="button" (click)="instalar.instalar()">Instalar la app</button>
+        } @else {
+          <ol class="instalar__pasos">
+            <li>Abre esta página en <strong>Safari</strong> (en Chrome del iPhone también vale, desde su botón de compartir).</li>
+            <li>Pulsa <strong>Compartir</strong> <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg> en la barra de abajo.</li>
+            <li>Baja y elige <strong>Añadir a pantalla de inicio</strong>; luego, <strong>Añadir</strong>.</li>
+          </ol>
+          <p class="ajustes__nota">Desde el icono nuevo se abre a pantalla completa y entra directamente.</p>
+        }
+      </section>
+    }
 
     <section class="ajustes__seccion ajustes__seccion--fila">
       <div>

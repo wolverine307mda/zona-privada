@@ -37,10 +37,15 @@ export class Musica {
   protected readonly periodos = PERIODOS;
   protected readonly aviso = signal('');
   protected readonly copiado = signal(false);
+  protected readonly cola = signal<Cancion[]>([]);
+  // color dominante de la portada: tiñe solo el reproductor (el menú y las barras no cambian)
+  protected readonly tono = signal('64, 72, 80');
+  private ultimaId = '';
+  private ultimaPortada = '';
 
   protected readonly pct = computed(() => { const c = this.ahora()?.cancion; return c?.duracion ? Math.min(100, (this.progreso() / c.duracion) * 100) : 0; });
-  // la portada que tiñe la página: la que suena o, si no suena nada, la última escuchada
-  protected readonly portada = computed(() => this.ahora()?.cancion?.imagen ?? this.recientes()[0]?.cancion.imagen ?? null);
+  protected readonly podio = computed(() => this.topCanciones().slice(0, 3));
+  protected readonly resto = computed(() => this.topCanciones().slice(3, 15));
 
   constructor() {
     const q = inject(ActivatedRoute).snapshot.queryParamMap.get('conexion');
@@ -68,7 +73,14 @@ export class Musica {
       const r = await firstValueFrom(this.http.get<Reproduccion>('/api/musica/ahora'));
       this.ahora.set(r);
       this.progreso.set(r.progreso);
+      const c = r.cancion;
+      if (c?.imagen && c.imagen !== this.ultimaPortada) { this.ultimaPortada = c.imagen; tonoDe(c.imagen).then((t) => t && this.tono.set(t)); }
+      if ((c?.id ?? '') !== this.ultimaId) { this.ultimaId = c?.id ?? ''; this.leerCola(); }
     } catch { /* se reintenta en el siguiente ciclo */ }
+  }
+
+  private async leerCola(): Promise<void> {
+    try { this.cola.set(await firstValueFrom(this.http.get<Cancion[]>('/api/musica/cola'))); } catch { this.cola.set([]); }
   }
 
   protected async leerTop(): Promise<void> {
@@ -110,4 +122,44 @@ export class Musica {
   protected icono(tipo: string | null): string {
     return tipo === 'Smartphone' ? 'M8 3h8v18H8zM11.5 18h1' : tipo === 'Speaker' ? 'M7 3h10v18H7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 6h.01' : 'M4 5h16v11H4zM8 20h8M12 16v4';
   }
+}
+
+// Media de los píxeles con color de la portada (los grises casi no cuentan), aclarada u oscurecida
+// para que sirva de fondo bajo texto blanco. Spotify sirve las portadas con CORS, así que el canvas puede leerlas.
+function tonoDe(url: string): Promise<string | null> {
+  return new Promise((ok) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onerror = () => ok(null);
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = c.height = 24;
+        const x = c.getContext('2d', { willReadFrequently: true })!;
+        x.drawImage(img, 0, 0, 24, 24);
+        const d = x.getImageData(0, 0, 24, 24).data;
+        let r = 0, g = 0, b = 0, peso = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const max = Math.max(d[i], d[i + 1], d[i + 2]), min = Math.min(d[i], d[i + 1], d[i + 2]);
+          const w = 0.05 + ((max - min) / 255) ** 2 * (max > 30 ? 1 : 0.1);
+          r += d[i] * w; g += d[i + 1] * w; b += d[i + 2] * w; peso += w;
+        }
+        ok(vivo(r / peso, g / peso, b / peso));
+      } catch { ok(null); }
+    };
+    img.src = url;
+  });
+}
+
+// el tono en HSL, con algo más de color y una luz media-oscura: siempre se lee bien el texto blanco encima
+function vivo(r: number, g: number, b: number): string {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  const l0 = (max + min) / 2, s0 = d ? d / (1 - Math.abs(2 * l0 - 1)) : 0;
+  const s = s0 < 0.08 ? s0 : Math.min(0.85, Math.max(0.5, s0 * 1.3)), l = Math.min(0.42, Math.max(0.3, l0));
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h % 6) + 6) % 2 - 1)), m = l - c / 2;
+  const [a, bb, cc] = h < 0 ? [c, 0, x] : h < 1 ? [c, x, 0] : h < 2 ? [x, c, 0] : h < 3 ? [0, c, x] : h < 4 ? [0, x, c] : h < 5 ? [x, 0, c] : [c, 0, x];
+  return [a, bb, cc].map((v) => Math.round((v + m) * 255)).join(', ');
 }

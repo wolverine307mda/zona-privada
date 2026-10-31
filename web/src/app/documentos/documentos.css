@@ -3,7 +3,7 @@
 .sub { font-size: var(--step-small); color: var(--soft); margin-top: 4px; }
 
 /* ---------- carpetas raíz ---------- */
-.raices { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.raices { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 12px; }
 .raiz {
   --c: var(--soft); position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px;
   border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque);
@@ -17,8 +17,8 @@
 @media (hover: hover) { .raiz:hover::before { opacity: 1; } }
 .raiz__icono { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 12px; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); }
 .raiz__texto { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.raiz__texto strong { font-weight: 500; }
-.raiz__texto small { font-size: 12px; color: var(--soft); }
+.raiz__texto strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.raiz__texto small { font-size: 12px; color: var(--soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .raiz--papelera { --c: var(--bad); }
 
 /* ---------- barra: migas, herramientas y filtros ---------- */

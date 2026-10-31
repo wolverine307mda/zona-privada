@@ -1,5 +1,3 @@
-@if (portada(); as p) { <div class="fondo" aria-hidden="true"><img [src]="p" alt=""></div> }
-
 @if (aviso()) {
   <p class="aviso" role="status"><span>{{ aviso() }}</span><button type="button" (click)="aviso.set('')" aria-label="Cerrar el aviso">×</button></p>
 }
@@ -28,11 +26,12 @@
       }
     </section>
   } @else {
-    <!-- sonando ahora -->
-    <section class="ahora" [class.parado]="!ahora()?.sonando">
+    <!-- sonando ahora: la portada desenfocada y su color tiñen solo este escenario -->
+    <section class="ahora" [class.parado]="!ahora()?.sonando" [style.--tono]="tono()">
       @if (ahora()?.cancion; as s) {
+        @if (s.imagen) { <div class="ahora__fondo" aria-hidden="true"><img [src]="s.imagen" alt=""></div> }
         <a class="disco" data-inclina [href]="s.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'Abrir ' + s.nombre + ' en Spotify'">
-          <span class="disco__vinilo" aria-hidden="true"></span>
+          <span class="disco__vinilo" aria-hidden="true">@if (s.imagen) { <img class="disco__etiqueta" [src]="s.imagen" alt=""> }</span>
           @if (s.imagen) { <img class="disco__portada" [src]="s.imagen" alt="" width="300" height="300"> }
         </a>
         <div class="ahora__info">
@@ -43,7 +42,7 @@
             }
           </p>
           <h2 class="ahora__titulo">{{ s.nombre }}</h2>
-          <p class="ahora__artista">{{ s.artistas }}@if (s.album) { <span> · {{ s.album }}</span> }</p>
+          <p class="ahora__artista">{{ s.artistas }}@if (s.album && s.album !== s.nombre) { <span> · {{ s.album }}</span> }</p>
           <div class="progreso">
             <span>{{ tiempo(progreso()) }}</span>
             <span class="progreso__barra"><span [style.width.%]="pct()"></span></span>
@@ -53,7 +52,7 @@
             <button type="button" (click)="control('previous')" aria-label="Anterior"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12l-9-6zM6 6v12" /></svg></button>
             <button class="controles__play" type="button" (click)="control(ahora()!.sonando ? 'pause' : 'play')" [attr.aria-label]="ahora()!.sonando ? 'Pausa' : 'Reproducir'">
               @if (ahora()!.sonando) { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg> }
-              @else { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg> }
+              @else { <svg class="icon relleno" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg> }
             </button>
             <button type="button" (click)="control('next')" aria-label="Siguiente"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12l9-6zM18 6v12" /></svg></button>
           </div>
@@ -67,61 +66,100 @@
       }
     </section>
 
-    <!-- lo más escuchado -->
-    <section class="caja">
-      <header class="top__cab">
-        <div class="segmento" role="group" aria-label="Qué ver">
-          <button type="button" [attr.aria-pressed]="tipoTop() === 'canciones'" (click)="verTop('canciones')">Canciones</button>
-          <button type="button" [attr.aria-pressed]="tipoTop() === 'artistas'" (click)="verTop('artistas')">Artistas</button>
-        </div>
-        <div class="segmento" role="group" aria-label="Periodo">
-          @for (p of periodos; track p.id) { <button type="button" [attr.aria-pressed]="periodo() === p.id" (click)="verPeriodo(p.id)">{{ p.nombre }}</button> }
-        </div>
-      </header>
-      @if (tipoTop() === 'canciones') {
-        <ol class="top">
-          @for (t of topCanciones(); track t.id; let i = $index) {
-            <li [class.podio]="i < 3">
-              <a [href]="t.url" target="_blank" rel="noopener noreferrer">
-                <span class="top__n">{{ i + 1 }}</span>
-                @if (t.imagen) { <img [src]="t.imagen" alt="" width="56" height="56" loading="lazy"> } @else { <span class="top__img"></span> }
-                <span class="top__texto"><strong>{{ t.nombre }}</strong><span>{{ t.artistas }}</span></span>
-              </a>
-            </li>
-          } @empty { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
-        </ol>
-      } @else {
-        <ol class="artistas">
-          @for (a of topArtistas(); track a.id; let i = $index) {
-            <li>
-              <a [href]="a.url" target="_blank" rel="noopener noreferrer" data-inclina>
-                @if (a.imagen) { <img [src]="a.imagen" alt="" width="160" height="160" loading="lazy"> } @else { <span class="artistas__img"></span> }
-                <span class="artistas__n">{{ i + 1 }}</span>
-                <strong>{{ a.nombre }}</strong>
-                @if (a.generos.length) { <span>{{ a.generos.slice(0, 2).join(' · ') }}</span> }
-              </a>
-            </li>
-          } @empty { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
-        </ol>
-      }
-    </section>
-
-    @if (recientes().length) {
+    <div class="rejilla">
+      <!-- lo más escuchado -->
       <section class="caja">
-        <header class="caja__cab"><h3>Lo último que has escuchado</h3></header>
-        <ul class="recientes">
-          @for (r of recientes(); track r.cuando) {
-            <li>
-              <a [href]="r.cancion.url" target="_blank" rel="noopener noreferrer">
-                @if (r.cancion.imagen) { <img [src]="r.cancion.imagen" alt="" width="44" height="44" loading="lazy"> }
-                <span class="top__texto"><strong>{{ r.cancion.nombre }}</strong><span>{{ r.cancion.artistas }}</span></span>
-                <time>{{ hace(r.cuando) }}</time>
-              </a>
-            </li>
-          }
-        </ul>
+        <header class="top__cab">
+          <h3>Lo más escuchado</h3>
+          <div class="top__filtros">
+            <div class="segmento" role="group" aria-label="Qué ver">
+              <button type="button" [attr.aria-pressed]="tipoTop() === 'canciones'" (click)="verTop('canciones')">Canciones</button>
+              <button type="button" [attr.aria-pressed]="tipoTop() === 'artistas'" (click)="verTop('artistas')">Artistas</button>
+            </div>
+            <div class="segmento" role="group" aria-label="Periodo">
+              @for (p of periodos; track p.id) { <button type="button" [attr.aria-pressed]="periodo() === p.id" (click)="verPeriodo(p.id)">{{ p.nombre }}</button> }
+            </div>
+          </div>
+        </header>
+        @if (tipoTop() === 'canciones') {
+          @if (podio().length) {
+            <ol class="podio">
+              @for (t of podio(); track t.id; let i = $index) {
+                <li>
+                  <a [href]="t.url" target="_blank" rel="noopener noreferrer" data-inclina>
+                    @if (t.imagen) { <img [src]="t.imagen" alt="" width="240" height="240" loading="lazy"> } @else { <span class="podio__img"></span> }
+                    <span class="podio__n">{{ i + 1 }}</span>
+                    <span class="podio__texto"><strong>{{ t.nombre }}</strong><span>{{ t.artistas }}</span></span>
+                  </a>
+                </li>
+              }
+            </ol>
+            @if (resto().length) {
+              <ol class="top">
+                @for (t of resto(); track t.id; let i = $index) {
+                  <li>
+                    <a [href]="t.url" target="_blank" rel="noopener noreferrer">
+                      <span class="top__n">{{ i + 4 }}</span>
+                      @if (t.imagen) { <img [src]="t.imagen" alt="" width="48" height="48" loading="lazy"> } @else { <span class="top__img"></span> }
+                      <span class="top__texto"><strong>{{ t.nombre }}</strong><span>{{ t.artistas }}</span></span>
+                    </a>
+                  </li>
+                }
+              </ol>
+            }
+          } @else { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
+        } @else {
+          <ol class="artistas">
+            @for (a of topArtistas(); track a.id; let i = $index) {
+              <li>
+                <a [href]="a.url" target="_blank" rel="noopener noreferrer" data-inclina>
+                  @if (a.imagen) { <img [src]="a.imagen" alt="" width="160" height="160" loading="lazy"> } @else { <span class="artistas__img"></span> }
+                  <span class="artistas__n">{{ i + 1 }}</span>
+                  <strong>{{ a.nombre }}</strong>
+                  @if (a.generos.length) { <span>{{ a.generos.slice(0, 2).join(' · ') }}</span> }
+                </a>
+              </li>
+            } @empty { <p class="nada">Spotify aún no tiene bastantes escuchas en este periodo.</p> }
+          </ol>
+        }
       </section>
-    }
+
+      <div class="lado">
+        @if (cola().length) {
+          <section class="caja">
+            <header class="caja__cab"><h3>A continuación</h3></header>
+            <ol class="lista">
+              @for (t of cola(); track $index) {
+                <li>
+                  <a [href]="t.url" target="_blank" rel="noopener noreferrer">
+                    @if (t.imagen) { <img [src]="t.imagen" alt="" width="44" height="44" loading="lazy"> }
+                    <span class="top__texto"><strong>{{ t.nombre }}</strong><span>{{ t.artistas }}</span></span>
+                    <time>{{ tiempo(t.duracion) }}</time>
+                  </a>
+                </li>
+              }
+            </ol>
+          </section>
+        }
+        @if (recientes().length) {
+          <section class="caja">
+            <header class="caja__cab"><h3>Recién escuchado</h3></header>
+            <ul class="lista">
+              @for (r of recientes().slice(0, 12); track r.cuando) {
+                <li>
+                  <a [href]="r.cancion.url" target="_blank" rel="noopener noreferrer">
+                    @if (r.cancion.imagen) { <img [src]="r.cancion.imagen" alt="" width="44" height="44" loading="lazy"> }
+                    <span class="top__texto"><strong>{{ r.cancion.nombre }}</strong><span>{{ r.cancion.artistas }}</span></span>
+                    <time>{{ hace(r.cuando) }}</time>
+                  </a>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    </div>
+
     <p class="pie">Conectado como <strong>{{ c.cuenta ?? 'tu cuenta' }}</strong>. Se desconecta desde <a routerLink="/seguridad">Seguridad</a>.</p>
   }
 } @else {

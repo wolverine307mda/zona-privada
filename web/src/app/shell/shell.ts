@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { activarInclinacion } from '../core/inclinar';
+import { Instalar } from '../core/instalar';
 import { INICIO, MODULOS } from '../core/modulos';
 import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
@@ -26,6 +27,7 @@ export class Shell {
   private readonly router = inject(Router);
   protected readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);
+  protected readonly instalar = inject(Instalar);
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
@@ -107,6 +109,13 @@ export class Shell {
   protected abrirAjustes(): void {
     this.menuAbierto.set(false);
     this.ajustes().nativeElement.showModal();
+  }
+
+  // Android y PC: el diálogo del navegador; iPhone: los pasos, dentro de Ajustes
+  protected async instalarApp(): Promise<void> {
+    if (this.instalar.puede()) { await this.instalar.instalar(); return; }
+    this.instalar.pasosIos.set(true);
+    this.abrirAjustes();
   }
 
   protected cerrarFuera(e: MouseEvent): void {
