@@ -71,7 +71,11 @@ export class Seguridad {
     this.leerSesiones();
     const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
     get<Acceso[]>('/api/seguridad/accesos').then((a) => this.accesos.set(a)).catch(() => {});
-    get<Estado>('/api/seguridad/estado').then((e) => this.estado.set(e)).catch(() => {});
+    get<Estado>('/api/seguridad/estado').then((e) => {
+      this.estado.set(e);
+      // en el iPhone, al ir a la app de códigos y volver, la app se recarga: se retoma la activación a medias
+      if (!e.dosPasos && this.activacionPendiente()) this.empezarDosPasos();
+    }).catch(() => {});
     get<Conexion[]>('/api/conexiones').then((c) => this.conexiones.set(c)).catch(() => {});
   }
 
@@ -148,11 +152,20 @@ export class Seguridad {
   // ---- verificación en dos pasos (la API de Identity: /api/auth/manage/2fa) ----
   private dosPasos(cuerpo: object) { return firstValueFrom(this.http.post<DosPasos>('/api/auth/manage/2fa', cuerpo)); }
 
+  private static readonly PENDIENTE = 'dos-pasos-pendiente';
+  private activacionPendiente(): boolean {
+    try { return Date.now() - Number(localStorage.getItem(Seguridad.PENDIENTE) ?? 0) < 15 * 60_000; } catch { return false; }
+  }
+  private marcarPendiente(si: boolean): void {
+    try { if (si) localStorage.setItem(Seguridad.PENDIENTE, String(Date.now())); else localStorage.removeItem(Seguridad.PENDIENTE); } catch { /* sin almacenamiento */ }
+  }
+
   protected async empezarDosPasos(): Promise<void> {
     this.errorDos.set('');
     this.codigo.set('');
     const d = await this.dosPasos({});
     this.dos.set(d);
+    if (!this.activacionPendiente()) this.marcarPendiente(true);
     // qrcode es CommonJS: según el empaquetado, sus funciones llegan en «default»
     const m = await import('qrcode');
     const qr = ((m as unknown as { default?: typeof m }).default ?? m);
@@ -164,12 +177,20 @@ export class Seguridad {
     this.errorDos.set('');
     try {
       const d = await this.dosPasos({ enable: true, twoFactorCode: this.codigo().replace(/\s/g, '') });
+      // se cree lo que dice el servidor, no lo que se ha pedido
+      if (!d.isTwoFactorEnabled) { this.errorDos.set('No se ha podido activar. Prueba otra vez en un momento.'); return; }
       this.dos.set(null);
+      this.marcarPendiente(false);
       this.codigos.set(d.recoveryCodes);
       this.estado.update((x) => (x ? { ...x, dosPasos: true } : x));
     } catch {
       this.errorDos.set('Ese código no vale. Mira que la hora del móvil esté bien y prueba con el siguiente.');
     }
+  }
+
+  protected cancelarDosPasos(): void {
+    this.dos.set(null);
+    this.marcarPendiente(false);
   }
 
   protected async nuevosCodigos(): Promise<void> {

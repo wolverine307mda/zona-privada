@@ -61,8 +61,9 @@ public static class Sesiones
         if (await db.Ajustes.AnyAsync(a => a.Clave == AvisarInicios && a.Valor == "si"))
         {
             var avisos = sp.GetRequiredService<IAvisos>();
-            var texto = $"Se ha iniciado sesión en tu zona privada.\n\nEquipo: {Dispositivo.Nombre(s.Agente)}\nIP: {s.Ip}\nHora: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC\n\nSi no has sido tú, ciérrala desde Seguridad y cambia la contraseña.";
-            _ = Task.Run(() => avisos.PorCorreo("Nuevo inicio de sesión", texto));
+            var hora = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, sp.GetRequiredService<Agenda.Zona>().Info);
+            var texto = $"Se ha iniciado sesión en tu zona privada.\n\nEquipo: {Dispositivo.Nombre(s.Agente)}\nIP: {s.Ip}\nHora: {hora:dd/MM/yyyy HH:mm:ss}\n\nSi no has sido tú, ciérrala desde Seguridad y cambia la contraseña.";
+            _ = Task.Run(() => avisos.PorCorreo("🔐 Nuevo inicio de sesión", texto, "/seguridad"));
         }
     }
 

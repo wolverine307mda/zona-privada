@@ -96,7 +96,7 @@
   background: linear-gradient(120deg, var(--brand), color-mix(in srgb, var(--brand) 55%, #7a5cff)); box-shadow: 0 6px 20px color-mix(in srgb, var(--brand) 30%, transparent); transition: transform 200ms var(--ease-out), box-shadow 200ms ease; }
 .barra__asis .icon { width: 17px; height: 17px; }
 @media (hover: hover) { .barra__asis:hover { transform: translateY(-1px); box-shadow: 0 10px 26px color-mix(in srgb, var(--brand) 42%, transparent); } }
-.reloj { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.02em; }
+.reloj { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
 .pantalla { padding: clamp(20px, 3vw, 36px) var(--margin) 64px; max-width: 1440px; width: 100%; view-transition-name: pantalla; }
 .barra { view-transition-name: barra; }

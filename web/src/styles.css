@@ -147,6 +147,9 @@ a { color: inherit; }
 /* el tema nuevo se abre en círculo desde el botón pulsado */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 .vt-tema::view-transition-new(root) { animation: tema-circulo 700ms var(--ease-in-out); }
+/* al cambiar el tema todo va en la foto de la página: si la pantalla y las barras fueran aparte
+   se fundirían por encima del círculo y se verían transparentes y superpuestas */
+.vt-tema * { view-transition-name: none !important; }
 /* al cambiar de pantalla: la pantalla se funde rápido y las barras fijas no se mueven */
 :root:not(.vt-tema)::view-transition-old(pantalla) { animation: 160ms ease both vt-sale; }
 :root:not(.vt-tema)::view-transition-new(pantalla) { animation: 240ms ease both vt-entra; }

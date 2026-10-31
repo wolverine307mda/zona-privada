@@ -64,7 +64,7 @@ export class Inicio implements OnDestroy {
   protected readonly so = computed(() => (this.a()?.sistemaOperativo ?? '').replace('Microsoft ', ''));
 
   constructor() {
-    const reloj = setInterval(() => this.ahora.set(new Date()), 30_000);
+    const reloj = setInterval(() => this.ahora.set(new Date()), 1000);
     this.limpiar = () => clearInterval(reloj);
 
     afterNextRender(() => {

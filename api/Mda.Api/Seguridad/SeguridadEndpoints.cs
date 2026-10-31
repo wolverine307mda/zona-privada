@@ -101,7 +101,7 @@ public static class SeguridadEndpoints
             const string texto = "👋 Prueba de avisos de tu zona privada: si te llega esto, los recordatorios funcionan.";
             var ok = canal switch
             {
-                "correo" => await avisos.PorCorreo("Prueba de avisos", texto),
+                "correo" => await avisos.PorCorreo("👋 Prueba de avisos", texto, "/seguridad"),
                 "whatsapp" => await avisos.PorWhatsApp(texto),
                 "push" => await avisos.PorPush("👋 Prueba de avisos", "Si ves esto, las notificaciones de la app funcionan en tus dispositivos.", "/seguridad"),
                 _ => (bool?)null,

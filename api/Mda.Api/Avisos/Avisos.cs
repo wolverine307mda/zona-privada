@@ -12,11 +12,13 @@ public interface IAvisos
 {
     Canales Disponibles();
     Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default);
+    // con la pantalla de la app que abre el botón del correo (por defecto, el inicio)
+    Task<bool> PorCorreo(string asunto, string texto, string ruta, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
     Task<bool> PorWhatsApp(string texto, CancellationToken ct = default);
     // notificación en los móviles y navegadores suscritos (Web Push)
     Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => Task.FromResult(false);
     // correo con versión HTML (el resumen semanal); el texto plano va de respaldo
-    Task<bool> PorCorreoHtml(string asunto, string html, string texto, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
+    Task<bool> PorCorreoHtml(string asunto, string html, string texto, string? ruta = null, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
 }
 
 public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, ILogger<Avisos> log) : IAvisos
@@ -27,11 +29,13 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, I
         C("Correo:Servidor") is not null && C("Correo:Para") is not null,
         C("WhatsApp:Telefono") is not null && C("WhatsApp:ApiKey") is not null);
 
-    public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) => Correo(asunto, texto, null, ct);
-    public Task<bool> PorCorreoHtml(string asunto, string html, string texto, CancellationToken ct = default) => Correo(asunto, texto, html, ct);
+    public Task<bool> PorCorreo(string asunto, string texto, CancellationToken ct = default) => Correo(asunto, texto, null, null, ct);
+    public Task<bool> PorCorreo(string asunto, string texto, string ruta, CancellationToken ct = default) => Correo(asunto, texto, null, ruta, ct);
+    public Task<bool> PorCorreoHtml(string asunto, string html, string texto, string? ruta = null, CancellationToken ct = default) => Correo(asunto, texto, html, ruta, ct);
     public Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => push.Enviar(titulo, texto, url, ct);
 
-    private async Task<bool> Correo(string asunto, string texto, string? html, CancellationToken ct)
+    // todos los correos salen con el mismo diseño (Plantilla); el texto plano va dentro por si el lector no pinta HTML
+    private async Task<bool> Correo(string asunto, string texto, string? html, string? ruta, CancellationToken ct)
     {
         if (!Disponibles().Correo) return false;
         try
@@ -46,8 +50,9 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, I
             {
                 Subject = asunto, Body = texto, IsBodyHtml = false,
             };
-            if (html is not null)
-                msg.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(html, System.Text.Encoding.UTF8, "text/html"));
+            var resumen = texto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+            var pagina = Plantilla.Correo(asunto, html ?? Plantilla.DeTexto(texto), C("App:UrlPublica"), ruta, resumen);
+            msg.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(pagina, System.Text.Encoding.UTF8, "text/html"));
             await smtp.SendMailAsync(msg, ct);
             return true;
         }

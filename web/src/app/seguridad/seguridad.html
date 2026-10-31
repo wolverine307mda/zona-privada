@@ -79,7 +79,7 @@
           @if (errorDos()) { <p class="error">{{ errorDos() }}</p> }
         </li>
       </ol>
-      <button class="enlace" type="button" (click)="dos.set(null)">Cancelar</button>
+      <button class="enlace" type="button" (click)="cancelarDosPasos()">Cancelar</button>
     } @else if (estado()?.dosPasos) {
       <p class="lead"><span class="ok-grande" aria-hidden="true">✓</span> Activada. Al entrar se pide tu contraseña y el código de la app del móvil.</p>
       <div class="fila">

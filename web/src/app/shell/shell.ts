@@ -59,7 +59,7 @@ export class Shell {
   constructor() {
     this.sistema.empezar();
     this.perfil.cargar();
-    const reloj = setInterval(() => this.ahora.set(new Date()), 15_000);
+    const reloj = setInterval(() => this.ahora.set(new Date()), 1000);
     const sinInclinar = activarInclinacion();
     // latido: la pestaña abierta avisa cada minuto de que sigue ahí (Seguridad lo enseña como «en línea»)
     const http = inject(HttpClient);

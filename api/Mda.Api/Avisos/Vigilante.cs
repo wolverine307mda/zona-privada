@@ -70,7 +70,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             ? $"La última copia de seguridad de la base de datos es del {TimeZoneInfo.ConvertTime(fecha, zona.Info):dd/MM/yyyy HH:mm}. Revisa el contenedor «copias» (docker compose logs copias)."
             : "No hay ninguna copia de seguridad de la base de datos. Revisa el contenedor «copias» (docker compose logs copias).";
         await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
-        await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, ct);
+        await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
     }
 
     // ---- mantenimiento del coche ----
@@ -90,7 +90,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             var titulo = e.Nivel == "vencido" ? $"🚗 {m.Nombre}: ya toca" : $"🚗 {m.Nombre}: falta poco";
             var texto = string.Join(" · ", cuando);
             await avisos.PorPush(titulo, texto, "/gastos/deudas", ct);
-            await avisos.PorCorreo(titulo, $"{texto}.\n\nCuando lo hagas, márcalo como hecho en Cartera › Coche.", ct);
+            await avisos.PorCorreo(titulo, $"{texto}.\n\nCuando lo hagas, márcalo como hecho en Cartera › Coche.", "/gastos/deudas", ct);
         }
         await db.SaveChangesAsync(ct);
     }
@@ -106,7 +106,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         if (hecho?.Valor == semana) return;
 
         var (asunto, html, texto, corto) = await Componer(db, DateOnly.FromDateTime(local), ct);
-        var ok = await avisos.PorCorreoHtml(asunto, html, texto, ct);
+        var ok = await avisos.PorCorreoHtml(asunto, html, texto, "/inicio", ct);
         ok |= await avisos.PorPush("📊 Tu semana", corto, "/gastos", ct);
         if (!ok && avisos.Disponibles().Correo) return; // se reintenta en el siguiente repaso
         if (hecho is null) db.Ajustes.Add(hecho = new Ajuste { Clave = ResumenUltimo });
@@ -139,8 +139,8 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
 
         string H(string s) => WebUtility.HtmlEncode(s);
         var sb = new StringBuilder();
-        sb.Append("<div style=\"font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#0b151c\">");
-        sb.Append($"<h1 style=\"font-size:26px;margin:0 0 4px\">Tu semana</h1><p style=\"color:#5f6870;margin:0 0 20px\">Del {desde.ToString("d 'de' MMMM", Es)} al {lunes.AddDays(-1).ToString("d 'de' MMMM", Es)}</p>");
+        sb.Append("<div>");
+        sb.Append($"<p style=\"color:#5f6870;margin:-10px 0 20px\">Del {desde.ToString("d 'de' MMMM", Es)} al {lunes.AddDays(-1).ToString("d 'de' MMMM", Es)}</p>");
         sb.Append("<table style=\"width:100%;border-collapse:collapse;margin-bottom:20px\"><tr>");
         foreach (var (t, v, c) in new[] { ("Gastado", gastos, "#0b151c"), ("Ingresado", ingresos, "#138a4c"), ("Saldo", saldo, saldo < 0 ? "#c62828" : "#0b151c") })
             sb.Append($"<td style=\"padding:14px;background:#f4f2ee;border-radius:12px;border:4px solid #fff\"><div style=\"font-size:12px;color:#5f6870;text-transform:uppercase\">{t}</div><div style=\"font-size:22px;font-weight:700;color:{c}\">{H(Cartera.Euros(v))}</div></td>");
@@ -175,9 +175,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             foreach (var c in canciones) sb.Append($"<li>{H(c)}</li>");
             sb.Append("</ol>");
         }
-        if (config["App:UrlPublica"] is { Length: > 0 } url)
-            sb.Append($"<p style=\"margin-top:24px\"><a href=\"{H(url)}/inicio\" style=\"background:#ff7a1a;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:600\">Abrir mi zona privada</a></p>");
-        sb.Append("<p style=\"color:#8d979e;font-size:12px;margin-top:24px\">Se desactiva en Seguridad › Avisos.</p></div>");
+        sb.Append("<p style=\"color:#8d979e;font-size:13px;margin:20px 0 0\">El resumen semanal se desactiva en Seguridad › Avisos.</p></div>");
 
         var texto = new StringBuilder($"Tu semana ({desde:dd/MM} – {lunes.AddDays(-1):dd/MM})\n\nGastado: {Cartera.Euros(gastos)}\nIngresado: {Cartera.Euros(ingresos)}\nSaldo: {Cartera.Euros(saldo)}\n");
         foreach (var (e, o) in agenda) texto.Append($"\n· {TimeZoneInfo.ConvertTime(o, zona.Info).ToString("dddd d HH:mm", Es)} {e.Titulo}");

@@ -34,7 +34,7 @@ public class Recordatorios(IServiceScopeFactory scopes, IAvisos avisos, Zona zon
             {
                 var texto = Texto(e, de);
                 var ok = false;
-                if (e.PorCorreo) ok |= await avisos.PorCorreo($"⏰ {e.Titulo}", texto, ct);
+                if (e.PorCorreo) ok |= await avisos.PorCorreo($"⏰ {e.Titulo}", texto, "/agenda", ct);
                 if (e.PorWhatsApp) ok |= await avisos.PorWhatsApp(texto, ct);
                 if (e.PorPush) ok |= await avisos.PorPush($"⏰ {e.Titulo}", Cuando(e, de), "/agenda", ct);
                 if (ok) e.UltimoAviso = ahora;

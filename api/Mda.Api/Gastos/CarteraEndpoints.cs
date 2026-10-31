@@ -290,7 +290,7 @@ public static class Cartera
         // el aviso sale en segundo plano: apuntar el gasto no espera al correo
         _ = Task.Run(async () =>
         {
-            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorCorreo(titulo, texto); }
+            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorCorreo(titulo, texto, "/gastos"); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar del presupuesto"); }
         });
     }

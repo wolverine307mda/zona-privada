@@ -24,6 +24,7 @@
 .hola__foto { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--brand); box-shadow: 0 0 0 3px var(--tarjeta), 0 0 0 6px var(--brand); flex: none; }
 .hola__fecha { font-size: var(--step-small); font-weight: 500; color: var(--acento); margin-bottom: 6px; }
 .hola__fecha::first-letter { text-transform: uppercase; }
+.hola__hora { font-variant-numeric: tabular-nums; }
 .hola__titulo { font: 700 clamp(1.5rem, 1rem + 2.4vw, 2.9rem)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: -0.045em; }
 .hola__lead { margin-top: 8px; color: var(--soft); }
 .hola__lead strong { color: var(--texto); font-weight: 500; }
