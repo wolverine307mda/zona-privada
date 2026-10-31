@@ -43,6 +43,9 @@ export class Seguridad {
   protected readonly copiado = signal<string | null>(null);
   protected readonly verTodos = signal(false);
   protected readonly iconos = ICONOS;
+  protected readonly senuelos = signal<{ id: number; ruta: string; activo: boolean; disparos: number }[]>([]);
+  protected readonly plantillasSenuelo = signal<{ id: string; nombre: string }[]>([]);
+  protected readonly cerrarSesionSenuelo = signal(true);
 
   // Telegram
   protected readonly telegram = signal<Telegram | null>(null);
@@ -80,6 +83,7 @@ export class Seguridad {
     this.leerSesiones();
     const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
     get<Acceso[]>('/api/seguridad/accesos').then((a) => this.accesos.set(a)).catch(() => {});
+    this.leerSenuelos();
     get<Estado>('/api/seguridad/estado').then((e) => {
       this.estado.set(e);
       // en el iPhone, al ir a la app de códigos y volver, la app se recarga: se retoma la activación a medias
@@ -102,6 +106,38 @@ export class Seguridad {
   }
   protected fecha(iso: string): string {
     return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  private leerSenuelos(): void {
+    firstValueFrom(this.http.get<{ cerrarSesion: boolean; senuelos: { id: number; ruta: string; activo: boolean; disparos: number }[]; plantillas: { id: string; nombre: string }[] }>('/api/senuelos'))
+      .then((r) => { this.senuelos.set(r.senuelos); this.plantillasSenuelo.set(r.plantillas); this.cerrarSesionSenuelo.set(r.cerrarSesion); })
+      .catch(() => {});
+  }
+
+  protected async crearSenuelo(plantilla: string): Promise<void> {
+    await firstValueFrom(this.http.post('/api/senuelos', { plantilla, carpeta: '' }));
+    this.leerSenuelos();
+  }
+
+  protected async alternarSenuelo(id: number, activo: boolean): Promise<void> {
+    await firstValueFrom(this.http.put(`/api/senuelos/${id}?activo=${activo}`, null));
+    this.leerSenuelos();
+  }
+
+  protected async quitarSenuelo(id: number): Promise<void> {
+    if (!confirm('¿Quitar este señuelo? Se borra el archivo falso.')) return;
+    await firstValueFrom(this.http.delete(`/api/senuelos/${id}`));
+    this.leerSenuelos();
+  }
+
+  protected async probarSenuelo(id: number): Promise<void> {
+    await firstValueFrom(this.http.post(`/api/senuelos/${id}/probar`, null));
+    this.aviso.set('Prueba enviada: mira tus notificaciones y Telegram.');
+  }
+
+  protected async ajustarCierre(v: boolean): Promise<void> {
+    this.cerrarSesionSenuelo.set(v);
+    await firstValueFrom(this.http.put(`/api/senuelos/ajustes?cerrarSesion=${v}`, null));
   }
 
   protected async cerrar(s: Sesion): Promise<void> {

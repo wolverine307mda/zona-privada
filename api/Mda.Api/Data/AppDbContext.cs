@@ -29,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
+    public DbSet<Senuelo> Senuelos => Set<Senuelo>();
 
     // PostgreSQL guarda «timestamp with time zone» en UTC y Npgsql no acepta otro desfase:
     // toda fecha con hora pasa a UTC al escribirla o al usarla en una consulta
@@ -125,6 +126,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasKey(x => x.Clave);
             e.Property(x => x.Clave).HasMaxLength(60);
             e.Property(x => x.Valor).HasMaxLength(2000);
+        });
+
+        b.Entity<Senuelo>(e =>
+        {
+            e.ToTable("senuelos");
+            e.Property(x => x.Raiz).HasMaxLength(20);
+            e.Property(x => x.Ruta).HasMaxLength(500);
+            e.Property(x => x.Plantilla).HasMaxLength(20);
+            e.HasIndex(x => new { x.Raiz, x.Ruta }).IsUnique();
         });
 
         b.Entity<FotoPublica>(e =>

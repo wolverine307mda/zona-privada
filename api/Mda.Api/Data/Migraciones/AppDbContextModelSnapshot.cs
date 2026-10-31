@@ -634,6 +634,49 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("ajustes", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Seguridad.Senuelo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Disparos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Plantilla")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Raiz")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("Ultimo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Raiz", "Ruta")
+                        .IsUnique();
+
+                    b.ToTable("senuelos", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.SesionAbierta", b =>
                 {
                     b.Property<string>("Id")

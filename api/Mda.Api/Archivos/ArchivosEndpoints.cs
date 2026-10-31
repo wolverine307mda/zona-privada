@@ -101,10 +101,11 @@ public static class ArchivosEndpoints
         });
 
         // ---- Descargar o ver (con rangos: la música y los vídeos se pueden adelantar) ----
-        g.MapGet("/archivo", (string raiz, string ruta, bool? ver, Carpetas c, HttpContext ctx) =>
+        g.MapGet("/archivo", async (string raiz, string ruta, bool? ver, Carpetas c, HttpContext ctx, Data.AppDbContext db, Telegram.Bot bot, Avisos.IAvisos avisos) =>
         {
             var real = c.Resolver(raiz, ruta);
             if (real is null || !File.Exists(real)) return NoValida();
+            await Seguridad.Senuelos.Comprobar(ctx, db, bot, avisos, c, raiz, real);
             var nombre = Path.GetFileName(real);
             var ext = Path.GetExtension(nombre).ToLowerInvariant();
             var enLinea = ver == true && SeVen.Contains(ext);

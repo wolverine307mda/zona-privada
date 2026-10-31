@@ -10,6 +10,7 @@ using Mda.Api.Conexiones;
 using Mda.Api.Data;
 using Mda.Api.Galeria;
 using Mda.Api.Gastos;
+using Mda.Api.Luz;
 using Mda.Api.Notas;
 using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
@@ -172,6 +173,10 @@ builder.Services.AddScoped<Conversacion>();
 builder.Services.AddHostedService<Sondeo>();
 // el tiempo (Open-Meteo)
 builder.Services.AddSingleton<ServicioTiempo>();
+// avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
+builder.Services.AddSingleton<ServicioLuz>();
+builder.Services.AddSingleton<AvisosLuz>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<AvisosLuz>());
 builder.Services.AddSingleton<IAvisos, Avisos>();
 builder.Services.AddSingleton<ServicioConexiones>();
 builder.Services.AddSingleton(Zona.Desde(builder.Configuration));
@@ -204,6 +209,7 @@ app.MapSistema();
 app.MapGastos();
 app.MapArchivos();
 app.MapGaleria();
+app.MapSenuelos();
 app.MapEstadoPublico();
 app.MapDeudas();
 app.MapNotas();
@@ -218,6 +224,7 @@ app.MapPerfil();
 app.MapAsistente();
 app.MapTelegram();
 app.MapTiempo();
+app.MapLuz();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

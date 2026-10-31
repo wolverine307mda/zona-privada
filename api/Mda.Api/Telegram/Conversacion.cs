@@ -108,6 +108,18 @@ public class Conversacion(
         var (accion, clave) = (partes[0], partes.ElementAtOrDefault(1) ?? "");
         switch (accion)
         {
+            case "sy":
+                await Editar(chat, idMensaje, "✅ Vale, anotado: fuiste tú.", null, ct);
+                await Contestar(cb, null, ct);
+                return;
+            case "sn":
+                // cierra la sesión que abrió el señuelo y bloquea la entrada una hora
+                if (await db.Sesiones.FindAsync([clave], ct) is { Cerrada: null } abierta) abierta.Cerrada = DateTimeOffset.UtcNow;
+                foreach (var u in await db.Users.ToListAsync(ct)) { u.LockoutEnabled = true; u.LockoutEnd = reloj.GetUtcNow().AddHours(1); }
+                await db.SaveChangesAsync(ct);
+                await Editar(chat, idMensaje, "🔒 Sesión cerrada y entrada bloqueada una hora. Cambia la contraseña cuando puedas.", null, ct);
+                await Contestar(cb, "Bloqueado", ct);
+                return;
             case "no":
                 cache.Remove($"tg:{clave}");
                 await Editar(chat, idMensaje, "✖️ Cancelado.", null, ct);

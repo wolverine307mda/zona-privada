@@ -4,6 +4,12 @@
 .interruptor small { display: block; color: var(--soft); margin-top: 2px; }
 .interruptor.apagado { opacity: .5; }
 .vacio { color: var(--soft); padding: 12px 4px; }
+.luz { display: flex; gap: 14px; align-items: center; margin: 0 0 10px; }
+.luz small { display: block; color: var(--soft); }
+.luz__nota { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 50%; font-weight: 700; background: color-mix(in srgb, var(--texto) 10%, transparent); font-variant-numeric: tabular-nums; }
+.luz__nota.buena { background: var(--brand); color: var(--on-brand, #000); }
+.luz__ajustes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 14px 0; }
+.luz__ajustes input[type=range] { width: 100%; accent-color: var(--brand); }
 
 .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .fila { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 8px; border-radius: 14px; background: color-mix(in srgb, var(--texto) 4%, transparent); }

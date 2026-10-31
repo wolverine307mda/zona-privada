@@ -106,3 +106,8 @@
 .copia { font-size: var(--step-small); color: var(--soft); padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ok) 8%, var(--tarjeta-2)); }
 .copia--mal { color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--tarjeta-2)); }
 .interruptor em { color: var(--soft); font-style: normal; }
+
+.acciones-senuelo { display: flex; gap: 10px; flex-wrap: wrap; }
+.fila-senuelo { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; }
+.interruptor-senuelo { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+.interruptor-senuelo input { width: 20px; height: 20px; accent-color: var(--brand); }
