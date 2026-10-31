@@ -16,13 +16,43 @@ export class SesionService {
   readonly dentro = computed(() => this.nombre() !== null);
   // true si la API no ha contestado (equipo apagado o sin red): no es lo mismo que «no hay sesión»
   readonly sinConexion = signal(false);
+  // la sesión está bloqueada (volviste a la app y falta desbloquear con Face ID o contraseña)
+  readonly bloqueada = signal(false);
+  private readonly bloqueoActual = signal<number | null>(null);
+
+  // segundos fuera de la app tras los que se pide desbloquear; es un ajuste de ESTE dispositivo (null = no pedirlo)
+  bloqueoSegundos(): number | null {
+    try { const v = Number(localStorage.getItem('mda-bloqueo')); return v >= 5 ? v : null; } catch { return null; }
+  }
+
+  // ¿sigue abierta la sesión? se pregunta al volver a la app (y al empezar); de paso se deja el bloqueo como lo pide este dispositivo
+  async refrescar(): Promise<void> {
+    try {
+      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null }>('/api/sesion'));
+      this.bloqueada.set(!!yo.bloqueada);
+      this.bloqueoActual.set(yo.bloqueo ?? null);
+      const local = this.bloqueoSegundos();
+      if (local !== null && yo.bloqueo !== local && !yo.bloqueada) await firstValueFrom(this.http.put('/api/sesion/bloqueo', { segundos: local }));
+    } catch { /* sin red o sin sesión: lo trata el resto */ }
+  }
+
+  // cambiar el ajuste de este dispositivo (null = quitarlo; quitarlo pide la contraseña otra vez en el servidor)
+  async ajustarBloqueo(segundos: number | null): Promise<void> {
+    await firstValueFrom(this.http.put('/api/sesion/bloqueo', { segundos }));
+    try { segundos === null ? localStorage.removeItem('mda-bloqueo') : localStorage.setItem('mda-bloqueo', String(segundos)); } catch { /* sin almacenamiento */ }
+    this.bloqueoActual.set(segundos);
+  }
 
   // Pregunta a la API una vez por carga; los guards la usan antes de entrar al panel
   async comprobar(): Promise<boolean> {
     if (this.comprobada) return this.dentro();
     try {
-      const yo = await firstValueFrom(this.http.get<{ usuario: string }>('/api/sesion'));
+      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null }>('/api/sesion'));
       this.nombre.set(yo.usuario);
+      this.bloqueada.set(!!yo.bloqueada);
+      this.bloqueoActual.set(yo.bloqueo ?? null);
+      const local = this.bloqueoSegundos();
+      if (local !== null && yo.bloqueo !== local && !yo.bloqueada) this.http.put('/api/sesion/bloqueo', { segundos: local }).subscribe({ error: () => {} });
       this.sinConexion.set(false);
       this.recordar(yo.usuario);
     } catch (e) {

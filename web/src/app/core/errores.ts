@@ -11,7 +11,7 @@ export class AvisoDeErrores implements ErrorHandler {
   handleError(error: unknown): void {
     const e = error instanceof Error && 'rejection' in error ? (error as { rejection: unknown }).rejection : error;
     if (e instanceof HttpErrorResponse) {
-      if (e.status === 401 || e.status === 400 || e.status === 404) return;
+      if (e.status === 401 || e.status === 400 || e.status === 404 || e.status === 423) return; // 423 = bloqueada: ya sale la pantalla de desbloqueo
       this.avisar(e.status === 0 ? 'El equipo no responde. Comprueba la conexión.' : e.status === 429 ? 'Demasiadas peticiones seguidas: espera un momento.' : 'No se pudo completar la acción. Inténtalo de nuevo.');
       return;
     }

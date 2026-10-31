@@ -22,6 +22,10 @@ public class SesionAbierta
     public DateTimeOffset? Cerrada { get; set; }
     // hasta cuándo vale la «contraseña otra vez» para acciones delicadas (órdenes al PC)
     public DateTimeOffset? ReautenticadaHasta { get; set; }
+    // «pedir Face ID al volver»: segundos fuera de la app a partir de los cuales la sesión se bloquea (null = nunca)
+    public int? BloquearTrasSegundos { get; set; }
+    public DateTimeOffset? SegundoPlano { get; set; }
+    public bool Bloqueada { get; set; }
 }
 
 // Cada intento de entrar, bien o mal
@@ -80,6 +84,7 @@ public static class Sesiones
 
     // Una sesión vale como mucho 30 días aunque se use a diario: pasado ese tiempo hay que volver a entrar
     public static readonly TimeSpan Maxima = TimeSpan.FromDays(30);
+    public const string ClaveBloqueada = "mda:bloqueada";
 
     // En cada petición: la sesión tiene que seguir abierta. Una cookie sin id de sesión no se acepta: la firma sola
     // no basta (si se filtraran las claves de firma, se podrían fabricar cookies válidas para siempre).
@@ -96,6 +101,21 @@ public static class Sesiones
             ctx.RejectPrincipal();
             await ctx.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
             return;
+        }
+        // bloqueo al volver a la app: si estuvo fuera más del umbral (o no se oyó de ella en un buen rato), pide desbloquear
+        if (sesion.BloquearTrasSegundos is { } umbral)
+        {
+            if (!sesion.Bloqueada)
+            {
+                if (sesion.SegundoPlano is { } sp)
+                {
+                    if (ahora - sp > TimeSpan.FromSeconds(umbral)) sesion.Bloqueada = true; else sesion.SegundoPlano = null;
+                }
+                // red de seguridad: si el aviso de «salgo de la app» no llegó (iOS la cerró de golpe), el silencio largo también bloquea
+                else if (ahora - sesion.UltimaVez > TimeSpan.FromSeconds(Math.Max(umbral, 180))) sesion.Bloqueada = true;
+                if (sesion.Bloqueada || sesion.SegundoPlano is null) await db.SaveChangesAsync();
+            }
+            if (sesion.Bloqueada) ctx.HttpContext.Items[ClaveBloqueada] = true;
         }
         if (ahora - sesion.UltimaVez > Refresco)
         {

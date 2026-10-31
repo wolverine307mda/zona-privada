@@ -801,6 +801,12 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<bool>("App")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("Bloqueada")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("BloquearTrasSegundos")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("Cerrada")
                         .HasColumnType("timestamp with time zone");
 
@@ -813,6 +819,9 @@ namespace Mda.Api.Data.Migraciones
                         .HasColumnType("character varying(64)");
 
                     b.Property<DateTimeOffset?>("ReautenticadaHasta")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SegundoPlano")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("UltimaVez")

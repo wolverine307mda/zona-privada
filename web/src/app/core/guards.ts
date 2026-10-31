@@ -25,7 +25,9 @@ export const sesionCaducada: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   return next(req).pipe(
     catchError((e: unknown) => {
-      const login = req.url.startsWith('/api/auth/') || req.url === '/api/sesion';
+      // un 401 aquí es «contraseña o código mal», no «sesión caducada»: no se echa al usuario al login
+      const login = req.url.startsWith('/api/auth/') || req.url.startsWith('/api/sesion') || req.url.startsWith('/api/seguridad/reautenticar');
+      if (e instanceof HttpErrorResponse && e.status === 423) sesion.bloqueada.set(true);
       if (e instanceof HttpErrorResponse && e.status === 401 && !login) {
         sesion.olvidar();
         router.navigateByUrl('/entrar');

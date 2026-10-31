@@ -176,3 +176,7 @@
 | POST | `/api/sistema/agente/salud` | el agente manda discos, volúmenes y reinicio pendiente (token) |
 | GET | `/api/sistema/agente/ordenes` | el agente pregunta (espera hasta 20 s) y recibe las órdenes firmadas con HMAC-SHA256 |
 | POST | `/api/sistema/agente/ordenes/{id}` | el agente cuenta el resultado `{ ok, resultado }` |
+| PUT | `/api/sesion/bloqueo` | `{ segundos }` (5–3600, null = no pedirlo) para ESTA sesión; aflojarlo pide reautenticar |
+| POST | `/api/sesion/segundo-plano` · `/desbloqueo/opciones` · `/desbloqueo` · `/desbloqueo-clave` | avisar de que sales de la app; desbloquear con passkey o con contraseña |
+| PUT | `/api/sesion/bloqueo` | `{ segundos }` (5–3600, null = no pedirlo) para ESTA sesión; aflojarlo pide reautenticar |
+| POST | `/api/sesion/segundo-plano` · `/desbloqueo/opciones` · `/desbloqueo` · `/desbloqueo-clave` | avisar de que sales de la app; desbloquear con passkey o con contraseña |

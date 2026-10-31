@@ -31,8 +31,11 @@ public static class AuthEndpoints
         var sesion = app.MapGroup("/api/sesion").RequireAuthorization();
 
         // quién soy (el front lo usa para saber si hay sesión)
-        sesion.MapGet("/", (ClaimsPrincipal user) =>
-            Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email) }));
+        sesion.MapGet("/", async (ClaimsPrincipal user, Data.AppDbContext db) =>
+        {
+            var s = Sesiones.Actual(user) is { } sid ? await db.Sesiones.FindAsync(sid) : null;
+            return Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email), bloqueada = s?.Bloqueada ?? false, bloqueo = s?.BloquearTrasSegundos });
+        });
 
         // cerrar sesión: borra la cookie
         sesion.MapPost("/salir", async (ClaimsPrincipal user, SignInManager<IdentityUser> signIn, Data.AppDbContext db) =>

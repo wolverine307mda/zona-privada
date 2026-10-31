@@ -222,11 +222,13 @@ app.UseRateLimiter();
 app.UseRegistroAccesos();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseBloqueoSesion();
 
 app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous().RequireCors(WebPublica);
 app.MapAuth();
 app.MapPasskeys();
 app.MapReautenticar();
+app.MapBloqueo();
 app.MapSistema();
 app.MapGastos();
 app.MapArchivos();

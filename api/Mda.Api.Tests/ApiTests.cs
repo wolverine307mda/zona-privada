@@ -76,9 +76,10 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         Assert.Contains(login.Headers.GetValues("Set-Cookie"), c => c.StartsWith("mda.sesion=") && c.Contains("httponly") && c.Contains("samesite=strict"));
 
-        var yo = await client.GetFromJsonAsync<Dictionary<string, string>>("/api/sesion");
-        Assert.Equal(ApiFactory.Usuario, yo!["usuario"]);
-        Assert.Equal(ApiFactory.Email, yo["email"]);
+        var yo = await client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/sesion");
+        Assert.Equal(ApiFactory.Usuario, yo.GetProperty("usuario").GetString());
+        Assert.Equal(ApiFactory.Email, yo.GetProperty("email").GetString());
+        Assert.False(yo.GetProperty("bloqueada").GetBoolean());
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/sistema")).StatusCode);
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync("/api/sesion/salir", null)).StatusCode);

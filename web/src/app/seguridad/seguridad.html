@@ -321,6 +321,22 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
       <input class="campo__input" maxlength="40" placeholder="Nombre (p. ej. iPhone)" [value]="nombrePasskey()" (input)="nombrePasskey.set($any($event.target).value)">
       <button class="button" type="button" (click)="registrarPasskey()" [disabled]="ocupadoPasskey()">{{ ocupadoPasskey() ? 'Esperando…' : 'Añadir este dispositivo' }}</button>
     </div>
+    <div class="bloqueo-app">
+      <label class="campo"><span class="campo__etiqueta">Pedir Face ID al volver a la app (en este dispositivo)</span>
+        <select class="campo__input" [value]="bloqueoSeg()" (change)="cambiarBloqueo($any($event.target).value)">
+          @for (o of opcionesBloqueo; track o.s) { <option [value]="o.s" [selected]="bloqueoSeg() === o.s">{{ o.t }}</option> }
+        </select></label>
+      <p class="nada">Al salir de la app, la sesión se bloquea en el servidor y no enseña nada hasta que la desbloquees con Face ID (o con la contraseña).</p>
+      @if (pedirClaveBloqueo()) {
+        <form class="fila-senuelo" (submit)="confirmarBloqueo($event)">
+          <input type="text" autocomplete="username" hidden>
+          <input class="campo__input" type="password" autocomplete="current-password" placeholder="Tu contraseña" [value]="claveBloqueo()" (input)="claveBloqueo.set($any($event.target).value)">
+          <input class="campo__input" inputmode="numeric" autocomplete="one-time-code" placeholder="Código (si lo tienes)" [value]="codigoBloqueo()" (input)="codigoBloqueo.set($any($event.target).value)">
+          <button class="button" type="submit">Confirmar</button>
+        </form>
+      }
+      @if (errorBloqueo()) { <p class="error">{{ errorBloqueo() }}</p> }
+    </div>
     <p class="nada">Se registra desde la dirección pública de la app (no desde localhost) y no se puede usar desde otra. Los dos pasos y la contraseña siguen valiendo como respaldo.</p>
   }
 </section>

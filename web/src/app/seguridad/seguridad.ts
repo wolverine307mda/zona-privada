@@ -47,6 +47,16 @@ export class Seguridad {
   protected readonly conPasskey = soportaPasskeys();
   protected readonly passkeys = signal<{ id: string; nombre: string; creado: string }[]>([]);
   protected readonly nombrePasskey = signal('');
+  // «pedir Face ID al volver a la app»: ajuste de este dispositivo
+  private readonly sesionSvc = inject(SesionService);
+  protected readonly bloqueoSeg = signal<number>(this.sesionSvc.bloqueoSegundos() ?? 0);
+  protected readonly opcionesBloqueo = [
+    { s: 0, t: 'No pedirlo' }, { s: 10, t: 'Al volver (tras 10 s fuera)' }, { s: 60, t: 'Tras 1 minuto fuera' }, { s: 300, t: 'Tras 5 minutos fuera' },
+  ];
+  protected readonly pedirClaveBloqueo = signal(false);
+  protected readonly claveBloqueo = signal('');
+  protected readonly codigoBloqueo = signal('');
+  protected readonly errorBloqueo = signal('');
   protected readonly ocupadoPasskey = signal(false);
   protected readonly origen = location.origin;
   protected readonly tokens = signal<{ id: number; nombre: string; alcances: string[]; ultimoUso: string | null; revocado: boolean }[]>([]);
@@ -121,6 +131,31 @@ export class Seguridad {
   }
   protected fecha(iso: string): string {
     return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // cambia el ajuste; aflojarlo o quitarlo pide la contraseña otra vez (si no, quien coja el móvil abierto lo desactivaría)
+  protected async cambiarBloqueo(valor: string): Promise<void> {
+    const s = Number(valor) || 0;
+    this.errorBloqueo.set('');
+    try {
+      await this.sesionSvc.ajustarBloqueo(s || null);
+      this.bloqueoSeg.set(s); this.pedirClaveBloqueo.set(false);
+      this.aviso.set(s ? 'Listo: la app se bloqueará al volver y pedirá Face ID.' : 'Bloqueo desactivado en este dispositivo.');
+    } catch (e) {
+      const x = e as HttpErrorResponse;
+      if (x.status === 403 && x.error?.reautenticar) { this.pedirClaveBloqueo.set(true); this.bloqueoSeg.set(this.bloqueoSeg()); this.pendienteBloqueo = s; }
+      else this.errorBloqueo.set('No se pudo cambiar el ajuste.');
+    }
+  }
+  private pendienteBloqueo = 0;
+
+  protected async confirmarBloqueo(ev: Event): Promise<void> {
+    ev.preventDefault();
+    try {
+      await firstValueFrom(this.http.post('/api/seguridad/reautenticar', { password: this.claveBloqueo(), codigo: this.codigoBloqueo() || null }));
+      this.claveBloqueo.set(''); this.codigoBloqueo.set('');
+      await this.cambiarBloqueo(String(this.pendienteBloqueo));
+    } catch { this.errorBloqueo.set('Contraseña (o código) incorrectos.'); }
   }
 
   private leerPasskeys(): void {
