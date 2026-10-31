@@ -32,6 +32,9 @@ public class Movimiento
     public bool TieneTicket { get; set; }
 
     public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
+
+    // entró solo (Apple Pay) y espera a que lo des por bueno; cuenta en el saldo igualmente
+    public bool PorConfirmar { get; set; }
 }
 
 // Un gasto o ingreso que se repite: suscripciones, alquiler, cuota del coche, seguro, nómina…

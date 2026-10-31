@@ -1,4 +1,5 @@
 using Mda.Api.Agenda;
+using Mda.Api.Atajos;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
 using Mda.Api.Galeria;
@@ -30,6 +31,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
+    public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
 
     // PostgreSQL guarda «timestamp with time zone» en UTC y Npgsql no acepta otro desfase:
     // toda fecha con hora pasa a UTC al escribirla o al usarla en una consulta
@@ -126,6 +128,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasKey(x => x.Clave);
             e.Property(x => x.Clave).HasMaxLength(60);
             e.Property(x => x.Valor).HasMaxLength(2000);
+        });
+
+        b.Entity<TokenAtajo>(e =>
+        {
+            e.ToTable("tokens_atajo");
+            e.Property(x => x.Nombre).HasMaxLength(40);
+            e.Property(x => x.Hash).HasMaxLength(64);
+            e.Property(x => x.Alcances).HasMaxLength(40);
+            e.Property(x => x.UltimaIp).HasMaxLength(64);
+            e.Property(x => x.Redes).HasMaxLength(400);
+            e.HasIndex(x => x.Hash).IsUnique();
         });
 
         b.Entity<Senuelo>(e =>

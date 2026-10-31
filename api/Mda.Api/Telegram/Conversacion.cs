@@ -108,6 +108,22 @@ public class Conversacion(
         var (accion, clave) = (partes[0], partes.ElementAtOrDefault(1) ?? "");
         switch (accion)
         {
+            case "pv" or "pd" or "pc":
+                {
+                    var trozos = clave.Split(':');
+                    var mov = int.TryParse(trozos[0], out var mid) ? await db.Movimientos.FindAsync([mid], ct) : null;
+                    if (mov is null) { await Editar(chat, idMensaje, "Ya no existe este apunte.", null, ct); await Contestar(cb, null, ct); return; }
+                    if (accion == "pd") { db.Movimientos.Remove(mov); await db.SaveChangesAsync(ct); await Editar(chat, idMensaje, "↩️ Deshecho: no se ha guardado nada.", null, ct); }
+                    else
+                    {
+                        if (accion == "pc" && trozos.Length > 1 && Categorias.Valida(trozos[1], mov.Tipo)) mov.Categoria = trozos[1];
+                        mov.PorConfirmar = false;
+                        await db.SaveChangesAsync(ct);
+                        await Editar(chat, idMensaje, $"✅ {H(mov.Concepto)} {Cartera.Euros(mov.Importe)} · {H(Categorias.Todas[mov.Categoria].Nombre)}", Botones(("↩️ Deshacer", $"pd:{mov.Id}")), ct);
+                    }
+                    await Contestar(cb, null, ct);
+                    return;
+                }
             case "sy":
                 await Editar(chat, idMensaje, "✅ Vale, anotado: fuiste tú.", null, ct);
                 await Contestar(cb, null, ct);

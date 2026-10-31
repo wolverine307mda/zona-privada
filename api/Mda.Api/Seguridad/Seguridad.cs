@@ -11,6 +11,8 @@ public static class Limites
     public const string Agente = "agente";
     // lo que lee la web pública (la galería): muchas imágenes por visita, pero con tope por IP
     public const string Publico = "publico";
+    // el iPhone con su token (Atajos, Apple Pay)
+    public const string Atajos = "atajos";
 }
 
 public static class IpCliente

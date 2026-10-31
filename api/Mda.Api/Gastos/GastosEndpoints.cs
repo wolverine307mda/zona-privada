@@ -83,6 +83,7 @@ public static class GastosEndpoints
             var m = await db.Movimientos.FindAsync([id], ct);
             if (m is null) return Results.NotFound();
             Copiar(e, m);
+            m.PorConfirmar = false; // editarlo es darlo por bueno
             await db.SaveChangesAsync(ct);
             if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
             return Results.Ok(m);

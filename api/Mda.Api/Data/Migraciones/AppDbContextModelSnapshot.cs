@@ -116,6 +116,56 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("eventos", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Atajos.TokenAtajo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Alcances")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Redes")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<bool>("Revocado")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UltimaIp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("UltimoUso")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Hash")
+                        .IsUnique();
+
+                    b.ToTable("tokens_atajo", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Avisos.PushSuscripcion", b =>
                 {
                     b.Property<int>("Id")
@@ -435,6 +485,9 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<string>("Notas")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("PorConfirmar")
+                        .HasColumnType("boolean");
 
                     b.Property<decimal?>("PrecioLitro")
                         .HasPrecision(6, 3)

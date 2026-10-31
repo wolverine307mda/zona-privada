@@ -9,6 +9,7 @@ export interface Movimiento {
   importe: number;
   categoria: string;
   concepto: string;
+  porConfirmar?: boolean; // entró solo (Apple Pay) y espera a que lo des por bueno
   notas: string | null;
   recurrenteId: number | null;
   litros: number | null;

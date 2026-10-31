@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Mda.Api.Agenda;
 using Mda.Api.Archivos;
 using Mda.Api.Asistente;
+using Mda.Api.Atajos;
 using Mda.Api.Auth;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
@@ -110,6 +111,9 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(Limites.Publico, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 300, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    o.AddPolicy(Limites.Atajos, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Limites.Agente, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -210,6 +214,7 @@ app.MapGastos();
 app.MapArchivos();
 app.MapGaleria();
 app.MapSenuelos();
+app.MapAtajos();
 app.MapEstadoPublico();
 app.MapDeudas();
 app.MapNotas();
