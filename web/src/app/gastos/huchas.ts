@@ -214,9 +214,15 @@ export class Huchas {
 
   protected async borrar(): Promise<void> {
     if (!this.confirmar()) { this.confirmar.set(true); return; }
-    await this.g.borrarHucha(this.editando()!.id);
-    this.dlg().nativeElement.close();
-    this.g.recargar();
+    try {
+      await this.g.borrarHucha(this.editando()!.id);
+      this.dlg().nativeElement.close();
+      this.g.recargar();
+    } catch (err) {
+      // si no se pudo, se dice y el botón vuelve a pedir confirmación
+      this.confirmar.set(false);
+      this.errores.set(erroresDe(err));
+    }
   }
 
   protected async aportar(h: Hucha, v: number): Promise<void> {

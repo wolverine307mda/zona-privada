@@ -16,7 +16,7 @@ export class PerfilService {
     if (!d) return null;
     return d.nombre ? `${d.nombre} ${d.apellidos ?? ''}`.trim() : d.usuario;
   });
-  readonly foto = computed(() => (this.datos()?.foto ? `/api/perfil/foto?v=${this.version()}` : 'img/avatar.webp?v=2'));
+  readonly foto = computed(() => (this.datos()?.foto ? `/api/perfil/foto?v=${this.version()}` : 'img/avatar.webp?v=3'));
 
   async cargar(): Promise<void> {
     try { this.datos.set(await firstValueFrom(this.http.get<DatosPerfil>('/api/perfil'))); } catch { /* sin conexión: se queda el usuario */ }

@@ -168,9 +168,15 @@ export class MantenimientoCoche {
 
   protected async borrar(): Promise<void> {
     if (!this.confirmar()) { this.confirmar.set(true); return; }
-    await this.g.borrarMantenimiento(this.editando()!.id);
-    this.dlg().nativeElement.close();
-    this.g.recargar();
+    try {
+      await this.g.borrarMantenimiento(this.editando()!.id);
+      this.dlg().nativeElement.close();
+      this.g.recargar();
+    } catch (err) {
+      // si no se pudo, se dice y el botón vuelve a pedir confirmación
+      this.confirmar.set(false);
+      this.errores.set(erroresDe(err));
+    }
   }
 
   protected fuera(e: MouseEvent): void { if (e.target === this.dlg().nativeElement) this.dlg().nativeElement.close(); }

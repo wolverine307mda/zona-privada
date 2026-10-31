@@ -309,9 +309,15 @@ export class Deudas {
 
   protected async borrar(): Promise<void> {
     if (!this.confirmar()) { this.confirmar.set(true); return; }
-    await this.g.borrarDeuda(this.editando()!.id);
-    this.dlgDeuda().nativeElement.close();
-    this.g.recargar();
+    try {
+      await this.g.borrarDeuda(this.editando()!.id);
+      this.dlgDeuda().nativeElement.close();
+      this.g.recargar();
+    } catch (err) {
+      // si no se pudo, se dice y el botón vuelve a pedir confirmación
+      this.confirmar.set(false);
+      this.errores.set(erroresDe(err));
+    }
   }
 
   private soltar?: () => void;

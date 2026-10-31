@@ -169,9 +169,15 @@ export class DialogoMovimiento {
 
   protected async borrar(): Promise<void> {
     if (!this.confirmarBorrado()) { this.confirmarBorrado.set(true); return; }
-    await this.gastos.borrarMovimiento(this.id()!);
-    this.cerrar();
-    this.gastos.recargar();
+    try {
+      await this.gastos.borrarMovimiento(this.id()!);
+      this.cerrar();
+      this.gastos.recargar();
+    } catch (err) {
+      // si no se pudo, se dice y el botón vuelve a pedir confirmación
+      this.confirmarBorrado.set(false);
+      this.errores.set(erroresDe(err));
+    }
   }
 
   protected cerrar(): void { this.dialogo().nativeElement.close(); }
