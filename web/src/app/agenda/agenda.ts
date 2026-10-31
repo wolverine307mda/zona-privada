@@ -4,11 +4,16 @@ import { Errores, erroresDe } from '../gastos/gastos.service';
 import { seguirTeclado } from '../gastos/teclado';
 import { MESES } from '../gastos/modelo';
 import {
-  AVISOS_DIA, AVISOS_HORA, AgendaService, Aparicion, COLORES_EVENTO, EstadoAgenda, REPETICIONES, Repeticion, TipoEvento,
-  colorEvento, hora, iso, mismoDia,
+  AVISOS_DIA, AVISOS_HORA, AgendaService, Aparicion, COLORES_EVENTO, DIAS_SEMANA, EstadoAgenda, Horario, REPETICIONES, Repeticion, TipoEvento,
+  colorEvento, diaHorario, hora, iso, mismoDia, textoHorario,
 } from './agenda.service';
 
 interface Dia { fecha: Date; delMes: boolean; hoy: boolean; eventos: Aparicion[]; }
+interface Bloque { a: Aparicion; top: number; alto: number; izq: number; ancho: number; }
+
+const PX_HORA = 48; // alto de una hora en la vista del día
+const minutos = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const leer = (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 
 const MENSAJES: Record<string, string> = {
   ok: 'Google Calendar enlazado: sus eventos ya salen aquí.',
@@ -18,8 +23,8 @@ const MENSAJES: Record<string, string> = {
   'sin-configurar': 'Falta configurar Google en el servidor (mira Seguridad › Apps conectadas).',
 };
 
-// Agenda: el mes en rejilla (lunes primero) con los eventos propios y los de Google, el día elegido en lista
-// y los recordatorios pendientes. Un evento puede repetirse y avisar por correo o WhatsApp.
+// Agenda: el mes en rejilla (lunes primero) con los eventos propios y los de Google, el día elegido por horas
+// (con tu horario de trabajo de fondo) o en lista, y los recordatorios pendientes. Un evento puede repetirse y avisar por correo o WhatsApp.
 @Component({
   selector: 'app-agenda',
   templateUrl: './agenda.html',
@@ -54,6 +59,92 @@ export class Agenda {
     });
   });
   protected readonly delDia = computed(() => this.del(this.elegido()));
+
+  // ---- el día por horas, con el horario de trabajo de fondo ----
+  protected readonly pxHora = PX_HORA;
+  protected readonly vista = signal<'horas' | 'lista'>(leer('agenda-vista', 'horas') as 'horas' | 'lista');
+  protected readonly reloj = signal(new Date());
+  protected readonly horario = computed(() => this.estado()?.horario ?? null);
+  protected readonly textoHorario = textoHorario;
+  protected readonly trabajaHoy = computed(() => { const h = this.horario(); return !!h?.activo && h.dias.includes(diaHorario(this.elegido())); });
+  protected readonly linea = computed(() => {
+    const d = this.elegido();
+    const inicioDia = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const eventos = this.delDia();
+    const items = eventos.filter((a) => !a.todoElDia).map((a) => {
+      const i = Math.max(0, (new Date(a.inicio).getTime() - inicioDia) / 60000);
+      const f = Math.min(1440, Math.max(a.fin ? (new Date(a.fin).getTime() - inicioDia) / 60000 : i + 30, i + 25));
+      return { a, i, f, col: 0 };
+    }).sort((x, y) => x.i - y.i || y.f - x.f);
+    const h = this.horario();
+    const trabaja = this.trabajaHoy() && h ? { i: minutos(h.entrada), f: minutos(h.salida) } : null;
+    let desde = 7 * 60, hasta = 22 * 60;
+    if (trabaja) { desde = Math.min(desde, trabaja.i); hasta = Math.max(hasta, trabaja.f); }
+    for (const x of items) { desde = Math.min(desde, x.i); hasta = Math.max(hasta, x.f); }
+    const h0 = Math.floor(desde / 60), h1 = Math.min(24, Math.ceil(hasta / 60));
+    // los que se pisan van en columnas, uno al lado del otro
+    const finCol: number[] = [];
+    for (const x of items) {
+      let c = finCol.findIndex((fin) => fin <= x.i);
+      if (c < 0) { c = finCol.length; finCol.push(x.f); } else finCol[c] = x.f;
+      x.col = c;
+    }
+    const y = (min: number) => ((min - h0 * 60) / 60) * PX_HORA;
+    const bloques: Bloque[] = items.map((x) => {
+      const n = Math.max(...items.filter((o) => o.i < x.f && o.f > x.i).map((o) => o.col)) + 1;
+      return { a: x.a, top: y(x.i), alto: Math.max(22, y(x.f) - y(x.i)), izq: (x.col / n) * 100, ancho: 100 / n };
+    });
+    const ahora = this.reloj();
+    const minAhora = ahora.getHours() * 60 + ahora.getMinutes();
+    return {
+      h0, alto: (h1 - h0) * PX_HORA, horas: Array.from({ length: h1 - h0 }, (_, k) => h0 + k), bloques,
+      todoDia: eventos.filter((a) => a.todoElDia),
+      trabajo: trabaja && h ? { top: y(trabaja.i), alto: y(trabaja.f) - y(trabaja.i), texto: h.nombre + ' · ' + h.entrada.replace(/^0/, '') + '–' + h.salida.replace(/^0/, '') } : null,
+      ahora: mismoDia(d, ahora) && minAhora >= h0 * 60 && minAhora <= h1 * 60 ? y(minAhora) : null,
+    };
+  });
+
+  protected ponerVista(v: 'horas' | 'lista'): void {
+    this.vista.set(v);
+    try { localStorage.setItem('agenda-vista', v); } catch { /* sin almacenamiento */ }
+  }
+
+  // pulsar un hueco del día crea un evento a esa hora (redondeada a la media hora)
+  protected nuevoEn(e: MouseEvent, h0: number): void {
+    const t = e.target as HTMLElement;
+    if (t !== e.currentTarget && !t.classList.contains('linea__hora') && !t.classList.contains('linea__trabajo')) return;
+    const caja = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const min = h0 * 60 + Math.floor((((e.clientY - caja.top) / PX_HORA) * 60) / 30) * 30;
+    this.nuevo('Evento', this.elegido(), Math.min(23 * 60 + 30, min));
+  }
+
+  // ---- mi horario ----
+  private readonly dlgHorario = viewChild.required<ElementRef<HTMLDialogElement>>('dialogoHorario');
+  protected readonly diasSemana = DIAS_SEMANA;
+  protected readonly hz = signal<Horario>({ activo: true, nombre: 'Trabajo', dias: [1, 2, 3, 4, 5], entrada: '08:30', salida: '17:30' });
+  protected readonly erroresHorario = signal<string[]>([]);
+
+  protected abrirHorario(): void {
+    this.hz.set(this.horario() ? { ...this.horario()! } : { activo: true, nombre: 'Trabajo', dias: [1, 2, 3, 4, 5], entrada: '08:30', salida: '17:30' });
+    this.erroresHorario.set([]);
+    this.dlgHorario().nativeElement.showModal();
+  }
+
+  protected alternarDia(n: number): void {
+    this.hz.update((h) => ({ ...h, dias: h.dias.includes(n) ? h.dias.filter((x) => x !== n) : [...h.dias, n].sort() }));
+  }
+
+  protected async guardarHorario(e: Event): Promise<void> {
+    e.preventDefault();
+    try {
+      const h = await this.api.guardarHorario(this.hz());
+      this.estado.update((s) => (s ? { ...s, horario: h } : s));
+      this.dlgHorario().nativeElement.close();
+      this.aviso.set(h.activo ? 'Horario guardado: ' + textoHorario(h) + '. Te aviso si una cita cae dentro.' : 'Horario desactivado.');
+    } catch (err) {
+      this.erroresHorario.set(Object.values(erroresDe(err)).flat());
+    }
+  }
   protected readonly recordatorios = computed(() => this.pendientes().filter((a) => a.tipo === 'Recordatorio'));
 
   // ---- diálogo ----
@@ -88,9 +179,11 @@ export class Agenda {
     this.cargar();
     this.api.estado().then((e) => this.estado.set(e)).catch(() => {});
     // lo que apunta el asistente desde cualquier pantalla
-    const recargar = () => this.cargar();
+    const recargar = () => { this.cargar(); this.api.estado().then((e) => this.estado.set(e)).catch(() => {}); };
     window.addEventListener('mda:agenda', recargar);
-    inject(DestroyRef).onDestroy(() => window.removeEventListener('mda:agenda', recargar));
+    // la raya de «ahora» en la vista del día
+    const t = setInterval(() => this.reloj.set(new Date()), 60_000);
+    inject(DestroyRef).onDestroy(() => { window.removeEventListener('mda:agenda', recargar); clearInterval(t); });
   }
 
   private del(f: Date): Aparicion[] {
@@ -145,16 +238,17 @@ export class Agenda {
   }
 
   // ---- crear y editar ----
-  protected nuevo(tipo: TipoEvento = 'Evento', dia?: Date): void {
+  protected nuevo(tipo: TipoEvento = 'Evento', dia?: Date, enMinuto?: number): void {
     const f = dia ?? this.elegido();
     const ahora = new Date();
-    const h = mismoDia(f, ahora) ? Math.min(23, ahora.getHours() + 1) : 10;
+    const h = enMinuto != null ? Math.floor(enMinuto / 60) : mismoDia(f, ahora) ? Math.min(23, ahora.getHours() + 1) : 10;
+    const m = String(enMinuto != null ? enMinuto % 60 : 0).padStart(2, '0');
     this.editando.set(null);
     this.tipo.set(tipo);
     this.tituloEv.set('');
     this.fecha.set(iso(f));
-    this.horaIni.set(`${String(h).padStart(2, '0')}:00`);
-    this.horaFin.set(`${String((h + 1) % 24).padStart(2, '0')}:00`);
+    this.horaIni.set(`${String(h).padStart(2, '0')}:${m}`);
+    this.horaFin.set(`${String((h + 1) % 24).padStart(2, '0')}:${m}`);
     this.todoElDia.set(false);
     this.lugar.set('');
     this.notas.set('');

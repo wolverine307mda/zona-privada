@@ -15,7 +15,19 @@ export interface EventoEntrada {
   tipo: TipoEvento; titulo: string; notas: string | null; lugar: string | null; inicio: string; fin: string | null; todoElDia: boolean;
   color: string; repetir: Repeticion; repetirHasta: string | null; avisoMinutos: number | null; porCorreo: boolean; porWhatsApp: boolean; porPush: boolean; porTelegram?: boolean; enGoogle: boolean; hecho: boolean;
 }
-export interface EstadoAgenda { canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; google: { configurado: boolean; conectado: boolean; cuenta: string | null }; }
+// tu horario de trabajo: días 1 = lunes … 7 = domingo; horas «08:30»
+export interface Horario { activo: boolean; nombre: string; dias: number[]; entrada: string; salida: string; }
+export interface EstadoAgenda { canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; google: { configurado: boolean; conectado: boolean; cuenta: string | null }; horario: Horario | null; }
+export const DIAS_SEMANA = [{ n: 1, c: 'L', l: 'lunes' }, { n: 2, c: 'M', l: 'martes' }, { n: 3, c: 'X', l: 'miércoles' }, { n: 4, c: 'J', l: 'jueves' }, { n: 5, c: 'V', l: 'viernes' }, { n: 6, c: 'S', l: 'sábado' }, { n: 7, c: 'D', l: 'domingo' }];
+export const diaHorario = (d: Date) => (d.getDay() === 0 ? 7 : d.getDay());
+// «L–V · 8:30–17:30»
+export const textoHorario = (h: Horario) => {
+  const d = [...h.dias].sort();
+  const dias = d.length === 7 ? 'Todos los días' : d.join() === '1,2,3,4,5' ? 'L–V' : d.length > 2 && d[d.length - 1] - d[0] === d.length - 1
+    ? `${DIAS_SEMANA[d[0] - 1].c}–${DIAS_SEMANA[d[d.length - 1] - 1].c}` : d.map((x) => DIAS_SEMANA[x - 1].c).join(' ');
+  const c = (t: string) => t.replace(/^0/, '');
+  return `${dias} · ${c(h.entrada)}–${c(h.salida)}`;
+};
 
 export const COLORES_EVENTO: { id: string; color: string }[] = [
   { id: '', color: 'var(--brand)' }, { id: 'naranja', color: '#ff8a3d' }, { id: 'rojo', color: '#ff5a5f' }, { id: 'rosa', color: '#ff5fa2' },
@@ -51,6 +63,8 @@ export class AgendaService {
   }
   hecho(id: number, hecho: boolean) { return firstValueFrom(this.http.post(`/api/agenda/${id}/hecho`, null, { params: { hecho } })); }
   borrar(id: number) { return firstValueFrom(this.http.delete(`/api/agenda/${id}`)); }
+  horario() { return firstValueFrom(this.http.get<Horario | null>('/api/agenda/horario')); }
+  guardarHorario(h: Horario) { return firstValueFrom(this.http.put<Horario>('/api/agenda/horario', h)); }
   desconectarGoogle() { return firstValueFrom(this.http.delete('/api/conexiones/google')); }
 }
 

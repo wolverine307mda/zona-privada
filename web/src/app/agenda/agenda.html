@@ -6,6 +6,9 @@
     <button class="mes__hoy" type="button" (click)="hoy()">Hoy</button>
   </div>
   <div class="acciones">
+    <button class="button button--ghost boton-horario" type="button" (click)="abrirHorario()" [title]="horario()?.activo ? textoHorario(horario()!) : 'Pon tu horario de trabajo'">
+      💼 <span>{{ horario()?.activo ? textoHorario(horario()!) : 'Mi horario' }}</span>
+    </button>
     <button class="button button--ghost" type="button" (click)="nuevo('Recordatorio')">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg> Recordatorio
     </button>
@@ -56,7 +59,37 @@
 
   <aside class="lado">
     <section class="caja">
-      <header class="caja__cab"><h3 class="primera">{{ diaLargo(elegido()) }}</h3><button class="enlace" type="button" (click)="nuevo('Evento')">+ Añadir</button></header>
+      <header class="caja__cab">
+        <h3 class="primera">{{ diaLargo(elegido()) }}</h3>
+        <div class="vistas" role="group" aria-label="Cómo ver el día">
+          <button type="button" [attr.aria-pressed]="vista() === 'horas'" (click)="ponerVista('horas')">Horas</button>
+          <button type="button" [attr.aria-pressed]="vista() === 'lista'" (click)="ponerVista('lista')">Lista</button>
+        </div>
+        <button class="enlace" type="button" (click)="nuevo('Evento')">+ Añadir</button>
+      </header>
+      @if (vista() === 'horas') {
+        @if (linea(); as l) {
+          @if (l.todoDia.length) {
+            <div class="todo-dia">
+              @for (a of l.todoDia; track a.clave) { <button type="button" class="chip-ev" [style.--c]="colorEvento(a.color)" [class.hecho]="a.hecho" (click)="abrir(a)">{{ a.titulo }}</button> }
+            </div>
+          }
+          <div class="linea" [style.height.px]="l.alto" [style.--px]="pxHora + 'px'" (click)="nuevoEn($event, l.h0)" title="Pulsa un hueco para añadir algo a esa hora">
+            @for (h of l.horas; track h) { <div class="linea__hora" [style.top.px]="(h - l.h0) * pxHora"><span>{{ h }}:00</span></div> }
+            @if (l.trabajo; as t) { <div class="linea__trabajo" [style.top.px]="t.top" [style.height.px]="t.alto"><span>💼 {{ t.texto }}</span></div> }
+            @for (b of l.bloques; track b.a.clave) {
+              <button type="button" class="bloque" [class.bloque--corto]="b.alto < 40" [class.bloque--rec]="b.a.tipo === 'Recordatorio'" [class.hecho]="b.a.hecho" [style.--c]="colorEvento(b.a.color)"
+                      [style.top.px]="b.top" [style.height.px]="b.alto" [style.left]="'calc(52px + (100% - 56px) * ' + b.izq / 100 + ')'" [style.width]="'calc((100% - 56px) * ' + b.ancho / 100 + ' - 3px)'"
+                      (click)="abrir(b.a)">
+                <strong>{{ b.a.tipo === 'Recordatorio' ? '⏰ ' : '' }}{{ b.a.titulo }}</strong>
+                <small>{{ hora(b.a.inicio) }}{{ b.a.fin ? '–' + hora(b.a.fin) : '' }}{{ b.a.lugar ? ' · ' + b.a.lugar : '' }}</small>
+              </button>
+            }
+            @if (l.ahora != null) { <div class="linea__ahora" [style.top.px]="l.ahora" aria-hidden="true"></div> }
+          </div>
+          @if (!horario()) { <p class="nada">¿Trabajas? <button class="enlace" type="button" (click)="abrirHorario()">Pon tu horario</button> y lo verás aquí de fondo.</p> }
+        }
+      } @else {
       @for (a of delDia(); track a.clave) {
         <button class="ev" type="button" [style.--c]="colorEvento(a.color)" [class.hecho]="a.hecho" (click)="abrir(a)">
           <span class="ev__hora">{{ a.todoElDia ? 'Todo el día' : hora(a.inicio) }}@if (a.fin && !a.todoElDia) {<small>{{ hora(a.fin) }}</small>}</span>
@@ -75,6 +108,7 @@
         </button>
       } @empty {
         <p class="nada">Nada este día. <button class="enlace" type="button" (click)="nuevo('Evento')">Añade algo</button></p>
+      }
       }
     </section>
 
@@ -185,6 +219,45 @@
       @if (editando()) { <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmar() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button> }
       <button class="button button--ghost" type="button" (click)="dialogo.close()">Cancelar</button>
       <button class="button" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- mi horario de trabajo -->
+<dialog class="dlg" #dialogoHorario (click)="$event.target === dialogoHorario && dialogoHorario.close()" aria-labelledby="dlg-hz-t">
+  <form class="dlg__caja" (submit)="guardarHorario($event)" novalidate>
+    <header class="dlg__cabeza">
+      <h2 id="dlg-hz-t">Mi horario</h2>
+      <button class="dlg__x" type="button" (click)="dialogoHorario.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+    </header>
+    <p class="dlg__lead">Se pinta de fondo en el día y te aviso cuando una cita (médico, gestiones…) cae dentro. También se lo puedes decir al asistente o al bot: «curro de 8:30 a 17:30».</p>
+
+    <label class="campo"><span class="campo__etiqueta">Nombre</span>
+      <input class="campo__input" type="text" maxlength="40" [value]="hz().nombre" (input)="hz.set({ ...hz(), nombre: valor($event) })"></label>
+
+    <div class="campo">
+      <span class="campo__etiqueta">Días</span>
+      <div class="dias-hz" role="group" aria-label="Días que trabajas">
+        @for (d of diasSemana; track d.n) {
+          <button type="button" [class.on]="hz().dias.includes(d.n)" [attr.aria-pressed]="hz().dias.includes(d.n)" [attr.aria-label]="d.l" (click)="alternarDia(d.n)">{{ d.c }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="fila2">
+      <label class="campo"><span class="campo__etiqueta">Entras</span><input class="campo__input" type="time" [value]="hz().entrada" (input)="hz.set({ ...hz(), entrada: valor($event) })"></label>
+      <label class="campo"><span class="campo__etiqueta">Sales</span><input class="campo__input" type="time" [value]="hz().salida" (input)="hz.set({ ...hz(), salida: valor($event) })"></label>
+    </div>
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="hz().activo" (change)="hz.set({ ...hz(), activo: marcado($event) })">
+      <span class="interruptor__pista" aria-hidden="true"></span><span>Activo</span>
+    </label>
+
+    @for (e of erroresHorario(); track e) { <p class="error">{{ e }}</p> }
+    <footer class="dlg__pie">
+      <button class="button button--ghost" type="button" (click)="dialogoHorario.close()">Cancelar</button>
+      <button class="button" type="submit">Guardar</button>
     </footer>
   </form>
 </dialog>

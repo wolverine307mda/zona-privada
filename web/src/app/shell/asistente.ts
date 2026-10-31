@@ -2,17 +2,17 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AgendaService, EventoEntrada } from '../agenda/agenda.service';
+import { AgendaService, DIAS_SEMANA, EventoEntrada, Horario, textoHorario } from '../agenda/agenda.service';
 import { AsistenteService } from '../core/asistente.service';
 import { GastosService, MovimientoEntrada, erroresDe } from '../gastos/gastos.service';
 import { seguirTeclado } from '../gastos/teclado';
 import { CATEGORIAS, FRECUENCIAS, Movimiento, categoria, euros } from '../gastos/modelo';
 
-type Clase = 'movimiento' | 'agenda' | 'hucha' | 'pregunta' | 'nada';
+type Clase = 'movimiento' | 'agenda' | 'hucha' | 'horario' | 'pregunta' | 'nada';
 interface AporteHucha { id: number; nombre: string; emoji: string; importe: number; }
 interface Propuesta {
   clase: Clase; resumen: string; movimiento: MovimientoEntrada | null; evento: EventoEntrada | null; hucha: AporteHucha | null;
-  dudas: string[] | null; respuesta: string | null;
+  dudas: string[] | null; respuesta: string | null; horario: Horario | null;
 }
 interface Hecho { texto: string; deshacer: () => Promise<unknown>; ver?: () => void; deshecho?: boolean; }
 
@@ -26,7 +26,8 @@ const Reconocimiento = (globalThis as unknown as { SpeechRecognition?: Construct
 
 const EJEMPLOS = [
   'ayer 12 € en el Mercadona', 'cobré la nómina 1.450 €', 'recuérdame mañana a las 9 llamar al taller', 'luz unos 60 € cada mes',
-  'dentista el jueves a las 16:00', '50 € a la hucha', '¿cuánto llevo en restaurantes?', '¿cuánto tengo?',
+  'médico el martes de 10 a 11 en el centro de salud', 'curro de 8:30 a 17:30', '¿qué tengo mañana?',
+  '50 € a la hucha', '¿cuánto llevo en restaurantes?', '¿cuánto tengo?',
 ];
 
 // Dos dígitos: para pasar fechas a los campos de fecha y hora del navegador
@@ -127,6 +128,14 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
                     } @else {
                       <label class="campo"><span>Cuándo</span>
                         <input type="datetime-local" [value]="aLocal(e.inicio)" (input)="ponerMomento($any($event.target).value)"></label>
+                      @if (e.fin) {
+                        <label class="campo"><span>Hasta</span>
+                          <input type="time" [value]="aLocal(e.fin).slice(11, 16)" (input)="ponerFin($any($event.target).value)"></label>
+                      }
+                    }
+                    @if (e.tipo === 'Evento') {
+                      <label class="campo campo--ancho"><span>Dónde <em>(opcional)</em></span>
+                        <input type="text" [value]="e.lugar ?? ''" maxlength="200" placeholder="Centro de salud, clínica…" (input)="cambiarEv({ lugar: $any($event.target).value || null })"></label>
                     }
                   </div>
                   <p class="extra">🔔 Te aviso {{ e.todoElDia ? 'ese día a las 9' : e.avisoMinutos ? e.avisoMinutos + ' min antes' : 'a esa hora' }} con notificación{{ e.porCorreo ? ' y correo' : '' }}.</p>
@@ -143,6 +152,21 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
                     <input type="number" inputmode="decimal" step="0.01" min="0.01" [value]="importeTexto()" [style.width.ch]="ancho()" (input)="teclearImporte($any($event.target).value)" aria-label="Importe">
                     <span>€</span>
                   </div>
+                }
+              }
+              @case ('horario') {
+                @if (hz(); as h) {
+                  <div class="fila-tipo"><span class="pastilla">💼 Horario de trabajo</span><span class="chip">{{ textoHorario(h) }}</span></div>
+                  <div class="dias-hz" role="group" aria-label="Días que trabajas">
+                    @for (d of diasSemana; track d.n) {
+                      <button type="button" [class.on]="h.dias.includes(d.n)" [attr.aria-pressed]="h.dias.includes(d.n)" [attr.aria-label]="d.l" (click)="alternarDia(d.n)">{{ d.c }}</button>
+                    }
+                  </div>
+                  <div class="campos">
+                    <label class="campo"><span>Entras</span><input type="time" [value]="h.entrada" (input)="hz.set({ ...h, entrada: $any($event.target).value })"></label>
+                    <label class="campo"><span>Sales</span><input type="time" [value]="h.salida" (input)="hz.set({ ...h, salida: $any($event.target).value })"></label>
+                  </div>
+                  <p class="extra">Se pinta en el calendario y te aviso si una cita cae dentro.</p>
                 }
               }
               @case ('pregunta') { <p class="respuesta">{{ p.respuesta }}</p> }
@@ -233,6 +257,10 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .selector::before { content: ''; position: absolute; left: 12px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--c); pointer-events: none; }
     .selector select { padding-left: 30px; }
     .extra { margin: 0; font-size: 13px; color: var(--soft); }
+    .dias-hz { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dias-hz button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--linea); background: var(--tarjeta); color: var(--soft); font: 600 13px var(--font-text); cursor: pointer; }
+    .dias-hz button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+    .respuesta { white-space: pre-line; }
     .hucha { display: flex; align-items: center; gap: 12px; }
     .hucha__emoji { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--tarjeta-2); font-size: 26px; }
     .hucha small { display: block; font-size: 12px; color: var(--soft); }
@@ -281,6 +309,9 @@ export class Asistente {
   protected readonly mov = signal<MovimientoEntrada | null>(null);
   protected readonly ev = signal<EventoEntrada | null>(null);
   protected readonly hu = signal<AporteHucha | null>(null);
+  protected readonly hz = signal<Horario | null>(null);
+  protected readonly diasSemana = DIAS_SEMANA;
+  protected readonly textoHorario = textoHorario;
   protected readonly pensando = signal(false);
   protected readonly escuchando = signal(false);
   protected readonly guardando = signal(false);
@@ -297,6 +328,7 @@ export class Asistente {
       case 'movimiento': return this.mov()?.tipo === 'Ingreso' ? 'Apuntar ingreso' : 'Apuntar gasto';
       case 'agenda': return this.ev()?.tipo === 'Recordatorio' ? 'Guardar recordatorio' : 'Guardar evento';
       case 'hucha': return (this.hu()?.importe ?? 0) < 0 ? 'Sacar de la hucha' : 'Meter en la hucha';
+      case 'horario': return 'Guardar horario';
       default: return null;
     }
   });
@@ -340,7 +372,7 @@ export class Asistente {
   private limpiar(): void {
     this.texto.set('');
     this.propuesta.set(null);
-    this.mov.set(null); this.ev.set(null); this.hu.set(null);
+    this.mov.set(null); this.ev.set(null); this.hu.set(null); this.hz.set(null);
     this.error.set('');
   }
 
@@ -365,6 +397,7 @@ export class Asistente {
         this.mov.set(p.movimiento ? { ...p.movimiento } : null);
         this.ev.set(p.evento ? { ...p.evento } : null);
         this.hu.set(p.hucha ? { ...p.hucha } : null);
+        this.hz.set(p.horario ? { ...p.horario } : null);
         const imp = p.movimiento?.importe ?? Math.abs(p.hucha?.importe ?? 0);
         this.importeTexto.set(imp.toFixed(2));
         this.ancho.set(Math.max(3, imp.toFixed(2).length - 0.2));
@@ -388,7 +421,19 @@ export class Asistente {
   protected ponerMomento(v: string): void {
     if (!v) return;
     const ini = new Date(v);
-    this.ev.update((e) => (e ? { ...e, inicio: ini.toISOString(), fin: e.fin ? new Date(ini.getTime() + 3600_000).toISOString() : null } : e));
+    // se conserva lo que dura
+    this.ev.update((e) => (e ? { ...e, inicio: ini.toISOString(), fin: e.fin ? new Date(ini.getTime() + (new Date(e.fin).getTime() - new Date(e.inicio).getTime())).toISOString() : null } : e));
+  }
+  protected ponerFin(v: string): void {
+    const e = this.ev();
+    if (!v || !e) return;
+    const [h, m] = v.split(':').map(Number);
+    const fin = new Date(e.inicio);
+    fin.setHours(h, m, 0, 0);
+    if (fin > new Date(e.inicio)) this.cambiarEv({ fin: fin.toISOString() });
+  }
+  protected alternarDia(n: number): void {
+    this.hz.update((h) => (h ? { ...h, dias: h.dias.includes(n) ? h.dias.filter((x) => x !== n) : [...h.dias, n].sort() } : h));
   }
   protected ponerDia(v: string): void {
     if (!v) return;
@@ -418,6 +463,7 @@ export class Asistente {
       if (p.clase === 'movimiento' && this.mov()) h = await this.guardarMovimiento(this.mov()!);
       else if (p.clase === 'agenda' && this.ev()) h = await this.guardarEvento(this.ev()!);
       else if (p.clase === 'hucha' && this.hu()) h = await this.guardarHucha(this.hu()!);
+      else if (p.clase === 'horario' && this.hz()) h = await this.guardarHorario(this.hz()!);
       if (h) {
         this.hecho.set(h);
         this.historial.update((l) => [h!, ...l].slice(0, 4));
@@ -463,6 +509,20 @@ export class Asistente {
       texto: `${h.emoji} ${h.importe < 0 ? 'Sacado de' : 'Metido en'} ${h.nombre}: ${euros(Math.abs(h.importe))}`,
       deshacer: async () => { await this.gastos.aportar(h.id, -h.importe); this.gastos.recargar(); },
       ver: () => { this.cerrar(); this.router.navigate(['/gastos/huchas']); },
+    };
+  }
+
+  private async guardarHorario(h: Horario): Promise<Hecho> {
+    const antes = await this.agenda.horario().catch(() => null);
+    await this.agenda.guardarHorario(h);
+    window.dispatchEvent(new Event('mda:agenda'));
+    return {
+      texto: `💼 Horario guardado: ${textoHorario(h)}`,
+      deshacer: async () => {
+        await this.agenda.guardarHorario(antes ?? { ...h, activo: false });
+        window.dispatchEvent(new Event('mda:agenda'));
+      },
+      ver: () => { this.cerrar(); this.router.navigate(['/agenda']); },
     };
   }
 

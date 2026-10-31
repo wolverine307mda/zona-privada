@@ -28,7 +28,9 @@ public class Conversacion(
         "💸 <i>ayer 12 € en el Mercadona</i>\n" +
         "💰 <i>cobré la nómina 1.450 €</i>\n" +
         "⏰ <i>recuérdame mañana a las 9 llamar al taller</i>\n" +
-        "📅 <i>dentista el jueves a las 16:00</i>\n" +
+        "📅 <i>cita con el médico el jueves de 10 a 11 en el centro de salud</i>\n" +
+        "💼 <i>curro de 8:30 a 17:30 de lunes a viernes</i>\n" +
+        "🗓️ <i>¿qué tengo mañana?</i>\n" +
         "🐷 <i>50 € a la hucha del viaje</i>\n" +
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
         "🌦️ <i>¿va a llover mañana?</i>\n\n" +
@@ -75,7 +77,7 @@ public class Conversacion(
         var p = Interprete.Entender(texto, ctx);
         if (p.Pregunta is { } q)
         {
-            await bot.Enviar(await AsistenteEndpoints.Responder(db, tiempo, q, DateOnly.FromDateTime(ctx.Ahora), ct), ct: ct);
+            await bot.Enviar(await AsistenteEndpoints.Responder(db, tiempo, zona, q, DateOnly.FromDateTime(ctx.Ahora), ct), ct: ct);
             return;
         }
         if (p.Clase == "nada") { await bot.Enviar(p.Resumen, ct: ct); return; }
@@ -136,6 +138,7 @@ public class Conversacion(
             "movimiento" when p.Movimiento is { } m => await GastosEndpoints.Crear(m, db, avisos, log, ct),
             "agenda" when p.Evento is { } e => await AgendaEndpoints.Crear(e, db, google, con, zona, reloj, ct),
             "hucha" when p.Hucha is { } h => await Cartera.Aportar(h.Id, new Aportacion(h.Importe), db, ct),
+            "horario" when p.Horario is { } hz => await Horario.Poner(db, hz, ct),
             _ => Results.BadRequest(),
         };
         if (r is ValidationProblem v) return (false, string.Join(" ", v.ProblemDetails.Errors.SelectMany(x => x.Value)), null);
@@ -143,7 +146,8 @@ public class Conversacion(
         return valor switch
         {
             Movimiento mv => (true, $"Apuntado: {p.Resumen}", $"dm:{mv.Id}"),
-            Hucha h => (true, $"{p.Resumen}. Ahora hay {Cartera.Euros(h.Ahorrado)}.", $"dh:{h.Id}:{p.Hucha!.Importe.ToString(CultureInfo.InvariantCulture)}"),
+            Horario hz => (true, $"Horario guardado: {hz.Texto()}. Lo verás en el calendario y te avisaré si una cita cae dentro.", null),
+            Hucha h => (true,$"{p.Resumen}. Ahora hay {Cartera.Euros(h.Ahorrado)}.", $"dh:{h.Id}:{p.Hucha!.Importe.ToString(CultureInfo.InvariantCulture)}"),
             not null when p.Clase == "agenda" && valor.GetType().GetProperty("Id")?.GetValue(valor) is int id => (true, $"En la agenda: {p.Resumen}", $"de:{id}"),
             _ => (false, "No se ha podido guardar. Prueba desde la app.", null),
         };
@@ -179,19 +183,11 @@ public class Conversacion(
 
         if (await tiempo.Leer(ct) is { } p) sb.Append('\n').Append(H(ServicioTiempo.Frase(p, hoy, hoy))).Append('\n');
 
-        var inicio = new DateTimeOffset(local.Date, zona.Info.GetUtcOffset(local.Date));
-        var lista = (await AgendaEndpoints.Apariciones(db, inicio, inicio.AddDays(1), zona, ct))
-            .Where(a => !(a.Tipo == TipoEvento.Recordatorio && a.Hecho)).OrderBy(a => a.Inicio).ToList();
-        sb.Append("\n<b>Agenda</b>\n");
-        if (lista.Count == 0) sb.Append("Nada para hoy 🙌\n");
-        foreach (var a in lista)
-        {
-            var hora = a.TodoElDia ? "todo el día" : TimeZoneInfo.ConvertTime(a.Inicio, zona.Info).ToString("HH:mm");
-            sb.Append($"{(a.Tipo == TipoEvento.Recordatorio ? "⏰" : "📅")} {hora} · {H(a.Titulo)}\n");
-        }
+        // la misma respuesta que «¿qué tengo hoy?», con el horario de trabajo incluido
+        sb.Append("\n<b>Agenda</b>\n").Append(H(await AsistenteEndpoints.Agenda(db, zona, hoy, hoy, ct))).Append('\n');
 
         var q = new Pregunta(QuePregunta.Saldo, null, null, hoy, hoy, "ahora");
-        sb.Append("\n<b>Dinero</b>\n").Append(H(await AsistenteEndpoints.Responder(db, tiempo, q, hoy, ct)));
+        sb.Append("\n<b>Dinero</b>\n").Append(H(await AsistenteEndpoints.Responder(db, tiempo, zona, q, hoy, ct)));
         return sb.ToString();
     }
 

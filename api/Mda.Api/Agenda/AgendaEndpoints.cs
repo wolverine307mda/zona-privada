@@ -82,12 +82,20 @@ public static class AgendaEndpoints
 
         g.MapDelete("/{id:int}", (int id, AppDbContext db, GoogleCalendar google, CancellationToken ct) => Borrar(id, db, google, ct));
 
-        // qué canales de aviso hay y si Google está enlazado
-        g.MapGet("/estado", async (IAvisos avisos, ServicioConexiones con, CancellationToken ct) =>
+        // qué canales de aviso hay, si Google está enlazado y tu horario de trabajo
+        g.MapGet("/estado", async (IAvisos avisos, ServicioConexiones con, AppDbContext db, CancellationToken ct) =>
         {
             var c = await con.Leer(ServicioConexiones.Google, ct);
-            return Results.Ok(new { canales = avisos.Disponibles(), google = new { configurado = con.Configurado(ServicioConexiones.Google), conectado = c is not null, cuenta = c?.Cuenta } });
+            return Results.Ok(new
+            {
+                canales = avisos.Disponibles(),
+                google = new { configurado = con.Configurado(ServicioConexiones.Google), conectado = c is not null, cuenta = c?.Cuenta },
+                horario = await Horario.Leer(db, ct),
+            });
         });
+
+        g.MapGet("/horario", async (AppDbContext db, CancellationToken ct) => Results.Ok(await Horario.Leer(db, ct)));
+        g.MapPut("/horario", (Horario h, AppDbContext db, CancellationToken ct) => Horario.Poner(db, h, ct));
     }
 
     // crear y borrar (los usan la API y el bot de Telegram)

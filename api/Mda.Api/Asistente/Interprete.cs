@@ -8,17 +8,18 @@ namespace Mda.Api.Asistente;
 
 public record HuchaConocida(int Id, string Nombre, string Emoji);
 public record AporteHucha(int Id, string Nombre, string Emoji, decimal Importe);
-public enum QuePregunta { Saldo, Gastado, Ingresado, Tiempo }
+public enum QuePregunta { Saldo, Gastado, Ingresado, Tiempo, Agenda }
 public record Pregunta(QuePregunta Que, string? Categoria, string? Concepto, DateOnly Desde, DateOnly Hasta, string Periodo);
 
-// Lo que el asistente ha entendido de una frase. Clase: movimiento, agenda, hucha, pregunta o nada.
+// Lo que el asistente ha entendido de una frase. Clase: movimiento, agenda, hucha, horario, pregunta o nada.
 // No guarda nada: la app lo enseña, deja retocarlo y lo guarda con los endpoints de siempre.
 public record Propuesta(
     string Clase, string Resumen, MovimientoEntrada? Movimiento = null, EventoEntrada? Evento = null,
-    AporteHucha? Hucha = null, Pregunta? Pregunta = null, IReadOnlyList<string>? Dudas = null, string? Respuesta = null);
+    AporteHucha? Hucha = null, Pregunta? Pregunta = null, IReadOnlyList<string>? Dudas = null, string? Respuesta = null, Horario? Horario = null);
 
 // Lo que sabe de ti para entender mejor: la hora de casa, qué categoría sueles poner a cada concepto y tus huchas
-public record Contexto(DateTime Ahora, TimeZoneInfo Zona, IReadOnlyDictionary<string, string> Aprendido, IReadOnlyList<HuchaConocida> Huchas);
+// y tu horario de trabajo, para avisarte si una cita cae dentro
+public record Contexto(DateTime Ahora, TimeZoneInfo Zona, IReadOnlyDictionary<string, string> Aprendido, IReadOnlyList<HuchaConocida> Huchas, Horario? Horario = null);
 
 // Entiende frases sueltas en castellano, sin IA de por medio: «ayer 12 € en el Mercadona», «cobré la nómina 1.450 €»,
 // «recuérdame el viernes a las 10 llamar al taller», «50 € a la hucha de Japón», «¿cuánto llevo en restaurantes?»…
@@ -62,6 +63,20 @@ public static partial class Interprete
             .Select(x => (new Regex($@"(?<![\w&]){Regex.Escape(x.Item1)}(?![\w&])", O), x.Item2)).ToArray();
 
     // ---- frases que dicen qué es ----
+    // ---- agenda: rangos, duración, lugar, citas médicas, horario de trabajo y preguntas ----
+    private const string H1 = @"(?<h1>\d{1,2})(?:[:.h](?<m1>\d{2}))?";
+    private const string H2 = @"(?<h2>\d{1,2})(?:[:.h](?<m2>\d{2}))?";
+    private const string Dia = "lunes|martes|miercoles|jueves|viernes|sabado|domingo";
+    [GeneratedRegex(@"\b(?:de|desde)\s+(?:las?\s+)?" + H1 + @"(?:\s*h\b)?\s+(?:a|hasta)\s+(?:las?\s+)?" + H2 + @"(?:\s*(?:h|horas)\b)?(?:\s+(?:de\s+la\s+|por\s+la\s+)?(?<p>manana|tarde|noche))?", O)] private static partial Regex ReRango();
+    [GeneratedRegex(@"\bhasta\s+(?:las?\s+)" + H2 + @"(?:\s+(?:de\s+la\s+)?(?<p>manana|tarde|noche))?", O)] private static partial Regex ReHasta();
+    [GeneratedRegex(@"\b(?:durante|dura|de)\s+(?<n>una?|dos|tres|cuatro|media|\d+)\s+(?<u>horas?|h|minutos?|min)\b(?<y>\s+y\s+media)?", O)] private static partial Regex ReDuracion();
+    [GeneratedRegex(@"\ben\s+(?:el\s+|la\s+|mi\s+)?(?<l>(?:hospital|clinica|centro\s+de\s+salud|centro\s+medico|ambulatorio|consulta|consultorio|mutua|urgencias|farmacia|oficina|gimnasio|colegio|instituto|universidad|ayuntamiento|notaria|banco|peluqueria|taller|casa\s+de|calle|avenida|avda|plaza)\b(?:\s+(?!(?:a\s+las?|el\s+(?:" + Dia + @")|este|esta|el\s+\d|hoy|manana|pasado|de\s+la\s+(?:manana|tarde|noche)|por\s+la|y|para|con|de\s+\d)\b)[\w.\-ºª/]+){0,4})", O)] private static partial Regex ReLugar();
+    [GeneratedRegex(@"\b(?:medic[oa]s?|cita\s+medica|doctor[a]?|dentista|odontolog\w*|fisio\w*|hospital|centro\s+de\s+salud|ambulatorio|analisis|analitica|vacuna\w*|dermatolog\w*|oculista|oftalmolog\w*|ginecolog\w*|pediatra|traumatolog\w*|psicolog\w*|psiquiatra|urgencias|enfermer[ao]|cardiolog\w*|radiografia|resonancia|ecografia|podolog\w*|logopeda|otorrino)\b", O)] private static partial Regex ReMedico();
+    [GeneratedRegex(@"\b(?:trabajo|curro|curra\w*|trabaj\w*|mi\s+horario|horario\s+de\s+trabajo|horario\s+laboral|jornada|entro|ficho)\b", O)] private static partial Regex ReHorarioClave();
+    [GeneratedRegex(@"\bentro\s+(?:a\s+)?(?:las?\s+)?" + H1 + @"\b.*?\bsalgo\s+(?:a\s+)?(?:las?\s+)?" + H2, O)] private static partial Regex ReEntroSalgo();
+    [GeneratedRegex(@"\b(?:de|desde\s+el)\s+(?<a>" + Dia + @")\s+(?:a|al|hasta\s+el)\s+(?<b>" + Dia + @")\b", O)] private static partial Regex ReDiasRango();
+    [GeneratedRegex(@"\b(?:hoy|pasado\s+manana|el\s+\d{1,2}\b|\d{1,2}\s+de\s+(?:" + Meses + @")|(?<!(?:la|por|de)\s)manana|el\s+(?:proximo\s+)?(?:" + Dia + @")|este\s+(?:" + Dia + @"))\b", O)] private static partial Regex ReUnDia();
+    [GeneratedRegex(@"\b(?:que\s+tengo|tengo\s+algo|tengo\s+(?:alguna\s+)?cita|que\s+hay\s+(?:en\s+(?:la\s+|mi\s+)?agenda|para)|mi\s+agenda|estoy\s+libre|tengo\s+(?:el\s+dia\s+)?libre|tengo\s+hueco|que\s+me\s+toca)\b", O)] private static partial Regex RePreguntaAgenda();
     [GeneratedRegex(@"\b(?:que\s+tiempo|el\s+tiempo|tiempo\s+(?:hace|hara|va\s+a\s+hacer)|llov\w*|llueve|lluvia|temperatura|grados|hace\s+(?:frio|calor|sol|viento)|hara\s+(?:frio|calor|sol|viento|bueno|malo)|paraguas|nieva|nevara|tormenta)\b", O)] private static partial Regex ReTiempo();
     [GeneratedRegex(@"^\W*(?:cuant[oa]s?|que\s+saldo|cual\s+es\s+mi\s+saldo|mi\s+saldo|saldo\b|como\s+voy|que\s+me\s+queda|en\s+que\s+(?:he\s+)?gast)", O)] private static partial Regex RePregunta();
     [GeneratedRegex(@"\b(?:saldo|cuanto\s+(?:dinero\s+)?tengo|cuanto\s+me\s+queda|que\s+me\s+queda|dinero\s+(?:tengo|ahora)|como\s+voy)\b", O)] private static partial Regex RePreguntaSaldo();
@@ -141,6 +156,15 @@ public static partial class Interprete
         var hoy = DateOnly.FromDateTime(ctx.Ahora);
 
         var recordatorio = ReRecordatorio().IsMatch(f.Plano);
+        // «¿qué tengo mañana?», «¿estoy libre el jueves?»
+        if (!recordatorio && RePreguntaAgenda().IsMatch(f.Plano))
+        {
+            Hora(f, ctx);
+            var dia = Fecha(f, hoy, futuro: true) ?? hoy;
+            return new("pregunta", "Tu agenda", Pregunta: new(QuePregunta.Agenda, null, null, dia, dia, DiaBonito(dia, hoy)));
+        }
+        // «curro de 8:30 a 17:30 de lunes a viernes»
+        if (!recordatorio && DeHorario(f) is { } horario) return horario;
         // «¿qué tiempo hace?», «¿va a llover mañana?», «¿hará frío el sábado?» (pero «recuérdame coger el paraguas» es un recordatorio)
         if (!recordatorio && ReTiempo().IsMatch(f.Plano) && !ReImporte().IsMatch(f.Plano))
         {
@@ -152,10 +176,12 @@ public static partial class Interprete
         if (RePregunta().IsMatch(f.Plano) || f.Plano.EndsWith('?') && f.Plano.Contains("cuant")) return Preguntar(f, ctx, hoy);
 
         var suelto = ReNumeroSuelto().Match(f.Plano);
-        var deAgenda = ReEvento().IsMatch(f.Plano) || ReALas().IsMatch(f.Plano) || ReReloj().IsMatch(f.Plano);
+        var deAgenda = ReEvento().IsMatch(f.Plano) || ReALas().IsMatch(f.Plano) || ReReloj().IsMatch(f.Plano) || ReRango().IsMatch(f.Plano) || ReMedico().IsMatch(f.Plano);
+        // «médico el martes de 10 a 11:30»: con una hora o un rango y sin € ni «pagué», es una cita aunque «médico» sea de la categoría salud
+        var conHora = ReRango().IsMatch(f.Plano) || (ReALas().IsMatch(f.Plano) || ReReloj().IsMatch(f.Plano)) && ReMedico().IsMatch(f.Plano);
         var dinero = !recordatorio && (ReImporte().IsMatch(f.Plano) || ReEurosCon().IsMatch(f.Plano)
             || suelto.Success && (Regex.IsMatch(suelto.Groups[1].Value, @"[.,]\d{2}$") || !deAgenda || ReDinero().IsMatch(f.Plano)
-                || ReIngreso().IsMatch(f.Plano) || CategoriaDe(f.Plano, ctx) is not null));
+                || ReIngreso().IsMatch(f.Plano) || CategoriaDe(f.Plano, ctx) is not null && !conHora));
         var hucha = recordatorio ? null : HuchaDe(f.Plano, ctx);
         var conNumero = ReImporte().IsMatch(f.Plano) || ReNumeroSuelto().IsMatch(f.Plano);
         var esHucha = !recordatorio && conNumero && (ReHucha().IsMatch(f.Plano) || hucha is not null && (ReMeter().IsMatch(f.Plano) || ReSacar().IsMatch(f.Plano)));
@@ -240,6 +266,24 @@ public static partial class Interprete
         var (_, repeticion, diaFijo) = LeerRepeticion(f);
         f.Coger(ReSeRepite());
 
+        // «en el centro de salud de la calle Mayor»: el lugar va aparte y no ensucia el título
+        string? lugar = null;
+        if (!recordatorio && f.Coger(ReLugar()) is { } lg)
+        {
+            var l = f.Original.Substring(lg.Groups["l"].Index, lg.Groups["l"].Length).Trim();
+            lugar = char.ToUpper(l[0], Es) + l[1..];
+        }
+        var medico = !recordatorio && ReMedico().IsMatch(f.Plano);
+
+        // «de 10 a 11:30», «desde las 16 hasta las 18»
+        TimeOnly? desde = null, hasta = null;
+        if (f.Coger(ReRango()) is { } rg)
+        {
+            var franja = rg.Groups["p"].Success ? rg.Groups["p"].Value : null;
+            desde = Ajustar(int.Parse(rg.Groups["h1"].Value), rg.Groups["m1"].Success ? int.Parse(rg.Groups["m1"].Value) : 0, franja, ctx);
+            hasta = FinDe(int.Parse(rg.Groups["h2"].Value), rg.Groups["m2"].Success ? int.Parse(rg.Groups["m2"].Value) : 0, franja, desde);
+        }
+
         DateTime? exacto = null;
         if (f.Coger(ReDentroDe()) is { } dd)
         {
@@ -250,7 +294,18 @@ public static partial class Interprete
             if (!u.StartsWith("min") && !u.StartsWith('h')) exacto = null; // «dentro de 3 días» es una fecha: la hora sale aparte
             if (exacto is null) f.Desmarcar(dd); // que lo lea Fecha
         }
-        var hora = exacto is null ? Hora(f, ctx) : null;
+        var hora = exacto is null ? desde ?? Hora(f, ctx) : null;
+        // «a las 10 hasta las 12», «durante hora y media»
+        if (hora is not null && hasta is null && f.Coger(ReHasta()) is { } hs)
+            hasta = FinDe(int.Parse(hs.Groups["h2"].Value), hs.Groups["m2"].Success ? int.Parse(hs.Groups["m2"].Value) : 0, hs.Groups["p"].Success ? hs.Groups["p"].Value : null, hora);
+        TimeSpan? duracion = null;
+        if (hasta is null && f.Coger(ReDuracion()) is { } du)
+        {
+            var n = du.Groups["n"].Value switch { "un" or "una" => 1, "dos" => 2, "tres" => 3, "cuatro" => 4, "media" => 0.5, var x => double.Parse(x, CultureInfo.InvariantCulture) };
+            if (du.Groups["y"].Success) n += 0.5;
+            duracion = du.Groups["u"].Value.StartsWith('m') ? TimeSpan.FromMinutes(n) : TimeSpan.FromHours(n);
+            if (duracion <= TimeSpan.Zero || duracion > TimeSpan.FromHours(24)) duracion = null;
+        }
         var fecha = exacto is { } ex ? DateOnly.FromDateTime(ex) : Fecha(f, hoy, futuro: true);
         if (diaFijo is { } dsem && fecha is null) fecha = Proximo(hoy, dsem, incluirHoy: true);
 
@@ -285,10 +340,19 @@ public static partial class Interprete
 
         var ini = new DateTimeOffset(inicio, ctx.Zona.GetUtcOffset(inicio));
         var tipo = recordatorio ? TipoEvento.Recordatorio : TipoEvento.Evento;
-        var aviso = todoElDia ? -540 : recordatorio ? 0 : 30;
-        var ev = new EventoEntrada(tipo, titulo, null, null, ini, tipo == TipoEvento.Evento && !todoElDia ? ini.AddHours(1) : null, todoElDia, "",
+        // a las citas médicas se avisa con una hora, para que dé tiempo a llegar
+        var aviso = todoElDia ? -540 : recordatorio ? 0 : medico ? 60 : 30;
+        DateTime? finLocal = tipo == TipoEvento.Recordatorio || todoElDia ? null
+            : hasta is { } hf && inicio.Date.Add(hf.ToTimeSpan()) > inicio ? inicio.Date.Add(hf.ToTimeSpan())
+            : inicio + (duracion ?? TimeSpan.FromHours(1));
+        DateTimeOffset? fin = finLocal is { } fl ? new DateTimeOffset(fl, ctx.Zona.GetUtcOffset(fl)) : null;
+        var ev = new EventoEntrada(tipo, titulo, null, lugar, ini, fin, todoElDia, medico ? "verde" : "",
             repeticion, null, aviso, recordatorio, false, false, false, true);
-        var cuando = todoElDia ? DiaBonito(DateOnly.FromDateTime(inicio), hoy) : $"{DiaBonito(DateOnly.FromDateTime(inicio), hoy)} a las {inicio:HH:mm}";
+        if (finLocal is { } fl2 && ctx.Horario is { Activo: true } hz && hz.Pisa(inicio, fl2))
+            dudas.Add($"Cae en tu horario de {hz.Nombre.ToLower(Es)} ({Horario.Corta(hz.HoraEntrada)}–{Horario.Corta(hz.HoraSalida)}).");
+        var cuando = todoElDia ? DiaBonito(DateOnly.FromDateTime(inicio), hoy)
+            : $"{DiaBonito(DateOnly.FromDateTime(inicio), hoy)} a las {inicio:HH:mm}" + (hasta is not null || duracion is not null ? $"–{finLocal:HH:mm}" : "");
+        if (lugar is not null) cuando += $" · 📍 {lugar}";
         var rep = repeticion switch
         {
             Repeticion.Diaria => " · cada día", Repeticion.Semanal => " · cada semana",
@@ -371,6 +435,50 @@ public static partial class Interprete
     }
 
     private static string? FranjaSuelta(Frase f) => f.Coger(ReFranja()) is { } fr ? fr.Groups["p"].Value : null;
+
+    // la hora de fin de un rango: «de 10 a 1» acaba a las 13, «de 4 a 6» (ya de tarde) a las 18
+    private static TimeOnly? FinDe(int h, int m, string? franja, TimeOnly? desde)
+    {
+        if (h > 23 || m > 59) return null;
+        if (franja is "tarde" or "noche" && h < 12) h += 12;
+        if (desde is { } d && h < 12 && new TimeOnly(h, m) <= d && h + 12 < 24 && new TimeOnly(h + 12, m) > d) h += 12;
+        return new TimeOnly(h, m);
+    }
+
+    private static readonly string[] NumDia = ["", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+
+    // «curro de 8:30 a 17:30», «trabajo de lunes a jueves de 9 a 18», «entro a las 7 y salgo a las 15», «los sábados trabajo de 10 a 14»
+    // Si dice un día concreto («mañana curro de 8 a 15»), no es el horario: es un evento de ese día.
+    private static Propuesta? DeHorario(Frase f)
+    {
+        var p = f.Plano;
+        if (!ReHorarioClave().IsMatch(p) || ReEvento().IsMatch(p) || ReUnDia().IsMatch(p)) return null;
+        var m = ReEntroSalgo().Match(p);
+        if (!m.Success) m = ReRango().Match(p);
+        if (!m.Success) return null;
+        int h1 = int.Parse(m.Groups["h1"].Value), m1 = m.Groups["m1"].Success ? int.Parse(m.Groups["m1"].Value) : 0;
+        int h2 = int.Parse(m.Groups["h2"].Value), m2 = m.Groups["m2"].Success ? int.Parse(m.Groups["m2"].Value) : 0;
+        if (m.Groups["p"].Success && m.Groups["p"].Value is "tarde" or "noche" && h2 < 12) h2 += 12;
+        if (h2 * 60 + m2 <= h1 * 60 + m1 && h2 < 12) h2 += 12; // «de 8 a 3» es hasta las 15
+        if (h1 > 23 || h2 > 23 || m1 > 59 || m2 > 59 || h2 * 60 + m2 <= h1 * 60 + m1) return null;
+
+        int[] dias;
+        if (ReDiasRango().Match(p) is { Success: true } r)
+        {
+            int a = Array.IndexOf(NumDia, r.Groups["a"].Value), b = Array.IndexOf(NumDia, r.Groups["b"].Value);
+            dias = a <= b ? Enumerable.Range(a, b - a + 1).ToArray() : Enumerable.Range(a, 8 - a).Concat(Enumerable.Range(1, b)).ToArray();
+        }
+        else if (Regex.IsMatch(p, @"\b(?:todos\s+los\s+dias|cada\s+dia|a\s+diario)\b")) dias = [1, 2, 3, 4, 5, 6, 7];
+        else if (Regex.IsMatch(p, @"\bfines?\s+de\s+semana\b")) dias = [6, 7];
+        else
+        {
+            dias = Regex.Matches(p, @"\b(?<d>lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\b")
+                .Select(x => Array.IndexOf(NumDia, x.Groups["d"].Value)).Distinct().Order().ToArray();
+            if (dias.Length == 0) dias = [1, 2, 3, 4, 5]; // sin días: entre semana
+        }
+        var h = new Horario(true, "Trabajo", dias, $"{h1:D2}:{m1:D2}", $"{h2:D2}:{m2:D2}");
+        return new("horario", $"Tu horario de trabajo: {h.Texto()}", Horario: h);
+    }
 
     private static TimeOnly? Ajustar(int h, int m, string? franja, Contexto ctx, bool ambigua = true)
     {

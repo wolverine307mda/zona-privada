@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Mda.Api.Agenda;
@@ -131,7 +132,7 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
         Assert.Equal("Dentista", dentista.Titulo);
         Assert.Equal(new DateTime(2026, 10, 29, 16, 0, 0), TimeZoneInfo.ConvertTime(dentista.Inicio, Madrid).DateTime);
         Assert.Equal(dentista.Inicio.AddHours(1), dentista.Fin);
-        Assert.Equal(30, dentista.AvisoMinutos);
+        Assert.Equal(60, dentista.AvisoMinutos); // cita médica: una hora antes
 
         var cumple = E("cumple de Ana el 14 de febrero").Evento!;
         Assert.True(cumple.TodoElDia);
@@ -176,6 +177,75 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
     }
 
     [Theory]
+    [InlineData("curro de 8:30 a 17:30", "08:30", "17:30", new[] { 1, 2, 3, 4, 5 })]
+    [InlineData("trabajo de lunes a jueves de 9 a 18", "09:00", "18:00", new[] { 1, 2, 3, 4 })]
+    [InlineData("entro a las 7 y salgo a las 15", "07:00", "15:00", new[] { 1, 2, 3, 4, 5 })]
+    [InlineData("los sábados trabajo de 10 a 14", "10:00", "14:00", new[] { 6 })]
+    [InlineData("mi horario es de 8 a 3 todos los días", "08:00", "15:00", new[] { 1, 2, 3, 4, 5, 6, 7 })]
+    public void Entiende_el_horario_de_trabajo(string frase, string entrada, string salida, int[] dias)
+    {
+        var p = E(frase);
+        Assert.Equal("horario", p.Clase);
+        Assert.Equal(entrada, p.Horario!.Entrada);
+        Assert.Equal(salida, p.Horario.Salida);
+        Assert.Equal(dias, p.Horario.Dias);
+    }
+
+    [Fact]
+    public void Un_dia_concreto_de_curro_es_un_evento_y_no_el_horario()
+    {
+        var p = E("mañana curro de 8 a 15");
+        Assert.Equal("agenda", p.Clase);
+        Assert.Equal("Curro", p.Evento!.Titulo);
+        Assert.Equal(new DateTime(2026, 10, 29, 15, 0, 0), TimeZoneInfo.ConvertTime(p.Evento.Fin!.Value, Madrid).DateTime);
+        Assert.Equal("agenda", E("reunión de trabajo el lunes a las 10").Clase);
+    }
+
+    [Fact]
+    public void Citas_medicas_con_rango_lugar_y_aviso_si_pisan_el_trabajo()
+    {
+        var curro = new Mda.Api.Agenda.Horario(true, "Trabajo", [1, 2, 3, 4, 5], "08:30", "17:30");
+        var c = Ctx() with { Horario = curro };
+        var p = E("cita con el médico el martes de 10 a 11:30 en el centro de salud", c);
+        Assert.Equal("agenda", p.Clase);
+        var e = p.Evento!;
+        Assert.Equal("Cita con el médico", e.Titulo);
+        Assert.Equal("Centro de salud", e.Lugar);
+        Assert.Equal(new DateTime(2026, 11, 3, 10, 0, 0), TimeZoneInfo.ConvertTime(e.Inicio, Madrid).DateTime);
+        Assert.Equal(new DateTime(2026, 11, 3, 11, 30, 0), TimeZoneInfo.ConvertTime(e.Fin!.Value, Madrid).DateTime);
+        Assert.Equal("verde", e.Color);
+        Assert.Equal(60, e.AvisoMinutos);
+        Assert.Contains(p.Dudas!, d => d.Contains("horario de trabajo"));
+
+        // por la tarde, después del curro, no hay aviso
+        var fisio = E("fisio el jueves a las 19 hasta las 20", c);
+        Assert.Equal(new DateTime(2026, 10, 29, 20, 0, 0), TimeZoneInfo.ConvertTime(fisio.Evento!.Fin!.Value, Madrid).DateTime);
+        Assert.DoesNotContain(fisio.Dudas ?? [], d => d.Contains("horario"));
+
+        var dentista = E("dentista el viernes a las 16:00 durante una hora y media", c);
+        Assert.Equal(new DateTime(2026, 10, 30, 17, 30, 0), TimeZoneInfo.ConvertTime(dentista.Evento!.Fin!.Value, Madrid).DateTime);
+
+        var analisis = E("análisis de sangre el 5 de noviembre a las 8:15 en el hospital La Paz");
+        Assert.Equal("Análisis de sangre", analisis.Evento!.Titulo);
+        Assert.Equal("Hospital La Paz", analisis.Evento.Lugar);
+        Assert.Equal(new DateTime(2026, 11, 5, 8, 15, 0), TimeZoneInfo.ConvertTime(analisis.Evento.Inicio, Madrid).DateTime);
+
+        // «llamar al taller» sigue siendo el título de un recordatorio
+        Assert.Equal("Llamar al taller", E("recuérdame mañana a las 9 llamar al taller").Evento!.Titulo);
+    }
+
+    [Theory]
+    [InlineData("¿qué tengo mañana?", 1)]
+    [InlineData("qué tengo hoy", 0)]
+    [InlineData("¿estoy libre el viernes?", 2)]
+    public void Entiende_preguntas_de_agenda(string frase, int dias)
+    {
+        var p = E(frase);
+        Assert.Equal(QuePregunta.Agenda, p.Pregunta!.Que);
+        Assert.Equal(Hoy.AddDays(dias), p.Pregunta.Desde);
+    }
+
+    [Theory]
     [InlineData("¿qué tiempo hace?", 0)]
     [InlineData("¿va a llover mañana?", 1)]
     [InlineData("hará frío el sábado", 3)]
@@ -195,6 +265,22 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
     [InlineData("")]
     [InlineData("mercadona")]
     public void Lo_que_no_entiende_lo_dice(string frase) => Assert.Equal("nada", E(frase).Clase);
+
+    [Fact]
+    public async Task El_horario_se_guarda_y_sale_en_la_agenda_del_dia()
+    {
+        var c = await factory.Dentro();
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync("/api/agenda/horario", new { activo = true, nombre = "Trabajo", dias = new[] { 1 }, entrada = "18:00", salida = "09:00" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await c.PutAsJsonAsync("/api/agenda/horario", new { activo = true, nombre = "Trabajo", dias = new[] { 1, 2, 3, 4, 5, 6, 7 }, entrada = "08:30", salida = "17:30" })).StatusCode);
+        var estado = await c.GetFromJsonAsync<JsonElement>("/api/agenda/estado");
+        Assert.Equal("08:30", estado.GetProperty("horario").GetProperty("entrada").GetString());
+
+        var r = await (await c.PostAsJsonAsync("/api/asistente/entender", new { texto = "¿qué tengo hoy?" })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("trabajo de 8:30 a 17:30", r.GetProperty("respuesta").GetString());
+        // y una cita en horas de trabajo avisa
+        var cita = await (await c.PostAsJsonAsync("/api/asistente/entender", new { texto = "médico mañana a las 11" })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains(cita.GetProperty("dudas").EnumerateArray(), d => d.GetString()!.Contains("horario de trabajo"));
+    }
 
     [Fact]
     public async Task El_endpoint_aprende_de_tus_apuntes_y_contesta_preguntas()

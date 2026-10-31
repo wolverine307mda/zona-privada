@@ -21,9 +21,31 @@ public static class AsistenteEndpoints
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["texto"] = ["Escribe una frase (máximo 300 caracteres)."] });
             var ctx = await ContextoDe(db, reloj, zona, ct);
             var p = Interprete.Entender(e.Texto, ctx);
-            if (p.Pregunta is { } q) p = p with { Respuesta = await Responder(db, tiempo, q, DateOnly.FromDateTime(ctx.Ahora), ct) };
+            if (p.Pregunta is { } q) p = p with { Respuesta = await Responder(db, tiempo, zona, q, DateOnly.FromDateTime(ctx.Ahora), ct) };
             return Results.Ok(p);
         });
+    }
+
+    // lo que tienes un día: tu horario de trabajo, los eventos y los recordatorios
+    internal static async Task<string> Agenda(AppDbContext db, Zona zona, DateOnly dia, DateOnly hoy, CancellationToken ct)
+    {
+        var ini = dia.ToDateTime(TimeOnly.MinValue);
+        var desde = new DateTimeOffset(ini, zona.Info.GetUtcOffset(ini));
+        var lista = (await AgendaEndpoints.Apariciones(db, desde, desde.AddDays(1), zona, ct))
+            .Where(a => !(a.Tipo == TipoEvento.Recordatorio && a.Hecho)).OrderBy(a => a.TodoElDia ? 0 : 1).ThenBy(a => a.Inicio).ToList();
+        var horario = await Horario.Leer(db, ct);
+        var cuando = dia == hoy ? "Hoy" : dia == hoy.AddDays(1) ? "Mañana" : dia.ToString("dddd d", new System.Globalization.CultureInfo("es-ES"));
+        cuando = char.ToUpper(cuando[0]) + cuando[1..];
+        var partes = new List<string>();
+        if (horario?.Trabaja(dia) == true) partes.Add($"💼 {horario.Nombre.ToLower()} de {Horario.Corta(horario.HoraEntrada)} a {Horario.Corta(horario.HoraSalida)}");
+        foreach (var a in lista)
+        {
+            var hora = a.TodoElDia ? "todo el día" : TimeZoneInfo.ConvertTime(a.Inicio, zona.Info).ToString("HH:mm");
+            partes.Add($"{(a.Tipo == TipoEvento.Recordatorio ? "⏰" : "📅")} {hora} {a.Titulo}{(a.Lugar is { } l ? $" ({l})" : "")}");
+        }
+        if (partes.Count == 0) return $"{cuando} lo tienes libre: no hay nada en la agenda.";
+        if (lista.Count == 0) return $"{cuando} solo tienes el {partes[0][3..]}. El resto, libre.";
+        return $"{cuando} tienes:\n" + string.Join("\n", partes);
     }
 
     public static async Task<Contexto> ContextoDe(AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct)
@@ -37,11 +59,12 @@ public static class AsistenteEndpoints
             .Where(x => x.Key.Length >= 3)
             .ToDictionary(x => x.Key, x => x.GroupBy(m => m.Categoria).OrderByDescending(c => c.Count()).First().Key);
         var huchas = await db.Huchas.AsNoTracking().OrderBy(h => h.Id).Select(h => new HuchaConocida(h.Id, h.Nombre, h.Emoji)).ToListAsync(ct);
-        return new Contexto(ahora, zona.Info, aprendido, huchas);
+        return new Contexto(ahora, zona.Info, aprendido, huchas, await Horario.Leer(db, ct));
     }
 
-    internal static async Task<string> Responder(AppDbContext db, Tiempo.ServicioTiempo tiempo, Pregunta q, DateOnly hoy, CancellationToken ct)
+    internal static async Task<string> Responder(AppDbContext db, Tiempo.ServicioTiempo tiempo, Zona zona, Pregunta q, DateOnly hoy, CancellationToken ct)
     {
+        if (q.Que == QuePregunta.Agenda) return await Agenda(db, zona, q.Desde, hoy, ct);
         if (q.Que == QuePregunta.Tiempo)
         {
             if (await tiempo.LugarGuardado(ct) is null) return "Aún no sé dónde vives: elige tu ciudad en la tarjeta del tiempo de Inicio.";
