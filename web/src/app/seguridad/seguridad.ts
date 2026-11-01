@@ -83,6 +83,7 @@ export class Seguridad {
   protected readonly codigos = signal<string[] | null>(null);
   protected readonly errorDos = signal('');
   protected readonly confirmarQuitar = signal(false);
+  protected readonly confirmarPanico = signal(false);
 
   protected readonly enLinea = computed(() => this.sesiones().filter((s) => s.enLinea).length);
   protected readonly accesosVistos = computed(() => (this.verTodos() ? this.accesos() : this.accesos().slice(0, 8)));
@@ -164,6 +165,13 @@ export class Seguridad {
       this.claveBloqueo.set(''); this.codigoBloqueo.set('');
       await this.cambiarBloqueo(String(this.pendienteBloqueo));
     } catch { this.errorBloqueo.set('Contraseña (o código) incorrectos.'); }
+  }
+
+  // corta todo (sesiones, tokens, lo público y la entrada durante una hora) y te lleva a la pantalla de entrar
+  protected async panico(): Promise<void> {
+    this.ocupado.set('panico');
+    try { await firstValueFrom(this.http.post('/api/seguridad/panico', null)); } finally { this.ocupado.set(null); }
+    location.href = '/entrar';
   }
 
   private leerTokens(): void {

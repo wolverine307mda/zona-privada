@@ -42,6 +42,7 @@ export class Documentos implements OnDestroy {
   private readonly elegir = viewChild.required<ElementRef<HTMLInputElement>>('elegir');
   private readonly dlgNombre = viewChild.required<ElementRef<HTMLDialogElement>>('dlgNombre');
   private readonly dlgVer = viewChild.required<ElementRef<HTMLDialogElement>>('dlgVer');
+  private readonly dlgMover = viewChild.required<ElementRef<HTMLDialogElement>>('dlgMover');
   private readonly reproductor = viewChild<ElementRef<HTMLAudioElement>>('reproductor');
   private soltarTeclado?: () => void;
 
@@ -79,6 +80,9 @@ export class Documentos implements OnDestroy {
       o === 'fecha' ? b.modificado.localeCompare(a.modificado) : o === 'tamano' ? b.tamano - a.tamano : a.nombre.localeCompare(b.nombre, 'es', { numeric: true });
     return [...lista].sort((a, b) => Number(b.carpeta) - Number(a.carpeta) || cmp(a, b));
   });
+  // una carpeta con miles de archivos no pinta todo de golpe: de 200 en 200
+  protected readonly limite = signal(200);
+  protected readonly mostrados = computed(() => this.visibles().slice(0, this.limite()));
   protected readonly totales = computed(() => {
     const l = this.elementos();
     return { carpetas: l.filter((e) => e.carpeta).length, archivos: l.filter((e) => !e.carpeta).length, peso: l.reduce((s, e) => s + e.tamano, 0) };
@@ -91,6 +95,14 @@ export class Documentos implements OnDestroy {
   protected readonly confirmar = signal<string | null>(null);
   protected readonly nombreDlg = signal<{ modo: 'carpeta' | 'renombrar'; elemento?: Elemento; valor: string; error?: string } | null>(null);
   protected readonly viendo = signal<Elemento | null>(null);
+  protected readonly zoom = signal(1);
+  protected readonly posicion = computed(() => {
+    const v = this.viendo(), l = this.imagenes();
+    const i = v ? l.findIndex((x) => x.ruta === v.ruta) : -1;
+    return i < 0 ? '' : `${i + 1} de ${l.length}`;
+  });
+  // «Mover a…»: el mismo cambio de carpeta que arrastrando, pero con teclado y en el móvil
+  protected readonly moverDlg = signal<{ elemento: Elemento; ruta: string; carpetas: Elemento[]; cargando: boolean; error?: string } | null>(null);
   protected readonly sonando = signal<Elemento | null>(null);
   protected readonly soltando = signal(false);
   protected readonly moviendo = signal<string | null>(null);
@@ -184,7 +196,9 @@ export class Documentos implements OnDestroy {
 
   // ---- visor de fotos y vídeos ----
   protected ver(e: Elemento): void {
+    this.zoom.set(1);
     this.viendo.set(e);
+    this.precargarVecina(e);
     const d = this.dlgVer().nativeElement;
     if (!d.open) d.showModal();
   }
@@ -194,7 +208,59 @@ export class Documentos implements OnDestroy {
     if (!e || !l.length) return;
     const i = l.findIndex((x) => x.ruta === e.ruta);
     if (i < 0) return;
-    this.viendo.set(l[(i + delta + l.length) % l.length]);
+    const nueva = l[(i + delta + l.length) % l.length];
+    this.zoom.set(1);
+    this.viendo.set(nueva);
+    this.precargarVecina(nueva);
+  }
+
+  // la siguiente foto se va bajando mientras miras esta
+  private precargarVecina(e: Elemento): void {
+    const l = this.imagenes();
+    const i = l.findIndex((x) => x.ruta === e.ruta);
+    if (i < 0 || l.length < 2) return;
+    new Image().src = this.miniatura(l[(i + 1) % l.length]);
+  }
+
+  protected cambiarZoom(delta: number): void { this.zoom.set(Math.min(4, Math.max(1, Math.round((this.zoom() + delta) * 4) / 4))); }
+  protected alternarZoom(): void { this.zoom.set(this.zoom() > 1 ? 1 : 2); }
+
+  // ---- mover a otra carpeta sin arrastrar ----
+  protected async pedirMover(e: Elemento): Promise<void> {
+    this.menu.set(null);
+    this.moverDlg.set({ elemento: e, ruta: '', carpetas: [], cargando: true });
+    this.dlgMover().nativeElement.showModal();
+    await this.entrarMover('');
+  }
+
+  protected async entrarMover(ruta: string): Promise<void> {
+    const d = this.moverDlg();
+    if (!d) return;
+    this.moverDlg.set({ ...d, ruta, cargando: true, error: undefined });
+    try {
+      const l = await this.api.lista(this.raiz()!, ruta);
+      // no se puede mover una carpeta dentro de sí misma
+      const carpetas = l.elementos.filter((x) => x.carpeta && x.ruta !== d.elemento.ruta && !x.ruta.startsWith(d.elemento.ruta + '/'));
+      this.moverDlg.set({ elemento: d.elemento, ruta, carpetas, cargando: false });
+    } catch { this.moverDlg.set({ ...d, ruta, carpetas: [], cargando: false, error: 'No se pudo leer esa carpeta.' }); }
+  }
+
+  protected subirMover(): void {
+    const d = this.moverDlg();
+    if (d?.ruta) this.entrarMover(d.ruta.includes('/') ? d.ruta.slice(0, d.ruta.lastIndexOf('/')) : '');
+  }
+
+  protected async confirmarMover(): Promise<void> {
+    const d = this.moverDlg();
+    if (!d) return;
+    try {
+      await this.api.mover(this.raiz()!, d.elemento.ruta, d.ruta);
+      this.dlgMover().nativeElement.close();
+      this.avisar(`Movido a ${d.ruta.split('/').at(-1) || this.nombreRaiz()}`);
+      this.recargar();
+    } catch (e) {
+      this.moverDlg.set({ ...d, error: e instanceof HttpErrorResponse ? (Object.values(e.error?.errors ?? {})[0] as string[] | undefined)?.[0] ?? 'No se pudo mover.' : 'No se pudo mover.' });
+    }
   }
 
   private x0 = 0;
@@ -369,6 +435,9 @@ export class Documentos implements OnDestroy {
     if (this.viendo() && this.esImagen(this.viendo()!)) {
       if (ev.key === 'ArrowRight') this.pasar(1);
       if (ev.key === 'ArrowLeft') this.pasar(-1);
+      if (ev.key === '+' || ev.key === '=') this.cambiarZoom(0.5);
+      if (ev.key === '-') this.cambiarZoom(-0.5);
+      if (ev.key === '0') this.zoom.set(1);
     }
     if (ev.key === 'Escape') this.menu.set(null);
   }

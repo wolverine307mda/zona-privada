@@ -219,3 +219,17 @@
   .dlg-nombre .button { flex: 1; }
 }
 @media (max-width: 380px) { .items:not(.items--lista) { gap: 8px; } }
+
+/* mover a… */
+.dlg-mover { width: min(92vw, 420px); }
+.mover__ruta { margin: 0 0 8px; color: var(--soft); font-size: .88rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mover__lista { list-style: none; margin: 0 0 12px; padding: 0; max-height: 40vh; overflow: auto; display: grid; gap: 2px; }
+.mover__lista button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 10px; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mover__lista button:hover, .mover__lista button:focus-visible { background: color-mix(in srgb, var(--acento) 12%, transparent); }
+.mover__lista .icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.mover__vacio { color: var(--soft); padding: 8px 10px; }
+.mas-items { grid-column: 1 / -1; justify-self: center; margin: 8px 0; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.visor__escena { overflow: auto; }
+.visor__escena img { transition: transform var(--dur-2, 240ms) var(--ease-out, ease-out); transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .visor__escena img { transition: none; } }

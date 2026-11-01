@@ -162,6 +162,10 @@ builder.Services.AddSingleton<ILectorSistema>(_ => LectorSistema.ParaEsteEquipo(
 builder.Services.AddSingleton<EstadoSistema>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<EstadoAgente>();
+// ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
+// (tiene que ir ANTES que cualquier servicio de fondo: el host los arranca en orden y así ya tienen las tablas, también en una base nueva)
+builder.Services.AddHostedService<SemillaAdmin>();
+
 // salud del PC y órdenes al agente
 builder.Services.AddSingleton<EstadoSalud>();
 builder.Services.AddSingleton<AvisosSalud>();
@@ -172,13 +176,13 @@ builder.Services.AddHostedService<MonitorSistema>();
 builder.Services.AddSingleton<Carpetas>();
 // miniaturas WebP de la galería pública (sin EXIF)
 builder.Services.AddSingleton<Derivados>();
+builder.Services.AddSingleton<Sondas>();
+builder.Services.AddHostedService<ResumenSondas>();
+builder.Services.AddHostedService<LatidoExterno>();
 builder.Services.AddSingleton<Pregenerar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
 builder.Services.AddResponseCompression(o => { o.EnableForHttps = true; o.MimeTypes = ["application/json"]; });
 
-// ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
-// (va antes que los demás servicios de fondo: el host los arranca en orden y así ya tienen las tablas)
-builder.Services.AddHostedService<SemillaAdmin>();
 
 // ---- Avisos (correo, WhatsApp), cuentas enlazadas (Spotify, Google) y agenda con recordatorios ----
 builder.Services.AddMemoryCache();
@@ -216,6 +220,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseSerilogRequestLogging();
 app.UseCabecerasSeguras();
+app.UseSondas();
 app.UseResponseCompression();
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -223,6 +228,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors();
 app.UseRateLimiter();
+app.UsePanico();
 app.UseRegistroAccesos();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -232,6 +238,7 @@ app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOf
 app.MapAuth();
 app.MapPasskeys();
 app.MapReautenticar();
+app.MapPanico();
 app.MapBloqueo();
 app.MapSistema();
 app.MapGastos();

@@ -16,6 +16,47 @@ public record DiscoSalud(string Nombre, string Modelo, string Salud, string Esta
 public record VolumenSalud(string Nombre, long LibreBytes, long TotalBytes);
 public record SaludPc(DateTimeOffset Hora, IReadOnlyList<DiscoSalud> Discos, IReadOnlyList<VolumenSalud> Volumenes, bool ReinicioPendiente);
 
+// Una foto de la salud por día (los últimos 90): sirve para ver a dónde va el espacio y el desgaste de los discos
+public class SaludDia
+{
+    public DateOnly Fecha { get; set; }
+    public string Datos { get; set; } = "[]";   // {"v":[[nombre,libre,total]],"d":[[nombre,desgaste,temperatura]]}
+}
+
+public static class HistorialSalud
+{
+    public const int Dias = 90;
+
+    public static async Task Guardar(AppDbContext db, SaludPc s, DateOnly hoy, CancellationToken ct = default)
+    {
+        var datos = JsonSerializer.Serialize(new
+        {
+            v = s.Volumenes.Select(x => new object[] { x.Nombre, x.LibreBytes, x.TotalBytes }),
+            d = s.Discos.Select(x => new object?[] { x.Nombre, x.DesgastePct, x.TemperaturaC }),
+        });
+        var fila = await db.SaludDias.FindAsync([hoy], ct);
+        if (fila is null) db.SaludDias.Add(fila = new SaludDia { Fecha = hoy });
+        fila.Datos = datos;
+        db.SaludDias.RemoveRange(await db.SaludDias.Where(d => d.Fecha < hoy.AddDays(-Dias)).ToListAsync(ct));
+        await db.SaveChangesAsync(ct);
+    }
+
+    public static async Task<object> Leer(AppDbContext db, CancellationToken ct = default)
+    {
+        var filas = await db.SaludDias.AsNoTracking().OrderBy(d => d.Fecha).ToListAsync(ct);
+        return filas.Select(f =>
+        {
+            var j = JsonDocument.Parse(f.Datos).RootElement;
+            return new
+            {
+                fecha = f.Fecha.ToString("yyyy-MM-dd"),
+                volumenes = j.GetProperty("v").EnumerateArray().Select(x => new { nombre = x[0].GetString(), libreBytes = x[1].GetInt64(), totalBytes = x[2].GetInt64() }),
+                discos = j.GetProperty("d").EnumerateArray().Select(x => new { nombre = x[0].GetString(), desgastePct = x[1].ValueKind == JsonValueKind.Number ? x[1].GetInt32() : (int?)null, temperaturaC = x[2].ValueKind == JsonValueKind.Number ? x[2].GetDouble() : (double?)null }),
+            };
+        }).ToList();
+    }
+}
+
 // Lo último que mandó el agente; se guarda también en la base para no perderlo al reiniciar
 public class EstadoSalud(TimeProvider reloj)
 {
@@ -86,7 +127,7 @@ public class AvisosSalud(IServiceScopeFactory scopes, EstadoSalud salud, EstadoS
             if (await db.Ajustes.AsNoTracking().FirstOrDefaultAsync(a => a.Clave == EstadoSalud.Clave, ct) is { } a && JsonSerializer.Deserialize<SaludPc>(a.Valor, JsonSerializerOptions.Web) is { } s)
                 salud.Restaurar(s, s.Hora);
         }
-        catch (Exception e) when (e is JsonException or InvalidOperationException) { log.LogWarning("No se pudo restaurar la última salud del PC"); }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or System.Data.Common.DbException) { log.LogWarning("No se pudo restaurar la última salud del PC"); }
         try { await Task.Delay(TimeSpan.FromMinutes(1), reloj, ct); } catch (OperationCanceledException) { return; }
         using var t = new PeriodicTimer(TimeSpan.FromMinutes(10), reloj);
         do
@@ -205,6 +246,9 @@ public static class OrdenesPc
             ordenes = await db.OrdenesPc.AsNoTracking().OrderByDescending(o => o.Id).Take(8).ToListAsync(ct),
         }));
 
+        // la foto diaria de los últimos 90 días (espacio libre y desgaste de cada disco)
+        g.MapGet("/historial", async (AppDbContext db, CancellationToken ct) => Results.Ok(await HistorialSalud.Leer(db, ct)));
+
         g.MapPost("/ordenes", async (OrdenEntrada e, AppDbContext db, EstadoAgente agente, IAvisos avisos, HttpContext ctx, TimeProvider reloj, CancellationToken ct) =>
         {
             var tipo = (e.Tipo ?? "").ToLowerInvariant();
@@ -243,6 +287,7 @@ public static class OrdenesPc
             if (x is null) db.Ajustes.Add(x = new Ajuste { Clave = EstadoSalud.Clave });
             x.Valor = JsonSerializer.Serialize(salud.Ultima, JsonSerializerOptions.Web);
             await db.SaveChangesAsync();
+            await HistorialSalud.Guardar(db, salud.Ultima!, DateOnly.FromDateTime(DateTime.UtcNow));
             return Results.NoContent();
         });
 

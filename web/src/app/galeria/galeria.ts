@@ -5,9 +5,6 @@ import { firstValueFrom } from 'rxjs';
 interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; enGlobo?: boolean; lat?: number | null; lon?: number | null; lugar?: string; }
 interface Sitio { nombre: string; lat: number; lon: number; region?: string | null; }
 interface Elemento { nombre: string; ruta: string; carpeta: boolean; tamano: number; soportada: boolean; foto: { id: string; publicada: boolean } | null; }
-interface Ventana { tipo: string; titulo: string; inicio: string; fin: string; puntuacion: number | null; detalle: string; }
-interface AjustesLuz { activa: boolean; umbral: number; antelacionMin: number; amanecer: boolean; astro: boolean; bortle: number; }
-interface Luz { ajustes: AjustesLuz; lugar: string | null; hoy: Ventana[]; manana: Ventana[]; }
 interface Estado { activa: boolean; publicadas: number; total: number; }
 
 const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
@@ -19,7 +16,6 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
   template: `
     <nav class="pestanas" role="tablist" aria-label="Partes de la galería">
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'fotos'" (click)="pestana.set('fotos')">Fotos <small>{{ estado()?.publicadas ?? 0 }}</small></button>
-      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'luz'" (click)="pestana.set('luz')">Luz</button>
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'web'" (click)="pestana.set('web')">Qué ve la web</button>
     </nav>
     @if (pestana() === 'fotos') {
@@ -85,38 +81,6 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
           </li>
         } @empty { @if (!fallo()) { <li class="vacio">Esta carpeta no tiene fotos.</li> } }
       </ul>
-    </section>
-    }
-    @if (pestana() === 'luz') {
-    <section class="caja">
-      <header class="caja__cab">
-        <h3>Luz para fotografiar</h3>
-        <span class="sub">{{ luz()?.lugar ? 'Desde ' + luz()!.lugar : 'Elige tu ciudad en la tarjeta del tiempo de Inicio' }}</span>
-      </header>
-      @if (luz(); as l) {
-        @for (dia of [{ n: 'Hoy', v: l.hoy }, { n: 'Mañana', v: l.manana }]; track dia.n) {
-          @for (v of dia.v; track v.tipo) {
-            <p class="luz">
-              <span class="luz__nota" [class.buena]="(v.puntuacion ?? 0) >= l.ajustes.umbral">{{ v.puntuacion ?? '–' }}</span>
-              <span><strong>{{ dia.n }} · {{ v.titulo }}</strong>
-                <small>{{ hora(v.inicio) }}–{{ hora(v.fin) }} · {{ v.detalle }}</small></span>
-            </p>
-          }
-        }
-        <label class="interruptor">
-          <input type="checkbox" [checked]="l.ajustes.activa" (change)="ajustarLuz({ activa: $any($event.target).checked })">
-          <span><strong>Avisarme (notificación y Telegram)</strong>
-            <small>Solo si la nota llega a {{ l.ajustes.umbral }}, no estás trabajando y no tienes un evento. La hora dorada, {{ l.ajustes.antelacionMin }} min antes; la noche de Vía Láctea, la tarde anterior.</small></span>
-        </label>
-        <div class="luz__ajustes">
-          <label class="campo"><span class="campo__etiqueta">Nota mínima: {{ l.ajustes.umbral }}</span>
-            <input type="range" min="1" max="10" [value]="l.ajustes.umbral" (change)="ajustarLuz({ umbral: +$any($event.target).value })"></label>
-          <label class="campo"><span class="campo__etiqueta">Cielo de tu zona (Bortle 1–9): {{ l.ajustes.bortle }}</span>
-            <input type="range" min="1" max="9" [value]="l.ajustes.bortle" (change)="ajustarLuz({ bortle: +$any($event.target).value })"></label>
-        </div>
-        <label class="interruptor"><input type="checkbox" [checked]="l.ajustes.amanecer" (change)="ajustarLuz({ amanecer: $any($event.target).checked })"><span><strong>Incluir la hora dorada de la mañana</strong></span></label>
-        <label class="interruptor"><input type="checkbox" [checked]="l.ajustes.astro" (change)="ajustarLuz({ astro: $any($event.target).checked })"><span><strong>Incluir noches de Vía Láctea</strong></span></label>
-      }
     </section>
     }
     @if (pestana() === 'web') {
@@ -202,8 +166,7 @@ export class Galeria implements OnInit {
   protected readonly categorias = CATEGORIAS;
   protected readonly estado = signal<Estado | null>(null);
   protected readonly publico = signal({ estado: false, cpu: false });
-  protected readonly pestana = signal<'fotos' | 'luz' | 'web'>('fotos');
-  protected readonly luz = signal<Luz | null>(null);
+  protected readonly pestana = signal<'fotos' | 'web'>('fotos');
   protected readonly consulta = signal('');
   protected readonly sitios = signal<Sitio[]>([]);
   protected readonly consultaCasa = signal('');
@@ -237,8 +200,6 @@ export class Galeria implements OnInit {
     this.fotos.set(f);
     this.publico.set(p);
     firstValueFrom(this.http.get<{ lat: number | null; lon: number | null; radioKm: number }>('/api/galeria/globo')).then((c) => this.casa.set(c)).catch(() => {});
-    // la luz depende de la previsión (Open-Meteo): si falla, el resto de la pantalla sigue
-    firstValueFrom(this.http.get<Luz>('/api/luz')).then((l) => this.luz.set(l)).catch(() => this.luz.set(null));
   }
 
   private async sitiosDe(q: string): Promise<Sitio[]> {
@@ -279,19 +240,6 @@ export class Galeria implements OnInit {
   }
 
   private guardarCasa(): Promise<unknown> { return firstValueFrom(this.http.put('/api/galeria/globo', this.casa())); }
-
-  protected hora(iso: string): string {
-    return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  protected async ajustarLuz(cambio: Partial<AjustesLuz>): Promise<void> {
-    const actual = this.luz();
-    if (!actual) return;
-    const nuevos = { ...actual.ajustes, ...cambio };
-    this.luz.set({ ...actual, ajustes: nuevos });
-    await firstValueFrom(this.http.put('/api/luz/ajustes', nuevos));
-    firstValueFrom(this.http.get<Luz>('/api/luz')).then((l) => this.luz.set(l)).catch(() => undefined);
-  }
 
   protected async ajustarPublico(campo: 'estado' | 'cpu', e: Event): Promise<void> {
     const nuevo = { ...this.publico(), [campo]: (e.target as HTMLInputElement).checked };

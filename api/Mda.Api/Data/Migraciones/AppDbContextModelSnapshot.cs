@@ -769,6 +769,21 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("ordenes_pc", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.SaludDia", b =>
+                {
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasMaxLength(6000)
+                        .HasColumnType("character varying(6000)");
+
+                    b.HasKey("Fecha");
+
+                    b.ToTable("salud_dias", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Acceso", b =>
                 {
                     b.Property<int>("Id")

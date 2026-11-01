@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Auth.PasskeyInfo> PasskeysInfo => Set<Mda.Api.Auth.PasskeyInfo>();
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
     public DbSet<Hucha> Huchas => Set<Hucha>();
+    public DbSet<Mda.Api.Pc.SaludDia> SaludDias => Set<Mda.Api.Pc.SaludDia>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
@@ -140,6 +141,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.UltimaIp).HasMaxLength(64);
             e.Property(x => x.UltimoDispositivo).HasMaxLength(80);
             e.Property(x => x.UltimoMotivo).HasMaxLength(20);
+        });
+
+        b.Entity<Mda.Api.Pc.SaludDia>(e =>
+        {
+            e.ToTable("salud_dias");
+            e.HasKey(x => x.Fecha);
+            e.Property(x => x.Datos).HasMaxLength(6000);
         });
 
         b.Entity<Ajuste>(e =>

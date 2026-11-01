@@ -60,8 +60,27 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
   `MODO_<CARPETA>=ro` en `.env` deja una carpeta de solo lectura.
 - Contenedor de la API con usuario sin privilegios, sistema de archivos de solo lectura (salvo `/tmp`, `/claves` y las carpetas montadas), sin capacidades de Linux ni escalada de privilegios, y con tope de memoria y procesos. Registros de Docker con rotación.
 
+## Llaves de acceso (passkeys) y confirmaciones
+
+- Cada llave tiene un **nombre** que eliges y se puede renombrar. De cada una se guarda (tabla `passkeys_info`) desde dónde se creó (IP, dispositivo,
+  navegador, idioma, zona horaria, pantalla), cuándo y desde dónde se usó por última vez y cuántas veces; junto a lo que ya guarda Identity
+  (sincronizada o solo en el dispositivo, verificada con cara/huella). Alta y baja de una llave avisan por Telegram.
+- Las acciones delicadas (órdenes al PC, aflojar el bloqueo de la app) piden **volver a confirmar**: con Face ID
+  (`/api/seguridad/reautenticar/passkey`) o con la contraseña (y el código de dos pasos). Vale 2 minutos y solo para esa sesión.
+
+## Pánico, sondas y latido
+
+- **Botón de pánico** (Seguridad, o `/panico` en Telegram): cierra todas las sesiones, revoca los tokens de los atajos, apaga la galería y el estado
+  públicos y bloquea el inicio de sesión (login y passkey) durante 1 hora. `/desbloquear` en Telegram lo levanta antes.
+- **Sondas**: `/.env`, `/wp-login.php`, `/admin`, `/.git/config`… contestan 404 como cualquier ruta inexistente, se apuntan y la IP pública queda
+  bloqueada 1 hora (nunca una IP local o desconocida). Resumen por hora a Telegram, solo si hubo alguna.
+- **Latido** a Healthchecks.io: ver «Latido» en [6. Despliegue](06-despliegue-y-operacion.md).
+- Opción no activada: dejar la app **solo dentro de Tailscale** (sin Funnel). Es lo más seguro, pero la app instalada en el iPhone y el
+  portfolio dejarían de llegar desde fuera de tu red.
+
 ## Continuidad
 
-- Copia diaria de PostgreSQL (14 días) + aviso si falta. Recomendado: copiar `./copias` fuera del PC.
+- Copia diaria de PostgreSQL (14 días) + copia cifrada con age a OneDrive + simulacro semanal de restauración + aviso si falta
+  (ver [6. Despliegue](06-despliegue-y-operacion.md#copias-de-seguridad)).
 - Si se filtra un secreto: cambiarlo en el proveedor (BotFather `/revoke`, Google/Spotify, contraseña de aplicación),
   actualizar `.env`, `docker compose up -d api`.

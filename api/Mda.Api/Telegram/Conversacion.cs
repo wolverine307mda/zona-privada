@@ -6,6 +6,7 @@ using Mda.Api.Asistente;
 using Mda.Api.Avisos;
 using Mda.Api.Conexiones;
 using Mda.Api.Data;
+using Mda.Api.Seguridad;
 using Mda.Api.Gastos;
 using Mda.Api.Tiempo;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -36,7 +37,8 @@ public class Conversacion(
         "🐷 <i>50 € a la hucha del viaje</i>\n" +
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
         "🌦️ <i>¿va a llover mañana?</i>\n\n" +
-        "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda";
+        "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
+        "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
 
     public async Task Atender(JsonElement u, CancellationToken ct)
     {
@@ -74,6 +76,13 @@ public class Conversacion(
             case "/hoy": await bot.Enviar(await Hoy(ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
+            case "/panico" or "/pánico":
+                await bot.Enviar("🚨 " + Panico.Resumen(await Panico.Ejecutar(db, reloj, cache, ct)) + "\nPara volver a entrar antes, escribe /desbloquear.", ct: ct);
+                return;
+            case "/desbloquear":
+                await Panico.Levantar(db, cache, ct);
+                await bot.Enviar("🔓 Bloqueo levantado: ya puedes iniciar sesión. La galería y el estado público siguen apagados hasta que los actives en la app.", ct: ct);
+                return;
         }
         if (texto.Length > 300) { await bot.Enviar("Es muy largo: dímelo en una frase.", ct: ct); return; }
 

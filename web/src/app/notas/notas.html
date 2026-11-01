@@ -54,6 +54,9 @@
   </article>
 </ng-template>
 
+@if (!cargado()) {
+  <div class="mosaico" aria-busy="true" aria-label="Cargando notas">@for (_ of [1, 2, 3, 4]; track $index) { <div class="caja esqueleto"><i></i><i></i><i></i></div> }</div>
+}
 @if (fijadas().length) {
   <section class="grupo">
     <h2 class="grupo__titulo">Fijadas</h2>

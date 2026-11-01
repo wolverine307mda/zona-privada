@@ -328,3 +328,19 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
   </div>
 </section>
 }
+
+<section class="caja">
+  <header class="caja__cab"><h3>Botón de pánico</h3><span class="sub">Si crees que alguien tiene acceso</span></header>
+  <p class="nada">Cierra todas las sesiones (también esta), revoca los tokens de los atajos, apaga la galería y el estado públicos y no deja iniciar sesión durante una hora. Desde Telegram: <strong>/panico</strong> para cortarlo y <strong>/desbloquear</strong> para volver a entrar.</p>
+  @if (!confirmarPanico()) {
+    <button class="button peligro" type="button" (click)="confirmarPanico.set(true)">Cortar todo</button>
+  } @else {
+    <div class="confirmar-panico" role="alert">
+      <strong>¿Seguro? Te quedarás sin sesión y sin poder entrar durante una hora.</strong>
+      <div class="acciones-panico">
+        <button class="enlace" type="button" (click)="confirmarPanico.set(false)">Cancelar</button>
+        <button class="button peligro" type="button" (click)="panico()" [disabled]="ocupado() === 'panico'">{{ ocupado() === 'panico' ? 'Cortando…' : 'Sí, cortar todo' }}</button>
+      </div>
+    </div>
+  }
+</section>

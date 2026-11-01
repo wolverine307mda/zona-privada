@@ -106,7 +106,9 @@ public static class PasskeysEndpoints
             if (u is null) return Results.Unauthorized();
             var credencial = PasskeyInfos.Decodificar(id);
             if (credencial is null) return Results.NotFound();
-            var nombre = (await users.GetPasskeysAsync(u)).FirstOrDefault(x => x.CredentialId.AsSpan().SequenceEqual(credencial))?.Name;
+            var existente = (await users.GetPasskeysAsync(u)).FirstOrDefault(x => x.CredentialId.AsSpan().SequenceEqual(credencial));
+            if (existente is null) return Results.NotFound(); // Identity da «bien» al quitar algo que no está
+            var nombre = existente.Name;
             var r = await users.RemovePasskeyAsync(u, credencial);
             if (!r.Succeeded) return Results.NotFound();
             await PasskeyInfos.Quitar(db, PasskeyInfos.IdDe(credencial));

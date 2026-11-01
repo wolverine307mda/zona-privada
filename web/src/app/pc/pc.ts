@@ -6,6 +6,8 @@ import { Reautenticar } from '../core/reautenticar';
 interface Disco { nombre: string; modelo: string; salud: string; estado: string; temperaturaC: number | null; desgastePct: number | null; erroresLectura: number | null; }
 interface Volumen { nombre: string; libreBytes: number; totalBytes: number; }
 interface Orden { id: number; tipo: string; parametro: string; estado: string; creada: string; resultado: string; desde: string; }
+interface DiaSalud { fecha: string; volumenes: Volumen[]; discos: { nombre: string; desgastePct: number | null; temperaturaC: number | null }[]; }
+interface Tendencia { titulo: string; unidad: string; puntos: string; actual: number; cambio: number | null; dias: number; area: string; }
 interface Estado {
   agenteConectado: boolean; saludHace: number | null; reautenticado: boolean; ordenes: Orden[];
   salud: { discos: Disco[]; volumenes: Volumen[]; reinicioPendiente: boolean } | null;
@@ -29,7 +31,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     <section class="caja">
       <header class="caja__cab">
         <h3>Mi PC</h3>
-        <span class="sub">{{ e()?.agenteConectado ? '🟢 el agente de Windows está conectado' : '🔴 el agente de Windows no responde: arráncalo con arrancar.cmd (carpeta agente)' }}</span>
+        <span class="sub">{{ e()?.agenteConectado ? '🟢 el agente de Windows está conectado' : '🔴 el agente de Windows no responde: abre «Zona privada» (icono junto al reloj) o agente\arrancar.cmd' }}</span>
       </header>
       @if (e()?.salud; as s) {
         <p class="sub">{{ hace() }}</p>
@@ -55,6 +57,23 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
         <p class="vacio">{{ cargado() ? 'Aún no ha llegado la salud del PC: el agente la manda cada 5 minutos.' : 'Cargando…' }}</p>
       }
     </section>
+
+    @if (tendencias().length) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Tendencia</h3><span class="sub">una foto al día, últimos {{ diasHistorial() }} días</span></header>
+        <div class="tendencias">
+          @for (t of tendencias(); track t.titulo) {
+            <div class="tendencia">
+              <strong>{{ t.titulo }}</strong>
+              <svg viewBox="0 0 160 44" preserveAspectRatio="none" role="img" [attr.aria-label]="t.titulo + ': ' + t.actual + ' ' + t.unidad">
+                <polygon [attr.points]="t.area" class="area"/><polyline [attr.points]="t.puntos" class="linea"/>
+              </svg>
+              <small>{{ t.actual }} {{ t.unidad }}{{ t.cambio == null ? '' : ' · ' + (t.cambio > 0 ? '+' : '') + t.cambio + ' ' + t.unidad + ' al mes' }}</small>
+            </div>
+          }
+        </div>
+      </section>
+    }
 
     <section class="caja">
       <header class="caja__cab"><h3>Órdenes</h3><span class="sub">Piden Face ID o tu contraseña · avisan a Telegram · caducan a los 60 s</span></header>
@@ -117,6 +136,39 @@ export class Pc implements OnInit, OnDestroy {
   protected readonly ocupado = signal(false);
   private temporizador?: ReturnType<typeof setInterval>;
 
+  protected readonly historial = signal<DiaSalud[]>([]);
+  protected readonly diasHistorial = computed(() => this.historial().length);
+  // una línea por volumen (porcentaje ocupado) y por disco (desgaste), con lo que sube o baja al mes
+  protected readonly tendencias = computed<Tendencia[]>(() => {
+    const h = this.historial();
+    if (h.length < 2) return [];
+    const r: Tendencia[] = [];
+    const nombres = new Set(h.flatMap((d) => d.volumenes.map((v) => v.nombre)));
+    for (const n of nombres) {
+      const serie = h.map((d) => { const v = d.volumenes.find((x) => x.nombre === n); return v && v.totalBytes ? { f: d.fecha, v: Math.round(100 - (100 * v.libreBytes) / v.totalBytes) } : null; }).filter((x) => x !== null);
+      const t = this.tendencia(`Disco ${n} ocupado`, '%', serie);
+      if (t) r.push(t);
+    }
+    const discos = new Set(h.flatMap((d) => d.discos.map((x) => x.nombre)));
+    for (const n of discos) {
+      const serie = h.map((d) => { const x = d.discos.find((y) => y.nombre === n); return x?.desgastePct != null ? { f: d.fecha, v: x.desgastePct } : null; }).filter((x) => x !== null);
+      const t = this.tendencia(`Desgaste del disco ${n}`, '%', serie);
+      if (t) r.push(t);
+    }
+    return r;
+  });
+
+  private tendencia(titulo: string, unidad: string, serie: { f: string; v: number }[]): Tendencia | null {
+    if (serie.length < 2) return null;
+    const vs = serie.map((p) => p.v), min = Math.min(...vs), max = Math.max(...vs), rango = Math.max(max - min, 2);
+    const x = (i: number) => (i / (serie.length - 1)) * 160;
+    const y = (v: number) => 40 - ((v - min) / rango) * 34;
+    const puntos = serie.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    const dias = Math.max(1, Math.round((new Date(serie[serie.length - 1].f).getTime() - new Date(serie[0].f).getTime()) / 86_400_000));
+    const cambio = dias >= 7 ? Math.round(((vs[vs.length - 1] - vs[0]) / dias) * 30 * 10) / 10 : null;
+    return { titulo, unidad, puntos, actual: vs[vs.length - 1], cambio, dias, area: `0,44 ${puntos} 160,44` };
+  }
+
   protected readonly hace = computed(() => {
     const s = this.e()?.saludHace;
     return s == null ? '' : s < 90 ? 'Medido hace un momento' : `Medido hace ${Math.round(s / 60)} min`;
@@ -131,6 +183,7 @@ export class Pc implements OnInit, OnDestroy {
 
   private async cargar(): Promise<void> {
     try { this.e.set(await firstValueFrom(this.http.get<Estado>('/api/pc'))); } catch { /* se reintenta en 15 s */ }
+    if (!this.historial().length) firstValueFrom(this.http.get<DiaSalud[]>('/api/pc/historial')).then((h) => this.historial.set(h)).catch(() => {});
     this.cargado.set(true);
   }
 

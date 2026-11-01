@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Avisos;
 
 public record Copia(bool Vigilada, DateTimeOffset? Fecha, long Tamano, string? Nombre);
+public record Simulacro(bool Ok, int Usuarios, int Tablas, string Copia, DateTimeOffset Fecha);
 
 // Cada 15 minutos, de día, mira si hay algo que contar:
 //   · los lunes desde las 9, el resumen de la semana por correo (y una notificación);
@@ -23,6 +24,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
     public const string ResumenSemanal = "resumen-semanal";
     private const string ResumenUltimo = "resumen-ultimo";
     private const string CopiasAvisado = "copias-avisado";
+    private const string SimulacroAvisado = "simulacro-avisado";
     private static readonly CultureInfo Es = new("es-ES");
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -47,6 +49,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Resumen(db, ct), "el resumen semanal");
         await Aislada(() => Coche(db, ct), "el coche");
         await Aislada(() => Copias(db, ct), "las copias");
+        await Aislada(() => ResultadoSimulacro(db, ct), "el simulacro de restauración");
         if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
     }
 
@@ -84,6 +87,38 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorTelegram($"💾 Falta la copia de seguridad\n{texto}", ct);
+    }
+
+    // ---- simulacro de restauración ----
+    // El contenedor «copias» restaura cada semana la última copia en una base vacía y deja el resultado en «.ultimo-simulacro»
+    // con el formato «ok|usuarios|tablas|archivo|fecha» (o «fallo|0|0|archivo|fecha»). Una copia que no se puede restaurar no es una copia.
+    public static Simulacro? LeerSimulacro(string? linea)
+    {
+        var p = (linea ?? "").Trim().Split('|');
+        if (p.Length < 5 || p[0] is not ("ok" or "fallo") || !int.TryParse(p[1], out var u) || !int.TryParse(p[2], out var t)
+            || !DateTimeOffset.TryParse(p[4], System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var f)) return null;
+        return new Simulacro(p[0] == "ok", u, t, p[3], f);
+    }
+
+    public async Task ResultadoSimulacro(AppDbContext db, CancellationToken ct)
+    {
+        var ruta = config["Copias:Ruta"];
+        if (string.IsNullOrWhiteSpace(ruta) || !File.Exists(Path.Combine(ruta, ".ultimo-simulacro"))) return;
+        if (LeerSimulacro(await File.ReadAllTextAsync(Path.Combine(ruta, ".ultimo-simulacro"), ct)) is not { } s) return;
+        var a = await db.Ajustes.FindAsync([SimulacroAvisado], ct);
+        var marca = s.Fecha.ToString("O");
+        if (a?.Valor == marca) return;
+        if (a is null) db.Ajustes.Add(a = new Ajuste { Clave = SimulacroAvisado });
+        a.Valor = marca;
+        await db.SaveChangesAsync(ct);
+        if (s.Ok)
+            await avisos.PorTelegram($"✅ Copia verificada: «{s.Copia}» se restauró en una base vacía ({s.Usuarios} usuario(s), {s.Tablas} tablas).", ct);
+        else
+        {
+            var texto = $"La copia «{s.Copia}» NO se pudo restaurar en la prueba semanal. Haz una copia a mano y revisa «docker compose logs copias».";
+            await avisos.PorPush("⚠️ Copia de seguridad dudosa", texto, "/seguridad", ct);
+            await avisos.PorTelegram($"⚠️ {texto}", ct);
+        }
     }
 
     // ---- el tiempo de mañana ----

@@ -13,7 +13,7 @@ namespace Mda.Api.Luz;
 
 public record AjustesLuz(bool Activa = false, int Umbral = 6, int AntelacionMin = 90, bool Amanecer = false, bool Astro = true, int Bortle = 5);
 
-public record VentanaLuz(string Tipo, string Titulo, DateTimeOffset Inicio, DateTimeOffset Fin, int? Puntuacion, string Detalle);
+public record VentanaLuz(string Tipo, string Titulo, DateTimeOffset Inicio, DateTimeOffset Fin, int? Puntuacion, string Detalle, string? Motivo = null);
 
 // Avisos de luz para fotografiar: la hora dorada (tarde y, si quieres, mañana) y las noches de Vía Láctea.
 // El sol, la luna y el núcleo galáctico se calculan en local (Astro); solo las nubes vienen de Open-Meteo, que ya usa el tiempo.
@@ -46,7 +46,7 @@ public class ServicioLuz(IHttpClientFactory http, IMemoryCache cache, Zona zona,
         var clave = $"nubes:{l.Lat.ToString(Inv)},{l.Lon.ToString(Inv)}";
         if (cache.TryGetValue(clave, out IReadOnlyList<HoraNubes>? guardado)) return guardado;
         var url = "https://api.open-meteo.com/v1/forecast?latitude=" + l.Lat.ToString(Inv) + "&longitude=" + l.Lon.ToString(Inv) +
-            "&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,visibility,wind_speed_10m&timezone=auto&forecast_days=4";
+            "&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,visibility,wind_speed_10m&timezone=auto&forecast_days=7";
         try
         {
             var j = await http.CreateClient("tiempo").GetFromJsonAsync<JsonElement>(url, ct);
@@ -76,14 +76,15 @@ public class ServicioLuz(IHttpClientFactory http, IMemoryCache cache, Zona zona,
         var lista = new List<VentanaLuz>();
         var (manana, tarde) = Astro.HoraDorada(dia, zona.Info, l.Lat, l.Lon);
         int? Dorada(Tramo t) => nubes is null ? null : Astro.PuntuarDorada(Entre(nubes, Local(t.Inicio), Local(t.Fin)));
-        if (a.Amanecer && manana is { } m) lista.Add(new VentanaLuz("amanecer", "Hora dorada de la mañana", m.Inicio, m.Fin, Dorada(m), "Sol subiendo"));
-        if (tarde is { } t2) lista.Add(new VentanaLuz("atardecer", "Hora dorada de la tarde", t2.Inicio, t2.Fin, Dorada(t2), "Sol bajando"));
+        string? Motivo(Tramo t) => nubes is null ? null : Astro.Porque(Entre(nubes, Local(t.Inicio), Local(t.Fin)));
+        if (a.Amanecer && manana is { } m) lista.Add(new VentanaLuz("amanecer", "Hora dorada de la mañana", m.Inicio, m.Fin, Dorada(m), "Sol subiendo", Motivo(m)));
+        if (tarde is { } t2) lista.Add(new VentanaLuz("atardecer", "Hora dorada de la tarde", t2.Inicio, t2.Fin, Dorada(t2), "Sol bajando", Motivo(t2)));
         if (a.Astro && Astro.NocheOscura(dia, zona.Info, l.Lat, l.Lon) is { } n)
         {
             var luna = Astro.IluminacionLuna(n.Inicio);
             var lunaArriba = Astro.AlturaLuna(n.Inicio.AddMinutes(n.Duracion.TotalMinutes / 2), l.Lat, l.Lon) > 0;
             int? p = nubes is null ? null : Astro.PuntuarNoche(Entre(nubes, Local(n.Inicio), Local(n.Fin)), luna, lunaArriba, a.Bortle);
-            lista.Add(new VentanaLuz("noche", "Noche de Vía Láctea", n.Inicio, n.Fin, p, $"{Astro.NombreFase(n.Inicio)} ({(int)Math.Round(luna * 100)} %), núcleo visible {(int)n.Duracion.TotalHours} h {n.Duracion.Minutes} min"));
+            lista.Add(new VentanaLuz("noche", "Noche de Vía Láctea", n.Inicio, n.Fin, p, $"{Astro.NombreFase(n.Inicio)} ({(int)Math.Round(luna * 100)} %), núcleo visible {(int)n.Duracion.TotalHours} h {n.Duracion.Minutes} min", nubes is null ? null : Astro.Porque(Entre(nubes, Local(n.Inicio), Local(n.Fin)))));
         }
         return lista;
     }
@@ -141,7 +142,7 @@ public class AvisosLuz(IServiceScopeFactory scopes, ServicioLuz luz, ServicioTie
                 ? $"{v.Detalle}. Noche de {local:dddd d} · {local:HH:mm} · puntuación {p}/10."
                 : $"{v.Titulo}: de {local:HH:mm} a {TimeZoneInfo.ConvertTime(v.Fin, zona.Info):HH:mm} · puntuación {p}/10. Estás libre.";
             var titulo = v.Tipo == "noche" ? "🌌 Noche para la Vía Láctea" : v.Tipo == "amanecer" ? "🌅 Hora dorada de la mañana" : "🌇 Hora dorada";
-            await avisos.PorPush(titulo, texto, "/fotos", ct);
+            await avisos.PorPush(titulo, texto, "/fotografia", ct);
             await avisos.PorTelegram($"{titulo}\n{texto}", ct);
             avisado.Add(clave);
             var reg = await db.Ajustes.FindAsync([ServicioLuz.ClaveAvisado], ct);
@@ -167,6 +168,73 @@ public static class LuzEndpoints
             // en la pantalla se ve todo, esté el aviso activado o no
             var todo = a with { Amanecer = true, Astro = true };
             return Results.Ok(new { ajustes = a, lugar = lugar.Nombre, hoy = await luz.Ventanas(hoy, lugar, todo, ct), manana = await luz.Ventanas(hoy.AddDays(1), lugar, todo, ct) });
+        });
+
+        // Un día entero para la pantalla «Cuándo salir a hacer fotografía»: efemérides, la serie cada 10 minutos
+        // (sol, luna y núcleo galáctico con altura y acimut, sombra, nubes y nota) y las ventanas del día.
+        g.MapGet("/dia", async (string? fecha, AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var a = await ServicioLuz.Leer(db, ct);
+            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).DateTime);
+            var dia = fecha is null ? hoy : DateOnly.TryParseExact(fecha, "yyyy-MM-dd", out var d) ? d : hoy;
+            if (dia < hoy.AddDays(-1) || dia > hoy.AddDays(7)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["fecha"] = ["Solo hay datos de ayer a una semana vista."] });
+            var nubes = await luz.Nubes(lugar, ct);
+            var porHora = nubes?.ToDictionary(h => h.Hora);
+            var efe = Astro.Dia(dia, zona.Info, lugar.Lat, lugar.Lon);
+            var ini = new DateTimeOffset(dia.ToDateTime(TimeOnly.MinValue), zona.Info.GetUtcOffset(dia.ToDateTime(TimeOnly.MinValue)));
+            var serie = Enumerable.Range(0, 145).Select(i =>
+            {
+                var t = ini.AddMinutes(10 * i);
+                var sol = Astro.PosSol(t, lugar.Lat, lugar.Lon); var luna = Astro.PosLuna(t, lugar.Lat, lugar.Lon); var nucleo = Astro.PosNucleo(t, lugar.Lat, lugar.Lon);
+                var local = TimeZoneInfo.ConvertTime(t, zona.Info).DateTime;
+                var redondeada = new DateTime(local.Year, local.Month, local.Day, local.Hour, 0, 0).AddHours(local.Minute >= 30 ? 1 : 0);
+                HoraNubes? h = porHora is not null && porHora.TryGetValue(redondeada, out var x) ? x : null;
+                var luz = Astro.IluminacionLuna(t);
+                return new
+                {
+                    min = 10 * i, etapa = Astro.Etapa(sol.Alt),
+                    sol = new { alt = Math.Round(sol.Alt, 1), az = Math.Round(sol.Az, 1) },
+                    luna = new { alt = Math.Round(luna.Alt, 1), az = Math.Round(luna.Az, 1) },
+                    nucleo = new { alt = Math.Round(nucleo.Alt, 1), az = Math.Round(nucleo.Az, 1) },
+                    sombra = Astro.Sombra(sol.Alt) is { } sm ? Math.Round(sm, 2) : (double?)null,
+                    nubes = h is null ? null : new { total = h.Total, baja = h.Baja, media = h.Media, alta = h.Alta, lluvia = h.Lluvia, vis = Math.Round(h.VisibilidadKm, 1), viento = Math.Round(h.Viento) },
+                    nota = Astro.PuntuarMomento(sol.Alt, nucleo.Alt, luna.Alt, luz, h, a.Bortle),
+                };
+            }).ToList();
+            var todo = a with { Amanecer = true, Astro = true };
+            return Results.Ok(new
+            {
+                sinLugar = false, lugar = lugar.Nombre, fecha = dia.ToString("yyyy-MM-dd"), hoy = dia == hoy, efemerides = efe, serie,
+                ventanas = await luz.Ventanas(dia, lugar, todo, ct), hayPrevision = nubes is not null,
+            });
+        });
+
+        // Los próximos siete días de un vistazo: la mejor ventana de cada uno y los momentos que más merecen la pena
+        g.MapGet("/semana", async (AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var a = await ServicioLuz.Leer(db, ct);
+            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).DateTime);
+            var nubes = await luz.Nubes(lugar, ct);
+            var todo = a with { Amanecer = true, Astro = true };
+            var dias = new List<object>();
+            var momentos = new List<VentanaLuz>();
+            for (var i = 0; i < 7; i++)
+            {
+                var dia = hoy.AddDays(i);
+                var vs = await luz.Ventanas(dia, lugar, todo, ct);
+                var efe = Astro.Dia(dia, zona.Info, lugar.Lat, lugar.Lon);
+                var luzDia = nubes?.Where(h => DateOnly.FromDateTime(h.Hora) == dia && h.Hora.Hour is >= 8 and <= 20).ToList();
+                momentos.AddRange(vs.Where(v => v.Puntuacion is not null));
+                dias.Add(new
+                {
+                    fecha = dia.ToString("yyyy-MM-dd"), efe.Amanecer, efe.Atardecer, efe.Fase, efe.IluminacionLuna,
+                    nubes = luzDia is { Count: > 0 } ? new { total = (int)luzDia.Average(h => h.Total), lluvia = (int)luzDia.Max(h => h.Lluvia) } : null,
+                    ventanas = vs, mejor = vs.Where(v => v.Puntuacion is not null).OrderByDescending(v => v.Puntuacion).FirstOrDefault(),
+                });
+            }
+            return Results.Ok(new { sinLugar = false, lugar = lugar.Nombre, hayPrevision = nubes is not null, dias, mejores = momentos.OrderByDescending(v => v.Puntuacion).ThenBy(v => v.Inicio).Take(5) });
         });
 
         g.MapPut("/ajustes", async (AjustesLuz a, AppDbContext db, CancellationToken ct) =>

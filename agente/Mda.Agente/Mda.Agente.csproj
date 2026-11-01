@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>mda-agente</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting> <!-- compila también en Linux (integración continua) -->
   </PropertyGroup>
 
   <!-- El mismo lector que usa la API, sin duplicar código -->

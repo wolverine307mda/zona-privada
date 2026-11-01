@@ -22,6 +22,10 @@ export const MODULOS: Modulo[] = [
     planes: ['Elegir qué fotos de «Imágenes» se publican', 'Descripción, texto alternativo y orden de cada una', 'Miniaturas WebP sin los datos de la cámara ni el GPS'],
   },
   {
+    id: 'fotografia', titulo: 'Fotografía', resumen: 'Cuándo salir a hacer fotografía: el cielo hora a hora, sol, luna, nubes y sombras.', listo: true,
+    icono: 'M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  },
+  {
     id: 'musica', titulo: 'Música', resumen: 'Lo que suena, con estadísticas de Spotify.', listo: true,
     icono: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
     planes: ['Lo más escuchado del mes', '«Sonando ahora» también en la web pública', 'La clave de Spotify, a salvo en el servidor'],

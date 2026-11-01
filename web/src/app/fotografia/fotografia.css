@@ -1,0 +1,79 @@
+:host { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.cab__titulo { margin: 0; font: 700 clamp(1.3rem, 5vw, 2rem)/1.05 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+.cab__sub { margin: 6px 0 0; color: var(--soft); text-transform: capitalize; }
+.aviso { margin: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent); color: var(--soft); font-size: .88rem; }
+.nada { color: var(--soft); margin: 0; }
+
+/* la escena */
+.escena { padding: 0; overflow: hidden; display: grid; }
+.escena__lienzo { position: relative; aspect-ratio: 4 / 3.4; overflow: hidden; background: #050816; }
+@media (min-width: 640px) { .escena__lienzo { aspect-ratio: 16 / 9; } }
+.escena__datos { position: absolute; left: 16px; top: 14px; display: grid; gap: 2px; color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); pointer-events: none; }
+.hora { font: 700 clamp(1.8rem, 7vw, 2.8rem)/1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.etapa { font-size: .86rem; opacity: .9; text-transform: capitalize; }
+.nota { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; min-width: 56px; height: 56px; padding: 0 8px; border-radius: 50%; background: color-mix(in srgb, var(--c) 82%, #000); color: #fff; font: 700 1.5rem/1 var(--font-display); box-shadow: 0 6px 24px color-mix(in srgb, var(--c) 45%, transparent); transition: background .3s; }
+.nota small { font-size: .6rem; opacity: .85; margin-top: -4px; }
+.controles { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px 0; }
+.boton { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: 600 .86rem/1 var(--font-text); cursor: pointer; transition: border-color .2s, background .2s; }
+.boton:hover, .boton:focus-visible, .boton[aria-pressed='true'] { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 14%, transparent); }
+.boton .icon { width: 16px; height: 16px; fill: currentColor; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* la línea del día */
+.linea { position: relative; padding: 12px 16px 14px; }
+.linea__svg { display: block; width: 100%; height: 64px; border-radius: 10px; overflow: hidden; background: color-mix(in srgb, var(--texto) 5%, transparent); }
+.linea__svg .marca { opacity: .55; }
+.linea__rango { position: absolute; left: 16px; right: 16px; top: 12px; width: calc(100% - 32px); height: 64px; margin: 0; background: none; -webkit-appearance: none; appearance: none; cursor: ew-resize; touch-action: pan-y; }
+.linea__rango::-webkit-slider-runnable-track { height: 64px; background: transparent; }
+.linea__rango::-moz-range-track { height: 64px; background: transparent; }
+.linea__rango::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 72px; margin-top: -4px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 2px rgba(0, 0, 0, .45), 0 0 16px rgba(255, 255, 255, .6); }
+.linea__rango::-moz-range-thumb { width: 6px; height: 72px; border: 0; border-radius: 4px; background: #fff; box-shadow: 0 0 0 2px rgba(0, 0, 0, .45), 0 0 16px rgba(255, 255, 255, .6); }
+.linea__rango:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 8px; }
+.linea__horas { display: flex; justify-content: space-between; margin-top: 6px; color: var(--soft); font-size: .72rem; font-variant-numeric: tabular-nums; }
+
+/* tarjetas */
+.rejilla { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.tarjeta { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.dato { margin: 0; color: var(--soft); font-size: .88rem; }
+.ventana { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 14px; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.ventana:hover, .ventana:focus-visible { border-color: var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); }
+.ventana__nota, .semana__nota { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: color-mix(in srgb, var(--c) 22%, transparent); color: var(--c); font: 700 1.3rem/1 var(--font-display); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.ventana__txt { display: grid; gap: 2px; min-width: 0; }
+.ventana__txt small { color: var(--soft); }
+.cuenta { margin: 0; font-weight: 600; color: var(--acento); }
+.brujulas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.brujula { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.brujula svg { width: 64px; height: 64px; }
+.brujula div { display: grid; }
+.brujula small { color: var(--soft); font-size: .76rem; }
+.luna { display: flex; align-items: center; gap: 14px; }
+.luna__disco { width: 64px; height: 64px; flex: none; filter: drop-shadow(0 0 14px rgba(220, 225, 255, .35)); }
+.luna div { display: grid; }
+.luna strong { font: 700 1.6rem/1 var(--font-display); }
+.luna small { color: var(--soft); }
+.capa { display: grid; grid-template-columns: 82px minmax(0, 1fr) 40px; gap: 8px; align-items: center; font-size: .84rem; }
+.capa__barra { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 10%, transparent); overflow: hidden; }
+.capa__barra i { display: block; height: 100%; border-radius: inherit; background: var(--acento); transition: width .25s; }
+.capa b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* semana */
+.semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.semana__dia { display: grid; justify-items: center; gap: 6px; padding: 8px 2px; border: 1px solid var(--vidrio-borde); border-radius: 14px; background: color-mix(in srgb, var(--texto) 4%, transparent); color: inherit; font: inherit; cursor: pointer; text-transform: capitalize; transition: border-color .2s, transform .2s; }
+.semana__dia:hover { transform: translateY(-2px); }
+.semana__dia.activo { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, transparent); }
+.semana__dia small { color: var(--soft); font-size: .68rem; line-height: 1.1; text-align: center; }
+.semana__dia .icon { width: 22px; height: 22px; fill: none; stroke: var(--soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.semana__nota { width: 34px; height: 34px; border-radius: 10px; font-size: 1rem; }
+@media (max-width: 520px) { .semana__dia small:last-child { display: none; } }
+.mejores { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: .88rem; }
+.mejores li { color: var(--soft); }
+.mejores b { font-size: 1rem; margin-right: 4px; }
+
+.avisos summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.avisos[open] summary { margin-bottom: 12px; }
+.avisos > * + * { margin-top: 10px; }
+
+/* carga */
+.esqueleto { padding: 0; overflow: hidden; }
+.esqueleto__cielo { aspect-ratio: 16 / 9; min-height: 260px; background: linear-gradient(110deg, color-mix(in srgb, var(--texto) 6%, transparent) 30%, color-mix(in srgb, var(--texto) 12%, transparent) 50%, color-mix(in srgb, var(--texto) 6%, transparent) 70%); background-size: 200% 100%; animation: brillo 1.4s linear infinite; }
+@keyframes brillo { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .esqueleto__cielo { animation: none; } .nota, .boton, .semana__dia, .capa__barra i { transition: none; } }

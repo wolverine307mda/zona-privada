@@ -158,6 +158,8 @@
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/luz` · PUT `/api/luz/ajustes` | hora dorada y noches de Vía Láctea de hoy y mañana con su nota; ajustes de los avisos |
+| GET | `/api/luz/dia?fecha=` | «Cuándo salir a hacer fotografía»: efemérides (amanecer, atardecer con acimut, crepúsculos, luna), serie de 145 puntos (cada 10 min) con sol, luna y núcleo galáctico (altura y acimut), sombra, nubes por capas y nota, y las ventanas del día. De ayer a 7 días |
+| GET | `/api/luz/semana` | los próximos 7 días: ventanas, mejor momento de cada uno, nubes y los 5 mejores momentos con su porqué |
 | GET/POST | `/api/senuelos` · PUT/DELETE `/{id}` · POST `/{id}/probar` · PUT `/ajustes` | archivos señuelo en Documentos |
 | GET/POST/DELETE | `/api/atajos-tokens` | tokens para Atajos de iOS (con sesión); el token solo sale al crearlo |
 | GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |
@@ -169,8 +171,11 @@
 | Método | Ruta | Descripción |
 |---|---|---|
 | POST | `/api/auth/passkey/entrada/opciones` · `/entrada` | entrar con un passkey (sin sesión); el segundo recibe `{ credencial }` y pone la cookie. 10/min por IP |
-| GET/POST/DELETE | `/api/passkeys` · `/opciones` · `/{id}` | gestionar los passkeys de la cuenta (con sesión, máx. 5) |
+| GET/POST/PUT/DELETE | `/api/passkeys` · `/opciones` · `/{id}` | gestionar los passkeys (con sesión, máx. 5). El GET trae nombre, sincronizada/verificada, alta (IP, dispositivo, idioma, zona, pantalla), último uso y nº de usos; el POST recibe `{ credencial, nombre, dispositivo }`; el PUT `{ nombre }` renombra |
 | POST | `/api/seguridad/reautenticar` | `{ password, codigo? }`: vale 2 min para esta sesión |
+| POST | `/api/seguridad/reautenticar/passkey/opciones` · `/passkey` | lo mismo con Face ID (`{ credencial }`) |
+| POST | `/api/seguridad/panico` | cierra sesiones, revoca tokens, apaga lo público y bloquea el login 1 h |
+| GET | `/api/pc/historial` | una foto de la salud por día (espacio libre y desgaste de los discos), 90 días |
 | GET | `/api/pc` | salud del PC, si el agente está conectado, si la reautenticación vale y las últimas órdenes |
 | POST | `/api/pc/ordenes` · GET `/api/pc/ordenes/{id}` | `{ tipo, parametro? }` (`bloquear`, `despierto`, `reiniciar`, `suspender`, `apagar`, `cancelar`); pide reautenticar (403 `reautenticar:true`) y avisa a Telegram |
 | POST | `/api/sistema/agente/salud` | el agente manda discos, volúmenes y reinicio pendiente (token) |

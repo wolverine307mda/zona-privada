@@ -18,6 +18,8 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 - Comprueba los cambios: `dotnet test ZonaPrivada.slnx`, `cd web && npx ng build`; para cambios visuales, pruébalo en
   escritorio y en móvil (375 px) con la API en memoria.
 - Desplegar = `docker compose up -d --build api` en el equipo de casa.
+- Las pruebas de `PostgresTests` arrancan un PostgreSQL con Testcontainers (hace falta Docker; sin él se saltan). Las migraciones se hacen con
+  `dotnet ef migrations add Nombre --output-dir Data/Migraciones` desde `api/Mda.Api`. `SemillaAdmin` tiene que ser el PRIMER servicio de fondo.
 
 ## Mapa rápido
 
@@ -31,3 +33,9 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | el marco, menú, reloj, asistente, buscador | `web/src/app/shell/` |
 | colores, fuentes, tokens | `web/src/styles.css` |
 | contenedores | `compose.yaml`, `Dockerfile` |
+| copias cifradas y simulacro | `herramientas/copias.sh` (+ `Avisos/Vigilante.cs` para el aviso) |
+| el .exe que lo arranca todo | `lanzador/Mda.Lanzador` (lógica pura en `Logica/`, tests en `Mda.Lanzador.Tests`) y el agente en `agente/` |
+| la pantalla de fotografía | `web/src/app/fotografia/` (escena en `cielo.ts`, datos en `modelo.ts`) y `api/Mda.Api/Luz/` |
+| llaves de acceso | `api/Mda.Api/Auth/Passkeys.cs`, `PasskeyInfo.cs`, `Seguridad/Reautenticar.cs`; front `seguridad/llaves.ts` |
+| pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |
+| medir la velocidad de la galería | `python herramientas/medir-galeria.py` |

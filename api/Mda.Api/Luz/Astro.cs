@@ -6,6 +6,8 @@ public record Tramo(DateTimeOffset Inicio, DateTimeOffset Fin)
 }
 
 // Una hora de la previsión con lo que importa para el cielo (Open-Meteo, hora local del lugar)
+public record Pos(double Alt, double Az);
+
 public record HoraNubes(DateTime Hora, int Total, int Baja, int Media, int Alta, int Lluvia, double VisibilidadKm, double Viento);
 
 // Posición del sol, la luna y el centro de la Vía Láctea calculada aquí, sin ninguna API (fórmulas de baja precisión de
@@ -24,17 +26,23 @@ public static class Astro
     private static double Sideral(double d, double lon) => Rad * (280.16 + 360.9856235 * d) + Rad * lon;
     private static double Altura(double h, double phi, double dec) => Math.Asin(Math.Sin(phi) * Math.Sin(dec) + Math.Cos(phi) * Math.Cos(dec) * Math.Cos(h));
 
-    // alturas sobre el horizonte, en grados
-    public static double AlturaSol(DateTimeOffset t, double lat, double lon)
+    // acimut en grados desde el norte hacia el este (0 = N, 90 = E, 180 = S, 270 = O)
+    private static double Acimut(double h, double phi, double dec) =>
+        (Math.Atan2(Math.Sin(h), Math.Cos(h) * Math.Sin(phi) - Math.Tan(dec) * Math.Cos(phi)) / Rad + 180 + 360) % 360;
+
+    private static Pos Posicion(double h, double lat, double dec) => new(Altura(h, Rad * lat, dec) / Rad, Acimut(h, Rad * lat, dec));
+
+    // (ángulo horario, declinación) del sol y de la luna en ese instante
+    private static (double H, double Dec) AngulosSol(DateTimeOffset t, double lon)
     {
         var d = Dias(t);
         var m = Rad * (357.5291 + 0.98560028 * d);
         var c = Rad * (1.9148 * Math.Sin(m) + 0.02 * Math.Sin(2 * m) + 0.0003 * Math.Sin(3 * m));
         var l = m + c + Rad * 102.9372 + Math.PI;
-        return Altura(Sideral(d, lon) - Ascension(l, 0), Rad * lat, Declinacion(l, 0)) / Rad;
+        return (Sideral(d, lon) - Ascension(l, 0), Declinacion(l, 0));
     }
 
-    public static double AlturaLuna(DateTimeOffset t, double lat, double lon)
+    private static (double H, double Dec) AngulosLuna(DateTimeOffset t, double lon)
     {
         var d = Dias(t);
         var l0 = Rad * (218.316 + 13.176396 * d);
@@ -42,12 +50,23 @@ public static class Astro
         var f = Rad * (93.272 + 13.229350 * d);
         var l = l0 + Rad * 6.289 * Math.Sin(m);
         var b = Rad * 5.128 * Math.Sin(f);
-        return Altura(Sideral(d, lon) - Ascension(l, b), Rad * lat, Declinacion(l, b)) / Rad;
+        return (Sideral(d, lon) - Ascension(l, b), Declinacion(l, b));
     }
 
     // el centro de la Vía Láctea (Sagitario): ascensión recta 17 h 45,7 min, declinación −28,94°
-    public static double AlturaNucleo(DateTimeOffset t, double lat, double lon) =>
-        Altura(Sideral(Dias(t), lon) - Rad * 266.4168, Rad * lat, Rad * -28.9362) / Rad;
+    private static (double H, double Dec) AngulosNucleo(DateTimeOffset t, double lon) => (Sideral(Dias(t), lon) - Rad * 266.4168, Rad * -28.9362);
+
+    public static Pos PosSol(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosSol(t, lon); return Posicion(h, lat, dec); }
+    public static Pos PosLuna(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosLuna(t, lon); return Posicion(h, lat, dec); }
+    public static Pos PosNucleo(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosNucleo(t, lon); return Posicion(h, lat, dec); }
+
+    // alturas sobre el horizonte, en grados
+    public static double AlturaSol(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosSol(t, lon); return Altura(h, Rad * lat, dec) / Rad; }
+    public static double AlturaLuna(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosLuna(t, lon); return Altura(h, Rad * lat, dec) / Rad; }
+    public static double AlturaNucleo(DateTimeOffset t, double lat, double lon) { var (h, dec) = AngulosNucleo(t, lon); return Altura(h, Rad * lat, dec) / Rad; }
+
+    // lo que mide la sombra de algo de 1 m de alto (en metros); null con el sol bajo el horizonte o casi (la sombra se pierde en el infinito)
+    public static double? Sombra(double alturaSol) => alturaSol < 1 ? null : Math.Min(40, 1 / Math.Tan(alturaSol * Rad));
 
     // 0 = luna nueva, 1 = llena
     public static double IluminacionLuna(DateTimeOffset t)
@@ -140,5 +159,79 @@ public static class Astro
         var p = 10.0 - total / 100 * 8 - lluvia / 100 * 4 - (Math.Clamp(bortle, 1, 9) - 1) * 0.45;
         if (lunaSobreElHorizonte) p -= iluminacionLuna * 4;
         return (int)Math.Round(Math.Clamp(p, 0, 10), MidpointRounding.AwayFromZero);
+    }
+
+    // ---- el día entero: salidas y puestas, crepúsculos y luna ----
+
+    public record Efemerides(DateTimeOffset? Amanecer, DateTimeOffset? Atardecer, double? AzAmanecer, double? AzAtardecer,
+        DateTimeOffset? CivilManana, DateTimeOffset? CivilTarde, DateTimeOffset? NauticoManana, DateTimeOffset? NauticoTarde,
+        DateTimeOffset? AstroManana, DateTimeOffset? AstroTarde, DateTimeOffset Mediodia, double AlturaMediodia,
+        DateTimeOffset? LunaSale, DateTimeOffset? LunaPone, string Fase, double IluminacionLuna);
+
+    // Se recorre el día minuto a minuto y se anotan los cruces del sol por −0,833° (salida y puesta), −6°, −12° y −18°
+    public static Efemerides Dia(DateOnly dia, TimeZoneInfo zona, double lat, double lon)
+    {
+        var ini = Local(dia, 0, zona);
+        const int N = 1440;
+        var sol = new double[N + 1];
+        var luna = new double[N + 1];
+        for (var i = 0; i <= N; i++) { var t = ini.AddMinutes(i); sol[i] = AlturaSol(t, lat, lon); luna[i] = AlturaLuna(t, lat, lon); }
+
+        DateTimeOffset? Cruce(double[] a, double umbral, bool subiendo)
+        {
+            for (var i = 1; i <= N; i++)
+                if (subiendo ? a[i - 1] < umbral && a[i] >= umbral : a[i - 1] >= umbral && a[i] < umbral) return ini.AddMinutes(i);
+            return null;
+        }
+        var amanecer = Cruce(sol, -0.833, true);
+        var atardecer = Cruce(sol, -0.833, false);
+        var max = Enumerable.Range(0, N + 1).MaxBy(i => sol[i]);
+        var noon = ini.AddMinutes(12 * 60);
+        return new Efemerides(amanecer, atardecer, amanecer is { } a ? PosSol(a, lat, lon).Az : null, atardecer is { } b ? PosSol(b, lat, lon).Az : null,
+            Cruce(sol, -6, true), Cruce(sol, -6, false), Cruce(sol, -12, true), Cruce(sol, -12, false), Cruce(sol, -18, true), Cruce(sol, -18, false),
+            ini.AddMinutes(max), sol[max], Cruce(luna, 0, true), Cruce(luna, 0, false), NombreFase(noon), IluminacionLuna(noon));
+    }
+
+    // ---- una nota para cada momento ----
+
+    // la «etapa» del cielo según la altura del sol
+    public static string Etapa(double alturaSol) => alturaSol switch
+    {
+        < -18 => "noche", < -12 => "astronomico", < -6 => "nautico", < -4 => "azul", < 6 => "dorada", _ => "dia",
+    };
+
+    // De 0 a 10 para ese instante: dorada y azul premian la nube alta y castigan la baja, el día pleno es una luz dura (nota media),
+    // y la noche cuenta si se ve el núcleo de la Vía Láctea y no hay luna. Sin previsión de nubes, null.
+    public static int? PuntuarMomento(double alturaSol, double alturaNucleo, double alturaLuna, double iluminacionLuna, HoraNubes? h, int bortle)
+    {
+        if (h is null) return null;
+        var una = new[] { h };
+        switch (Etapa(alturaSol))
+        {
+            case "dorada": return PuntuarDorada(una);
+            case "azul": return Math.Max(0, PuntuarDorada(una) - 1);
+            case "nautico": return Math.Max(0, PuntuarDorada(una) - 3);
+            case "astronomico": return Math.Max(0, PuntuarDorada(una) - 5);
+            case "noche":
+                var p = PuntuarNoche(una, iluminacionLuna, alturaLuna > 0, bortle);
+                return alturaNucleo > 10 ? p : (int)Math.Round(p * 0.5, MidpointRounding.AwayFromZero);
+            default:
+                var d = 4.0 - h.Total / 100.0 + (alturaSol < 30 ? 1 : 0) - h.Lluvia / 100.0 * 3;
+                return (int)Math.Round(Math.Clamp(d, 0, 6), MidpointRounding.AwayFromZero);
+        }
+    }
+
+    // en una frase, por qué sale esa nota
+    public static string Porque(IReadOnlyList<HoraNubes> horas)
+    {
+        if (horas.Count == 0) return "";
+        var total = Media(horas.Select(h => h.Total)); var baja = Media(horas.Select(h => h.Baja));
+        var alta = Media(horas.Select(h => (h.Media + h.Alta) / 2)); var lluvia = Media(horas.Select(h => h.Lluvia));
+        if (lluvia >= 50) return "riesgo de lluvia";
+        if (baja >= 60) return "nube baja que tapa el sol";
+        if (total >= 90) return "cielo cubierto";
+        if (total < 10) return "cielo despejado";
+        if (baja < 30 && alta is >= 20 and <= 70) return "nubes altas que pueden teñirse y sin nube baja";
+        return "nubosidad variable";
     }
 }

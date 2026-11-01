@@ -118,3 +118,7 @@
 .guia summary { cursor: pointer; color: var(--acento); }
 .guia ol { display: grid; gap: 10px; padding-left: 20px; color: var(--soft); }
 .guia code { word-break: break-all; }
+
+.confirmar-panico { display: grid; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--bad); }
+.acciones-panico { display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
+.button.peligro { background: var(--bad); color: #fff; }

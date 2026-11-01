@@ -110,7 +110,7 @@
     <div class="caja vacio"><strong>{{ error() }}</strong><button class="mini" type="button" (click)="ir(raiz()!)">Volver al principio</button></div>
   } @else {
     <section class="items" [class.items--lista]="vista() === 'lista'" [class.is-cargando]="cargando()" (click)="cerrarMenus()">
-      @for (e of visibles(); track e.ruta; let i = $index) {
+      @for (e of mostrados(); track e.ruta; let i = $index) {
         <article class="item" [class.item--carpeta]="e.carpeta" [class.is-sobre]="moviendo() === e.ruta" [class.is-menu]="menu() === e.ruta"
                  [style.--c]="TIPOS[e.tipo].color" [style.--i]="i < 24 ? i : 24"
                  draggable="true" (dragstart)="cogerElemento($event, e)"
@@ -146,6 +146,9 @@
               <button role="menuitem" type="button" (click)="pedirNombre('renombrar', e)">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg> Renombrar
               </button>
+              <button role="menuitem" type="button" (click)="pedirMover(e)">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3zM12 13h6M15 10l3 3-3 3" /></svg> Mover a…
+              </button>
               <button role="menuitem" type="button" class="peligro" (click)="borrar(e)">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="ICONO_PAPELERA" /></svg> {{ confirmar() === e.ruta ? '¿Seguro? Pulsa otra vez' : 'A la papelera' }}
               </button>
@@ -154,7 +157,7 @@
         </article>
       } @empty {
         <div class="vacio vacio--grande">
-          @if (cargando()) { <strong class="esta-cargando">Cargando…</strong> }
+          @if (cargando()) { <div class="esqueleto" aria-busy="true" aria-label="Cargando la carpeta"><i></i><i></i><i></i></div> }
           @else if (resultados()) { <strong>Nada con «{{ q() }}»</strong> Prueba con otra palabra. }
           @else {
             <span class="vacio__icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS.carpeta.icono" /></svg></span>
@@ -162,6 +165,9 @@
             Arrastra archivos aquí o pulsa «Subir».
           }
         </div>
+      }
+      @if (visibles().length > limite()) {
+        <button class="mini mas-items" type="button" (click)="limite.set(limite() + 200)">Mostrar más ({{ visibles().length - limite() }} restantes)</button>
       }
     </section>
   }
@@ -214,6 +220,24 @@
 
 @if (aviso()) { <p class="aviso" role="status">{{ aviso() }}</p> }
 
+<!-- mover a otra carpeta (sin arrastrar) -->
+<dialog class="dlg-nombre dlg-mover" #dlgMover (close)="moverDlg.set(null)" aria-labelledby="dlg-mover-t">
+  @if (moverDlg(); as m) {
+    <h2 id="dlg-mover-t">Mover «{{ m.elemento.nombre }}»</h2>
+    <p class="mover__ruta"><button class="mini" type="button" (click)="subirMover()" [disabled]="!m.ruta" aria-label="Subir una carpeta">↑</button> {{ nombreRaiz() }}{{ m.ruta ? ' / ' + m.ruta.split('/').join(' / ') : '' }}</p>
+    <ul class="mover__lista">
+      @for (c of m.carpetas; track c.ruta) {
+        <li><button type="button" (click)="entrarMover(c.ruta)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="TIPOS.carpeta.icono" /></svg> {{ c.nombre }}</button></li>
+      } @empty { <li class="mover__vacio">{{ m.cargando ? 'Cargando…' : 'No hay más carpetas aquí.' }}</li> }
+    </ul>
+    @if (m.error) { <p class="error">{{ m.error }}</p> }
+    <footer>
+      <button class="button button--ghost" type="button" (click)="dlgMover.close()">Cancelar</button>
+      <button class="button" type="button" (click)="confirmarMover()" [disabled]="m.cargando">Mover aquí</button>
+    </footer>
+  }
+</dialog>
+
 <!-- carpeta nueva / renombrar -->
 <dialog class="dlg-nombre" #dlgNombre (close)="alCerrarNombre()" (click)="fueraNombre($event)" aria-labelledby="dlg-nombre-t">
   @if (nombreDlg(); as n) {
@@ -234,7 +258,15 @@
 <dialog class="visor" #dlgVer (close)="alCerrarVisor()" (click)="fueraVisor($event)" aria-label="Visor">
   @if (viendo(); as v) {
     <header class="visor__cab">
-      <span><strong>{{ v.nombre }}</strong><small>{{ tamano(v.tamano) }} · {{ fecha(v.modificado) }}</small></span>
+      <span><strong>{{ v.nombre }}</strong><small>{{ posicion() ? posicion() + ' · ' : '' }}{{ tamano(v.tamano) }} · {{ fecha(v.modificado) }}</small></span>
+      @if (v.tipo !== 'video') {
+        <button class="visor__boton" type="button" (click)="cambiarZoom(-0.5)" [disabled]="zoom() <= 1" aria-label="Alejar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
+        </button>
+        <button class="visor__boton" type="button" (click)="cambiarZoom(0.5)" [disabled]="zoom() >= 4" aria-label="Acercar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+      }
       <button class="visor__boton" type="button" (click)="descargar(v)" aria-label="Descargar">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
       </button>
@@ -246,9 +278,10 @@
       @if (v.tipo === 'video') {
         <video [src]="miniatura(v)" controls autoplay playsinline></video>
       } @else {
-        @for (img of [v]; track img.ruta) { <img [src]="miniatura(img)" [alt]="img.nombre" draggable="false"> }
+        @for (img of [v]; track img.ruta) { <img [src]="miniatura(img)" [alt]="img.nombre" draggable="false" [style.transform]="'scale(' + zoom() + ')'" (dblclick)="alternarZoom()"> }
       }
     </div>
+    <p class="solo-lectores" aria-live="polite">{{ v.nombre }}{{ posicion() ? ', foto ' + posicion() : '' }}</p>
     @if (v.tipo !== 'video' && imagenes().length > 1) {
       <button class="visor__flecha visor__flecha--izq" type="button" (click)="pasar(-1)" aria-label="Anterior">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>

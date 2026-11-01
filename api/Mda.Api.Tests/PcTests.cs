@@ -156,6 +156,29 @@ public class PcTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
     }
 
     [Fact]
+    public async Task Cada_dia_queda_una_foto_de_la_salud_y_se_guardan_solo_90()
+    {
+        var c = await factory.Dentro();
+        await AgenteConectado();
+        await AgenteConectado(); // el mismo día otra vez: se sustituye, no se acumula
+        var h = await c.GetFromJsonAsync<JsonElement>("/api/pc/historial");
+        var hoy = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        Assert.Single(h.EnumerateArray(), d => d.GetProperty("fecha").GetString() == hoy);
+        var dia = h.EnumerateArray().Single(d => d.GetProperty("fecha").GetString() == hoy);
+        Assert.Equal("C:", dia.GetProperty("volumenes")[0].GetProperty("nombre").GetString());
+        Assert.Equal(100L << 30, dia.GetProperty("volumenes")[0].GetProperty("libreBytes").GetInt64());
+        Assert.Equal(5, dia.GetProperty("discos")[0].GetProperty("desgastePct").GetInt32());
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var s = new SaludPc(DateTimeOffset.UtcNow, [], [new VolumenSalud("D:", 1, 2)], false);
+        for (var i = 1; i <= 95; i++) await HistorialSalud.Guardar(db, s, DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-95 + i));
+        Assert.True(db.SaludDias.Count() <= 91);
+        Assert.False(db.SaludDias.Any(d => d.Fecha < DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-HistorialSalud.Dias)));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync("/api/pc/historial")).StatusCode);
+    }
+
+    [Fact]
     public async Task La_salud_que_manda_el_agente_se_ve_en_la_pantalla()
     {
         var c = await Dentro();

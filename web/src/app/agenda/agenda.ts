@@ -42,6 +42,7 @@ export class Agenda {
   protected readonly pendientes = signal<Aparicion[]>([]);
   protected readonly estado = signal<EstadoAgenda | null>(null);
   protected readonly aviso = signal('');
+  protected readonly cargado = signal(false);
   protected readonly semana = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
   protected readonly colores = COLORES_EVENTO;
   protected readonly repeticiones = REPETICIONES;
@@ -204,6 +205,7 @@ export class Agenda {
       this.apariciones.set(r.apariciones);
       this.pendientes.set(p);
     } catch { /* sin conexión: se queda lo que había */ }
+    this.cargado.set(true);
   }
 
   protected moverMes(n: number): void {

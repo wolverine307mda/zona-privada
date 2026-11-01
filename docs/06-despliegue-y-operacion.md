@@ -56,10 +56,18 @@ Solo en desarrollo: `Datos:EnMemoria=true` (con `ASPNETCORE_ENVIRONMENT=Developm
 
 ## Copias de seguridad
 
-- El servicio `copias` hace `pg_dump -Fc` una vez al día (a partir de las 3:00, o en cuanto se encienda el equipo)
-  en `./copias/zonaprivada-AAAAMMDD-HHMM.dump`, y guarda las 14 últimas automáticas.
-- La API avisa (correo/push/Telegram) si la última copia tiene más de 30 horas.
-- **Guarda copias también fuera del PC** (otro disco o nube): `./copias` no se sube a git.
+El contenedor `copias` ejecuta [`herramientas/copias.sh`](../herramientas/copias.sh) cada 10 minutos:
+
+1. **Copia diaria** (a partir de las 3:00, o en cuanto se encienda el equipo): `pg_dump -Fc` en `./copias/zonaprivada-AAAAMMDD-HHMM.dump`;
+   se guardan las 14 últimas. La API avisa (correo/push/Telegram) si la última tiene más de 30 horas.
+2. **Copia cifrada fuera del PC** (si hay `COPIAS_AGE_PUBLICA` en el `.env`): el dump y el volumen `claves` (las claves de las cookies)
+   se cifran con [age](https://github.com/FiloSottile/age) y se copian a `COPIAS_NUBE`, una carpeta que sincronice OneDrive.
+   Se guardan 14 diarias y 8 semanales (`semanal/`, las de domingo). Sin la clave privada nadie puede leerlas.
+   - Una vez: `age-keygen -o clave-privada.txt`, **guarda ese archivo fuera del PC** (gestor de contraseñas, USB), y pon la línea
+     `Public key: age1…` en `COPIAS_AGE_PUBLICA`. Después `docker compose up -d copias`.
+   - Descifrar: `age -d -i clave-privada.txt zonaprivada-AAAAMMDD.dump.age > copia.dump` (y `…-claves.tar.age | tar -x`).
+3. **Simulacro semanal de restauración**: la última copia se restaura en una base vacía (`simulacro`, que se borra al terminar) y el
+   resultado queda en `./copias/.ultimo-simulacro`. La API lo manda a Telegram: «✅ copia verificada» o «⚠️ NO se pudo restaurar».
 
 Copia manual:
 
@@ -74,6 +82,11 @@ docker compose stop api
 docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < copias/ARCHIVO.dump
 docker compose start api
 ```
+
+## Latido («PC apagado»)
+
+Con `HEALTHCHECK_URL` (un check gratuito de [healthchecks.io](https://healthchecks.io) con periodo de 5 min y margen de 15) la API hace un GET
+cada 5 minutos. Si el PC se apaga, se corta internet o Docker se cae, el latido para y Healthchecks te avisa por correo o Telegram.
 
 ## Base de datos a mano
 
@@ -99,14 +112,35 @@ select "Fecha", "Ip", "Exito", "Motivo" from accesos order by "Id" desc limit 20
   `update "AspNetUsers" set "TwoFactorEnabled" = false;`.
 - **Cambiar la contraseña**: desde Perfil, o cambia `ADMIN_PASSWORD` en `.env` (mínimo 12 caracteres) y `docker compose up -d api`.
 
-## Agente de Windows
+## «Zona privada.exe» (arranque con un clic)
+
+Un solo programa (`lanzador/Mda.Lanzador`) que sustituye a abrir Docker, `docker compose up` y `agente\arrancar.cmd`:
+
+```bat
+dotnet publish lanzador\Mda.Lanzador -c Release -o lanzador\publicado   :: genera lanzador\publicado\ZonaPrivada.exe (autocontenido, ~50 MB)
+lanzador\publicado\ZonaPrivada.exe --instalar                           :: un aviso de administrador: tarea de inicio + accesos directos
+lanzador\publicado\ZonaPrivada.exe --desinstalar                        :: lo quita
+```
+
+- Al abrirlo: arranca Docker Desktop si hace falta, espera a que responda, ejecuta `docker compose --profile publico up -d` y **aloja el agente**
+  del PC dentro (ya no hace falta `mda-agente.exe`). Vive en la bandeja junto al reloj: verde = todo en marcha, ámbar = funciona pero algo falla
+  (sin salida a Internet, un contenedor parado, el agente sin conectar), rojo = no hay app (se vuelve a levantar solo cada 5 minutos).
+- Menú del icono: abrir la app, abrir en local, registros (Seq), reiniciar la API, **actualizar** (reconstruir la API), arrancar/parar todo,
+  «Iniciar con Windows», abrir la carpeta y el registro (`%AppData%\ZonaPrivada\lanzador.log`).
+- «Iniciar con Windows» crea una **tarea programada al iniciar sesión con privilegios máximos** (20 s de retraso): arranca sola y sin avisos de
+  administrador. Con administrador el agente puede leer la temperatura y el desgaste de los discos.
+- Lee `AGENTE_TOKEN` y `URL_PUBLICA` del `.env` de la carpeta del proyecto (la busca sola; si no, te la pregunta una vez).
+- Para actualizar el propio `.exe`, ciérralo desde el menú antes de volver a publicar.
+- Un PC apagado o suspendido no se puede arrancar desde fuera; el icono solo trabaja con la sesión de Windows iniciada.
+
+## Agente de Windows (sin el lanzador)
 
 ```bat
 agente\arrancar.cmd                      :: lo compila la primera vez (agente/publicado) y lo deja en segundo plano
 dotnet run --project agente/Mda.Agente   :: en primer plano para ver qué hace
 ```
 
-Arranque automático: acceso directo a `agente\arrancar.cmd` en `shell:startup` (Win + R).
+Sigue valiendo como respaldo (acceso directo a `agente\arrancar.cmd` en `shell:startup`). No lo uses a la vez que el lanzador.
 
 ## Problemas típicos
 

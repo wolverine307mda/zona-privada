@@ -169,8 +169,10 @@ flowchart LR
 | Agenda | `web/src/app/agenda` | `Agenda/` | mes en rejilla, día por horas con **horario de trabajo** de fondo, eventos/recordatorios con repetición y avisos (correo, WhatsApp, push, Telegram), Google Calendar |
 | Notas | `web/src/app/notas` | `Notas/` | Markdown, tareas `- [ ]`, colores, etiquetas, fijadas/archivadas |
 | Documentos | `web/src/app/documentos` | `Archivos/` | carpetas del PC montadas en Docker: ver, subir, descargar, mover, renombrar, papelera |
+| Fotografía | `web/src/app/fotografia` | `Luz/` | «Cuándo salir a hacer fotografía»: el cielo hora a hora (sol, luna, nubes por capas, sombra, estrellas y Vía Láctea animados con datos reales), línea del día con la nota de cada hora, mejores momentos, semana y avisos |
 | Música | `web/src/app/musica` | `Conexiones/` | Spotify: lo que suena, control, recientes, cola, top |
-| Seguridad | `web/src/app/seguridad` | `Seguridad/`, `Auth/` | sesiones abiertas, accesos, 2FA con QR, canales de aviso (correo, WhatsApp, push, Telegram) |
+| Seguridad | `web/src/app/seguridad` | `Seguridad/`, `Auth/` | sesiones abiertas, accesos, 2FA con QR, llaves de acceso (Face ID) con nombre y datos del dispositivo, bloqueo al volver a la app, señuelos, tokens de Atajos, botón de pánico, canales de aviso |
+| Mi PC | `web/src/app/pc` | `Pc/` | salud del equipo (discos, espacio, tendencia a 90 días) y órdenes (bloquear, reiniciar, apagar…) firmadas, que se confirman con Face ID o contraseña |
 | Perfil | `web/src/app/perfil` | `Seguridad/Perfil.cs` | nombre, contacto, foto, cambiar contraseña |
 | Asistente | `web/src/app/shell/asistente.ts` | `Asistente/` | intérprete de frases en español por reglas (sin IA externa): gastos, ingresos, huchas, eventos, horario, preguntas |
 | Telegram | Seguridad › Avisos | `Telegram/` | bot vinculado a un solo chat: avisos + asistente desde el chat (/hoy, /tiempo, /saldo) |

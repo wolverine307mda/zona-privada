@@ -20,13 +20,13 @@ public class RelojFijo(DateTimeOffset ahora) : TimeProvider
 }
 
 // Open-Meteo de mentira: las nubes por horas de 4 días desde «desde», todas iguales
-public class NubesFalsas(DateOnly desde, int total, int baja, int media, int alta, int lluvia) : HttpMessageHandler, IHttpClientFactory
+public class NubesFalsas(DateOnly desde, int total, int baja, int media, int alta, int lluvia, int horasTotales = 96) : HttpMessageHandler, IHttpClientFactory
 {
     public HttpClient CreateClient(string name) => new(this, false);
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
     {
-        var horas = Enumerable.Range(0, 96).Select(i => desde.ToDateTime(TimeOnly.MinValue).AddHours(i)).ToList();
+        var horas = Enumerable.Range(0, horasTotales).Select(i => desde.ToDateTime(TimeOnly.MinValue).AddHours(i)).ToList();
         JsonArray A<T>(Func<DateTime, T> f) => new(horas.Select(h => JsonValue.Create(f(h))).ToArray<JsonNode?>());
         var json = new JsonObject
         {

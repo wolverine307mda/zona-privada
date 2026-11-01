@@ -90,10 +90,12 @@
           @if (!horario()) { <p class="nada">¿Trabajas? <button class="enlace" type="button" (click)="abrirHorario()">Pon tu horario</button> y lo verás aquí de fondo.</p> }
         }
       } @else {
+      @if (!cargado()) { <div class="esqueleto" aria-busy="true" aria-label="Cargando el día"><i></i><i></i><i></i></div> }
       @for (a of delDia(); track a.clave) {
-        <button class="ev" type="button" [style.--c]="colorEvento(a.color)" [class.hecho]="a.hecho" (click)="abrir(a)">
-          <span class="ev__hora">{{ a.todoElDia ? 'Todo el día' : hora(a.inicio) }}@if (a.fin && !a.todoElDia) {<small>{{ hora(a.fin) }}</small>}</span>
-          <span class="ev__texto">
+        <div class="ev" [style.--c]="colorEvento(a.color)" [class.hecho]="a.hecho">
+          <button class="ev__abrir" type="button" (click)="abrir(a)" [attr.aria-label]="a.titulo + ', ' + (a.todoElDia ? 'todo el día' : hora(a.inicio))"></button>
+          <span class="ev__hora" aria-hidden="true">{{ a.todoElDia ? 'Todo el día' : hora(a.inicio) }}@if (a.fin && !a.todoElDia) {<small>{{ hora(a.fin) }}</small>}</span>
+          <span class="ev__texto" aria-hidden="true">
             <strong>{{ a.titulo }}</strong>
             <span>
               @if (a.lugar) { 📍 {{ a.lugar }} }
@@ -103,11 +105,11 @@
             </span>
           </span>
           @if (a.tipo === 'Recordatorio') {
-            <span class="check" role="checkbox" [attr.aria-checked]="a.hecho" aria-label="Hecho" tabindex="0" (click)="marcar(a, $event)" (keydown.enter)="marcar(a, $event)"></span>
+            <button class="check" type="button" role="checkbox" [attr.aria-checked]="a.hecho" [attr.aria-label]="'Hecho: ' + a.titulo" (click)="marcar(a, $event)"></button>
           }
-        </button>
+        </div>
       } @empty {
-        <p class="nada">Nada este día. <button class="enlace" type="button" (click)="nuevo('Evento')">Añade algo</button></p>
+        @if (cargado()) { <p class="nada">Nada este día. <button class="enlace" type="button" (click)="nuevo('Evento')">Añade algo</button></p> }
       }
       }
     </section>
@@ -115,10 +117,11 @@
     <section class="caja">
       <header class="caja__cab"><h3>Recordatorios</h3><span class="sub">{{ recordatorios().length }} pendientes</span></header>
       @for (a of recordatorios().slice(0, 8); track a.clave) {
-        <button class="ev ev--rec" type="button" [style.--c]="colorEvento(a.color)" (click)="abrir(a)">
-          <span class="check" role="checkbox" aria-checked="false" aria-label="Marcar como hecho" tabindex="0" (click)="marcar(a, $event)" (keydown.enter)="marcar(a, $event)"></span>
-          <span class="ev__texto"><strong>{{ a.titulo }}</strong><span>{{ cuando(a) }}</span></span>
-        </button>
+        <div class="ev ev--rec" [style.--c]="colorEvento(a.color)">
+          <button class="ev__abrir" type="button" (click)="abrir(a)" [attr.aria-label]="a.titulo + ', ' + cuando(a)"></button>
+          <button class="check" type="button" role="checkbox" aria-checked="false" [attr.aria-label]="'Marcar como hecho: ' + a.titulo" (click)="marcar(a, $event)"></button>
+          <span class="ev__texto" aria-hidden="true"><strong>{{ a.titulo }}</strong><span>{{ cuando(a) }}</span></span>
+        </div>
       } @empty {
         <p class="nada">Sin recordatorios pendientes. 🎉</p>
       }
