@@ -1,0 +1,38 @@
+.llaves { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+.llave { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 14px; border-radius: 16px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); animation: llave-entra var(--dur-media, .35s) cubic-bezier(.2, .8, .2, 1) both; transition: border-color .3s, background .3s; }
+.llave--ok { border-color: var(--ok, #3fb950); background: color-mix(in srgb, var(--ok, #3fb950) 10%, transparent); }
+.llave--mal { border-color: var(--bad); }
+.llave__icono { width: 44px; height: 44px; padding: 10px; border-radius: 12px; background: color-mix(in srgb, var(--acento) 14%, transparent); fill: none; stroke: var(--acento); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; box-sizing: border-box; }
+.llave__cuerpo { display: grid; gap: 8px; min-width: 0; }
+.llave__nombre { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.llave__nombre strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.02rem; }
+.llave__lapiz { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--soft); cursor: pointer; }
+.llave__lapiz:hover, .llave__lapiz:focus-visible { color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, transparent); }
+.llave__lapiz .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.llave__edicion { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.llave__edicion .campo__input { flex: 1 1 160px; min-width: 0; }
+.llave__linea { margin: 0; color: var(--soft); font-size: .86rem; }
+.etiquetas { display: flex; flex-wrap: wrap; gap: 6px; }
+.etiqueta { padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; color: var(--soft); border: 1px solid var(--vidrio-borde); }
+.etiqueta--acento { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 45%, transparent); }
+.detalle { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 2px 0; font-size: .84rem; animation: llave-entra .25s ease both; }
+.detalle dt { color: var(--soft); }
+.detalle dd { margin: 0; overflow-wrap: anywhere; }
+.acciones { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.enlace { border: 0; background: none; color: var(--acento); font: 600 .84rem/1.2 var(--font-text); cursor: pointer; padding: 8px 2px; min-height: 36px; }
+.enlace:disabled { opacity: .5; cursor: default; }
+.enlace--peligro { color: var(--bad); }
+.confirmar { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: .86rem; }
+.resultado { margin: 0; font-size: .86rem; color: var(--ok, #3fb950); }
+.resultado--mal { color: var(--bad); }
+.vacio { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: center; padding: 16px; border-radius: 16px; border: 1px dashed var(--vidrio-borde); color: var(--soft); }
+.vacio p { margin: 0; font-size: .92rem; }
+.vacio strong { color: var(--texto); }
+.vacio__icono { width: 44px; height: 44px; fill: none; stroke: var(--acento); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.alta { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid var(--brand); animation: llave-entra .25s ease both; }
+.alta .acciones { justify-content: flex-end; }
+@keyframes llave-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .llave, .detalle, .alta { animation: none; } .llave { transition: none; } }
+.alta .campo { display: grid; gap: 6px; }
+.alta .campo__input, .llave__edicion .campo__input { width: 100%; min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: inherit; box-sizing: border-box; }
+.vacio p { text-align: left; }

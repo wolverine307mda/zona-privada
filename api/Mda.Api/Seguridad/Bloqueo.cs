@@ -67,7 +67,7 @@ public static class BloqueoSesion
             return u is null ? Results.Unauthorized() : Results.Content(await signIn.MakePasskeyRequestOptionsAsync(u), "application/json");
         }).RequireRateLimiting(Limites.Reauth);
 
-        g.MapPost("/desbloqueo", async (CredencialEntrada c, HttpContext ctx, ClaimsPrincipalAccessor yo, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn, AppDbContext db) =>
+        g.MapPost("/desbloqueo", async (CredencialEntrada c, HttpContext ctx, ClaimsPrincipalAccessor yo, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn, AppDbContext db, TimeProvider reloj) =>
         {
             var u = await users.GetUserAsync(yo.Usuario);
             if (u is null) return Results.Unauthorized();
@@ -75,6 +75,7 @@ public static class BloqueoSesion
             // tiene que ser un passkey de ESTA cuenta (no vale el de otra)
             if (!r.Succeeded || r.User is null || r.User.Id != u.Id) return Results.Problem("Ese passkey no es de esta cuenta.", statusCode: StatusCodes.Status401Unauthorized);
             await users.AddOrUpdatePasskeyAsync(r.User, r.Passkey);
+            await PasskeyInfos.Uso(db, ctx, PasskeyInfos.IdDe(r.Passkey.CredentialId), "desbloqueo", reloj);
             return await Desbloquear(ctx, db);
         }).RequireRateLimiting(Limites.Reauth);
 

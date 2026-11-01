@@ -1,7 +1,9 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { crearCredencial, soportaPasskeys } from '../core/passkey';
+import { soportaPasskeys } from '../core/passkey';
+import { Reautenticar } from '../core/reautenticar';
+import { Llaves } from './llaves';
 import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
 import type { Conexion } from '../musica/musica';
@@ -27,6 +29,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
+  imports: [Llaves],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })
@@ -45,8 +48,6 @@ export class Seguridad {
   protected readonly verTodos = signal(false);
   protected readonly iconos = ICONOS;
   protected readonly conPasskey = soportaPasskeys();
-  protected readonly passkeys = signal<{ id: string; nombre: string; creado: string }[]>([]);
-  protected readonly nombrePasskey = signal('');
   // «pedir Face ID al volver a la app»: ajuste de este dispositivo
   private readonly sesionSvc = inject(SesionService);
   protected readonly bloqueoSeg = signal<number>(this.sesionSvc.bloqueoSegundos() ?? 0);
@@ -57,7 +58,6 @@ export class Seguridad {
   protected readonly claveBloqueo = signal('');
   protected readonly codigoBloqueo = signal('');
   protected readonly errorBloqueo = signal('');
-  protected readonly ocupadoPasskey = signal(false);
   protected readonly origen = location.origin;
   protected readonly tokens = signal<{ id: number; nombre: string; alcances: string[]; ultimoUso: string | null; revocado: boolean }[]>([]);
   protected readonly tokenNuevo = signal<string | null>(null);
@@ -108,7 +108,6 @@ export class Seguridad {
     get<Acceso[]>('/api/seguridad/accesos').then((a) => this.accesos.set(a)).catch(() => {});
     this.leerSenuelos();
     this.leerTokens();
-    this.leerPasskeys();
     get<Estado>('/api/seguridad/estado').then((e) => {
       this.estado.set(e);
       // en el iPhone, al ir a la app de códigos y volver, la app se recarga: se retoma la activación a medias
@@ -149,38 +148,22 @@ export class Seguridad {
   }
   private pendienteBloqueo = 0;
 
+  private readonly reauth = inject(Reautenticar);
+
+  protected async confirmarBloqueoConCara(): Promise<void> {
+    try {
+      if (!(await this.reauth.confirmarConPasskey())) return;
+      await this.cambiarBloqueo(String(this.pendienteBloqueo));
+    } catch { this.errorBloqueo.set('Ese passkey no sirve. Usa la contraseña.'); }
+  }
+
   protected async confirmarBloqueo(ev: Event): Promise<void> {
     ev.preventDefault();
     try {
-      await firstValueFrom(this.http.post('/api/seguridad/reautenticar', { password: this.claveBloqueo(), codigo: this.codigoBloqueo() || null }));
+      await this.reauth.confirmarConClave(this.claveBloqueo(), this.codigoBloqueo());
       this.claveBloqueo.set(''); this.codigoBloqueo.set('');
       await this.cambiarBloqueo(String(this.pendienteBloqueo));
     } catch { this.errorBloqueo.set('Contraseña (o código) incorrectos.'); }
-  }
-
-  private leerPasskeys(): void {
-    firstValueFrom(this.http.get<{ id: string; nombre: string; creado: string }[]>('/api/passkeys')).then((l) => this.passkeys.set(l)).catch(() => {});
-  }
-
-  protected async registrarPasskey(): Promise<void> {
-    this.ocupadoPasskey.set(true);
-    try {
-      const opciones = await firstValueFrom(this.http.post<unknown>('/api/passkeys/opciones', null));
-      const credencial = await crearCredencial(opciones);
-      await firstValueFrom(this.http.post('/api/passkeys', { credencial, nombre: this.nombrePasskey().trim() || 'Este dispositivo' }));
-      this.nombrePasskey.set('');
-      this.aviso.set('Passkey añadido: la próxima vez puedes entrar con Face ID.');
-      this.leerPasskeys();
-    } catch (e) {
-      const cancelado = e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'AbortError');
-      if (!cancelado) this.aviso.set('No se pudo añadir el passkey. Ábrela desde su dirección pública (no localhost) e inténtalo otra vez.');
-    } finally { this.ocupadoPasskey.set(false); }
-  }
-
-  protected async quitarPasskey(id: string): Promise<void> {
-    if (!confirm('¿Quitar este passkey?')) return;
-    await firstValueFrom(this.http.delete(`/api/passkeys/${encodeURIComponent(id)}`));
-    this.leerPasskeys();
   }
 
   private leerTokens(): void {

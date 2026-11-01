@@ -54,5 +54,29 @@ public static class Reautenticar
             }
             return Results.NoContent();
         }).RequireAuthorization().RequireRateLimiting(Limites.Reauth);
+
+        // lo mismo con el passkey (Face ID): se pide un reto de esta cuenta y la firma lo confirma
+        app.MapPost("/api/seguridad/reautenticar/passkey/opciones", async (ClaimsPrincipalAccessor yo, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn) =>
+        {
+            var u = await users.GetUserAsync(yo.Usuario);
+            return u is null ? Results.Unauthorized() : Results.Content(await signIn.MakePasskeyRequestOptionsAsync(u), "application/json");
+        }).RequireAuthorization().RequireRateLimiting(Limites.Reauth);
+
+        app.MapPost("/api/seguridad/reautenticar/passkey", async (CredencialEntrada c, ClaimsPrincipalAccessor yo, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn, AppDbContext db, HttpContext ctx, TimeProvider reloj) =>
+        {
+            var u = await users.GetUserAsync(yo.Usuario);
+            if (u is null) return Results.Unauthorized();
+            var r = await signIn.PerformPasskeyAssertionAsync(c.Credencial.GetRawText());
+            // tiene que ser un passkey de ESTA cuenta
+            if (!r.Succeeded || r.User is null || r.User.Id != u.Id) return Results.Problem("Ese passkey no es de esta cuenta.", statusCode: StatusCodes.Status401Unauthorized);
+            await users.AddOrUpdatePasskeyAsync(r.User, r.Passkey);
+            await PasskeyInfos.Uso(db, ctx, PasskeyInfos.IdDe(r.Passkey.CredentialId), "confirmación", reloj);
+            if (Sesiones.Actual(ctx.User) is { } sid && await db.Sesiones.FindAsync(sid) is { } s)
+            {
+                s.ReautenticadaHasta = reloj.GetUtcNow().Add(Validez);
+                await db.SaveChangesAsync();
+            }
+            return Results.NoContent();
+        }).RequireAuthorization().RequireRateLimiting(Limites.Reauth);
     }
 }

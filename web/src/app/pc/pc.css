@@ -18,3 +18,7 @@
 .historial { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; }
 .historial li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .historial small { color: var(--soft); }
+
+.cara { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; }
+.cara .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.reauth .enlace { justify-self: center; border: 0; background: none; color: var(--acento); font: 600 14px/1.2 var(--font-text); cursor: pointer; padding: 6px; }

@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Reautenticar } from '../core/reautenticar';
 
 interface Disco { nombre: string; modelo: string; salud: string; estado: string; temperaturaC: number | null; desgastePct: number | null; erroresLectura: number | null; }
 interface Volumen { nombre: string; libreBytes: number; totalBytes: number; }
@@ -56,7 +57,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     </section>
 
     <section class="caja">
-      <header class="caja__cab"><h3>Órdenes</h3><span class="sub">Piden tu contraseña otra vez · avisan a Telegram · caducan a los 60 s</span></header>
+      <header class="caja__cab"><h3>Órdenes</h3><span class="sub">Piden Face ID o tu contraseña · avisan a Telegram · caducan a los 60 s</span></header>
       @if (mensaje()) { <p class="msg" role="status">{{ mensaje() }}</p> }
       <div class="ordenes">
         @for (o of ordenes; track o.texto) {
@@ -68,7 +69,14 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
       @if (pendiente(); as p) {
         <form class="reauth" (submit)="confirmar($event)" novalidate>
           <p><strong>{{ p.texto }}</strong>{{ p.aviso ? ' — ' + p.aviso : '' }}</p>
-          @if (pedirClave()) {
+          @if (pedirClave() && reauth.conPasskey) {
+            <button class="button cara" type="button" (click)="conCara()" [disabled]="ocupado()">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 10v1M15 10v1M12 10v4h-1M9 16c1.5 1.3 4.5 1.3 6 0"/></svg>
+              {{ ocupado() ? 'Comprobando…' : 'Confirmar con Face ID' }}
+            </button>
+            @if (!verClave()) { <button class="enlace" type="button" (click)="verClave.set(true)">Usar la contraseña</button> }
+          }
+          @if (pedirClave() && (!reauth.conPasskey || verClave())) {
             <input type="text" autocomplete="username" hidden>
             <label class="campo"><span class="campo__etiqueta">Tu contraseña</span>
               <input class="campo__input" type="password" autocomplete="current-password" [value]="clave()" (input)="clave.set($any($event.target).value)"></label>
@@ -78,7 +86,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
           @if (error()) { <p class="error">{{ error() }}</p> }
           <footer class="pie">
             <button class="enlace" type="button" (click)="cancelar()">Cancelar</button>
-            <button class="button" type="submit" [disabled]="ocupado()">{{ ocupado() ? 'Enviando…' : 'Confirmar' }}</button>
+            @if (!pedirClave() || !reauth.conPasskey || verClave()) { <button class="button" type="submit" [disabled]="ocupado()">{{ ocupado() ? 'Enviando…' : 'Confirmar' }}</button> }
           </footer>
         </form>
       }
@@ -95,6 +103,8 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 })
 export class Pc implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
+  protected readonly reauth = inject(Reautenticar);
+  protected readonly verClave = signal(false);
   protected readonly ordenes = ORDENES;
   protected readonly e = signal<Estado | null>(null);
   protected readonly cargado = signal(false);
@@ -131,7 +141,23 @@ export class Pc implements OnInit, OnDestroy {
   protected elegir(o: (typeof ORDENES)[number]): void {
     this.pendiente.set(o); this.error.set(''); this.mensaje.set('');
     this.pedirClave.set(!this.e()?.reautenticado);
+    this.verClave.set(false);
     // si aún vale la contraseña de hace un momento, solo se pide confirmar
+  }
+
+  // Face ID: confirma y envía la orden sin escribir nada
+  protected async conCara(): Promise<void> {
+    const o = this.pendiente();
+    if (!o || this.ocupado()) return;
+    this.ocupado.set(true); this.error.set('');
+    try {
+      if (!(await this.reauth.confirmarConPasskey())) return;
+      await this.enviar(o);
+    } catch (err) {
+      const x = err as HttpErrorResponse;
+      this.error.set(x.status === 401 ? 'Ese passkey no sirve. Usa la contraseña.' : (x.error?.detail ?? x.error?.title ?? 'No se pudo enviar la orden.'));
+      this.verClave.set(true);
+    } finally { this.ocupado.set(false); }
   }
 
   protected cancelar(): void { this.pendiente.set(null); this.clave.set(''); this.codigo.set(''); this.error.set(''); }

@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Conexion> Conexiones => Set<Conexion>();
     public DbSet<SesionAbierta> Sesiones => Set<SesionAbierta>();
     public DbSet<Acceso> Accesos => Set<Acceso>();
+    public DbSet<Mda.Api.Auth.PasskeyInfo> PasskeysInfo => Set<Mda.Api.Auth.PasskeyInfo>();
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
     public DbSet<Hucha> Huchas => Set<Hucha>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
@@ -122,6 +123,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Ip).HasMaxLength(64);
             e.Property(x => x.Agente).HasMaxLength(400);
             e.Property(x => x.Motivo).HasMaxLength(80);
+        });
+
+        b.Entity<Mda.Api.Auth.PasskeyInfo>(e =>
+        {
+            e.ToTable("passkeys_info");
+            e.Property(x => x.Id).HasMaxLength(400);
+            e.Property(x => x.UsuarioId).HasMaxLength(450);
+            e.Property(x => x.AltaIp).HasMaxLength(64);
+            e.Property(x => x.Dispositivo).HasMaxLength(80);
+            e.Property(x => x.Tipo).HasMaxLength(12);
+            e.Property(x => x.UserAgent).HasMaxLength(400);
+            e.Property(x => x.Idioma).HasMaxLength(20);
+            e.Property(x => x.Zona).HasMaxLength(60);
+            e.Property(x => x.Pantalla).HasMaxLength(20);
+            e.Property(x => x.UltimaIp).HasMaxLength(64);
+            e.Property(x => x.UltimoDispositivo).HasMaxLength(80);
+            e.Property(x => x.UltimoMotivo).HasMaxLength(20);
         });
 
         b.Entity<Ajuste>(e =>
