@@ -64,7 +64,7 @@ export class Seguridad {
   protected readonly nombreToken = signal('');
   protected readonly alcancesToken = signal<string[]>(['gasto']);
   protected readonly permisosToken = [
-    { id: 'gasto', texto: 'Apuntar gastos' }, { id: 'pago', texto: 'Apple Pay' }, { id: 'lectura', texto: 'Leer saldo y agenda' },
+    { id: 'gasto', texto: 'Apuntar gastos' }, { id: 'pago', texto: 'Apple Pay' }, { id: 'lectura', texto: 'Leer saldo y agenda' }, { id: 'casa', texto: 'Llegar y salir de casa' },
   ];
   protected readonly senuelos = signal<{ id: number; ruta: string; activo: boolean; disparos: number }[]>([]);
   protected readonly plantillasSenuelo = signal<{ id: string; nombre: string }[]>([]);

@@ -171,12 +171,15 @@ builder.Services.AddSingleton<EstadoSalud>();
 builder.Services.AddSingleton<AvisosSalud>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AvisosSalud>());
 builder.Services.AddHostedService<MonitorSistema>();
+builder.Services.AddHostedService<AvisosBateria>();
+builder.Services.AddHostedService<VigilanteRed>();
 
 // ---- Documentos: las carpetas del equipo montadas en Archivos:Base ----
 builder.Services.AddSingleton<Carpetas>();
 // miniaturas WebP de la galería pública (sin EXIF)
 builder.Services.AddSingleton<Derivados>();
 builder.Services.AddSingleton<Sondas>();
+builder.Services.AddSingleton<IComprobadorRed, ComprobadorTcp>();
 builder.Services.AddHostedService<ResumenSondas>();
 builder.Services.AddHostedService<LatidoExterno>();
 builder.Services.AddSingleton<Pregenerar>();
@@ -247,6 +250,9 @@ app.MapGaleria();
 app.MapSenuelos();
 app.MapAtajos();
 app.MapPc();
+app.MapCasa();
+app.MapRed();
+app.MapPortapapeles();
 app.MapEstadoPublico();
 app.MapDeudas();
 app.MapNotas();

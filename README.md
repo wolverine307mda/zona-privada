@@ -172,7 +172,7 @@ flowchart LR
 | Fotografía | `web/src/app/fotografia` | `Luz/` | «Cuándo salir a hacer fotografía»: el cielo hora a hora (sol, luna, nubes por capas, sombra, estrellas y Vía Láctea animados con datos reales), línea del día con la nota de cada hora, mejores momentos, semana y avisos |
 | Música | `web/src/app/musica` | `Conexiones/` | Spotify: lo que suena, control, recientes, cola, top |
 | Seguridad | `web/src/app/seguridad` | `Seguridad/`, `Auth/` | sesiones abiertas, accesos, 2FA con QR, llaves de acceso (Face ID) con nombre y datos del dispositivo, bloqueo al volver a la app, señuelos, tokens de Atajos, botón de pánico, canales de aviso |
-| Mi PC | `web/src/app/pc` | `Pc/` | salud del equipo (discos, espacio, tendencia a 90 días) y órdenes (bloquear, reiniciar, apagar…) firmadas, que se confirman con Face ID o contraseña |
+| Mi PC | `web/src/app/pc` | `Pc/` | render 3D del PC, salud (discos, tendencia a 90 días), batería, volumen y brillo, órdenes firmadas (bloquear, reiniciar, apagar… con Face ID), «llegué a casa / me voy» y modo concentración, música del PC, aparatos de la red de casa, portapapeles compartido y avisos del PC (descargas, Windows, copias, batería) |
 | Perfil | `web/src/app/perfil` | `Seguridad/Perfil.cs` | nombre, contacto, foto, cambiar contraseña |
 | Asistente | `web/src/app/shell/asistente.ts` | `Asistente/` | intérprete de frases en español por reglas (sin IA externa): gastos, ingresos, huchas, eventos, horario, preguntas |
 | Telegram | Seguridad › Avisos | `Telegram/` | bot vinculado a un solo chat: avisos + asistente desde el chat (/hoy, /tiempo, /saldo) |

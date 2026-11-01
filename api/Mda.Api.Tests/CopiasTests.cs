@@ -54,4 +54,32 @@ public class CopiasTests(CopiasFactory factory) : IClassFixture<CopiasFactory>
         Assert.Contains(factory.Avisos.Enviados, m => m.StartsWith("push:") && m.Contains("dudosa"));
         Assert.Contains(factory.Avisos.Enviados, m => m.StartsWith("telegram:") && m.Contains("NO se pudo restaurar"));
     }
+
+    [Fact]
+    public async Task Cada_copia_nueva_avisa_pero_la_primera_vez_solo_se_anota_y_se_puede_apagar()
+    {
+        var v = factory.Services.GetRequiredService<Vigilante>();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        int Avisos() => factory.Avisos.Enviados.Count(m => m.Contains("Copia de seguridad hecha"));
+
+        var a = Path.Combine(factory.Carpeta, "zonaprivada-20261101-0300.dump");
+        await File.WriteAllBytesAsync(a, new byte[2048]);
+        await v.CopiaNueva(db, default);
+        Assert.Equal(0, Avisos());                       // la primera solo se apunta
+
+        var b = Path.Combine(factory.Carpeta, "zonaprivada-20261102-0300.dump");
+        await File.WriteAllBytesAsync(b, new byte[4096]);
+        File.SetLastWriteTimeUtc(b, DateTime.UtcNow.AddMinutes(5));
+        await v.CopiaNueva(db, default);
+        await v.CopiaNueva(db, default);                 // la misma copia no se repite
+        Assert.Equal(1, Avisos());
+
+        await Mda.Api.Pc.AvisosPcAjustes.Guardar(db, new Mda.Api.Pc.AvisosPc(Copias: false));
+        var c = Path.Combine(factory.Carpeta, "zonaprivada-20261103-0300.dump");
+        await File.WriteAllBytesAsync(c, new byte[1024]);
+        File.SetLastWriteTimeUtc(c, DateTime.UtcNow.AddMinutes(10));
+        await v.CopiaNueva(db, default);
+        Assert.Equal(1, Avisos());                       // con el aviso apagado no sale
+    }
 }

@@ -299,6 +299,7 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
       <li><strong>Por voz / Siri:</strong> «Dictar texto» + la misma acción hacia <code>{{ origen }}/api/atajos/frase</code> con <code>texto</code>. Ponle de nombre «Apunta gasto».</li>
       <li><strong>Centro de control:</strong> Ajustes › Centro de control › Añadir control › Atajo, y elige el atajo. También sirve el botón de acción.</li>
       <li><strong>Apple Pay:</strong> Atajos › Automatización › Transacción › «Ejecutar inmediatamente». Acción «Obtener contenido de URL» a <code>{{ origen }}/api/atajos/pago</code> con <code>comercio</code> (Comercio) e <code>importe</code> (Cantidad). Usa un token con permiso «pago». Solo se prueba pagando de verdad.</li>
+      <li><strong>Llegué a casa / me voy:</strong> Atajos › Automatización › Llegar (o Salir) de un lugar › «Obtener contenido de URL» a <code>{{ origen }}/api/atajos/casa</code>, método POST, cuerpo JSON <code>estado</code> = <code>llegada</code> (o <code>salida</code>). Usa un token con permiso «casa».</li>
       <li><strong>Pregunta del bot:</strong> automatización por lugar u hora que haga POST a <code>{{ origen }}/api/atajos/ping</code>: el bot te pregunta y respondes desde la notificación de Telegram.</li>
     </ol>
   </details>

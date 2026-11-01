@@ -38,10 +38,11 @@ public record MovimientoAtajo(decimal Importe, string Concepto, string? Tipo, st
 public record FraseAtajo(string Texto);
 public record PagoAtajo(string Comercio, decimal Importe, string? Tarjeta);
 public record PingAtajo(string? Texto);
+public record CasaAtajo(string Estado);
 
 public static class AtajosApi
 {
-    public static readonly string[] Alcances = ["gasto", "pago", "lectura"];
+    public static readonly string[] Alcances = ["gasto", "pago", "lectura", "casa"];
     private static readonly CultureInfo Es = new("es-ES");
 
     public static string Hashear(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
@@ -161,6 +162,13 @@ public static class AtajosApi
             var ok = await bot.Enviar($"💬 {System.Net.WebUtility.HtmlEncode(texto)}", new { force_reply = true, input_field_placeholder = "12,50 en el Mercadona" }, html: true, ct: ct);
             return ok ? Results.NoContent() : Results.StatusCode(502);
         }).Requiere("gasto");
+
+        // «Llegué a casa» / «Me voy»: una automatización por lugar del iPhone manda {"estado":"llegada"} o {"estado":"salida"}
+        a.MapPost("/casa", async (CasaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
+        {
+            var (ok, mensaje) = await Mda.Api.Pc.Casa.Aplicar((e.Estado ?? "").ToLowerInvariant(), db, agente, avisos, reloj, "Atajo · " + IpCliente.De(ctx), ct);
+            return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
+        }).Requiere("casa");
 
         // Apple Pay: la automatización «Transacción» manda comercio e importe al pagar; entra «por confirmar»
         a.MapPost("/pago", async (PagoAtajo e, AppDbContext db, IAvisos avisos, Bot bot, IMemoryCache cache, ILogger<Movimiento> log, TimeProvider reloj, Zona zona, CancellationToken ct) =>

@@ -28,6 +28,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
     public DbSet<Hucha> Huchas => Set<Hucha>();
     public DbSet<Mda.Api.Pc.SaludDia> SaludDias => Set<Mda.Api.Pc.SaludDia>();
+    public DbSet<Mda.Api.Pc.DispositivoRed> DispositivosRed => Set<Mda.Api.Pc.DispositivoRed>();
+    public DbSet<Mda.Api.Pc.ElementoPortapapeles> Portapapeles => Set<Mda.Api.Pc.ElementoPortapapeles>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
@@ -141,6 +143,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.UltimaIp).HasMaxLength(64);
             e.Property(x => x.UltimoDispositivo).HasMaxLength(80);
             e.Property(x => x.UltimoMotivo).HasMaxLength(20);
+        });
+
+        b.Entity<Mda.Api.Pc.DispositivoRed>(e =>
+        {
+            e.ToTable("dispositivos_red");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Host).HasMaxLength(120);
+            e.Property(x => x.Icono).HasMaxLength(20);
+        });
+
+        b.Entity<Mda.Api.Pc.ElementoPortapapeles>(e =>
+        {
+            e.ToTable("portapapeles");
+            e.Property(x => x.Texto).HasMaxLength(2000);
+            e.Property(x => x.Origen).HasMaxLength(40);
+            e.HasIndex(x => x.Creado);
         });
 
         b.Entity<Mda.Api.Pc.SaludDia>(e =>

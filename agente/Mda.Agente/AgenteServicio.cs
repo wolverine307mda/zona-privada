@@ -15,14 +15,23 @@ static class AgenteServicio
         using var esperaLarga = new HttpClient { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(45) };
         esperaLarga.DefaultRequestHeaders.Add("X-Agente-Token", token);
 
+        Vigias.Descargas(http, ct);
         _ = Task.Run(async () =>
         {
             try
             {
                 using var cada5 = new PeriodicTimer(TimeSpan.FromMinutes(5));
+                bool? reinicioAntes = null;
                 do
                 {
-                    try { await http.PostAsJsonAsync("/api/sistema/agente/salud", Salud.Leer(), ct); }
+                    try
+                    {
+                        var s = Salud.Leer();
+                        await http.PostAsJsonAsync("/api/sistema/agente/salud", s, ct);
+                        // Windows acaba de pedir reiniciar (no al arrancar el agente, solo cuando pasa de «no» a «sí»)
+                        if (s.ReinicioPendiente && reinicioAntes == false) await Vigias.Enviar(http, "reinicio-pendiente", "", ct);
+                        reinicioAntes = s.ReinicioPendiente;
+                    }
                     catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { /* la API no está: en 5 min otra vez */ }
                 } while (await cada5.WaitForNextTickAsync(ct));
             }

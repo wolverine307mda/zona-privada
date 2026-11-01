@@ -16,6 +16,7 @@ interface Sonando { sonando: boolean; cancion: Cancion | null; progreso: number;
 interface Seguridad { dosPasos: boolean; fallosMes: number; }
 interface Raiz { id: string; nombre: string; elementos: number; }
 interface VentanaLuz { tipo: string; titulo: string; inicio: string; fin: string; puntuacion: number | null; motivo?: string | null; }
+interface AparatoRed { id: number; nombre: string; enLinea: boolean | null; }
 interface EstadoPcInicio { agenteConectado: boolean; salud: { volumenes: { nombre: string; libreBytes: number; totalBytes: number }[]; reinicioPendiente: boolean } | null; }
 
 // Panel del inicio: un vistazo a todo — el dinero del mes, lo que suena, el coche, la agenda,
@@ -54,6 +55,8 @@ export class Panel {
   protected readonly luz = signal<{ lugar: string | null; hoy: VentanaLuz[] } | null>(null);
   protected readonly pc = signal<EstadoPcInicio | null>(null);
   protected readonly llaves = signal(0);
+  protected readonly red = signal<AparatoRed[] | null>(null);
+  protected readonly redCaida = computed(() => (this.red() ?? []).filter((a) => a.enLinea === false));
 
   // la mejor ventana de luz de hoy que aún no ha terminado
   protected readonly luzHoy = computed(() => {
@@ -117,6 +120,7 @@ export class Panel {
       get<{ lugar: string | null; hoy: VentanaLuz[] }>('/api/luz').then((l) => this.luz.set(l)).catch(() => this.luz.set({ lugar: null, hoy: [] })),
       get<EstadoPcInicio>('/api/pc').then((p) => this.pc.set(p)).catch(() => {}),
       get<unknown[]>('/api/passkeys').then((l) => this.llaves.set(l.length)).catch(() => {}),
+      get<AparatoRed[]>('/api/red').then((r) => this.red.set(r)).catch(() => {}),
       this.leerMusica(),
     ]);
   }

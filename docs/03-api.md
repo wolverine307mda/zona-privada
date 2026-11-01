@@ -175,6 +175,13 @@
 | POST | `/api/seguridad/reautenticar` | `{ password, codigo? }`: vale 2 min para esta sesión |
 | POST | `/api/seguridad/reautenticar/passkey/opciones` · `/passkey` | lo mismo con Face ID (`{ credencial }`) |
 | POST | `/api/seguridad/panico` | cierra sesiones, revoca tokens, apaga lo público y bloquea el login 1 h |
+| POST | `/api/pc/casa` · `/concentracion` · `/multimedia` | `{ estado: llegada\|salida }`, `{ activo }`, `{ accion: playpause\|siguiente\|anterior\|silencio }`: varias órdenes al agente de una vez; sin Face ID (no apagan nada). 409 si el agente no está en marcha |
+| POST | `/api/atajos/casa` | lo mismo que `/api/pc/casa` para el iPhone (token con permiso `casa`) |
+| GET/PUT | `/api/pc/avisos` | `{ descargas, windows, copias, bateria }`: qué te avisa el PC |
+| GET/POST/PUT/DELETE | `/api/red` · `/{id}` · POST `/{id}/probar` | aparatos de la red de casa (nombre, IP o nombre, puerto, tipo); solo direcciones locales o de Tailscale; se prueban cada minuto |
+| GET/POST/DELETE | `/api/portapapeles` · `/{id}` · POST `/{id}/al-pc` · `/del-pc` | texto compartido móvil ↔ PC (20 últimos, 24 h, 2000 letras) |
+| POST | `/api/sistema/agente/eventos` | el agente cuenta una descarga terminada o «Windows pide reiniciar» (token) |
+| GET/POST | `/api/sistema/agente/portapapeles` · `/{id}` | el agente lee el texto a copiar o deja el del PC (token) |
 | GET | `/api/pc/historial` | una foto de la salud por día (espacio libre y desgaste de los discos), 90 días |
 | GET | `/api/pc` | salud del PC, si el agente está conectado, si la reautenticación vale y las últimas órdenes |
 | POST | `/api/pc/ordenes` · GET `/api/pc/ordenes/{id}` | `{ tipo, parametro? }` (`bloquear`, `despierto`, `reiniciar`, `suspender`, `apagar`, `cancelar`); pide reautenticar (403 `reautenticar:true`) y avisa a Telegram |

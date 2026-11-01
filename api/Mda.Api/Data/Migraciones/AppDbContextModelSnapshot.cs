@@ -725,6 +725,80 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("notas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.DispositivoRed", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Avisar")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("Cambio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("Comprobado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("EnLinea")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Icono")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("LatenciaMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int>("Puerto")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("dispositivos_red", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Pc.ElementoPortapapeles", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Creado");
+
+                    b.ToTable("portapapeles", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Pc.OrdenPc", b =>
                 {
                     b.Property<int>("Id")

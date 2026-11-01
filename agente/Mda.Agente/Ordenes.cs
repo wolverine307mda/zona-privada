@@ -9,10 +9,11 @@ using System.Text;
 // una orden inventada, retocada, repetida tarde o de otro tipo se descarta.
 record OrdenRecibida(int Id, string Tipo, string Parametro, long Caduca, string Firma);
 record ResultadoOrden(bool Ok, string Resultado);
+record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -24,7 +25,7 @@ static partial class Ordenes
                 var lista = await esperaLarga.GetFromJsonAsync<List<OrdenRecibida>>("/api/sistema/agente/ordenes", ct) ?? [];
                 foreach (var o in lista)
                 {
-                    var r = Ejecutar(o, secreto);
+                    var r = await EjecutarAsync(o, secreto, esperaLarga, ct);
                     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] orden {o.Tipo}: {(r.Ok ? "hecha" : "rechazada")} ({r.Resultado})");
                     try { await esperaLarga.PostAsJsonAsync($"/api/sistema/agente/ordenes/{o.Id}", r, ct); } catch (HttpRequestException) { /* la API no se entera: caduca */ }
                 }
@@ -40,12 +41,43 @@ static partial class Ordenes
     static string Firma(string secreto, OrdenRecibida o) =>
         Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secreto), Encoding.UTF8.GetBytes($"{o.Id}|{o.Tipo}|{o.Parametro}|{o.Caduca}"))).ToLowerInvariant();
 
-    internal static ResultadoOrden Ejecutar(OrdenRecibida o, string secreto)
+    // firma, caducidad y lista cerrada: lo primero que se mira siempre, sea cual sea la orden
+    static ResultadoOrden? Rechazo(OrdenRecibida o, string secreto)
     {
         if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(Firma(secreto, o)), Encoding.UTF8.GetBytes(o.Firma ?? "")))
             return new(false, "firma no válida");
         if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() > o.Caduca) return new(false, "caducada");
         if (!Permitidas.Contains(o.Tipo)) return new(false, "orden no permitida");
+        return null;
+    }
+
+    // las órdenes del portapapeles hablan con la API (el texto no viaja en la orden, solo su número)
+    static async Task<ResultadoOrden> EjecutarAsync(OrdenRecibida o, string secreto, HttpClient http, CancellationToken ct)
+    {
+        if (Rechazo(o, secreto) is { } no) return no;
+        try
+        {
+            if (o.Tipo == "portapapeles")
+            {
+                var texto = (await http.GetFromJsonAsync<TextoPortapapeles>($"/api/sistema/agente/portapapeles/{int.Parse(o.Parametro)}", ct))?.Texto;
+                if (string.IsNullOrEmpty(texto)) return new(false, "ese texto ya no está");
+                return await Dispositivos.PonerPortapapeles(texto) ? new(true, "copiado al portapapeles del PC") : new(false, "Windows no dejó copiarlo");
+            }
+            if (o.Tipo == "copiar")
+            {
+                var texto = await Dispositivos.LeerPortapapeles();
+                if (string.IsNullOrWhiteSpace(texto)) return new(false, "el portapapeles del PC está vacío (o no es texto)");
+                var r = await http.PostAsJsonAsync("/api/sistema/agente/portapapeles", new TextoPortapapeles(texto.Length > 2000 ? texto[..2000] : texto), ct);
+                return r.IsSuccessStatusCode ? new(true, "portapapeles del PC traído") : new(false, $"la API responde {(int)r.StatusCode}");
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or FormatException or System.Text.Json.JsonException) { return new(false, e.Message); }
+        return Ejecutar(o, secreto);
+    }
+
+    internal static ResultadoOrden Ejecutar(OrdenRecibida o, string secreto)
+    {
+        if (Rechazo(o, secreto) is { } no) return no;
         try
         {
             switch (o.Tipo)
@@ -56,6 +88,8 @@ static partial class Ordenes
                 case "apagar": Lanzar("shutdown", "/s /t 30 /c \"Zona privada: apagado en 30 s (cancelable)\""); return new(true, "apagado en 30 s");
                 case "suspender": Lanzar("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0"); return new(true, "suspendiendo");
                 case "cancelar": Lanzar("shutdown", "/a"); return new(true, "cancelado");
+                case "multimedia":
+                    return Dispositivos.TeclaMultimedia(o.Parametro) ? new(true, $"música: {o.Parametro}") : new(false, "acción de música no válida");
                 case "volumen":
                     if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
                     return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");

@@ -203,15 +203,27 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar"];
+    // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
-    public static readonly string[] SinConfirmar = ["volumen", "brillo"];
+    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar"];
     public static readonly TimeSpan Validez = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan AgenteConectado = TimeSpan.FromSeconds(15);
 
     // la firma que el agente comprueba con el secreto compartido: sin ella, una orden de la base de datos o del camino no vale
     public static string Firma(string secreto, OrdenPc o) =>
         Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secreto), Encoding.UTF8.GetBytes($"{o.Id}|{o.Tipo}|{o.Parametro}|{o.Caduca.ToUnixTimeSeconds()}"))).ToLowerInvariant();
+
+    // crea una orden pendiente (la recoge el agente en unos segundos); las comprobaciones son de quien la pide
+    public static async Task<OrdenPc> Encolar(AppDbContext db, TimeProvider reloj, string tipo, string parametro, string desde, CancellationToken ct = default)
+    {
+        var ahora = reloj.GetUtcNow();
+        var o = new OrdenPc { Tipo = tipo, Parametro = parametro, Creada = ahora, Caduca = ahora.Add(Validez), Desde = desde.Length > 200 ? desde[..200] : desde };
+        db.OrdenesPc.Add(o);
+        await db.SaveChangesAsync(ct);
+        return o;
+    }
 
     public static string Texto(OrdenPc o) => o.Tipo switch
     {
@@ -223,6 +235,9 @@ public static class OrdenesPc
         "cancelar" => "cancelar el apagado o reinicio",
         "volumen" => $"volumen al {o.Parametro} %",
         "brillo" => $"brillo de la pantalla al {o.Parametro} %",
+        "multimedia" => $"música del PC: {o.Parametro}",
+        "portapapeles" => "copiar un texto al portapapeles del PC",
+        "copiar" => "traer el portapapeles del PC",
         _ => o.Tipo,
     };
 
@@ -247,6 +262,7 @@ public static class OrdenesPc
             salud = salud.Ultima,
             saludHace = salud.Ultima is null ? (double?)null : (reloj.GetUtcNow() - salud.Recibida).TotalSeconds,
             reautenticado = await Reautenticar.Vigente(ctx, db, reloj),
+            concentracion = await Casa.ConcentracionActiva(db, ct),
             ordenes = await db.OrdenesPc.AsNoTracking().OrderByDescending(o => o.Id).Take(8).ToListAsync(ct),
         }));
 
@@ -256,7 +272,7 @@ public static class OrdenesPc
         g.MapPost("/ordenes", async (OrdenEntrada e, AppDbContext db, EstadoAgente agente, IAvisos avisos, HttpContext ctx, TimeProvider reloj, CancellationToken ct) =>
         {
             var tipo = (e.Tipo ?? "").ToLowerInvariant();
-            if (!Tipos.Contains(tipo)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["tipo"] = ["Orden no permitida."] });
+            if (!Tipos.Contains(tipo) || Dedicadas.Contains(tipo)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["tipo"] = ["Orden no permitida."] });
             var parametro = tipo == "despierto" ? (e.Parametro == "off" ? "off" : "on") : "";
             if (tipo is "volumen" or "brillo")
             {

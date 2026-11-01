@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Management;
+using System.Text;
 using System.Runtime.InteropServices;
 
 // Lo que el portátil sabe de sí mismo y deja cambiar: batería, volumen y brillo de la pantalla.
@@ -119,5 +121,50 @@ static class Dispositivos
         [PreserveSig] int GetChannelVolumeLevelScalar(uint canal, out float nivel);
         [PreserveSig] int SetMute([MarshalAs(UnmanagedType.Bool)] bool silencio, ref Guid contexto);
         [PreserveSig] int GetMute([MarshalAs(UnmanagedType.Bool)] out bool silencio);
+    }
+
+    // ---- teclas multimedia: las entiende cualquier reproductor (Spotify de escritorio, el navegador, VLC…) ----
+    [DllImport("user32.dll")] static extern void keybd_event(byte tecla, byte escaneo, uint opciones, UIntPtr extra);
+
+    public static bool TeclaMultimedia(string accion)
+    {
+        byte? tecla = accion switch { "playpause" => 0xB3, "siguiente" => 0xB0, "anterior" => 0xB1, "silencio" => 0xAD, _ => null };
+        if (tecla is not { } t) return false;
+        keybd_event(t, 0, 0, UIntPtr.Zero);            // pulsar
+        keybd_event(t, 0, 0x0002, UIntPtr.Zero);       // soltar
+        return true;
+    }
+
+    // ---- portapapeles (por PowerShell: el portapapeles de Windows pide un hilo con ventana y esto lo evita) ----
+    static async Task<(int Codigo, string Salida)> PowerShell(string guion, string? entrada)
+    {
+        var info = new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -Command -")
+        {
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+            StandardOutputEncoding = new UTF8Encoding(false), StandardInputEncoding = new UTF8Encoding(false),
+        };
+        using var p = Process.Start(info)!;
+        // el texto va por la entrada estándar después del guion: nunca dentro de la línea de comandos (nada que escapar ni que inyectar)
+        await p.StandardInput.WriteAsync("[Console]::InputEncoding = [Text.UTF8Encoding]::new($false); [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n" + guion + "\n");
+        if (entrada is not null) await p.StandardInput.WriteAsync(entrada);
+        p.StandardInput.Close();
+        var salida = await p.StandardOutput.ReadToEndAsync();
+        using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try { await p.WaitForExitAsync(limite.Token); } catch (OperationCanceledException) { try { p.Kill(true); } catch (InvalidOperationException) { } return (-1, ""); }
+        return (p.ExitCode, salida);
+    }
+
+    public static async Task<bool> PonerPortapapeles(string texto)
+    {
+        // el guion lee el texto de la base64 de abajo: así no hay comillas ni saltos de línea que rompan nada
+        var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(texto));
+        var (codigo, _) = await PowerShell($"Set-Clipboard -Value ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{b64}')))", null);
+        return codigo == 0;
+    }
+
+    public static async Task<string?> LeerPortapapeles()
+    {
+        var (codigo, salida) = await PowerShell("Get-Clipboard -Raw", null);
+        return codigo == 0 ? salida.TrimEnd('\r', '\n') : null;
     }
 }

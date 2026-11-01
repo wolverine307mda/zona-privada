@@ -140,6 +140,15 @@
     } @else { <div class="esqueleto" aria-label="Cargando"><i></i><i></i></div> }
   </a>
 
+  <!-- aparatos de casa -->
+  @if (red()?.length) {
+    <a class="caja mini" routerLink="/pc" data-inclina [class.mini--aviso]="redCaida().length">
+      <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01" /></svg></span><h3>Casa</h3></header>
+      <strong class="cifra">{{ red()!.length - redCaida().length }}<small>/{{ red()!.length }} en línea</small></strong>
+      <span class="sub">{{ redCaida().length ? 'Sin respuesta: ' + redCaida()[0].nombre + (redCaida().length > 1 ? ' y ' + (redCaida().length - 1) + ' más' : '') : 'Todo responde' }}</span>
+    </a>
+  }
+
   <!-- seguridad -->
   <a class="caja mini" routerLink="/seguridad" data-inclina [class.mini--aviso]="seguridad() && !seguridad()!.dosPasos">
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4" /></svg></span><h3>Seguridad</h3></header>

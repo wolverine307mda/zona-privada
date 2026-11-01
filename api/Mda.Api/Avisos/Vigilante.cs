@@ -25,6 +25,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
     private const string ResumenUltimo = "resumen-ultimo";
     private const string CopiasAvisado = "copias-avisado";
     private const string SimulacroAvisado = "simulacro-avisado";
+    private const string CopiaNotificada = "copia-notificada";
     private static readonly CultureInfo Es = new("es-ES");
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -50,6 +51,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Coche(db, ct), "el coche");
         await Aislada(() => Copias(db, ct), "las copias");
         await Aislada(() => ResultadoSimulacro(db, ct), "el simulacro de restauración");
+        await Aislada(() => CopiaNueva(db, ct), "la copia nueva");
         if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
     }
 
@@ -87,6 +89,21 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorTelegram($"💾 Falta la copia de seguridad\n{texto}", ct);
+    }
+
+    // «💾 Copia hecha»: un aviso por cada copia nueva (si lo tienes activado en Mi PC › Avisos)
+    public async Task CopiaNueva(AppDbContext db, CancellationToken ct)
+    {
+        var c = UltimaCopia();
+        if (!c.Vigilada || c.Nombre is null) return;
+        var a = await db.Ajustes.FindAsync([CopiaNotificada], ct);
+        if (a?.Valor == c.Nombre) return;
+        var primera = a is null;
+        if (a is null) db.Ajustes.Add(a = new Ajuste { Clave = CopiaNotificada });
+        a.Valor = c.Nombre;
+        await db.SaveChangesAsync(ct);
+        if (primera || !(await Pc.AvisosPcAjustes.Leer(db, ct)).Copias) return; // la primera vez solo se anota cuál es la última
+        await avisos.PorTelegram($"💾 Copia de seguridad hecha: {c.Nombre} ({c.Tamano / 1024.0 / 1024:0.#} MB).", ct);
     }
 
     // ---- simulacro de restauración ----
