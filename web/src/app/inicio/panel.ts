@@ -15,6 +15,8 @@ interface Cancion { nombre: string; artistas: string; imagen: string | null; dur
 interface Sonando { sonando: boolean; cancion: Cancion | null; progreso: number; dispositivo: string | null; }
 interface Seguridad { dosPasos: boolean; fallosMes: number; }
 interface Raiz { id: string; nombre: string; elementos: number; }
+interface VentanaLuz { tipo: string; titulo: string; inicio: string; fin: string; puntuacion: number | null; motivo?: string | null; }
+interface EstadoPcInicio { agenteConectado: boolean; salud: { volumenes: { nombre: string; libreBytes: number; totalBytes: number }[]; reinicioPendiente: boolean } | null; }
 
 // Panel del inicio: un vistazo a todo — el dinero del mes, lo que suena, el coche, la agenda,
 // los recordatorios, las notas fijadas, la seguridad, la gasolina y las carpetas. Cada tarjeta carga sola
@@ -49,6 +51,23 @@ export class Panel {
   protected readonly seguridad = signal<Seguridad | null>(null);
   protected readonly gasolina = signal<Gasolina | null>(null);
   protected readonly raices = signal<Raiz[]>([]);
+  protected readonly luz = signal<{ lugar: string | null; hoy: VentanaLuz[] } | null>(null);
+  protected readonly pc = signal<EstadoPcInicio | null>(null);
+  protected readonly llaves = signal(0);
+
+  // la mejor ventana de luz de hoy que aún no ha terminado
+  protected readonly luzHoy = computed(() => {
+    const ahora = Date.now();
+    return [...(this.luz()?.hoy ?? [])].filter((v) => new Date(v.fin).getTime() > ahora).sort((a, b) => (b.puntuacion ?? -1) - (a.puntuacion ?? -1))[0] ?? null;
+  });
+  protected readonly discoPc = computed(() => {
+    const p = this.pc()?.salud;
+    if (!p) return 'Aún sin lecturas de salud';
+    const v = p.volumenes.find((x) => x.totalBytes) ;
+    const usado = v ? Math.round(100 - (100 * v.libreBytes) / v.totalBytes) : null;
+    return `${usado != null ? `Disco ${v!.nombre} al ${usado} %` : 'Discos sanos'}${p.reinicioPendiente ? ' · reinicio pendiente' : ''}`;
+  });
+  protected horaLuz(iso: string): string { return iso.slice(11, 16); }
 
   protected readonly deuda = computed(() => this.deudas()?.deudas.find((d) => d.restante > 0) ?? this.deudas()?.deudas[0] ?? null);
   protected readonly eventos = computed(() => (this.agenda() ?? []).filter((a) => a.tipo === 'Evento').slice(0, 4));
@@ -95,6 +114,9 @@ export class Panel {
       get<Seguridad>('/api/seguridad/estado').then((s) => this.seguridad.set(s)),
       get<Gasolina>('/api/gastos/gasolina').then((g) => this.gasolina.set(g)),
       get<Raiz[]>('/api/archivos/raices').then((r) => this.raices.set(r)),
+      get<{ lugar: string | null; hoy: VentanaLuz[] }>('/api/luz').then((l) => this.luz.set(l)).catch(() => this.luz.set({ lugar: null, hoy: [] })),
+      get<EstadoPcInicio>('/api/pc').then((p) => this.pc.set(p)).catch(() => {}),
+      get<unknown[]>('/api/passkeys').then((l) => this.llaves.set(l.length)).catch(() => {}),
       this.leerMusica(),
     ]);
   }

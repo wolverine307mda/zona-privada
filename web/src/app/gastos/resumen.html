@@ -16,7 +16,7 @@
           <p class="etq">{{ esActual() ? 'Dinero ahora' : 'Al acabar el mes' }}</p>
           <p class="cartera__cifra">{{ euros(esActual() ? s.actual : s.finMes) }}</p>
           <p class="cartera__sub">
-            @if (esActual()) { Empezaste el mes con <b>{{ euros(s.inicioMes) }}</b> · previsto a fin de mes <b [class.rojo]="s.previsto < 0">{{ euros(s.previsto) }}</b> }
+            @if (esActual()) { Empezaste el mes con <b>{{ euros(s.inicioMes) }}</b> · a fin de mes, con lo apuntado <b [class.rojo]="s.previsto < 0">{{ euros(s.previsto) }}</b> }
             @else { Empezó con <b>{{ euros(s.inicioMes) }}</b> · {{ s.finMes - s.inicioMes >= 0 ? 'ganaste' : 'perdiste' }} <b>{{ euros(s.finMes - s.inicioMes) }}</b> }
           </p>
           <div class="cartera__botones">

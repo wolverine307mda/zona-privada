@@ -61,15 +61,8 @@ public static class Cartera
             var bv = b ?? 0;
             var actual = bv + await NetoHasta(db, hoy.AddDays(1), ct);
             var fin = bv + await NetoHasta(db, hasta, ct);
-            // lo previsto: el final del mes con los fijos que faltan por aplicar (solo en el mes actual o futuros)
+            // Solo cuenta lo que has apuntado: una nómina o una suscripción no suma ni resta hasta que la apuntas tú
             var previsto = fin;
-            if (hasta > hoy)
-            {
-                var registrados = await db.Movimientos.Where(m => m.RecurrenteId != null && m.Fecha >= desde && m.Fecha < hasta).Select(m => m.RecurrenteId!.Value).ToListAsync(ct);
-                var rec = await db.Recurrentes.AsNoTracking().ToListAsync(ct);
-                previsto += rec.Where(r => r.TocaEn(desde.Year, desde.Month) && !registrados.Contains(r.Id))
-                    .Sum(r => r.Tipo == TipoMovimiento.Ingreso ? r.Importe : -r.Importe);
-            }
             var huchas = await db.Huchas.SumAsync(h => (decimal?)h.Ahorrado, ct) ?? 0;
             return Results.Ok(new EstadoSaldo(b is not null, actual, bv + await NetoHasta(db, desde, ct), fin, previsto, huchas, actual - huchas));
         });
@@ -186,17 +179,15 @@ public static class Cartera
         var restantes = diasMes - hoy.Day + 1;
         var delMes = movs.Where(m => m.Fecha >= primero).ToList();
         var registrados = delMes.Where(m => m.RecurrenteId is not null).Select(m => m.RecurrenteId!.Value).ToHashSet();
-        var pendientes = rec.Where(r => r.TocaEn(hoy.Year, hoy.Month) && !registrados.Contains(r.Id)).ToList();
-        var pendienteNeto = pendientes.Sum(r => r.Tipo == TipoMovimiento.Ingreso ? r.Importe : -r.Importe);
-
-        // lo que queda para gastar cada día sin tocar las huchas, contando con los fijos que faltan
-        var disponible = saldo - huchas + pendienteNeto;
+        // los fijos que faltan (nómina, suscripciones…) NO se cuentan hasta que los apuntas: ni suman ni restan
+        // lo que queda para gastar cada día sin tocar las huchas
+        var disponible = saldo - huchas;
         var porDia = Math.Round(disponible / restantes, 2, MidpointRounding.AwayFromZero);
 
-        // gasto del mes al ritmo actual: lo variable (no fijo) se extrapola; los fijos pendientes se suman
+        // gasto del mes al ritmo actual: lo variable (no fijo) se extrapola
         var gastoMes = delMes.Where(m => m.Tipo == TipoMovimiento.Gasto).Sum(m => m.Importe);
         var variable = delMes.Where(m => m.Tipo == TipoMovimiento.Gasto && m.RecurrenteId is null && m.DeudaId is null).Sum(m => m.Importe);
-        var proyeccion = Math.Round(gastoMes + variable / hoy.Day * (restantes - 1) + pendientes.Where(r => r.Tipo == TipoMovimiento.Gasto).Sum(r => r.Importe), 2);
+        var proyeccion = Math.Round(gastoMes + variable / hoy.Day * (restantes - 1), 2);
 
         // regla 50/30/20 con el mes anterior completo (si no hay, con este)
         var ant = movs.Where(m => m.Fecha >= primero.AddMonths(-1) && m.Fecha < primero).ToList();
@@ -207,12 +198,12 @@ public static class Cartera
         var regla = new Regla(ingresos, nec, cap, ingresos - nec - cap);
 
         var lista = new List<Consejo>();
-        if (disponible < 0 && saldo + pendienteNeto >= 0)
+        if (disponible < 0 && saldo >= 0)
             lista.Add(new("alerta", "Las huchas pasan de lo que tienes", $"Tienes {Euros(saldo)} y has apartado {Euros(huchas)} en huchas. Saca algo de una hucha o ajusta el saldo si no cuadra.", "aviso"));
         else if (disponible < 0)
-            lista.Add(new("alerta", "Vas en números rojos", $"Contando los fijos que faltan, acabarías el mes con {Euros(disponible)}. Frena lo que no sea imprescindible.", "malo"));
+            lista.Add(new("alerta", "Vas en números rojos", $"Con lo que tienes ahora, y sin contar lo que aún no hayas apuntado, te quedan {Euros(disponible)}. Frena lo que no sea imprescindible.", "malo"));
         else
-            lista.Add(new("ritmo", $"{Euros(porDia)} al día", restantes == 1 ? "Es lo que te queda hoy, último día del mes, sin tocar las huchas y contando lo que falta por aplicar." : $"Es lo que puedes gastar cada día hasta fin de mes ({restantes} días) sin tocar las huchas, contando lo que falta por aplicar.", "bueno"));
+            lista.Add(new("ritmo", $"{Euros(porDia)} al día", restantes == 1 ? "Es lo que te queda hoy, último día del mes, sin tocar las huchas." : $"Es lo que puedes gastar cada día hasta fin de mes ({restantes} días) sin tocar las huchas.", "bueno"));
 
         // la categoría que más se ha disparado frente a la media de los tres meses anteriores
         var previos = movs.Where(m => m.Fecha < primero && m.Tipo == TipoMovimiento.Gasto).ToList();

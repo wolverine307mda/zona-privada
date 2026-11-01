@@ -1,6 +1,7 @@
 import { Router, RouterLink } from '@angular/router';
 import { GastosService } from '../gastos/gastos.service';
 import { Panel } from './panel';
+import { DatosPc, Pc3d } from './pc-3d';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { PerfilService } from '../core/perfil.service';
 import { SesionService } from '../core/sesion.service';
@@ -20,7 +21,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Panel, RouterLink],
+  imports: [Panel, RouterLink, Pc3d],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })
@@ -50,6 +51,7 @@ export class Inicio implements OnDestroy {
     return h < 7 ? 'Buenas noches' : h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches';
   });
   protected readonly real = computed(() => this.a()?.origen === 'equipo');
+  protected readonly datosPc = computed<DatosPc>(() => ({ cpu: this.a()?.cpu ?? 0, memoria: this.memoria().pct, disco: this.disco().pct, real: this.real() }));
 
   protected readonly memoria = computed(() => this.porcentaje(this.a()?.memoriaUsada, this.a()?.memoriaTotal));
   protected readonly disco = computed(() => this.porcentaje(this.a()?.discoUsado, this.a()?.discoTotal));

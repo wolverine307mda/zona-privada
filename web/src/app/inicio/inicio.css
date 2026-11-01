@@ -105,3 +105,13 @@
   .origen { margin-left: 0; }
   .kpi { min-height: 0; }
 }
+
+/* tu PC por dentro (3D) */
+.pc3d { display: grid; gap: 12px; overflow: hidden; background: var(--brillo), radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--brand) 14%, var(--vidrio)), var(--vidrio) 62%); }
+.pc3d__escena { position: relative; height: clamp(300px, 52vw, 460px); border-radius: 18px; overflow: hidden; background: radial-gradient(70% 70% at 50% 45%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 75%); }
+.pc3d__escena app-pc-3d { position: absolute; inset: 0; }
+.pc3d__chips { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.pc3d__chips li { display: grid; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--fondo) 62%, transparent); backdrop-filter: blur(10px); }
+.pc3d__chips b { font: 700 1.05rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.pc3d__chips small { color: var(--soft); font-size: .72rem; }
+.pc3d__enlace { justify-self: end; color: var(--acento); font-weight: 600; font-size: .88rem; text-decoration: none; }

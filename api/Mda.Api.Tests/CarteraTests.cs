@@ -135,7 +135,7 @@ public class CarteraTests(ModulosFactory factory) : IClassFixture<ModulosFactory
         var rec = new List<Recurrente> { new() { Id = 1, Nombre = "Alquiler", Tipo = TipoMovimiento.Gasto, Categoria = "vivienda", Importe = 100, Dia = 25, Inicio = new DateOnly(2026, 1, 1) } };
         var r = Cartera.ConsejosDe(hoy, movs, rec, 1200, 0);
         Assert.Equal(11, r.DiasRestantes);
-        Assert.Equal(100m, r.PorDia); // (1200 − 100 de alquiler pendiente) / 11
+        Assert.Equal(109.09m, r.PorDia); // 1200 / 11: el alquiler pendiente NO se descuenta hasta que se apunte
         Assert.Contains(r.Lista, x => x.Icono == "sube");
     }
 }

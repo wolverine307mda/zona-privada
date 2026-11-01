@@ -119,11 +119,32 @@
     </ul>
   </a>
 
+  <!-- fotografía: la mejor luz de hoy -->
+  <a class="caja mini" routerLink="/fotografia" data-inclina>
+    <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" /></svg></span><h3>Cielo</h3></header>
+    @if (luzHoy(); as v) {
+      <strong class="cifra">{{ v.puntuacion ?? '–' }}<small>/10</small></strong>
+      <span class="sub">{{ v.titulo }} · {{ horaLuz(v.inicio) }}–{{ horaLuz(v.fin) }}</span>
+    } @else if (luz() !== null) {
+      <strong class="cifra">–</strong>
+      <span class="sub">Sin luz especial hoy</span>
+    } @else { <div class="esqueleto" aria-label="Cargando"><i></i><i></i></div> }
+  </a>
+
+  <!-- mi PC -->
+  <a class="caja mini" routerLink="/pc" data-inclina [class.mini--aviso]="pc() && !pc()!.agenteConectado">
+    <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4zM9 19h6M12 15v4" /></svg></span><h3>Mi PC</h3></header>
+    @if (pc(); as p) {
+      <strong class="cifra">{{ p.agenteConectado ? 'Activo' : 'Apagado' }}</strong>
+      <span class="sub">{{ p.agenteConectado ? discoPc() : 'Abre «Zona privada»' }}</span>
+    } @else { <div class="esqueleto" aria-label="Cargando"><i></i><i></i></div> }
+  </a>
+
   <!-- seguridad -->
   <a class="caja mini" routerLink="/seguridad" data-inclina [class.mini--aviso]="seguridad() && !seguridad()!.dosPasos">
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4" /></svg></span><h3>Seguridad</h3></header>
     <strong class="cifra">{{ enLinea() }}<small> en línea</small></strong>
-    <span class="sub">{{ sesiones().length }} sesiones · {{ seguridad()?.dosPasos ? 'dos pasos ✓' : 'activa los dos pasos' }}</span>
+    <span class="sub">{{ sesiones().length }} sesiones · {{ seguridad()?.dosPasos ? 'dos pasos ✓' : 'activa los dos pasos' }}{{ llaves() ? ' · ' + llaves() + (llaves() === 1 ? ' llave' : ' llaves') : '' }}</span>
   </a>
 
   <!-- gasolina -->
