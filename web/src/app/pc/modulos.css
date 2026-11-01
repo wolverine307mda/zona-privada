@@ -1,5 +1,17 @@
-:host { display: block; }
+/* varias tarjetas dentro de un mismo componente: en columna y con aire entre ellas (comun.css ya pone la animación de entrada) */
+:host { display: flex; flex-direction: column; gap: 18px; }
+/* cabecera de cada tarjeta: el título nunca se parte y lo de al lado baja a la línea de abajo si no cabe */
+.caja__cab { flex-wrap: wrap; row-gap: 4px; }
+.caja__cab h3 { flex: none; max-width: 100%; }
+.caja__cab .sub { flex: 1 1 200px; text-align: right; }
 .nada { color: var(--soft); margin: 0; font-size: .88rem; }
+/* lo que las pantallas viejas tenían en su propio CSS: aquí hace falta de nuevo */
+.interruptor { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; cursor: pointer; }
+.interruptor input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--brand); }
+.interruptor span { display: grid; gap: 2px; min-width: 0; }
+.interruptor small { color: var(--soft); font-size: .84rem; }
+.campo__etiqueta { font-size: .8rem; color: var(--soft); }
+.campo--corto { max-width: 110px; }
 .msg { margin: 8px 0 0; color: var(--acento); font-size: .9rem; }
 .error { margin: 0; color: var(--bad); font-size: .9rem; }
 .botones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
@@ -18,11 +30,12 @@
 .alta .campo__input, textarea.campo__input { width: 100%; box-sizing: border-box; min-height: 46px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: inherit; }
 textarea.campo__input { resize: vertical; }
 .acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; }
-.fila2 { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; }
+.fila2 { display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 12px; align-items: end; }
+.alta .campo--corto { max-width: none; }
 
 /* aparatos de casa */
 .aparatos { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
-.aparato { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.aparato { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
 .aparato--caido { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
 .aparato__icono { font-size: 1.5rem; text-align: center; }
 .aparato__texto { display: grid; min-width: 0; }
@@ -31,7 +44,8 @@ textarea.campo__input { resize: vertical; }
 .punto { width: 12px; height: 12px; border-radius: 50%; background: var(--soft); }
 .punto--ok { background: #3fb96a; box-shadow: 0 0 0 4px color-mix(in srgb, #3fb96a 25%, transparent); }
 .punto--mal { background: var(--bad); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 25%, transparent); }
-@media (max-width: 520px) { .aparato { grid-template-columns: 36px minmax(0, 1fr) auto; } .aparato .enlace { grid-column: span 1; } }
+.aparato__acciones { display: flex; gap: 6px; }
+@media (max-width: 520px) { .aparato { grid-template-columns: 36px minmax(0, 1fr) auto; } .aparato__acciones { grid-column: 2 / -1; } }
 
 /* portapapeles */
 .clips { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }

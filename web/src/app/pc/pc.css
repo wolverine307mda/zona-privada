@@ -42,3 +42,8 @@
 .nivel { display: grid; gap: 6px; margin-bottom: 12px; }
 .nivel span { display: flex; justify-content: space-between; }
 .nivel input { width: 100%; accent-color: var(--brand); min-height: 32px; }
+
+/* cabecera de cada tarjeta: el título nunca se parte y lo de al lado baja a la línea de abajo si no cabe */
+.caja__cab { flex-wrap: wrap; row-gap: 4px; }
+.caja__cab h3 { flex: none; max-width: 100%; }
+.caja__cab .sub { flex: 1 1 200px; text-align: right; }

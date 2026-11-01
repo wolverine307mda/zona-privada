@@ -21,9 +21,11 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
             <span class="aparato__texto"><strong>{{ a.nombre }}</strong>
               <small>{{ a.host }}:{{ a.puerto }} · {{ a.enLinea === null ? 'sin comprobar' : a.enLinea ? 'en línea' + (a.latenciaMs != null ? ' · ' + a.latenciaMs + ' ms' : '') : 'sin respuesta' + (a.cambio ? ' desde ' + hace(a.cambio) : '') }}</small></span>
             <span class="punto" [class.punto--ok]="a.enLinea === true" [class.punto--mal]="a.enLinea === false" [attr.aria-label]="a.enLinea ? 'en línea' : 'sin respuesta'"></span>
-            <button class="enlace" type="button" (click)="probar(a)">Probar</button>
-            @if (borrando() === a.id) { <button class="enlace enlace--peligro" type="button" (click)="borrar(a)">¿Seguro?</button> }
-            @else { <button class="enlace" type="button" (click)="borrando.set(a.id)" [attr.aria-label]="'Quitar ' + a.nombre">Quitar</button> }
+            <span class="aparato__acciones">
+              <button class="enlace" type="button" (click)="probar(a)">Probar</button>
+              @if (borrando() === a.id) { <button class="enlace enlace--peligro" type="button" (click)="borrar(a)">¿Seguro?</button> }
+              @else { <button class="enlace" type="button" (click)="borrando.set(a.id)" [attr.aria-label]="'Quitar ' + a.nombre">Quitar</button> }
+            </span>
           </li>
         } @empty { <li class="nada">Aún no vigilas ningún aparato. Añade el router, la impresora, el NAS…</li> }
       </ul>

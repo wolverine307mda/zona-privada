@@ -67,7 +67,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     <section class="caja">
       <header class="caja__cab">
         <h3>Mi PC</h3>
-        <span class="sub">{{ e()?.agenteConectado ? '🟢 el agente de Windows está conectado' : '🔴 el agente de Windows no responde: abre «Zona privada» (icono junto al reloj) o agente\arrancar.cmd' }}</span>
+        <span class="sub">{{ e()?.agenteConectado ? '🟢 el agente de Windows está conectado' : '🔴 el agente de Windows no responde: abre «Zona privada» (icono junto al reloj) o arrancar.cmd (carpeta agente)' }}</span>
       </header>
       @if (e()?.salud; as s) {
         <p class="sub">{{ hace() }}</p>
@@ -154,7 +154,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
       }
     </section>
   `,
-  styleUrl: './pc.css',
+  styleUrls: ['../gastos/comun.css', './pc.css'],
 })
 export class Pc implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);

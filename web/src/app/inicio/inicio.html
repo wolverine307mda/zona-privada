@@ -33,14 +33,14 @@
   </header>
   <div class="pc3d__escena">
     <app-pc-3d [datos]="datosPc()" />
-    <ul class="pc3d__chips" aria-label="Resumen del equipo">
-      <li><b>{{ a()?.cpu ?? 0 }}%</b><small>procesador</small></li>
-      <li><b>{{ memoria().pct }}%</b><small>memoria</small></li>
-      <li><b>{{ disco().pct }}%</b><small>disco</small></li>
-      @if (a()?.bateria != null) { <li><b>{{ a()!.bateria }}%{{ a()!.cargando ? ' ⚡' : '' }}</b><small>batería</small></li> }
-      <li><b>{{ encendido() }}</b><small>encendido</small></li>
-    </ul>
   </div>
+  <ul class="pc3d__chips" aria-label="Resumen del equipo">
+    <li><b>{{ a()?.cpu ?? 0 }}%</b><small>procesador</small></li>
+    <li><b>{{ memoria().pct }}%</b><small>memoria</small></li>
+    <li><b>{{ disco().pct }}%</b><small>disco</small></li>
+    @if (a()?.bateria != null) { <li><b>{{ a()!.bateria }}%{{ a()!.cargando ? ' ⚡' : '' }}</b><small>batería</small></li> }
+    <li><b>{{ encendido() }}</b><small>encendido</small></li>
+  </ul>
   <a class="pc3d__enlace" routerLink="/pc">Salud, órdenes y tendencia en «Mi PC» →</a>
 </section>
 
