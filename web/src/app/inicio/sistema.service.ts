@@ -21,6 +21,11 @@ export interface Metricas {
   redSubida: number;
   // «equipo»: datos reales del PC (agente de Windows); «contenedor»: lo que ve Docker
   origen: 'equipo' | 'contenedor';
+  // solo de un portátil con agente
+  bateria?: number | null;
+  cargando?: boolean | null;
+  volumen?: number | null;
+  brillo?: number | null;
 }
 
 export type EstadoConexion = 'conectando' | 'en-vivo' | 'reconectando' | 'sin-conexion';

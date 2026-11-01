@@ -30,6 +30,10 @@ static class AgenteServicio
         }, ct);
         _ = Ordenes.Bucle(esperaLarga, token, ct);
 
+        // batería, volumen y brillo cambian despacio y WMI/Core Audio son caros: se miran cada 10 s
+        (int Porcentaje, bool Cargando)? bateria = null; int? volumen = null, brillo = null;
+        var ultimaLectura = DateTime.MinValue;
+
         string? ultimo = null;
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         try
@@ -39,7 +43,12 @@ static class AgenteServicio
                 string estado;
                 try
                 {
-                    var r = await http.PostAsJsonAsync("/api/sistema/agente", lector.Leer(), ct);
+                    if (DateTime.UtcNow - ultimaLectura > TimeSpan.FromSeconds(10))
+                    {
+                        (bateria, volumen, brillo) = (Dispositivos.Bateria(), Dispositivos.Volumen(), Dispositivos.Brillo());
+                        ultimaLectura = DateTime.UtcNow;
+                    }
+                    var r = await http.PostAsJsonAsync("/api/sistema/agente", lector.Leer() with { Bateria = bateria?.Porcentaje, Cargando = bateria?.Cargando, Volumen = volumen, Brillo = brillo }, ct);
                     estado = r.IsSuccessStatusCode ? "conectado"
                         : r.StatusCode == System.Net.HttpStatusCode.Unauthorized ? "token incorrecto"
                         : $"la API responde {(int)r.StatusCode}";

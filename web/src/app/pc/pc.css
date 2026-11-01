@@ -29,3 +29,16 @@
 .tendencia .linea { fill: none; stroke: var(--acento); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .tendencia .area { fill: color-mix(in srgb, var(--acento) 14%, transparent); }
 .tendencia small { color: var(--soft); }
+
+.pc3d { padding-bottom: 8px; }
+.pc3d__escena { position: relative; height: clamp(280px, 48vw, 420px); border-radius: 18px; overflow: hidden; background: radial-gradient(70% 70% at 50% 45%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 75%); }
+.pc3d__escena app-pc-3d { position: absolute; inset: 0; }
+.bateria { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.bateria__icono { position: relative; width: 54px; height: 26px; border: 2px solid var(--soft); border-radius: 7px; padding: 2px; box-sizing: border-box; }
+.bateria__icono::after { content: ''; position: absolute; right: -6px; top: 7px; width: 4px; height: 8px; border-radius: 0 2px 2px 0; background: var(--soft); }
+.bateria__icono i { display: block; height: 100%; border-radius: 3px; background: #3fb96a; transition: width .4s; }
+.bateria__icono.baja i { background: var(--bad); }
+.bateria small { color: var(--soft); }
+.nivel { display: grid; gap: 6px; margin-bottom: 12px; }
+.nivel span { display: flex; justify-content: space-between; }
+.nivel input { width: 100%; accent-color: var(--brand); min-height: 32px; }

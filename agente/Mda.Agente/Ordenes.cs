@@ -12,7 +12,7 @@ record ResultadoOrden(bool Ok, string Resultado);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -56,6 +56,12 @@ static partial class Ordenes
                 case "apagar": Lanzar("shutdown", "/s /t 30 /c \"Zona privada: apagado en 30 s (cancelable)\""); return new(true, "apagado en 30 s");
                 case "suspender": Lanzar("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0"); return new(true, "suspendiendo");
                 case "cancelar": Lanzar("shutdown", "/a"); return new(true, "cancelado");
+                case "volumen":
+                    if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
+                    return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");
+                case "brillo":
+                    if (!int.TryParse(o.Parametro, out var bri) || bri is < 0 or > 100) return new(false, "brillo no válido");
+                    return Dispositivos.PonerBrillo(bri) ? new(true, $"brillo al {bri} %") : new(false, "esta pantalla no deja cambiar el brillo (¿es un portátil?)");
             }
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return new(false, e.Message); }

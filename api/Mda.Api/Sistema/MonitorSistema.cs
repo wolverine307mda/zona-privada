@@ -115,6 +115,9 @@ public static class SistemaEndpoints
             try { m = await req.ReadFromJsonAsync<MetricasSistema>(); }
             catch (Exception e) when (e is System.Text.Json.JsonException or BadHttpRequestException) { return Results.BadRequest(); }
             if (m is null) return Results.BadRequest();
+            // lo que llega de fuera se acota: un porcentaje es de 0 a 100 o nada
+            int? P(int? v) => v is >= 0 and <= 100 ? v : null;
+            m = m with { Bateria = P(m.Bateria), Volumen = P(m.Volumen), Brillo = P(m.Brillo) };
             agente.Recibir(m);
             agente.Visto();
             return Results.NoContent();

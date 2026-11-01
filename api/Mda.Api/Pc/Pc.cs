@@ -203,7 +203,9 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo"];
+    // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
+    public static readonly string[] SinConfirmar = ["volumen", "brillo"];
     public static readonly TimeSpan Validez = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan AgenteConectado = TimeSpan.FromSeconds(15);
 
@@ -219,6 +221,8 @@ public static class OrdenesPc
         "suspender" => "suspender",
         "apagar" => "apagar (en 30 s)",
         "cancelar" => "cancelar el apagado o reinicio",
+        "volumen" => $"volumen al {o.Parametro} %",
+        "brillo" => $"brillo de la pantalla al {o.Parametro} %",
         _ => o.Tipo,
     };
 
@@ -254,8 +258,13 @@ public static class OrdenesPc
             var tipo = (e.Tipo ?? "").ToLowerInvariant();
             if (!Tipos.Contains(tipo)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["tipo"] = ["Orden no permitida."] });
             var parametro = tipo == "despierto" ? (e.Parametro == "off" ? "off" : "on") : "";
+            if (tipo is "volumen" or "brillo")
+            {
+                if (!int.TryParse(e.Parametro, out var nivel) || nivel is < 0 or > 100) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = ["Pon un número de 0 a 100."] });
+                parametro = nivel.ToString();
+            }
             if (!agente.Conectado(AgenteConectado)) return Results.Conflict(new { detalle = "El agente de Windows no está en marcha (agente\\arrancar.cmd)." });
-            if (!await Reautenticar.Vigente(ctx, db, reloj)) return Reautenticar.Pedir();
+            if (!SinConfirmar.Contains(tipo) && !await Reautenticar.Vigente(ctx, db, reloj)) return Reautenticar.Pedir();
             var ahora = reloj.GetUtcNow();
             var o = new OrdenPc { Tipo = tipo, Parametro = parametro, Creada = ahora, Caduca = ahora.Add(Validez), Desde = Dispositivo.Nombre(ctx.Request.Headers.UserAgent.ToString()) + " · " + IpCliente.De(ctx) };
             db.OrdenesPc.Add(o);

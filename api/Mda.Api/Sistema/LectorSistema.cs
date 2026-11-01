@@ -24,7 +24,12 @@ public record MetricasSistema(
     IReadOnlyList<Disco>? Discos = null,
     double RedBajada = 0,
     double RedSubida = 0,
-    string Origen = "contenedor");
+    string Origen = "contenedor",
+    // solo en un portátil con agente: batería (%), si está enchufado, volumen y brillo de la pantalla (%)
+    int? Bateria = null,
+    bool? Cargando = null,
+    int? Volumen = null,
+    int? Brillo = null);
 
 public interface ILectorSistema
 {

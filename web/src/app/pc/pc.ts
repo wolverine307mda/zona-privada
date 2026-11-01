@@ -2,6 +2,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Reautenticar } from '../core/reautenticar';
+import { SistemaService } from '../inicio/sistema.service';
+import { DatosPc, Pc3d } from '../inicio/pc-3d';
 
 interface Disco { nombre: string; modelo: string; salud: string; estado: string; temperaturaC: number | null; desgastePct: number | null; erroresLectura: number | null; }
 interface Volumen { nombre: string; libreBytes: number; totalBytes: number; }
@@ -27,7 +29,34 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
+  imports: [Pc3d],
   template: `
+    <section class="caja pc3d">
+      <header class="caja__cab"><h3>Tu PC por dentro</h3><span class="sub">{{ a()?.origen === 'equipo' ? 'en directo · arrastra para girarlo' : 'midiendo Docker · arranca el agente' }}</span></header>
+      <div class="pc3d__escena"><app-pc-3d [datos]="datosPc()" /></div>
+    </section>
+
+    @if (e()?.agenteConectado && (a()?.bateria != null || a()?.brillo != null || a()?.volumen != null)) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Portátil</h3><span class="sub">batería, pantalla y sonido</span></header>
+        @if (a()?.bateria != null) {
+          <div class="bateria" role="img" [attr.aria-label]="'Batería al ' + a()!.bateria + ' por ciento' + (a()!.cargando ? ', enchufado' : '')">
+            <span class="bateria__icono" [class.baja]="a()!.bateria! <= 20 && !a()!.cargando"><i [style.width.%]="a()!.bateria"></i></span>
+            <strong>{{ a()!.bateria }} %</strong><small>{{ a()!.cargando ? 'enchufado' : 'con batería' }}</small>
+          </div>
+        }
+        @if (a()?.brillo != null) {
+          <label class="nivel"><span>Brillo de la pantalla <b>{{ brillo() ?? a()!.brillo }} %</b></span>
+            <input type="range" min="0" max="100" step="5" [value]="brillo() ?? a()!.brillo" (input)="brillo.set(+$any($event.target).value)" (change)="nivel('brillo', +$any($event.target).value)"></label>
+        }
+        @if (a()?.volumen != null) {
+          <label class="nivel"><span>Volumen <b>{{ volumen() ?? a()!.volumen }} %</b></span>
+            <input type="range" min="0" max="100" step="5" [value]="volumen() ?? a()!.volumen" (input)="volumen.set(+$any($event.target).value)" (change)="nivel('volumen', +$any($event.target).value)"></label>
+        }
+        @if (aviso()) { <p class="msg" role="status">{{ aviso() }}</p> }
+      </section>
+    }
+
     <section class="caja">
       <header class="caja__cab">
         <h3>Mi PC</h3>
@@ -123,6 +152,16 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 export class Pc implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   protected readonly reauth = inject(Reautenticar);
+  private readonly sistema = inject(SistemaService);
+  protected readonly a = computed(() => this.sistema.actual());
+  protected readonly datosPc = computed<DatosPc>(() => {
+    const m = this.a();
+    const pct = (u?: number, t?: number) => (u && t ? Math.round((100 * u) / t) : 0);
+    return { cpu: m?.cpu ?? 0, memoria: pct(m?.memoriaUsada, m?.memoriaTotal), disco: pct(m?.discoUsado, m?.discoTotal), real: m?.origen === 'equipo' };
+  });
+  protected readonly volumen = signal<number | null>(null);
+  protected readonly brillo = signal<number | null>(null);
+  protected readonly aviso = signal('');
   protected readonly verClave = signal(false);
   protected readonly ordenes = ORDENES;
   protected readonly e = signal<Estado | null>(null);
@@ -185,6 +224,19 @@ export class Pc implements OnInit, OnDestroy {
     try { this.e.set(await firstValueFrom(this.http.get<Estado>('/api/pc'))); } catch { /* se reintenta en 15 s */ }
     if (!this.historial().length) firstValueFrom(this.http.get<DiaSalud[]>('/api/pc/historial')).then((h) => this.historial.set(h)).catch(() => {});
     this.cargado.set(true);
+  }
+
+  // volumen y brillo: órdenes inocuas, no piden confirmar con Face ID
+  protected async nivel(tipo: 'volumen' | 'brillo', valor: number): Promise<void> {
+    this.aviso.set('');
+    try {
+      await firstValueFrom(this.http.post('/api/pc/ordenes', { tipo, parametro: String(valor) }));
+      this.aviso.set(`${tipo === 'volumen' ? 'Volumen' : 'Brillo'} al ${valor} %`);
+    } catch (err) {
+      this.aviso.set((err as HttpErrorResponse).status === 409 ? 'El agente de Windows no está en marcha.' : 'No se pudo cambiar.');
+    }
+    // en cuanto el agente cuente el valor real, el deslizador vuelve a seguirlo
+    setTimeout(() => { if (tipo === 'volumen') this.volumen.set(null); else this.brillo.set(null); }, 6000);
   }
 
   protected usado(v: Volumen): number { return v.totalBytes ? Math.round(100 - (100 * v.libreBytes) / v.totalBytes) : 0; }
