@@ -172,6 +172,9 @@ builder.Services.AddHostedService<MonitorSistema>();
 builder.Services.AddSingleton<Carpetas>();
 // miniaturas WebP de la galería pública (sin EXIF)
 builder.Services.AddSingleton<Derivados>();
+builder.Services.AddSingleton<Pregenerar>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
+builder.Services.AddResponseCompression(o => { o.EnableForHttps = true; o.MimeTypes = ["application/json"]; });
 
 // ---- Al arrancar: migraciones y usuario administrador desde la configuración ----
 // (va antes que los demás servicios de fondo: el host los arranca en orden y así ya tienen las tablas)
@@ -213,6 +216,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseSerilogRequestLogging();
 app.UseCabecerasSeguras();
+app.UseResponseCompression();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 // el enrutado va después de los archivos: si no, la ruta comodín del front se quedaría con los .js y .css

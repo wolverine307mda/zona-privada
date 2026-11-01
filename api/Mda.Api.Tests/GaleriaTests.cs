@@ -125,7 +125,13 @@ public class GaleriaTests(GaleriaFactory factory) : IClassFixture<GaleriaFactory
         Assert.Equal("RIFF", Encoding.ASCII.GetString(bytes, 0, 4));
         Assert.DoesNotContain(GaleriaFactory.Secreto, Encoding.Latin1.GetString(bytes));
         using var decodificada = SKBitmap.Decode(bytes);
-        Assert.Equal(480, Math.Max(decodificada.Width, decodificada.Height));
+        Assert.Equal(360, Math.Max(decodificada.Width, decodificada.Height));
+        // ya con la miniatura generada, la lista lleva el marcador borroso
+        var otra = await (await anonimo.SendAsync(Publica("/api/publico/galeria"))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.StartsWith("data:image/webp;base64,", otra.GetProperty("fotos")[0].GetProperty("lqip").GetString());
+        var media = await (await anonimo.GetAsync(foto.GetProperty("media").GetString())).Content.ReadAsByteArrayAsync();
+        using var m = SKBitmap.Decode(media);
+        Assert.Equal(720, Math.Max(m.Width, m.Height));
 
         var grande = await (await anonimo.GetAsync(foto.GetProperty("grande").GetString())).Content.ReadAsByteArrayAsync();
         using var g = SKBitmap.Decode(grande);

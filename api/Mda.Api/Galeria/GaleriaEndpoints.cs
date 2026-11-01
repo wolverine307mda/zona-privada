@@ -101,7 +101,7 @@ public static class GaleriaEndpoints
                 .Select(f => new { f.Id, f.Ruta, f.Titulo, f.Descripcion, f.Alt, f.Categoria, f.Orden, f.Ancho, f.Alto, f.Tono, f.Hash, f.Publicada, f.EnGlobo, f.Lat, f.Lon, f.Lugar }).ToListAsync(ct)));
 
         // añade una foto a la galería (o la devuelve si ya estaba)
-        g.MapPost("/fotos", async (FotoEntrada e, Carpetas c, Derivados d, AppDbContext db, CancellationToken ct) =>
+        g.MapPost("/fotos", async (FotoEntrada e, Carpetas c, Derivados d, Pregenerar pre, AppDbContext db, CancellationToken ct) =>
         {
             var real = c.Resolver("imagenes", e.Ruta);
             if (real is null || !File.Exists(real)) return Results.NotFound();
@@ -128,10 +128,11 @@ public static class GaleriaEndpoints
             f.Categoria = Recortar(e.Categoria ?? f.Categoria, 30).ToLowerInvariant();
             f.Publicada = true;
             await db.SaveChangesAsync(ct);
+            pre.Encolar(f);
             return Results.Ok(f);
         });
 
-        g.MapPut("/fotos/{id}", async (string id, FotoCambio e, Carpetas c, Derivados d, AppDbContext db, CancellationToken ct) =>
+        g.MapPut("/fotos/{id}", async (string id, FotoCambio e, Carpetas c, Derivados d, Pregenerar pre, AppDbContext db, CancellationToken ct) =>
         {
             var f = await db.FotosPublicas.FindAsync([id], ct);
             if (f is null) return Results.NotFound();
@@ -151,6 +152,7 @@ public static class GaleriaEndpoints
                 (f.Ancho, f.Alto, f.Tono, f.Hash) = (m.Ancho, m.Alto, m.Tono, h);
             }
             await db.SaveChangesAsync(ct);
+            if (f.Publicada) pre.Encolar(f);
             return Results.Ok(f);
         });
 
@@ -213,7 +215,8 @@ public static class GaleriaEndpoints
             {
                 id = f.Id, titulo = f.Titulo, descripcion = f.Descripcion, alt = f.Alt.Length > 0 ? f.Alt : f.Titulo, categoria = f.Categoria,
                 ancho = f.Ancho, alto = f.Alto, tono = f.Tono, lugar = LugarPublico(f, exclusion),
-                mini = $"/api/publico/galeria/{f.Id}/mini?v={f.Hash}", grande = $"/api/publico/galeria/{f.Id}/grande?v={f.Hash}",
+                mini = $"/api/publico/galeria/{f.Id}/mini?v={f.Hash}", media = $"/api/publico/galeria/{f.Id}/media?v={f.Hash}", grande = $"/api/publico/galeria/{f.Id}/grande?v={f.Hash}",
+                lqip = d.Lqip(f),
             }).ToList();
             ctx.Response.Headers.CacheControl = "public, max-age=60";
             return Results.Ok(new { fotos });

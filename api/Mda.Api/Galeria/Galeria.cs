@@ -37,7 +37,9 @@ public class FotoPublica
 // el codificador de Skia no copia metadatos, así que el GPS y la cámara se pierden.
 public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<Derivados> log)
 {
-    public static readonly Dictionary<string, int> Tamanos = new() { ["mini"] = 480, ["grande"] = 1600 };
+    public static readonly Dictionary<string, int> Tamanos = new() { ["mini"] = 360, ["media"] = 720, ["grande"] = 1600 };
+    private static readonly Dictionary<string, int> Calidad = new() { ["mini"] = 70, ["media"] = 75, ["grande"] = 80 };
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _lqip = new();
     // lo que Skia sabe leer en todas las plataformas (HEIC/AVIF no: hay que pasarlos a JPG o WebP)
     public static readonly string[] Extensiones = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"];
 
@@ -80,7 +82,7 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
             using var reducida = Reducir(origen, lado);
             if (reducida is null) return null;
             using var imagen = SKImage.FromBitmap(reducida);
-            using var datos = imagen.Encode(SKEncodedImageFormat.Webp, tam == "mini" ? 74 : 80);
+            using var datos = imagen.Encode(SKEncodedImageFormat.Webp, Calidad[tam]);
             var temporal = destino + $".{Guid.NewGuid():N}.tmp";
             await using (var s = File.Create(temporal)) datos.SaveTo(s);
             File.Move(temporal, destino, true);
@@ -92,6 +94,29 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
             return null;
         }
         finally { _cupo.Release(); }
+    }
+
+    // ¿ya está generado el derivado? (no lo genera)
+    public bool Existe(FotoPublica f, string tam) => File.Exists(Path.Combine(Directorio, $"{f.Id}-{f.Hash}-{tam}.webp"));
+
+    // Miniatura borrosa de 16 px en data-URI (~300 B): la web pinta la rejilla al instante. Sale de la «mini» ya generada; null si aún no existe.
+    public string? Lqip(FotoPublica f)
+    {
+        var clave = $"{f.Id}-{f.Hash}";
+        if (_lqip.TryGetValue(clave, out var hecho)) return hecho;
+        var mini = Path.Combine(Directorio, $"{f.Id}-{f.Hash}-mini.webp");
+        if (!File.Exists(mini)) return null;
+        try
+        {
+            using var origen = SKBitmap.Decode(mini);
+            if (origen is null) return null;
+            var w = 16; var h = Math.Max(1, (int)Math.Round(16.0 * origen.Height / origen.Width));
+            using var pequena = origen.Resize(new SKImageInfo(w, h), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
+            using var imagen = SKImage.FromBitmap(pequena);
+            using var datos = imagen.Encode(SKEncodedImageFormat.Webp, 40);
+            return _lqip[clave] = "data:image/webp;base64," + Convert.ToBase64String(datos.ToArray());
+        }
+        catch (Exception e) { log.LogWarning(e, "No se pudo generar el marcador de {Id}", f.Id); return null; }
     }
 
     // borra los derivados de una foto (al despublicarla o si cambia el archivo)
