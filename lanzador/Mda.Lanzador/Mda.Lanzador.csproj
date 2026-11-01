@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- «Zona privada.exe»: arranca Docker y los contenedores, aloja el agente del PC y vive en la bandeja junto al reloj.
+       Un solo ejecutable autocontenido (no hace falta tener .NET instalado) que pide permisos de administrador una vez. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>ZonaPrivada</AssemblyName>
+    <RootNamespace>Mda.Lanzador</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icono.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <!-- El mismo agente que el de consola, sin duplicar código -->
+  <ItemGroup>
+    <Compile Include="..\..\agente\Mda.Agente\AgenteServicio.cs" Link="Agente\AgenteServicio.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Salud.cs" Link="Agente\Salud.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Ordenes.cs" Link="Agente\Ordenes.cs" />
+    <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
+    <PackageReference Include="System.Management" Version="10.0.14" />
+  </ItemGroup>
+
+</Project>

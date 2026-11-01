@@ -6,4 +6,8 @@
     <Project Path="api/Mda.Api.Tests/Mda.Api.Tests.csproj" />
     <Project Path="api/Mda.Api/Mda.Api.csproj" />
   </Folder>
+  <Folder Name="/lanzador/">
+    <Project Path="lanzador/Mda.Lanzador.Tests/Mda.Lanzador.Tests.csproj" />
+    <Project Path="lanzador/Mda.Lanzador/Mda.Lanzador.csproj" />
+  </Folder>
 </Solution>
