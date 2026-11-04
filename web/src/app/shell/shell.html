@@ -1,4 +1,4 @@
-<div class="marco" [class.menu-abierto]="menuAbierto()">
+<div class="marco" [class.menu-abierto]="menuAbierto()" [class.compacto]="compacto()">
   <aside class="lateral" id="menu-lateral" aria-label="Menú de la zona privada"
          (touchstart)="empiezaGesto($event)" (touchmove)="sigueGesto($event)" (touchend)="acabaGesto()">
     <div class="lateral__cabeza">
@@ -12,20 +12,38 @@
       <button class="lateral__cerrar" type="button" (click)="menuAbierto.set(false)" aria-label="Cerrar el menú">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
+      <button class="lateral__compactar" type="button" (click)="alternarCompacto()" [attr.aria-pressed]="compacto()" [attr.aria-label]="compacto() ? 'Ampliar el menú' : 'Reducir el menú a iconos'" [attr.title]="(compacto() ? 'Ampliar el menú' : 'Reducir a iconos') + ' ( [ )'">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
     </div>
 
     <nav class="menu">
-      <p class="menu__grupo">General</p>
-      <a class="menu__item" [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+      <a class="menu__item" [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? inicio.titulo : null">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg>
-        <span>{{ inicio.titulo }}</span>
+        <span class="menu__txt">{{ inicio.titulo }}</span>
       </a>
 
-      @for (m of listos; track m.id) {
-        <a class="menu__item" [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
-          <span>{{ m.titulo }}</span>
-        </a>
+      @for (g of grupos; track g.id) {
+        <div class="grupo" [class.grupo--abierto]="abierto(g.id)" [class.grupo--activo]="grupoActivo() === g.id">
+          <button class="menu__item grupo__cab" type="button" (click)="alternar(g.id)" [attr.aria-expanded]="abierto(g.id)" [attr.aria-controls]="'sub-' + g.id" [attr.title]="compacto() ? g.titulo : null">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="g.icono" /></svg>
+            <span class="menu__txt">{{ g.titulo }}</span>
+            <svg class="grupo__flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+          <div class="grupo__sub" [id]="'sub-' + g.id">
+            <ul class="grupo__lista">
+              <li class="grupo__titulo" aria-hidden="true">{{ g.titulo }}</li>
+              @for (m of g.modulos; track m.id; let i = $index) {
+                <li>
+                  <a class="menu__item menu__item--sub" [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [style.--i]="i">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
+                    <span class="menu__txt">{{ m.titulo }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
       }
     </nav>
 
@@ -33,12 +51,12 @@
       @if (instalar.disponible()) {
         <button class="menu__item menu__item--ajustes menu__item--instalar" type="button" (click)="instalarApp()">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 7v7M9 11l3 3 3-3M11 18.5h2" /></svg>
-          <span>Instalar la app</span>
+          <span class="menu__txt">Instalar la app</span>
         </button>
       }
-      <button class="menu__item menu__item--ajustes" type="button" (click)="abrirAjustes()" aria-haspopup="dialog">
+      <button class="menu__item menu__item--ajustes" type="button" (click)="abrirAjustes()" aria-haspopup="dialog" [attr.title]="compacto() ? 'Ajustes' : null">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
-        <span>Ajustes</span>
+        <span class="menu__txt">Ajustes</span>
         <span class="menu__muestra" aria-hidden="true"></span>
       </button>
 

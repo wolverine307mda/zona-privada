@@ -1,11 +1,11 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { activarInclinacion } from '../core/inclinar';
 import { Instalar } from '../core/instalar';
-import { INICIO, MODULOS } from '../core/modulos';
+import { GRUPOS, INICIO, MODULOS } from '../core/modulos';
 import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
@@ -19,6 +19,10 @@ import { Pin } from './pin';
 import { Buscador } from './buscador';
 import { MiniMusica } from './mini-musica';
 
+const leer = (k: string): string | null => { try { return localStorage.getItem(k); } catch { return null; } };
+const guardar = (k: string, v: string): void => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+const leerLista = (k: string): string[] => { try { const v = JSON.parse(leer(k) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; } };
+
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
@@ -27,6 +31,7 @@ import { MiniMusica } from './mini-musica';
   styleUrl: './shell.css',
   host: {
     '(document:keydown.escape)': 'menuAbierto.set(false)',
+    '(document:keydown)': 'tecla($event)',
     '(document:touchstart)': 'bordeGesto($event)',
   },
 })
@@ -43,6 +48,7 @@ export class Shell {
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
   protected readonly pestanas = MODULOS.filter((m) => m.listo && m.pestana);
+  protected readonly grupos = GRUPOS;
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
   protected readonly usuario = this.sesion.usuario;
@@ -61,6 +67,30 @@ export class Shell {
     if (id === 'perfil') return { ...INICIO, id: 'perfil', titulo: 'Perfil', resumen: 'Tus datos, tu foto y tu cuenta.' };
     return [INICIO, ...MODULOS].find((m) => m.id === id) ?? INICIO;
   });
+
+  // ---- submenús y modo compacto del lateral (se recuerdan en este navegador) ----
+  protected readonly compacto = signal(leer('mda-menu-compacto') === '1');
+  private readonly abiertos = signal<string[]>(leerLista('mda-menu-grupos'));
+  protected readonly grupoActivo = computed(() => GRUPOS.find((g) => g.modulos.some((m) => m.id === this.seccion().id))?.id ?? null);
+  protected abierto(id: string): boolean { return this.abiertos().includes(id); }
+
+  protected alternar(id: string): void {
+    this.abiertos.update((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+    guardar('mda-menu-grupos', JSON.stringify(this.abiertos()));
+  }
+
+  protected alternarCompacto(): void {
+    this.compacto.update((c) => !c);
+    guardar('mda-menu-compacto', this.compacto() ? '1' : '0');
+  }
+
+  // «[» reduce o amplía el menú (salvo mientras se escribe)
+  protected tecla(e: KeyboardEvent): void {
+    if (e.key !== '[' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName))) return;
+    this.alternarCompacto();
+  }
 
   constructor() {
     this.sistema.empezar();
@@ -89,6 +119,11 @@ export class Shell {
       sinInclinar();
       document.removeEventListener('touchmove', mover);
       document.removeEventListener('touchend', acabar);
+    });
+    // la sección abierta despliega su grupo (sin cerrar los demás)
+    effect(() => {
+      const g = this.grupoActivo();
+      if (g) untracked(() => { if (!this.abierto(g)) this.alternar(g); });
     });
     // cerrar el menú del móvil al navegar
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.menuAbierto.set(false));

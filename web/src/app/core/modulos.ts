@@ -15,6 +15,14 @@ export const INICIO: Modulo = {
   icono: 'M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10',
 };
 
+// Los submenús del lateral: así caben todas las secciones sin desplazarse dentro del menú
+export interface Grupo {
+  id: string;
+  titulo: string;
+  icono: string;
+  modulos: Modulo[];
+}
+
 export const MODULOS: Modulo[] = [
   {
     id: 'fotos', titulo: 'Galería', resumen: 'Qué fotos se ven en el portfolio, con su descripción.', listo: true,
@@ -64,3 +72,14 @@ export const MODULOS: Modulo[] = [
     planes: ['Activar la verificación en dos pasos con el móvil', 'Cambiar la contraseña', 'Ver y cerrar sesiones abiertas'],
   },
 ];
+
+const GRUPOS_DEF = [
+  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'agenda', 'notas'] },
+  { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
+  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'documentos', 'seguridad'] },
+];
+
+export const GRUPOS: Grupo[] = GRUPOS_DEF.map((g) => ({
+  id: g.id, titulo: g.titulo, icono: g.icono,
+  modulos: g.ids.map((id) => MODULOS.find((m) => m.id === id)).filter((m): m is Modulo => !!m && m.listo),
+}));
