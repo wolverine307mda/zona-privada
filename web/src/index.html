@@ -20,6 +20,14 @@
 </head>
 <body>
   <!-- se ve mientras baja el código; Angular lo sustituye al arrancar -->
-  <app-root><div class="precarga" aria-label="Cargando"><span>MDA</span></div></app-root>
+  <app-root><div class="nucleo" role="status" aria-label="Cargando">
+    <div class="nucleo__reactor" aria-hidden="true">
+      <i class="r r1"></i><i class="r r2"></i><i class="r r3"></i>
+      <i class="o" style="--i:-7%;--d:3.6s"></i><i class="o" style="--i:4%;--d:5.2s;animation-direction:reverse"></i><i class="o" style="--i:-3%;--d:4.1s;--e:-1.3s"></i><i class="o" style="--i:9%;--d:6.4s;--e:-2.6s;animation-direction:reverse"></i><i class="o" style="--i:-11%;--d:7.5s;--e:-4s"></i>
+      <span class="nucleo__barrido"></span>
+      <b class="nucleo__marca">MDA</b>
+    </div>
+    <p class="nucleo__txt">Iniciando<i>.</i><i>.</i><i>.</i></p>
+  </div></app-root>
 </body>
 </html>

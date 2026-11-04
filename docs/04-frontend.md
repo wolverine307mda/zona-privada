@@ -88,3 +88,11 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
   guarda con las rutas normales y permite **deshacer**. Las respuestas a preguntas se muestran con `white-space: pre-line`.
 - **Buscador** (Ctrl+K o «/»): ir a secciones, acciones rápidas, buscar notas.
 - **Tiempo** (`inicio/tiempo.ts`): ciudad por búsqueda o geolocalización, horas, semana, interruptor del aviso de la víspera.
+
+## Cargas y esqueletos (estilo HUD)
+
+- **Arranque**: un reactor de anillos que giran, partículas en órbita, una línea que barre y «Iniciando…». Es CSS puro (`.nucleo` en `styles.css`): sale en
+  `index.html` antes de que baje Angular y luego lo pinta `core/nucleo.ts` (`<app-nucleo />`); con `mini` es un reactor pequeño para meter dentro de una pantalla.
+- **«Cargando…»** (`.cargando`, `.esta-cargando`): mini reactor delante del texto, en todas las pantallas a la vez.
+- **Esqueletos** (`.esqueleto`): líneas y tarjetas con un barrido de luz del color de acento.
+- Con «reducir movimiento» el reactor queda quieto; las líneas y tarjetas del esqueleto siguen moviéndose porque indican que se está cargando.

@@ -188,23 +188,52 @@ input[type='date'], input[type='time'], input[type='datetime-local'], input[type
 }
 input::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
 input, select, textarea { max-width: 100%; box-sizing: border-box; }
-/* cargando: un aro que gira delante del texto (vale para cualquier «Cargando…») */
+/* cargando: un mini reactor (dos arcos que giran en sentido contrario y un núcleo que late) delante del texto; vale para cualquier «Cargando…» */
 .cargando, .esta-cargando { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--soft); }
 .cargando::before, .esta-cargando::before {
-  content: ''; flex: none; width: 18px; height: 18px; border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--texto) 12%, transparent); border-top-color: var(--brand); animation: gira-carga 800ms linear infinite;
+  content: ''; flex: none; width: 20px; height: 20px; border-radius: 50%; box-sizing: border-box;
+  border: 2px solid transparent; border-top-color: var(--brand); border-bottom-color: color-mix(in srgb, var(--brand) 35%, transparent);
+  background: radial-gradient(circle, var(--brand) 0 2px, transparent 2.5px); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 70%, transparent));
+  animation: nucleo-gira 900ms linear infinite;
 }
-@keyframes gira-carga { to { transform: rotate(360deg); } }
-/* esqueleto: líneas que brillan mientras llegan los datos */
-.esqueleto { display: flex; flex-direction: column; gap: 10px; list-style: none; }
-.esqueleto i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--tarjeta-2) 25%, color-mix(in srgb, var(--texto) 9%, var(--tarjeta-2)) 50%, var(--tarjeta-2) 75%) 0 0 / 300% 100%; animation: brilla 1.3s ease-in-out infinite; }
-.esqueleto i:nth-child(2) { width: 80%; } .esqueleto i:nth-child(3) { width: 60%; }
-@keyframes brilla { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes nucleo-gira { to { transform: rotate(360deg); } }
 
-/* precarga de index.html (antes de que arranque Angular): la misma marca que el arranque de app.ts */
-.precarga { position: fixed; inset: 0; display: grid; place-items: center; background: var(--fondo); }
-.precarga span { font: 700 clamp(2.4rem, 8vw, 4rem)/1 var(--font-display); letter-spacing: -0.05em; color: var(--texto); animation: precarga 1.6s ease-in-out infinite; }
-@keyframes precarga { 50% { opacity: 0.55; transform: scale(0.97); } }
+/* esqueletos: líneas y tarjetas con un barrido de luz del color de acento */
+.esqueleto { display: flex; flex-direction: column; gap: 10px; list-style: none; }
+.esqueleto i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(100deg, var(--tarjeta-2) 30%, color-mix(in srgb, var(--brand) 20%, var(--tarjeta-2)) 50%, var(--tarjeta-2) 70%) 0 0 / 300% 100%; animation: brilla 1.5s ease-in-out infinite; }
+.esqueleto i:nth-child(2) { width: 80%; } .esqueleto i:nth-child(3) { width: 60%; }
+.esqueleto.caja { position: relative; overflow: hidden; }
+.esqueleto.caja::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 35%, color-mix(in srgb, var(--brand) 13%, transparent) 50%, transparent 65%); transform: translateX(-100%); animation: barrido 1.8s ease-in-out infinite; }
+@keyframes brilla { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes barrido { to { transform: translateX(100%); } }
+
+/* pantalla de arranque, estilo HUD: anillos que giran, partículas en órbita, una línea que barre y el texto «iniciando» (en index.html antes de que
+   arranque Angular y en app.ts después; el mismo dibujo) */
+.nucleo { position: fixed; inset: 0; z-index: 99; display: grid; place-content: center; justify-items: center; gap: 30px; background: radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--brand) 11%, var(--fondo)), var(--fondo) 64%); animation: nucleo-aparece 400ms ease both; }
+.nucleo__reactor { position: relative; display: grid; place-items: center; width: clamp(150px, 40vw, 220px); aspect-ratio: 1; animation: nucleo-monta 900ms var(--ease-expo) both; }
+.nucleo .r { position: absolute; border-radius: 50%; border: 2px solid transparent; box-sizing: border-box; }
+.nucleo .r1 { inset: 0; border-top-color: var(--brand); border-bottom-color: color-mix(in srgb, var(--brand) 30%, transparent); filter: drop-shadow(0 0 8px var(--brand)); animation: nucleo-gira 2.6s linear infinite; }
+.nucleo .r2 { inset: 13%; border: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent); animation: nucleo-gira 7s linear infinite reverse; }
+.nucleo .r3 { inset: 27%; border-left-color: var(--acento); border-right-color: color-mix(in srgb, var(--acento) 35%, transparent); animation: nucleo-gira 1.7s linear infinite; }
+.nucleo .o { position: absolute; inset: var(--i, 0); animation: nucleo-gira var(--d, 4s) linear infinite; animation-delay: var(--e, 0s); }
+.nucleo .o::before { content: ''; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 10px var(--brand); }
+.nucleo__barrido { position: absolute; inset: 14%; border-radius: 50%; overflow: hidden; }
+.nucleo__barrido::before { content: ''; position: absolute; left: 0; right: 0; height: 28%; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--brand) 38%, transparent), transparent); animation: nucleo-barre 2.2s ease-in-out infinite; }
+.nucleo__marca { position: relative; font: 700 clamp(1.1rem, 4.4vw, 1.6rem)/1 var(--font-display); letter-spacing: .14em; text-indent: .14em; color: var(--texto); text-shadow: 0 0 16px color-mix(in srgb, var(--brand) 80%, transparent); animation: nucleo-late 1.8s ease-in-out infinite; }
+.nucleo__txt { margin: 0; font: 500 .72rem/1 var(--font-code); letter-spacing: .34em; text-indent: .34em; text-transform: uppercase; color: var(--soft); }
+.nucleo__txt i { font-style: normal; animation: nucleo-parpadeo 1.2s steps(1) infinite; }
+.nucleo__txt i:nth-child(2) { animation-delay: .2s; } .nucleo__txt i:nth-child(3) { animation-delay: .4s; }
+@keyframes nucleo-aparece { from { opacity: 0; } }
+@keyframes nucleo-monta { from { transform: scale(.6) rotate(-30deg); opacity: 0; } }
+@keyframes nucleo-barre { from { top: -28%; } to { top: 100%; } }
+@keyframes nucleo-late { 50% { opacity: .6; transform: scale(.96); } }
+@keyframes nucleo-parpadeo { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+/* al pasar del de index.html al de Angular no se vuelve a «montar» */
+app-nucleo .nucleo:not(.nucleo--mini), app-nucleo .nucleo:not(.nucleo--mini) .nucleo__reactor { animation: none; }
+/* el mismo reactor, pequeño y sin fondo, para meterlo dentro de una pantalla (<app-nucleo mini />) */
+.nucleo--mini { position: static; inset: auto; z-index: auto; background: none; gap: 12px; padding: 24px 0; animation: none; }
+.nucleo--mini .nucleo__reactor { width: 72px; }
+.nucleo--mini .nucleo__marca { font-size: .62rem; }
 
 /* con un diálogo abierto, el fondo no se mueve */
 html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
