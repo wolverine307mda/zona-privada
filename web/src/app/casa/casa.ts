@@ -3,6 +3,7 @@ import { CasaService } from './casa.service';
 import { AparatoCasa, DispositivoTuya, EscenaCasa, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
 import { ReglasCasa } from './reglas-casa';
 import { TarjetaAparato } from './tarjeta-aparato';
+import { EstadoError, EstadoVacio } from '../ui';
 
 type Pestana = 'todo' | number;
 const CLAVE_PESTANA = 'mda.casa.pestana';
@@ -11,7 +12,7 @@ const CLAVE_PESTANA = 'mda.casa.pestana';
 // (termómetro, lámpara, aire, tele…) que responde a un toque; lo que se ve se actualiza solo cada 15 segundos.
 @Component({
   selector: 'app-casa',
-  imports: [TarjetaAparato, ReglasCasa],
+  imports: [TarjetaAparato, ReglasCasa, EstadoVacio, EstadoError],
   templateUrl: './casa.html',
   styleUrls: ['./casa.css'],
 })
@@ -74,6 +75,8 @@ export class Casa implements OnInit {
       if (g && g !== 'todo' && Number.isInteger(Number(g))) this.pestana.set(Number(g));
     } catch { /* sin almacenamiento */ }
   }
+
+  protected reintentar(): void { void this.casa.cargar(); }
 
   async ngOnInit(): Promise<void> {
     await this.casa.cargar();

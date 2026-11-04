@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ControlRadial, Interruptor } from '../ui';
 import { CasaService } from './casa.service';
 import { AparatoCasa, PuntoHistorial, campo, encendido, hace, numero, texto, trazo, valor } from './modelo';
 
@@ -8,6 +9,7 @@ const MODOS: Record<string, string> = { auto: 'Auto', frio: 'Frío', calor: 'Cal
 // La tarjeta de un aparato: cada tipo enseña sus datos y sus mandos. Al editar el panel salen los botones de orden, ocultar y ajustes.
 @Component({
   selector: 'app-tarjeta-aparato',
+  imports: [Interruptor, ControlRadial],
   styleUrls: ['./tarjeta-aparato.css'],
   template: `
     <article class="t" [class.t--on]="activo()" [class.t--oculto]="oculto()" [attr.data-tipo]="a().tipo">
@@ -22,7 +24,7 @@ const MODOS: Record<string, string> = { auto: 'Auto', frio: 'Frío', calor: 'Cal
             <button type="button" (click)="ajustes.emit()" aria-label="Ajustes del aparato">⚙︎</button>
           </div>
         } @else if (interruptor(); as k) {
-          <button class="interruptor" type="button" role="switch" [attr.aria-checked]="activo()" [attr.aria-label]="'Encender o apagar ' + a().nombre" (click)="alternar(k)"><i></i></button>
+          <app-interruptor [activo]="activo()" [etiqueta]="'Encender o apagar ' + a().nombre" [ocupado]="enviando()" (activoChange)="alternar(k)" />
         }
       </header>
 
@@ -47,11 +49,8 @@ const MODOS: Record<string, string> = { auto: 'Auto', frio: 'Frío', calor: 'Cal
           <div class="t__fila"><span class="chip">⚡ {{ texto(numero(a(), 'potencia'), 'W', 0) }}</span></div>
         }
         @case ('clima') {
-          <div class="clima">
-            <button type="button" class="redondo" (click)="objetivo(-0.5)" [disabled]="editando() || !activo()" aria-label="Bajar la temperatura">−</button>
-            <div class="t__grande">{{ texto(numero(a(), 'objetivo'), '°C') }}</div>
-            <button type="button" class="redondo" (click)="objetivo(0.5)" [disabled]="editando() || !activo()" aria-label="Subir la temperatura">+</button>
-          </div>
+          <app-control-radial [etiqueta]="'Temperatura de ' + a().nombre" [valor]="numero(a(), 'objetivo') ?? 24" [min]="campo(a(), 'objetivo')?.min ?? 16" [max]="campo(a(), 'objetivo')?.max ?? 30"
+            [paso]="0.5" unidad="°C" [desactivado]="editando() || !activo()" (confirmado)="enviar('objetivo', $event)" />
           <div class="modos" role="group" aria-label="Modo">
             @for (m of modos; track m[0]) { <button type="button" class="chip" [class.chip--on]="valor(a(), 'modo') === m[0]" [disabled]="editando()" (click)="enviar('modo', m[0])">{{ m[1] }}</button> }
           </div>
@@ -96,11 +95,11 @@ export class TarjetaAparato implements OnInit {
     if (this.a().tipo === 'sensor') void this.casa.historial(this.a().id, 'temperatura', 24).then((p) => this.puntos.set(p)).catch(() => {});
   }
 
-  protected alternar(clave: string): void { void this.casa.ejecutar(this.a(), clave, !encendido(this.a(), clave)); }
-  protected enviar(clave: string, v: string): void { void this.casa.ejecutar(this.a(), clave, v); }
-  protected objetivo(delta: number): void {
-    const c = campo(this.a(), 'objetivo');
-    const n = Math.min(c?.max ?? 30, Math.max(c?.min ?? 16, (numero(this.a(), 'objetivo') ?? 24) + delta));
-    void this.casa.ejecutar(this.a(), 'objetivo', n);
+  // mientras la orden va de camino el interruptor no se puede volver a pulsar
+  protected readonly enviando = signal(false);
+  protected async alternar(clave: string): Promise<void> {
+    this.enviando.set(true);
+    try { await this.casa.ejecutar(this.a(), clave, !encendido(this.a(), clave)); } finally { this.enviando.set(false); }
   }
+  protected enviar(clave: string, v: string | number): void { void this.casa.ejecutar(this.a(), clave, v); }
 }

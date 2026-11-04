@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, computed, input, model, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, computed, input, model, output, viewChild } from '@angular/core';
 import { Numero, formatear } from './numero';
 import { ajustar, anguloDeFraccion, decimalesDe, fraccion, fraccionDePunto, marcasDelArco, trazoArco, valorDeFraccion } from './arco';
 
@@ -62,6 +62,8 @@ let siguiente = 0;
 })
 export class ControlRadial {
   readonly valor = model(0);
+  /** El valor «de verdad»: al soltar el arco, al pulsar − o + y con el teclado (no en cada movimiento del arrastre). Para mandar la orden al aparato. */
+  readonly confirmado = output<number>();
   readonly min = input(0);
   readonly max = input(100);
   readonly paso = input(1);
@@ -88,6 +90,7 @@ export class ControlRadial {
   protected sumar(veces: number): void {
     if (this.desactivado()) return;
     this.valor.set(ajustar(this.valor() + veces * this.paso(), this.min(), this.max(), this.paso()));
+    this.confirmado.emit(this.valor());
   }
 
   protected empezar(e: PointerEvent): void {
@@ -98,7 +101,11 @@ export class ControlRadial {
     e.preventDefault();
   }
   protected mover(e: PointerEvent): void { if (this.arrastrando) this.poner(e); }
-  protected acabar(): void { this.arrastrando = false; }
+  protected acabar(): void {
+    if (!this.arrastrando) return;
+    this.arrastrando = false;
+    this.confirmado.emit(this.valor());
+  }
 
   private poner(e: PointerEvent): void {
     const r = this.lienzo().nativeElement.getBoundingClientRect();
@@ -112,7 +119,7 @@ export class ControlRadial {
     const gran = 10;
     const acciones: Record<string, () => void> = {
       ArrowRight: () => this.sumar(1), ArrowUp: () => this.sumar(1), ArrowLeft: () => this.sumar(-1), ArrowDown: () => this.sumar(-1),
-      PageUp: () => this.sumar(gran), PageDown: () => this.sumar(-gran), Home: () => this.valor.set(this.min()), End: () => this.valor.set(this.max()),
+      PageUp: () => this.sumar(gran), PageDown: () => this.sumar(-gran), Home: () => { this.valor.set(this.min()); this.confirmado.emit(this.valor()); }, End: () => { this.valor.set(this.max()); this.confirmado.emit(this.valor()); },
     };
     const accion = acciones[e.key];
     if (accion) { accion(); e.preventDefault(); }

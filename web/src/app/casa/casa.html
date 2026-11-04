@@ -47,15 +47,10 @@
   }
 
   @if (e.aparatos.length === 0) {
-    <div class="vacio">
-      <span class="vacio__icono" aria-hidden="true">🏠</span>
-      <strong>Tu casa está vacía</strong>
-      <p>Añade tus aparatos (termómetro, lámparas, aire, tele…) o prueba con unos de ejemplo para ver cómo queda.</p>
-      <div class="vacio__acciones">
-        <button class="button" type="button" (click)="abrirAparato()">Añadir aparato</button>
-        <button class="button button--ghost" type="button" (click)="ejemplo()" [disabled]="ocupado()">Cargar ejemplo</button>
-      </div>
-    </div>
+    <app-estado-vacio icono="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10" titulo="Tu casa está vacía" texto="Añade tus aparatos (termómetro, lámparas, aire, tele…) o prueba con unos de ejemplo para ver cómo queda.">
+      <button class="button" type="button" (click)="abrirAparato()">Añadir aparato</button>
+      <button class="button button--ghost" type="button" (click)="ejemplo()" [disabled]="ocupado()" [attr.aria-busy]="ocupado() || null">Cargar ejemplo</button>
+    </app-estado-vacio>
   } @else {
     @if (editando()) {
       <p class="ayuda">Modo edición: ordena con ↑ ↓, oculta lo que no quieras ver y toca ⚙︎ para renombrar, cambiar de habitación o quitar.</p>
@@ -76,8 +71,10 @@
     </div>
   }
   }
+} @else if (casa.error()) {
+  <app-estado-error titulo="No se pudo leer la casa" [mensaje]="casa.error()" (reintentar)="reintentar()" />
 } @else {
-  <div class="rejilla" aria-label="Cargando la casa">
+  <div class="rejilla" aria-label="Cargando la casa" aria-busy="true">
     @for (n of [1, 2, 3, 4]; track n) { <div class="esq"><i></i><i></i><i></i></div> }
   </div>
 }
@@ -112,7 +109,7 @@
     @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
     <div class="dlg__acciones">
       <button class="button button--ghost" type="button" (click)="dlgAparato.close()">Cancelar</button>
-      <button class="button" type="submit" [disabled]="ocupado()">{{ ocupado() ? 'Añadiendo…' : 'Añadir' }}</button>
+      <button class="button" type="submit" [disabled]="ocupado()" [attr.aria-busy]="ocupado() || null">{{ ocupado() ? 'Añadiendo…' : 'Añadir' }}</button>
     </div>
   </form>
 </dialog>
