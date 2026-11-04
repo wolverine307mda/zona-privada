@@ -90,3 +90,12 @@ los LED del router se ponen verdes o rojos según `/api/red`, el móvil se encie
 - **Calculadora 500 / NPF** (`fotografia/npf.ts`): en el navegador, recuerda tu cámara en `localStorage`.
 - **Sitios y diario** (`Luz/Puntos.cs`): hasta 30 sitios; el diario compara la nota prevista con cómo salió y, con 3 salidas o más de cada tipo, dice cuánto fiarte. Aún no sube fotos al diario.
 - **AR** (`/fotografia/ar`): cámara trasera, brújula y giroscopio; el arco del sol y la luna de hoy sobre la imagen. Pide permiso (en iPhone, el de movimiento); funciona solo por HTTPS. Supone el móvil derecho y el campo de visión se ajusta a mano.
+
+## Cartera: lo que se añadió en la Fase 5
+
+- **Previsión de cierre de mes** (`Gastos/Prevision.cs`): saldo de hoy menos tu gasto variable medio de los últimos 60 días por los días que quedan, con banda de mejor y peor caso. No cuenta fijos ni nóminas hasta que los apuntas.
+- **Dónde gastas** (`Gastos/Lugares.cs`): el atajo de Apple Pay puede mandar `lat` y `lon`; se guardan con ~100 m y se juntan en zonas de ~1 km. Estadísticas enseña el mapa de calor.
+- **Reglas que aprenden** (`Gastos/Reglas.cs`): corregir la categoría de un gasto (en la app o con los botones del bot) guarda «comercio → categoría» y pisa a la costumbre.
+- **Importar extracto** (`Gastos/Extractos.cs`, pestaña Importar): CSV con detección de separador y columnas, vista previa, duplicados sin marcar.
+- **Otras monedas** (`Gastos/Divisas.cs`): tipo de referencia del BCE (últimos 90 días, sin clave); el gasto se guarda en euros con la moneda y el importe original.
+- **Informe mensual** (`Gastos/Informe.cs`): PDF con QuestPDF (licencia comunitaria, gratis para uso personal); el día 1 a las 9 se manda por Telegram el del mes anterior. La imagen de Docker instala `libfontconfig1` para poder dibujarlo.
