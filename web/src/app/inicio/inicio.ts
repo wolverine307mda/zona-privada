@@ -14,6 +14,7 @@ import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
 import { echarts, opcionesCpu, opcionesHistorial } from './graficas';
 import { SistemaService } from './sistema.service';
+import { Numero } from '../ui';
 
 const GB = 1024 ** 3;
 
@@ -27,7 +28,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Bateria, Espacio, Linea, Panel, RouterLink, Pc3d, SemaforoVida],
+  imports: [Bateria, Espacio, Linea, Panel, RouterLink, Pc3d, SemaforoVida, Numero],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })

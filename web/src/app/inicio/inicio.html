@@ -75,7 +75,7 @@
 
   <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M3 8h18v8H3zM7 16v3M11 16v3M15 16v3M19 16v3M7 11v2M11 11v2M15 11v2" /></svg></span><h3>Memoria</h3></header>
-    <p class="cifra">{{ memoria().pct }}<span>%</span></p>
+    <p class="cifra"><app-numero [valor]="memoria().pct" [decimales]="0" /><span>%</span></p>
     <div class="barra" role="progressbar" aria-label="Memoria en uso" [attr.aria-valuenow]="memoria().pct" aria-valuemin="0" aria-valuemax="100">
       <span [style.width.%]="memoria().pct" [class.alta]="memoria().pct > 85"></span>
     </div>
@@ -84,7 +84,7 @@
 
   <article class="kpi tarjeta" data-inclina>
     <header class="kpi__cabeza"><span class="kpi__icono"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 14h16M8 17h.01M12 17h.01" /></svg></span><h3>Disco del sistema</h3></header>
-    <p class="cifra">{{ disco().pct }}<span>%</span></p>
+    <p class="cifra"><app-numero [valor]="disco().pct" [decimales]="0" /><span>%</span></p>
     <div class="barra" role="progressbar" aria-label="Disco en uso" [attr.aria-valuenow]="disco().pct" aria-valuemin="0" aria-valuemax="100">
       <span [style.width.%]="disco().pct" [class.alta]="disco().pct > 90"></span>
     </div>
