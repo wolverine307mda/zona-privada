@@ -36,6 +36,7 @@ textarea.campo__input { resize: vertical; }
 /* aparatos de casa */
 .aparatos { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
 .aparato { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.aparato__grafica { grid-column: 1 / -1; }
 .aparato--caido { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
 .aparato__icono { font-size: 1.5rem; text-align: center; }
 .aparato__texto { display: grid; min-width: 0; }

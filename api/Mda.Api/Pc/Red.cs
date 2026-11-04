@@ -22,13 +22,15 @@ public class DispositivoRed
     public string Mac { get; set; } = "";
     // «es mi móvil»: si está en la red, estás en casa; al llegar y al irte se aplica solo el «llegué» / «me voy»
     public bool Presencia { get; set; }
+    // guarda la latencia de cada minuto para sacar una gráfica (se pensó para el router; hasta HistorialRed.MaxPorDispositivo aparatos)
+    public bool Historial { get; set; }
     public bool? EnLinea { get; set; }
     public int? LatenciaMs { get; set; }
     public DateTimeOffset? Comprobado { get; set; }
     public DateTimeOffset? Cambio { get; set; }
 }
 
-public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true, string? Mac = null, bool Presencia = false);
+public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true, string? Mac = null, bool Presencia = false, bool Historial = false);
 
 public interface IComprobadorRed
 {
@@ -118,11 +120,12 @@ public static class RedCasa
         {
             d.Nombre = e.Nombre.Trim(); d.Host = e.Host.Trim(); d.Puerto = e.Puerto;
             d.Icono = Iconos.Contains((e.Icono ?? "").ToLowerInvariant()) ? e.Icono!.ToLowerInvariant() : "otro"; d.Avisar = e.Avisar;
-            d.Mac = NormalizarMac(e.Mac) ?? ""; d.Presencia = e.Presencia;
+            d.Mac = NormalizarMac(e.Mac) ?? ""; d.Presencia = e.Presencia; d.Historial = e.Historial;
         }
 
         g.MapPost("/", async (DispositivoEntrada e, AppDbContext db, IComprobadorRed comprobador, TimeProvider reloj, CancellationToken ct) =>
         {
+            if (e.Historial && await db.DispositivosRed.CountAsync(x => x.Historial, ct) >= HistorialRed.MaxPorDispositivo) return Results.ValidationProblem(new Dictionary<string, string[]> { ["historial"] = [$"El historial de latencia es para {HistorialRed.MaxPorDispositivo} aparatos como mucho."] });
             if (await db.DispositivosRed.CountAsync(ct) >= Maximo) return Results.ValidationProblem(new Dictionary<string, string[]> { ["nombre"] = [$"Máximo {Maximo} aparatos."] });
             if (await Validar(e, ct) is { } mal) return mal;
             var d = new DispositivoRed();
@@ -137,6 +140,7 @@ public static class RedCasa
         {
             if (await db.DispositivosRed.FindAsync([id], ct) is not { } d) return Results.NotFound();
             if (await Validar(e, ct) is { } mal) return mal;
+            if (e.Historial && !d.Historial && await db.DispositivosRed.CountAsync(x => x.Historial, ct) >= HistorialRed.MaxPorDispositivo) return Results.ValidationProblem(new Dictionary<string, string[]> { ["historial"] = [$"El historial de latencia es para {HistorialRed.MaxPorDispositivo} aparatos como mucho."] });
             Copiar(e, d);
             await Aplicar(db, d, comprobador, reloj.GetUtcNow(), ct);
             return Results.Ok(d);
@@ -148,6 +152,14 @@ public static class RedCasa
             db.DispositivosRed.Remove(d);
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
+        });
+
+        // la gráfica de latencia y caídas de un aparato con historial (de 1 hora a 30 días)
+        g.MapGet("/{id:int}/historial", async (int id, int? horas, AppDbContext db, TimeProvider reloj, CancellationToken ct) =>
+        {
+            if (await db.DispositivosRed.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct) is not { } d) return Results.NotFound();
+            var (puntos, resumen) = await HistorialRed.Leer(db, id, TimeSpan.FromHours(Math.Clamp(horas ?? 24, 1, 720)), reloj.GetUtcNow(), ct);
+            return Results.Ok(new { d.Id, d.Nombre, d.Historial, puntos, resumen });
         });
 
         // Wake-on-LAN: lo manda el agente desde el PC (el contenedor está detrás de NAT y su difusión no llegaría a la red de casa); pide Face ID
@@ -200,6 +212,7 @@ public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobad
             var (en, ms) = await comprobador.Comprobar(d.Host, d.Puerto, ct, d.Presencia);
             var ahora = reloj.GetUtcNow();
             d.Comprobado = ahora; d.LatenciaMs = en ? ms : null;
+            if (d.Historial) db.LecturasRed.Add(new LecturaRed { DispositivoId = d.Id, Hora = ahora, EnLinea = en, Ms = en ? ms : null });
             if (d.EnLinea is null) { d.EnLinea = en; d.Cambio = ahora; }               // la primera lectura no avisa
             else if (d.EnLinea == en) _seguidas.Remove(d.Id);
             else if (_seguidas.GetValueOrDefault(d.Id) + 1 >= 2)
@@ -212,7 +225,10 @@ public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobad
             await db.SaveChangesAsync(ct);
         }
         await Presencia(db, ct);
+        // una vez por hora se resumen las lecturas con más de 48 h
+        if (reloj.GetUtcNow() - _compactado >= TimeSpan.FromHours(1)) { _compactado = reloj.GetUtcNow(); await HistorialRed.Compactar(db, _compactado, ct); }
     }
+    private DateTimeOffset _compactado = DateTimeOffset.MinValue;
 
     // Presencia: con algún móvil marcado, llegar a casa y salir de ella aplica solo el «llegué» / «me voy». El primer estado que se ve solo se apunta.
     private async Task Presencia(AppDbContext db, CancellationToken ct)

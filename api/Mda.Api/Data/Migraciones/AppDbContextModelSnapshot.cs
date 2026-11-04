@@ -757,6 +757,9 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<bool?>("EnLinea")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("Historial")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Host")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -859,6 +862,58 @@ namespace Mda.Api.Data.Migraciones
                     b.HasKey("Id");
 
                     b.ToTable("escenas", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Pc.LecturaHora", b =>
+                {
+                    b.Property<int>("DispositivoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("Hora")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Caidas")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxMs")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MediaMs")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Muestras")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DispositivoId", "Hora");
+
+                    b.ToTable("red_horas", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Pc.LecturaRed", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("DispositivoId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("EnLinea")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Hora")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Ms")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DispositivoId", "Hora");
+
+                    b.ToTable("red_lecturas", (string)null);
                 });
 
             modelBuilder.Entity("Mda.Api.Pc.OrdenPc", b =>

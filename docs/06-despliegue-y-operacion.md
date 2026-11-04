@@ -187,3 +187,9 @@ Al añadir tu móvil en «Mi PC → Aparatos de casa» y marcar **«Es mi móvil
 todos los móviles marcados fuera durante **10 minutos**, **salida** (los móviles se duermen y dejan de contestar un rato). Al cambiar de estado aplica solo `Casa.Aplicar` («llegué a casa» / «me voy»), como el atajo del iPhone.
 El primer estado que se ve solo se apunta (`presencia-estado` en `ajustes`) para no tocar el PC al activarlo. Si el agente no está en marcha, te lo cuenta por Telegram.
 Para los móviles, un «conexión rechazada» cuenta como «está en la red» (no suelen tener ningún puerto abierto). Usa una IP fija del móvil en el router (o su IP de Tailscale); con la dirección Wi-Fi privada de iOS cambiante no funciona.
+
+## Historial de latencia (router)
+
+Marcando «Guardar su historial de latencia» en un aparato (hasta 3, pensado para el router) el vigilante guarda **una lectura por minuto** (`red_lecturas`). Pasadas 48 horas se resumen en una fila por hora completa
+(`red_horas`: lecturas, caídas, latencia media y máxima) y a los 30 días se borran, así la gráfica del mes son 720 puntos y la base no crece sin parar. La latencia es el tiempo de abrir una conexión TCP: dentro del contenedor
+no hay permiso para ICMP (ping), y para ver si la red va lenta o se corta da lo mismo. En Mi PC → Aparatos de casa sale el botón «Gráfica» con 24 h, 7 días o 30 días.

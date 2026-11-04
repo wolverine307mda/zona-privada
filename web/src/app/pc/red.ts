@@ -2,8 +2,9 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmarService } from '../core/confirmar.service';
+import { GraficaRed } from './grafica-red';
 
-interface Aparato { id: number; nombre: string; host: string; puerto: number; icono: string; avisar: boolean; mac: string; presencia: boolean; enLinea: boolean | null; latenciaMs: number | null; comprobado: string | null; cambio: string | null; }
+interface Aparato { id: number; nombre: string; host: string; puerto: number; icono: string; avisar: boolean; mac: string; presencia: boolean; historial: boolean; enLinea: boolean | null; latenciaMs: number | null; comprobado: string | null; cambio: string | null; }
 
 const ICONOS: Record<string, string> = { pc: '🖥️', movil: '📱', nas: '🗄️', impresora: '🖨️', camara: '📷', tv: '📺', router: '📡', otro: '🔌' };
 const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas: 'NAS / disco', impresora: 'Impresora', camara: 'Cámara', tv: 'Televisión', router: 'Router', otro: 'Otro' };
@@ -11,6 +12,7 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
 // Los aparatos de tu red de casa: la API prueba cada minuto si responden y te avisa por Telegram cuando uno se apaga o vuelve.
 @Component({
   selector: 'app-red-casa',
+  imports: [GraficaRed],
   styleUrls: ['../gastos/comun.css', './modulos.css'],
   template: `
     <section class="caja">
@@ -23,11 +25,13 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
               <small>{{ a.host }}:{{ a.puerto }} · {{ a.enLinea === null ? 'sin comprobar' : a.enLinea ? 'en línea' + (a.latenciaMs != null ? ' · ' + a.latenciaMs + ' ms' : '') : 'sin respuesta' + (a.cambio ? ' desde ' + hace(a.cambio) : '') }}</small></span>
             <span class="punto" [class.punto--ok]="a.enLinea === true" [class.punto--mal]="a.enLinea === false" [attr.aria-label]="a.enLinea ? 'en línea' : 'sin respuesta'"></span>
             <span class="aparato__acciones">
+              @if (a.historial) { <button class="enlace" type="button" (click)="grafica.set(grafica() === a.id ? null : a.id)" [attr.aria-expanded]="grafica() === a.id">Gráfica</button> }
               @if (a.mac) { <button class="enlace" type="button" (click)="despertar(a)" [attr.aria-label]="'Despertar ' + a.nombre">Despertar</button> }
               <button class="enlace" type="button" (click)="probar(a)">Probar</button>
               @if (borrando() === a.id) { <button class="enlace enlace--peligro" type="button" (click)="borrar(a)">¿Seguro?</button> }
               @else { <button class="enlace" type="button" (click)="borrando.set(a.id)" [attr.aria-label]="'Quitar ' + a.nombre">Quitar</button> }
             </span>
+            @if (grafica() === a.id) { <app-grafica-red class="aparato__grafica" [id]="a.id" /> }
           </li>
         } @empty { <li class="nada">Aún no vigilas ningún aparato. Añade el router, la impresora, el NAS…</li> }
       </ul>
@@ -45,6 +49,7 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
           <label class="campo"><span class="campo__etiqueta">Tipo</span>
             <select class="campo__input" [value]="icono()" (change)="icono.set($any($event.target).value)">@for (k of claves; track k) { <option [value]="k">{{ iconos[k] }} {{ nombres[k] }}</option> }</select></label>
           <p class="nada">Se comprueba abriendo una conexión a ese puerto (80 o 443 para la web del aparato, 9100 impresoras, 445 NAS, 554 cámaras). Solo direcciones de tu red de casa o de Tailscale.</p>
+          <label class="interruptor"><input type="checkbox" [checked]="historial()" (change)="historial.set($any($event.target).checked)"><span><strong>Guardar su historial de latencia</strong><small>Una lectura por minuto para ver la gráfica de lo rápido que contesta y cuándo se cae (pensado para el router; hasta 3 aparatos).</small></span></label>
           <label class="interruptor"><input type="checkbox" [checked]="presencia()" (change)="presencia.set($any($event.target).checked)"><span><strong>Es mi móvil: úsalo para saber si estoy en casa</strong><small>Al llegar se aplica «llegué a casa» y, si lleva 10 minutos sin estar en la red, «me voy». Pon la IP fija del móvil en la red de casa (o su IP de Tailscale).</small></span></label>
           <label class="interruptor"><input type="checkbox" [checked]="avisar()" (change)="avisar.set($any($event.target).checked)"><span><strong>Avisarme por Telegram si se apaga</strong></span></label>
           @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
@@ -71,6 +76,8 @@ export class RedCasa implements OnInit {
   protected readonly icono = signal('otro');
   protected readonly mac = signal('');
   protected readonly presencia = signal(false);
+  protected readonly historial = signal(false);
+  protected readonly grafica = signal<number | null>(null);
   protected readonly mensaje = signal('');
   private readonly confirmar = inject(ConfirmarService);
   protected readonly avisar = signal(true);
@@ -95,8 +102,8 @@ export class RedCasa implements OnInit {
     ev.preventDefault();
     this.ocupado.set(true); this.error.set('');
     try {
-      await firstValueFrom(this.http.post('/api/red', { nombre: this.nombre(), host: this.host(), puerto: Number(this.puerto()), icono: this.icono(), avisar: this.avisar(), mac: this.mac(), presencia: this.presencia() }));
-      this.formulario.set(false); this.nombre.set(''); this.host.set(''); this.puerto.set('80'); this.mac.set(''); this.presencia.set(false);
+      await firstValueFrom(this.http.post('/api/red', { nombre: this.nombre(), host: this.host(), puerto: Number(this.puerto()), icono: this.icono(), avisar: this.avisar(), mac: this.mac(), presencia: this.presencia(), historial: this.historial() }));
+      this.formulario.set(false); this.nombre.set(''); this.host.set(''); this.puerto.set('80'); this.mac.set(''); this.presencia.set(false); this.historial.set(false);
       await this.leer();
     } catch (e) {
       const d = (e as HttpErrorResponse).error as { errors?: Record<string, string[]> } | undefined;
