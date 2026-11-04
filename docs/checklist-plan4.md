@@ -20,7 +20,7 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ⬜ 3.5 Cámara (go2rtc, perfil casa)
 
 ## Fase 4 · Automatizaciones y escenas
-- ⬜ 4.1 Motor de reglas con histéresis y plantillas
+- ✅ 4.1 Motor de reglas con histéresis, plantillas, registro y aviso por Telegram
 - ⬜ 4.2 Escenas con acciones de Casa
 
 ## Fase 5 · Diseño

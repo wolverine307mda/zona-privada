@@ -1,5 +1,6 @@
 :host { display: block; }
 .cabecera { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.cabecera__botones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .kicker { margin: 0 0 4px; font: 600 .75rem/1 var(--font-text); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
 .titulo { margin: 0; font: 300 clamp(1.8rem, 6vw, 2.6rem)/1.05 var(--font-display); }
 

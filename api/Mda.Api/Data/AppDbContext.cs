@@ -48,6 +48,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Domotica.Entidad> Entidades => Set<Mda.Api.Domotica.Entidad>();
     public DbSet<Mda.Api.Domotica.LecturaCasa> Lecturas => Set<Mda.Api.Domotica.LecturaCasa>();
     public DbSet<Mda.Api.Domotica.PanelCasa> Paneles => Set<Mda.Api.Domotica.PanelCasa>();
+    public DbSet<Mda.Api.Domotica.ReglaCasa> Reglas => Set<Mda.Api.Domotica.ReglaCasa>();
+    public DbSet<Mda.Api.Domotica.RegistroCasa> RegistrosCasa => Set<Mda.Api.Domotica.RegistroCasa>();
     public DbSet<Mda.Api.Luz.PuntoFoto> PuntosFoto => Set<Mda.Api.Luz.PuntoFoto>();
     public DbSet<Mda.Api.Luz.SalidaFoto> SalidasFoto => Set<Mda.Api.Luz.SalidaFoto>();
     public DbSet<Mda.Api.Pc.MedidaVelocidad> MedidasVelocidad => Set<Mda.Api.Pc.MedidaVelocidad>();
@@ -253,6 +255,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Domotica.ReglaCasa>(e =>
+        {
+            e.ToTable("casa_reglas");
+            e.Property(x => x.Nombre).HasMaxLength(40);
+            e.Property(x => x.SensorClave).HasMaxLength(24);
+            e.Property(x => x.Operador).HasMaxLength(1);
+            e.Property(x => x.Accion).HasMaxLength(10);
+            e.Property(x => x.Modo).HasMaxLength(10);
+        });
+        b.Entity<Mda.Api.Domotica.RegistroCasa>(e =>
+        {
+            e.ToTable("casa_registro");
+            e.Property(x => x.Texto).HasMaxLength(300);
+            e.HasIndex(x => x.Fecha);
         });
         b.Entity<Mda.Api.Domotica.PanelCasa>(e =>
         {

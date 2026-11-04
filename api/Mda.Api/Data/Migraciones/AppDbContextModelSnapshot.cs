@@ -490,6 +490,111 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("casa_paneles", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Domotica.RegistroCasa", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Ok")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ReglaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.ToTable("casa_registro", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Domotica.ReglaCasa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("Desde")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DestinoId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Disparada")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("EsperaMinutos")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Histeresis")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("Minutos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Modo")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<double?>("Objetivo")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Operador")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<bool>("Revertir")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SensorClave")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<int>("SensorId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("SoloAvisar")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("Ultima")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Umbral")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("casa_reglas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Galeria.FotoPublica", b =>
                 {
                     b.Property<string>("Id")

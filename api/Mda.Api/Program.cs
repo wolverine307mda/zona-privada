@@ -208,6 +208,8 @@ builder.Services.AddSingleton<Mda.Api.Domotica.IDriverCasa, Mda.Api.Domotica.Dri
 foreach (var pendiente in new[] { "cast", "hogar" }) builder.Services.AddSingleton<Mda.Api.Domotica.IDriverCasa>(new Mda.Api.Domotica.DriverPendiente(pendiente));
 builder.Services.AddSingleton<Mda.Api.Domotica.ServicioCasa>();
 builder.Services.AddHostedService<Mda.Api.Domotica.VigilanteCasa>();
+builder.Services.AddSingleton<Mda.Api.Domotica.MotorReglas>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Mda.Api.Domotica.MotorReglas>());
 builder.Services.AddHostedService<LatidoExterno>();
 builder.Services.AddSingleton<Pregenerar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
@@ -315,6 +317,7 @@ app.MapPin();
 app.MapBateria();
 app.MapEscenas();
 Mda.Api.Domotica.CasaEndpoints.MapDomotica(app);
+Mda.Api.Domotica.ReglasEndpoints.MapReglasCasa(app);
 app.MapVelocidad();
 app.MapHogar();
 app.MapCartera();

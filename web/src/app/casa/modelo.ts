@@ -9,6 +9,14 @@ export interface EstadoCasa { estancias: EstanciaCasa[]; aparatos: AparatoCasa[]
 export interface TipoCatalogo { id: string; nombre: string; campos: unknown[]; }
 export interface Catalogo { tipos: TipoCatalogo[]; drivers: string[]; }
 export interface DispositivoTuya { id: string; nombre: string; categoria: string; enLinea: boolean; tipoSugerido: string | null; }
+export interface ReglaCasa {
+  id: number; nombre: string; activa: boolean; sensorId: number; sensorClave: string; operador: '>' | '<'; umbral: number; minutos: number; destinoId: number;
+  accion: 'encender' | 'apagar'; objetivo: number | null; modo: string | null; revertir: boolean; histeresis: number; esperaMinutos: number; soloAvisar: boolean;
+  disparada: boolean; ultima: string | null; resumen: string;
+}
+export type ReglaEntrada = Omit<ReglaCasa, 'id' | 'disparada' | 'ultima' | 'resumen'>;
+export interface PlantillaRegla { id: string; nombre: string; descripcion: string; valores: Partial<ReglaEntrada>; }
+export interface RegistroRegla { id: number; reglaId: number | null; fecha: string; texto: string; ok: boolean; }
 export interface PuntoHistorial { fecha: string; valor: number; }
 
 // Cómo está colocado el panel: el orden de los aparatos en cada habitación y los que has ocultado

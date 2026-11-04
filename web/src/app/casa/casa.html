@@ -4,11 +4,19 @@
     <h2 class="titulo">{{ saludo }}</h2>
   </div>
   @if (estado()) {
-    <button class="button button--ghost" type="button" (click)="editando.set(!editando())" [attr.aria-pressed]="editando()">{{ editando() ? 'Listo' : 'Editar panel' }}</button>
+    <div class="cabecera__botones">
+      <button class="button button--ghost" type="button" (click)="vista.set(vista() === 'reglas' ? 'panel' : 'reglas'); editando.set(false)" [attr.aria-pressed]="vista() === 'reglas'">{{ vista() === 'reglas' ? 'Volver al panel' : 'Automatizaciones' }}</button>
+      @if (vista() === 'panel') {
+        <button class="button button--ghost" type="button" (click)="editando.set(!editando())" [attr.aria-pressed]="editando()">{{ editando() ? 'Listo' : 'Editar panel' }}</button>
+      }
+    </div>
   }
 </section>
 
 @if (estado(); as e) {
+ @if (vista() === 'reglas') {
+  <app-reglas-casa [aparatos]="aparatos()" />
+ } @else {
   <div class="resumen" aria-label="Resumen de la casa">
     <span class="chip-r"><b>{{ encendidos() }}</b> encendidos</span>
     @if (temperatura() !== null) { <span class="chip-r"><b>{{ temperatura()!.toLocaleString('es-ES', { maximumFractionDigits: 1 }) }}</b> °C de media</span> }
@@ -53,6 +61,7 @@
         <button class="button button--ghost peligro" type="button" (click)="borrarEstancia()">{{ confirmarEstancia() ? '¿Seguro? Pulsa otra vez' : 'Quitar esta habitación' }}</button>
       }
     </div>
+  }
   }
 } @else {
   <div class="rejilla" aria-label="Cargando la casa">
