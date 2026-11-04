@@ -36,7 +36,7 @@ public class TokenAtajo
 public record TokenEntrada(string Nombre, string[] Alcances);
 public record MovimientoAtajo(decimal Importe, string Concepto, string? Tipo, string? Categoria, DateOnly? Fecha);
 public record FraseAtajo(string Texto);
-public record PagoAtajo(string Comercio, decimal Importe, string? Tarjeta);
+public record PagoAtajo(string Comercio, decimal Importe, string? Tarjeta, double? Lat = null, double? Lon = null);
 public record PingAtajo(string? Texto);
 public record CasaAtajo(string Estado);
 
@@ -199,6 +199,7 @@ public static class AtajosApi
             var res = await GastosEndpoints.Crear(new MovimientoEntrada(tipo, hoy, importe, cat, comercio, e.Tarjeta is { Length: > 0 } t ? $"Apple Pay · {t}" : "Apple Pay", null, null, null, null), db, avisos, log, ct);
             if (res is not Created<Movimiento> { Value: { } m }) return res;
             m.PorConfirmar = true;
+            if (Lugares.Valida(e.Lat, e.Lon)) { m.Lat = Lugares.Redondear(e.Lat!.Value); m.Lon = Lugares.Redondear(e.Lon!.Value); }
             await db.SaveChangesAsync(ct);
 
             var nombre = Categorias.Todas[m.Categoria].Nombre;

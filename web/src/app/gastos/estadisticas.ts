@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
+import { Lugares } from './lugares';
 import { echarts, opcionesEvolucion } from './graficas-gastos';
 import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from './modelo';
 
@@ -8,6 +9,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
 // el mejor y el peor mes, y las categorías donde más se gasta
 @Component({
   selector: 'app-estadisticas',
+  imports: [Lugares],
   template: `
     <div class="periodo" role="group" aria-label="Periodo">
       @for (p of periodos; track p) {
@@ -54,6 +56,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
           }
         </ul>
       </section>
+      <app-lugares />
     } @else {
       <p class="cargando">{{ fallo() ? 'El equipo no responde: comprueba la conexión.' : 'Cargando…' }}</p>
     }

@@ -579,9 +579,15 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<int?>("Kilometros")
                         .HasColumnType("integer");
 
+                    b.Property<double?>("Lat")
+                        .HasColumnType("double precision");
+
                     b.Property<decimal?>("Litros")
                         .HasPrecision(8, 2)
                         .HasColumnType("numeric(8,2)");
+
+                    b.Property<double?>("Lon")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Notas")
                         .HasMaxLength(500)

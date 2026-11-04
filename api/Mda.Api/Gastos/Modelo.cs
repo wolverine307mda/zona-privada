@@ -35,6 +35,10 @@ public class Movimiento
 
     // entró solo (Apple Pay) y espera a que lo des por bueno; cuenta en el saldo igualmente
     public bool PorConfirmar { get; set; }
+
+    // dónde se pagó (si el atajo del iPhone lo mandó), con ~100 m de precisión
+    public double? Lat { get; set; }
+    public double? Lon { get; set; }
 }
 
 // Un gasto o ingreso que se repite: suscripciones, alquiler, cuota del coche, seguro, nómina…

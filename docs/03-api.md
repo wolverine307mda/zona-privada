@@ -59,6 +59,7 @@
 | PUT/DELETE | `/presupuestos/{categoria}` | `{ limite }` / quitar |
 | GET | `/consejos` | consejos de ahorro calculados con tus datos |
 | GET | `/prevision` | con cuánto cerrarás el mes: saldo de hoy menos el ritmo variable de los últimos 60 días, con banda de mejor y peor caso (`Gastos/Prevision.cs`) |
+| GET | `/lugares?anio=&mes=` | dónde gastas: zonas de ~1 km con lo gastado y los comercios con más peso (mes = 0 para el año). Los pagos de `POST /api/atajos/pago` aceptan `lat` y `lon` opcionales, guardados con ~100 m (`Gastos/Lugares.cs`) |
 | GET/POST | `/deudas` | lista con progreso / crea `{ nombre, total, categoria, inicio, notas? }` |
 | PUT/DELETE | `/deudas/{id}` | edita / borra |
 | POST | `/deudas/{id}/pagos` | registra un pago (crea un movimiento enlazado) |
