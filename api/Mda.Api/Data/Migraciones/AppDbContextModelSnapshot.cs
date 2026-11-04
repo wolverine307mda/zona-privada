@@ -692,6 +692,83 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("recurrentes", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Luz.PuntoFoto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Lat")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Lon")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Notas")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Orientacion")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("puntos_foto", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Luz.SalidaFoto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nota")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("Prevision")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PuntoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Resultado")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.ToTable("salidas_foto", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Notas.Nota", b =>
                 {
                     b.Property<int>("Id")

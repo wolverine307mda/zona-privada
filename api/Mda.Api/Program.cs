@@ -304,6 +304,7 @@ app.MapAsistente();
 app.MapTelegram();
 app.MapTiempo();
 app.MapLuz();
+app.MapPuntos();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

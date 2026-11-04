@@ -172,10 +172,10 @@ public static class LuzEndpoints
 
         // Un día entero para la pantalla «Cuándo salir a hacer fotografía»: efemérides, la serie cada 10 minutos
         // (sol, luna y núcleo galáctico con altura y acimut, sombra, nubes y nota) y las ventanas del día.
-        g.MapGet("/dia", async (string? fecha, AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        g.MapGet("/dia", async (string? fecha, int? punto, AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
         {
             var a = await ServicioLuz.Leer(db, ct);
-            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            if (await Puntos.LugarDe(punto, db, tiempo, ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
             var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).DateTime);
             var dia = fecha is null ? hoy : DateOnly.TryParseExact(fecha, "yyyy-MM-dd", out var d) ? d : hoy;
             if (dia < hoy.AddDays(-1) || dia > hoy.AddDays(7)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["fecha"] = ["Solo hay datos de ayer a una semana vista."] });
@@ -211,10 +211,10 @@ public static class LuzEndpoints
         });
 
         // Los próximos siete días de un vistazo: la mejor ventana de cada uno y los momentos que más merecen la pena
-        g.MapGet("/semana", async (AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        g.MapGet("/semana", async (int? punto, AppDbContext db, ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
         {
             var a = await ServicioLuz.Leer(db, ct);
-            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            if (await Puntos.LugarDe(punto, db, tiempo, ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
             var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).DateTime);
             var nubes = await luz.Nubes(lugar, ct);
             var todo = a with { Amanecer = true, Astro = true };

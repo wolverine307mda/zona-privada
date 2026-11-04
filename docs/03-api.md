@@ -163,6 +163,8 @@
 | GET | `/api/luz/eventos` | lluvias de meteoros y eclipses de los próximos 6 meses con la luna de esa noche y las nubes si caen en la previsión (fechas fijas en `Luz/Eventos.cs`) |
 | GET | `/api/luz/aurora` | Kp previsto por el NOAA SWPC, el Kp que hace falta en la latitud de tu lugar y si hoy es posible (solo hemisferio norte; en `Luz/Aurora.cs`) |
 | GET | `/api/luz/niebla` | los próximos 3 amaneceres: niebla, inversión térmica o mar de nubes según temperatura, rocío, humedad, viento, nubes bajas y temperatura a 850 hPa (`Luz/Niebla.cs`) |
+| GET/POST/PUT/DELETE | `/api/luz/puntos` (`/{id}`) | tus sitios de fotografía (nombre, coordenadas, hacia dónde miras, notas; hasta 30). `GET /api/luz/puntos/hoy` da la mejor ventana de hoy y mañana de cada uno; `/api/luz/dia` y `/semana` aceptan `?punto=id` |
+| GET/POST/DELETE | `/api/luz/salidas` | el diario de salidas: fecha, sitio, tipo, nota prevista (1-10), cómo salió (1-5) y una nota; el GET incluye la calibración por tipo de luz (`Luz/Puntos.cs`) |
 | GET/POST | `/api/senuelos` · PUT/DELETE `/{id}` · POST `/{id}/probar` · PUT `/ajustes` | archivos señuelo en Documentos |
 | GET/POST/DELETE | `/api/atajos-tokens` | tokens para Atajos de iOS (con sesión); el token solo sale al crearlo |
 | GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |

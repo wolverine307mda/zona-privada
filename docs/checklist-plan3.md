@@ -47,8 +47,8 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 34 Aurora (Kp)
 - ✅ 35 Regla 500 / NPF
 - ✅ 36 Niebla e inversión térmica
-- 🔄 37 Puntos favoritos
-- ⬜ 38 Diario de salidas
+- ✅ 37 Puntos favoritos
+- 🔄 38 Diario de salidas
 - ⬜ 39 AR del sol y la luna
 
 ## Fase 5 · Cartera

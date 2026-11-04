@@ -8,6 +8,7 @@ import { Aurora } from './aurora';
 import { CalculadoraEstrellas } from './calculadora-estrellas';
 import { EventosCielo } from './eventos';
 import { Niebla } from './niebla';
+import { Puntos } from './puntos';
 import { Cielo } from './cielo';
 import { AjustesLuz, Dia, DiaSemana, Semana, Ventana, cardinal, colorNota, creciente, hhmm, instante } from './modelo';
 
@@ -27,7 +28,7 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
 // y la semana de un vistazo. El sol y la luna se calculan en el servidor; las nubes vienen de la previsión (Open-Meteo).
 @Component({
   selector: 'app-fotografia',
-  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, EventosCielo, Niebla, NgTemplateOutlet, RouterLink],
+  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, EventosCielo, Niebla, Puntos, NgTemplateOutlet, RouterLink],
   styleUrls: ['../gastos/comun.css', './fotografia.css'],
   template: `
     <header class="cab">
@@ -146,6 +147,8 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
         </section>
       }
 
+      <app-puntos (cambiar)="elegirPunto($event)" />
+
       <app-niebla />
 
       <app-aurora />
@@ -174,6 +177,7 @@ export class Fotografia implements OnInit {
   private readonly destruido = inject(DestroyRef);
   protected readonly dia = signal<Dia | null>(null);
   protected readonly semana = signal<Semana | null>(null);
+  private punto: number | null = null;
   protected readonly ajustes = signal<AjustesLuz | null>(null);
   protected readonly cargando = signal(true);
   protected readonly min = signal(720);
@@ -253,17 +257,29 @@ export class Fotografia implements OnInit {
 
   ngOnInit(): void {
     void this.cargar();
-    firstValueFrom(this.http.get<Semana>('/api/luz/semana')).then((s) => this.semana.set(s)).catch(() => {});
+    this.leerSemana();
     firstValueFrom(this.http.get<{ ajustes: AjustesLuz }>('/api/luz')).then((l) => this.ajustes.set(l.ajustes)).catch(() => {});
     this.destruido.onDestroy(() => cancelAnimationFrame(this.marco));
   }
 
+  private leerSemana(): void {
+    firstValueFrom(this.http.get<Semana>('/api/luz/semana' + (this.punto !== null ? `?punto=${this.punto}` : ''))).then((s) => this.semana.set(s)).catch(() => {});
+  }
+
+  // ver el cielo de uno de tus sitios (o volver al lugar de siempre)
+  protected elegirPunto(id: number | null): void { this.punto = id; this.leerSemana(); void this.cargar(); }
+
   private minutoAhora(): number { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+
+  private consulta(fecha?: string): string {
+    const q = [fecha ? `fecha=${fecha}` : '', this.punto !== null ? `punto=${this.punto}` : ''].filter(Boolean).join('&');
+    return q ? '?' + q : '';
+  }
 
   protected async cargar(fecha?: string): Promise<void> {
     this.parar();
     try {
-      const d = await firstValueFrom(this.http.get<Dia>('/api/luz/dia' + (fecha ? `?fecha=${fecha}` : '')));
+      const d = await firstValueFrom(this.http.get<Dia>('/api/luz/dia' + this.consulta(fecha)));
       this.dia.set(d);
       if (!d.sinLugar) {
         const mejor = [...(d.ventanas ?? [])].sort((a, b) => (b.puntuacion ?? -1) - (a.puntuacion ?? -1))[0];
