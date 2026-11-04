@@ -52,9 +52,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 39 AR del sol y la luna
 
 ## Fase 5 · Cartera
-- ⬜ 27 Previsión de cierre de mes
-- ⬜ 28 Objetivos con fecha
-- ⬜ 29 Gasto por lugar
+- ✅ 27 Previsión de cierre de mes
+- ✅ 28 Objetivos con fecha (ya estaba del Plan 2: cada hucha con fecha calcula cuánto meter al mes)
+- 🔄 29 Gasto por lugar
 - ⬜ 30 Informe mensual en PDF
 - ⬜ 31 Importar extracto CSV
 - ⬜ 32 Tipos de cambio

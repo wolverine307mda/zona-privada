@@ -32,6 +32,14 @@
             <p class="cartera__pordia">{{ euros(c.porDia) }}<small>/día</small></p>
             <p class="cartera__sub">{{ c.diasRestantes === 1 ? 'Hoy es el último día del mes' : c.diasRestantes + ' días hasta fin de mes' }} · al ritmo actual gastarás <b>{{ eurosCorto(c.proyeccion) }}</b></p>
           </div>
+          @if (prevision(); as p) {
+            <div class="cierre" [attr.aria-label]="'Previsión de cierre de mes: entre ' + euros(p.bajo) + ' y ' + euros(p.alto)">
+              <p class="etq">Cerrarás el mes con</p>
+              <p class="cierre__cifra" [class.rojo]="p.central < 0">{{ euros(p.central) }}</p>
+              <p class="cierre__rango">entre <b>{{ eurosCorto(p.bajo) }}</b> y <b>{{ eurosCorto(p.alto) }}</b> · gastas unos {{ euros(p.ritmoDia) }} al día en lo variable</p>
+              @if (!p.fiable) { <p class="cierre__aviso">Aún hay pocos días apuntados ({{ p.diasDeDatos }}): la previsión mejorará con el tiempo.</p> }
+            </div>
+          }
         }
       }
     </section>

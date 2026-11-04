@@ -69,6 +69,7 @@ export interface Consejos {
   porDia: number; diasRestantes: number; disponible: number; proyeccion: number;
   regla: { ingresos: number; necesidades: number; caprichos: number; ahorro: number }; lista: Consejo[];
 }
+export interface PrevisionCierre { saldoActual: number; central: number; bajo: number; alto: number; ritmoDia: number; diasRestantes: number; diasDeDatos: number; fiable: boolean; }
 export interface Mantenimiento {
   id: number; nombre: string; cadaKm: number | null; cadaMeses: number | null; ultimaFecha: string | null; ultimoKm: number | null; notas: string | null;
   proximoKm: number | null; faltanKm: number | null; proximaFecha: string | null; faltanDias: number | null; nivel: 'ok' | 'pronto' | 'vencido' | 'sin-datos'; progreso: number;

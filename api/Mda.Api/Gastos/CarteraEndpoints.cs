@@ -147,6 +147,14 @@ public static class Cartera
             return Results.NoContent();
         });
 
+        // Con cuánto cerrarás el mes, con banda de «mejor» y «peor» caso
+        g.MapGet("/prevision", async (AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        {
+            var hoy = Hoy(reloj, zona);
+            var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha <= hoy).ToListAsync(ct);
+            return Results.Ok(Prevision.Cierre(hoy, movs, await SaldoActual(db, hoy, ct)));
+        });
+
         // ---- Consejos para ahorrar ----
         g.MapGet("/consejos", async (AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {

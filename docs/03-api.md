@@ -58,6 +58,7 @@
 | GET | `/presupuestos` | límite y gastado por categoría este mes |
 | PUT/DELETE | `/presupuestos/{categoria}` | `{ limite }` / quitar |
 | GET | `/consejos` | consejos de ahorro calculados con tus datos |
+| GET | `/prevision` | con cuánto cerrarás el mes: saldo de hoy menos el ritmo variable de los últimos 60 días, con banda de mejor y peor caso (`Gastos/Prevision.cs`) |
 | GET/POST | `/deudas` | lista con progreso / crea `{ nombre, total, categoria, inicio, notas? }` |
 | PUT/DELETE | `/deudas/{id}` | edita / borra |
 | POST | `/deudas/{id}/pagos` | registra un pago (crea un movimiento enlazado) |

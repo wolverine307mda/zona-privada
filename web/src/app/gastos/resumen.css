@@ -175,3 +175,7 @@
   .pend__boton { grid-column: 1 / -1; }
   .cal__dia i { display: none; }
 }
+
+.cierre { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--vidrio-borde); }
+.cierre__cifra { margin: 0; font: 700 1.6rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.cierre__rango, .cierre__aviso { margin: 4px 0 0; color: var(--soft); font-size: .8rem; }

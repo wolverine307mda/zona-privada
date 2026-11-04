@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
-import { CATEGORIAS, Consejos, Movimiento, Pendiente, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
+import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
 
 // Resumen del mes: el dinero que tienes (saldo que se arrastra de mes en mes), lo que puedes gastar al día,
 // consejos para ahorrar, presupuestos, lo que se repite y falta por aplicar, en qué se va el dinero,
@@ -29,6 +29,7 @@ export class Resumen implements OnDestroy {
   protected readonly apuntando = signal<number | null>(null);
   protected readonly saldo = signal<Saldo | null>(null);
   protected readonly consejos = signal<Consejos | null>(null);
+  protected readonly prevision = signal<PrevisionCierre | null>(null);
   protected readonly presupuestos = signal<Presupuesto[]>([]);
   // diálogos
   protected readonly saldoTexto = signal('');
@@ -109,8 +110,8 @@ export class Resumen implements OnDestroy {
       this.datos.set(d);
       this.saldo.set(s);
       this.presupuestos.set(p);
-      if (this.g.esMesActual()) this.g.consejos().then((c) => this.consejos.set(c)).catch(() => {});
-      else this.consejos.set(null);
+      if (this.g.esMesActual()) { this.g.consejos().then((c) => this.consejos.set(c)).catch(() => {}); this.g.prevision().then((p) => this.prevision.set(p)).catch(() => {}); }
+      else { this.consejos.set(null); this.prevision.set(null); }
     } catch {
       this.error.set(true);
     }
