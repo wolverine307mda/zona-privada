@@ -318,6 +318,7 @@ app.MapBateria();
 app.MapEscenas();
 Mda.Api.Domotica.CasaEndpoints.MapDomotica(app);
 Mda.Api.Domotica.ReglasEndpoints.MapReglasCasa(app);
+Mda.Api.Domotica.EscenasCasa.MapEscenasCasa(app);
 app.MapVelocidad();
 app.MapHogar();
 app.MapCartera();

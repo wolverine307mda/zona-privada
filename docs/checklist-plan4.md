@@ -21,7 +21,7 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 
 ## Fase 4 · Automatizaciones y escenas
 - ✅ 4.1 Motor de reglas con histéresis, plantillas, registro y aviso por Telegram
-- ⬜ 4.2 Escenas con acciones de Casa
+- ✅ 4.2 Escenas de casa (foto del estado de los aparatos, un toque para volver a ponerla)
 
 ## Fase 5 · Diseño
 - ⬜ 5.1 Componentes (control radial, interruptor, tarjeta métrica, etiqueta flotante)

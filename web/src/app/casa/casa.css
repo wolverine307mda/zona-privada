@@ -50,3 +50,11 @@
 .lista-tuya { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; max-height: 200px; overflow: auto; }
 .lista-tuya button { width: 100%; display: grid; text-align: left; gap: 2px; min-height: 44px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); cursor: pointer; }
 .lista-tuya small { color: var(--soft); }
+
+.escenas { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+.escena { display: inline-flex; gap: 4px; }
+.escena__boton, .escena__nueva, .escena__borrar { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: var(--texto); font: 600 .88rem/1 var(--font-text); cursor: pointer; transition: background 200ms, border-color 200ms; }
+.escena__boton:hover { border-color: var(--brand); }
+.escena__nueva { border-style: dashed; color: var(--soft); }
+.escena__borrar { padding: 0 12px; }
+.escena__boton:disabled { opacity: .6; cursor: default; }

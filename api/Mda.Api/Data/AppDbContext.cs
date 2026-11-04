@@ -50,6 +50,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Domotica.PanelCasa> Paneles => Set<Mda.Api.Domotica.PanelCasa>();
     public DbSet<Mda.Api.Domotica.ReglaCasa> Reglas => Set<Mda.Api.Domotica.ReglaCasa>();
     public DbSet<Mda.Api.Domotica.RegistroCasa> RegistrosCasa => Set<Mda.Api.Domotica.RegistroCasa>();
+    public DbSet<Mda.Api.Domotica.EscenaCasa> EscenasCasa => Set<Mda.Api.Domotica.EscenaCasa>();
     public DbSet<Mda.Api.Luz.PuntoFoto> PuntosFoto => Set<Mda.Api.Luz.PuntoFoto>();
     public DbSet<Mda.Api.Luz.SalidaFoto> SalidasFoto => Set<Mda.Api.Luz.SalidaFoto>();
     public DbSet<Mda.Api.Pc.MedidaVelocidad> MedidasVelocidad => Set<Mda.Api.Pc.MedidaVelocidad>();
@@ -264,6 +265,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Operador).HasMaxLength(1);
             e.Property(x => x.Accion).HasMaxLength(10);
             e.Property(x => x.Modo).HasMaxLength(10);
+        });
+        b.Entity<Mda.Api.Domotica.EscenaCasa>(e =>
+        {
+            e.ToTable("casa_escenas");
+            e.Property(x => x.Nombre).HasMaxLength(30);
+            e.Property(x => x.Icono).HasMaxLength(16);
         });
         b.Entity<Mda.Api.Domotica.RegistroCasa>(e =>
         {

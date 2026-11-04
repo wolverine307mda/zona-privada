@@ -33,6 +33,19 @@
 
   @if (casa.error()) { <p class="error" role="alert">{{ casa.error() }}</p> }
 
+  @if (e.aparatos.length) {
+    <div class="escenas" role="group" aria-label="Escenas">
+      @for (s of escenas(); track s.id) {
+        <span class="escena">
+          <button type="button" class="escena__boton" (click)="aplicarEscena(s)" [disabled]="aplicando() === s.id"><span aria-hidden="true">{{ s.icono }}</span> {{ aplicando() === s.id ? 'Poniendo…' : s.nombre }}</button>
+          @if (editando()) { <button type="button" class="escena__borrar" (click)="borrarEscena(s)" [attr.aria-label]="'Quitar la escena ' + s.nombre">{{ quitandoEscena() === s.id ? '¿Seguro?' : '✕' }}</button> }
+        </span>
+      }
+      <button type="button" class="escena__nueva" (click)="abrirEscena()">＋ Guardar escena</button>
+    </div>
+    @if (mensaje()) { <p class="ayuda" role="status">{{ mensaje() }}</p> }
+  }
+
   @if (e.aparatos.length === 0) {
     <div class="vacio">
       <span class="vacio__icono" aria-hidden="true">🏠</span>
@@ -116,6 +129,21 @@
     <div class="dlg__acciones">
       <button class="button button--ghost peligro" type="button" (click)="borrarAparato()" [disabled]="ocupado()">{{ confirmarBorrar() ? '¿Seguro? Pulsa otra vez' : 'Quitar aparato' }}</button>
       <button class="button button--ghost" type="button" (click)="dlgAjustes.close()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="ocupado()">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- guardar escena -->
+<dialog class="dlg" #dlgEscena aria-labelledby="t-escena">
+  <form (submit)="crearEscena($event)" novalidate>
+    <h3 id="t-escena">Guardar escena</h3>
+    <p class="ayuda">Se guarda cómo están ahora {{ pestana() === 'todo' ? 'todos los aparatos' : 'los aparatos de esta habitación' }} (encendido, brillo, color, aire, volumen…). Un toque y vuelven a quedar así.</p>
+    <label class="campo"><span>Nombre</span><input type="text" maxlength="30" [value]="escNombre()" (input)="escNombre.set(valor($event))" placeholder="Cine"></label>
+    <label class="campo"><span>Icono (un emoji)</span><input type="text" maxlength="8" [value]="escIcono()" (input)="escIcono.set(valor($event))"></label>
+    @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
+    <div class="dlg__acciones">
+      <button class="button button--ghost" type="button" (click)="dlgEscena.close()">Cancelar</button>
       <button class="button" type="submit" [disabled]="ocupado()">Guardar</button>
     </div>
   </form>

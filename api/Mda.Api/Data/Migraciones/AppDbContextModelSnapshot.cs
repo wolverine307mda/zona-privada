@@ -415,6 +415,33 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("casa_entidades", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Domotica.EscenaCasa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Acciones")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Icono")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("casa_escenas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Domotica.Estancia", b =>
                 {
                     b.Property<int>("Id")

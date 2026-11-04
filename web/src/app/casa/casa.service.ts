@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { AparatoCasa, Catalogo, DispositivoTuya, EstadoCasa, PanelGuardado, PlantillaRegla, PuntoHistorial, ReglaCasa, ReglaEntrada, RegistroRegla } from './modelo';
+import { AparatoCasa, Catalogo, DispositivoTuya, EscenaCasa, EstadoCasa, PanelGuardado, PlantillaRegla, PuntoHistorial, ReglaCasa, ReglaEntrada, RegistroRegla } from './modelo';
 
 // Habla con /api/domotica y guarda el estado de la casa en una señal: las tarjetas se pintan solas al cambiar.
 @Injectable({ providedIn: 'root' })
@@ -72,5 +72,9 @@ export class CasaService {
     return firstValueFrom(id ? this.http.put(`${this.base}/reglas/${id}`, r) : this.http.post(`${this.base}/reglas/`, r));
   }
   borrarRegla(id: number) { return firstValueFrom(this.http.delete(`${this.base}/reglas/${id}`)); }
+  escenas() { return firstValueFrom(this.http.get<EscenaCasa[]>(`${this.base}/escenas/`)); }
+  guardarEscena(nombre: string, icono: string, aparatoIds: number[] | null) { return firstValueFrom(this.http.post(`${this.base}/escenas/`, { nombre, icono, aparatoIds })); }
+  aplicarEscena(id: number) { return firstValueFrom(this.http.post<{ hechas: number; fallos: string[] }>(`${this.base}/escenas/${id}/aplicar`, null)); }
+  borrarEscena(id: number) { return firstValueFrom(this.http.delete(`${this.base}/escenas/${id}`)); }
   cargarEjemplo() { return firstValueFrom(this.http.post(`${this.base}/ejemplo`, null)); }
 }

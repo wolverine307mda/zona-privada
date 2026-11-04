@@ -30,7 +30,17 @@
   --soft: #8d979e;
   --sombra: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35); /* relieve de las tarjetas */
 
-  --ok: #3ddc84; --warn: #ffc93c; --bad: #ff5a5f;
+  --sombra-interior: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.18); /* canto de luz del vidrio */
+  --sombra-flota: 0 8px 24px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.06) inset; /* etiquetas y menús que flotan */
+  --sombra-pulsa: 0 2px 8px rgba(0, 0, 0, 0.25); /* controles pequeños */
+
+  /* tarjeta negra de la métrica principal: es negra también de día */
+  --negra: #060606; --on-negra: #f5f2ec; --negra-soft: #a29e97; --negra-linea: rgba(255, 255, 255, 0.12);
+
+  --ok: #3ddc84; --warn: #ffc93c; --bad: #ff5a5f; --on-bad: #1c0608;
+
+  /* esqueleto de carga */
+  --esq-base: var(--tarjeta-2); --esq-luz: color-mix(in srgb, var(--brand) 20%, var(--tarjeta-2));
 
   /* nombres que usa la pantalla de entrar */
   --dark: var(--fondo); --dark-2: var(--tarjeta-2); --paper: var(--tarjeta); --on-paper: var(--texto); --on-dark: var(--texto);
@@ -43,7 +53,16 @@
   --step-lead: clamp(1.1rem, 1rem + 0.4vw, 1.35rem);
   --step-head: clamp(1.35rem, 1rem + 1.2vw, 2rem);
   --margin: clamp(16px, 2.4vw, 32px);
-  --radio: 16px;
+  --radio: 16px; /* heredado: cada pantalla pasa a la escala de abajo al rediseñarla y la fase 4.1 lo retira */
+  /* radios: superficies grandes en 28–36, cajas pequeñas en 12–20 y los controles en píldora */
+  --radio-s: 12px; --radio-m: 20px; --radio-l: 28px; --radio-xl: 36px; --radio-pildora: 999px;
+  /* espacios (múltiplos de 4) y tamaño mínimo de un objetivo táctil */
+  --esp-1: 4px; --esp-2: 8px; --esp-3: 12px; --esp-4: 16px; --esp-5: 24px; --esp-6: 32px; --esp-7: 48px;
+  --tactil: 44px;
+  /* cifras y saludos grandes: peso ligero (Switzer 300) */
+  --peso-ligero: 300;
+  --step-saludo: clamp(1.9rem, 1.3rem + 2.4vw, 3rem);
+  --step-cifra: clamp(2.75rem, 1.8rem + 4.2vw, 5rem);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
@@ -71,6 +90,11 @@
   --texto: #0b151c;
   --soft: #5f6870;
   --sombra: 0 1px 2px rgba(11, 21, 28, 0.04), 0 10px 28px rgba(11, 21, 28, 0.07); /* relieve de las tarjetas */
+  --sombra-interior: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(11, 21, 28, 0.05);
+  --sombra-flota: 0 8px 24px rgba(11, 21, 28, 0.12), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --sombra-pulsa: 0 2px 8px rgba(11, 21, 28, 0.10);
+  /* verde, ámbar y rojo más oscuros para que el texto llegue a 4,5:1 sobre blanco */
+  --ok: #0f7a42; --warn: #9a6200; --bad: #c62f34; --on-bad: #ffffff;
   --vidrio: color-mix(in srgb, #ffffff 70%, transparent);
   --vidrio-fuerte: color-mix(in srgb, #ffffff 86%, transparent);
   --vidrio-borde: rgba(11, 21, 28, 0.08);
@@ -130,7 +154,19 @@ a { color: inherit; }
 .button:active { transform: scale(0.96); }
 .button:disabled { opacity: 0.6; cursor: progress; }
 .button--ghost { background: transparent; color: inherit; border: 1.5px solid var(--linea); }
+.button--sm { min-height: var(--tactil); padding: 0 20px; } /* el más pequeño que sigue siendo cómodo de pulsar */
+.button--peligro { background: var(--bad); color: var(--on-bad); }
+/* ocupado (aria-busy="true"): no se puede volver a pulsar y gira un reactor pequeño delante del texto */
+.button[aria-busy='true'] { pointer-events: none; cursor: progress; }
+.button[aria-busy='true']::before {
+  content: ''; flex: none; width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box;
+  border: 2px solid currentColor; border-right-color: transparent; animation: nucleo-gira 700ms linear infinite;
+}
 @media (hover: hover) { .button:hover { filter: brightness(1.07); } }
+
+/* cifra grande de peso ligero con la unidad pequeña al lado: <p class="cifra">22,5<small>°C</small></p> */
+.cifra { margin: 0; font: var(--peso-ligero) var(--step-cifra)/1 var(--font-text); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.cifra small, .cifra__unidad { margin-left: 0.12em; font-size: 0.38em; font-weight: 400; letter-spacing: 0; color: var(--soft); }
 
 /* viñeta de cómic: la tarjeta de entrar mantiene el guiño a la web */
 .vineta { background: var(--tarjeta); color: var(--texto); border: 3px solid var(--brand); box-shadow: 8px 8px 0 var(--brand); }
@@ -165,9 +201,9 @@ a { color: inherit; }
 
 /* sin movimiento: se apagan las animaciones decorativas, pero no los indicadores de carga (si no, no se sabe que algo está cargando) */
 @media (prefers-reduced-motion: reduce) {
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *),
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *)::before,
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *)::after { animation: none !important; transition: none !important; }
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true']),
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true'])::before,
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true'])::after { animation: none !important; transition: none !important; }
   [data-inclina] { transform: none !important; }
 }
 
@@ -200,12 +236,15 @@ input, select, textarea { max-width: 100%; box-sizing: border-box; }
 
 /* esqueletos: líneas y tarjetas con un barrido de luz del color de acento */
 .esqueleto { display: flex; flex-direction: column; gap: 10px; list-style: none; }
-.esqueleto i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(100deg, var(--tarjeta-2) 30%, color-mix(in srgb, var(--brand) 20%, var(--tarjeta-2)) 50%, var(--tarjeta-2) 70%) 0 0 / 300% 100%; animation: brilla 1.5s ease-in-out infinite; }
+.esqueleto i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(100deg, var(--esq-base) 30%, var(--esq-luz) 50%, var(--esq-base) 70%) 0 0 / 300% 100%; animation: brilla 1.5s ease-in-out infinite; }
 .esqueleto i:nth-child(2) { width: 80%; } .esqueleto i:nth-child(3) { width: 60%; }
 .esqueleto.caja { position: relative; overflow: hidden; }
 .esqueleto.caja::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 35%, color-mix(in srgb, var(--brand) 13%, transparent) 50%, transparent 65%); transform: translateX(-100%); animation: barrido 1.8s ease-in-out infinite; }
 @keyframes brilla { from { background-position: 100% 0; } to { background-position: 0 0; } }
 @keyframes barrido { to { transform: translateX(100%); } }
+/* sin movimiento el esqueleto no barre: solo late despacio, así se sigue viendo que está cargando (el barrido de .esqueleto.caja ya lo apaga el bloque de arriba) */
+@keyframes esqueleto-pulso { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .esqueleto i { background-position: 50% 0; animation: esqueleto-pulso 2.4s ease-in-out infinite; } }
 
 /* pantalla de arranque, estilo HUD: anillos que giran, partículas en órbita, una línea que barre y el texto «iniciando» (en index.html antes de que
    arranque Angular y en app.ts después; el mismo dibujo) */

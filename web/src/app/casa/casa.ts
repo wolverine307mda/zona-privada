@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { CasaService } from './casa.service';
-import { AparatoCasa, DispositivoTuya, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
+import { AparatoCasa, DispositivoTuya, EscenaCasa, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
 import { ReglasCasa } from './reglas-casa';
 import { TarjetaAparato } from './tarjeta-aparato';
 
@@ -20,6 +20,7 @@ export class Casa implements OnInit {
   private readonly dlgAparato = viewChild<ElementRef<HTMLDialogElement>>('dlgAparato');
   private readonly dlgAjustes = viewChild<ElementRef<HTMLDialogElement>>('dlgAjustes');
   private readonly dlgEstancia = viewChild<ElementRef<HTMLDialogElement>>('dlgEstancia');
+  private readonly dlgEscena = viewChild<ElementRef<HTMLDialogElement>>('dlgEscena');
 
   protected readonly estado = this.casa.estado;
   protected readonly editando = signal(false);
@@ -28,6 +29,12 @@ export class Casa implements OnInit {
   protected readonly panel = signal<PanelGuardado>(PANEL_VACIO);
   protected readonly ocupado = signal(false);
   protected readonly aviso = signal('');
+  protected readonly escenas = signal<EscenaCasa[]>([]);
+  protected readonly mensaje = signal('');
+  protected readonly escNombre = signal('');
+  protected readonly escIcono = signal('✨');
+  protected readonly aplicando = signal<number | null>(null);
+  protected readonly quitandoEscena = signal<number | null>(null);
 
   // formularios de los diálogos
   protected readonly nuevoNombre = signal('');
@@ -70,10 +77,51 @@ export class Casa implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.casa.cargar();
+    void this.cargarEscenas();
     this.panel.set(leerPanel(this.estado()?.panel ?? null));
     // si la habitación recordada ya no existe, se vuelve a «Todo»
     const p = this.pestana();
     if (p !== 'todo' && !this.estado()?.estancias.some((e) => e.id === p)) this.pestana.set('todo');
+  }
+
+  private async cargarEscenas(): Promise<void> {
+    try { this.escenas.set(await this.casa.escenas()); } catch { /* sin escenas */ }
+  }
+
+  // un toque y los aparatos vuelven a como estaban al guardarla
+  protected async aplicarEscena(e: EscenaCasa): Promise<void> {
+    this.aplicando.set(e.id);
+    try {
+      const r = await this.casa.aplicarEscena(e.id);
+      this.mensaje.set(r.fallos.length ? `«${e.nombre}»: ${r.hechas} hechas, ${r.fallos.length} sin conexión (${r.fallos[0]}).` : `«${e.nombre}» puesta.`);
+      await this.casa.cargar();
+    } catch { this.mensaje.set('No se pudo poner la escena.'); } finally { this.aplicando.set(null); }
+  }
+
+  protected abrirEscena(): void {
+    this.escNombre.set(''); this.escIcono.set('✨'); this.aviso.set('');
+    this.dlgEscena()?.nativeElement.showModal();
+  }
+
+  // guarda cómo están ahora los aparatos de esta pestaña (o todos en «Todo»)
+  protected async crearEscena(e: Event): Promise<void> {
+    e.preventDefault();
+    if (!this.escNombre().trim()) { this.aviso.set('Ponle un nombre.'); return; }
+    this.ocupado.set(true);
+    try {
+      const ids = this.pestana() === 'todo' ? null : this.aparatos().filter((a) => a.estanciaId === this.pestana()).map((a) => a.id);
+      await this.casa.guardarEscena(this.escNombre().trim(), this.escIcono().trim() || '✨', ids);
+      await this.cargarEscenas();
+      this.dlgEscena()?.nativeElement.close();
+    } catch (x) {
+      const errores = (x as { error?: { errors?: Record<string, string[]> } }).error?.errors;
+      this.aviso.set(errores ? Object.values(errores)[0]?.[0] ?? 'Revisa los datos.' : 'No se pudo guardar la escena.');
+    } finally { this.ocupado.set(false); }
+  }
+
+  protected async borrarEscena(e: EscenaCasa): Promise<void> {
+    if (this.quitandoEscena() !== e.id) { this.quitandoEscena.set(e.id); return; }
+    try { await this.casa.borrarEscena(e.id); this.quitandoEscena.set(null); await this.cargarEscenas(); } catch { this.mensaje.set('No se pudo quitar la escena.'); }
   }
 
   protected ponerPestana(p: Pestana): void {

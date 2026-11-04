@@ -17,6 +17,7 @@ export interface ReglaCasa {
 export type ReglaEntrada = Omit<ReglaCasa, 'id' | 'disparada' | 'ultima' | 'resumen'>;
 export interface PlantillaRegla { id: string; nombre: string; descripcion: string; valores: Partial<ReglaEntrada>; }
 export interface RegistroRegla { id: number; reglaId: number | null; fecha: string; texto: string; ok: boolean; }
+export interface EscenaCasa { id: number; nombre: string; icono: string; acciones: number; }
 export interface PuntoHistorial { fecha: string; valor: number; }
 
 // Cómo está colocado el panel: el orden de los aparatos en cada habitación y los que has ocultado
