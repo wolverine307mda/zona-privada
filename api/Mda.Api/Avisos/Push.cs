@@ -53,6 +53,7 @@ public class Push(IServiceScopeFactory scopes, IConfiguration config, ILogger<Pu
     // Manda a todos los dispositivos suscritos; los que ya no existen (404/410) se borran
     public async Task<bool> Enviar(string titulo, string texto, string? url, CancellationToken ct = default)
     {
+        if (config.GetValue<bool>("Escritorio:Ensayo")) return false; // modo ensayo: no se notifica desde la copia de escritorio
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var subs = await db.Push.ToListAsync(ct);

@@ -52,6 +52,11 @@ public class Secretos(SecretosFuente fuente, IConfiguration config, ILogger<Secr
         new("vigilancia", "Latido externo", "Healthchecks.io: te avisa si el PC deja de dar señales", [new("Url", "URL del latido", "Healthcheck:Url")]),
     ];
 
+    // Modo ensayo (versión de escritorio que corre a la vez que la de Docker): no se cargan las claves de lo que habla con el exterior,
+    // para que las dos instancias no se pisen (mensajes duplicados, dos bots escuchando, órdenes dobles a los aparatos, cambios en Google).
+    public static readonly string[] Silenciables = ["telegram", "whatsapp", "correo", "spotify", "google", "vigilancia", "tuya", "homeassistant", "adguard"];
+    public bool Ensayo => config.GetValue<bool>("Escritorio:Ensayo");
+
     public static CampoSecreto? Campo(string servicio, string nombre) =>
         Catalogo.FirstOrDefault(s => s.Id == servicio)?.Campos.FirstOrDefault(c => c.Nombre == nombre);
 
@@ -79,7 +84,7 @@ public class Secretos(SecretosFuente fuente, IConfiguration config, ILogger<Secr
     {
         var datos = new Dictionary<string, string?>();
         foreach (var s in await db.Secretos.AsNoTracking().ToListAsync(ct))
-            if (Campo(s.Servicio, s.Nombre) is { } c) datos[c.Config] = s.Valor; // una clave quitada queda en "" y anula la del .env
+            if (Campo(s.Servicio, s.Nombre) is { } c && !(Ensayo && Silenciables.Contains(s.Servicio))) datos[c.Config] = s.Valor; // una clave quitada queda en "" y anula la del .env
         fuente.Proveedor.Poner(datos);
     }
 
