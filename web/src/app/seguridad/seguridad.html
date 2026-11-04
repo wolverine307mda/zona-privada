@@ -239,18 +239,26 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
   <header class="caja__cab"><h3>Archivos señuelo</h3><span class="sub">Falsos y a la vista en Documentos: si alguien los abre, te llega la alarma</span></header>
   <p class="nada">Nadie legítimo tiene motivo para abrir «contraseñas.csv». Si alguien con una sesión robada lo hace, te avisa por Telegram y notificación
     (con «Fui yo» / «No fui yo»), y por defecto se le cierra la sesión. El contenido es inventado: no hay nada real dentro.</p>
-  <ul class="accesos">
+  <ul class="senuelos">
     @for (s of senuelos(); track s.id) {
-      <li>
-        <span class="acceso__marca" aria-hidden="true">{{ s.activo ? '🪤' : '⏸' }}</span>
-        <span class="acceso__texto"><strong>{{ s.ruta }}</strong><span>{{ s.disparos }} {{ s.disparos === 1 ? 'vez abierto' : 'veces abierto' }}{{ s.activo ? '' : ' · desactivado' }}</span></span>
-        <span class="acciones-senuelo">
+      <li class="senuelo" [class.senuelo--off]="!s.activo">
+        <span class="senuelo__icono" aria-hidden="true">{{ s.activo ? '🪤' : '⏸' }}</span>
+        <span class="senuelo__texto">
+          <strong>{{ s.ruta }}</strong>
+          <small>{{ s.disparos }} {{ s.disparos === 1 ? 'vez abierto' : 'veces abierto' }}@if (!s.activo) { <em>desactivado</em> }</small>
+        </span>
+        <span class="senuelo__acciones">
           <button class="enlace" type="button" (click)="probarSenuelo(s.id)">Probar</button>
-          <button class="enlace" type="button" (click)="alternarSenuelo(s.id, !s.activo)">{{ s.activo ? 'Desactivar' : 'Activar' }}</button>
-          <button class="enlace" type="button" (click)="quitarSenuelo(s.id)">Quitar</button>
+          <details class="mas">
+            <summary aria-label="Más acciones de {{ s.ruta }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg></summary>
+            <div class="mas__lista">
+              <button type="button" (click)="alternarSenuelo(s.id, !s.activo); cerrarMenu($event)">{{ s.activo ? 'Desactivar' : 'Activar' }}</button>
+              <button type="button" class="mas__peligro" (click)="quitarSenuelo(s.id); cerrarMenu($event)">Quitar</button>
+            </div>
+          </details>
         </span>
       </li>
-    } @empty { <p class="nada">Aún no hay ninguno.</p> }
+    } @empty { <li class="nada">Aún no hay ninguno.</li> }
   </ul>
   <div class="fila-senuelo">
     @for (p of plantillasSenuelo(); track p.id) {

@@ -169,6 +169,9 @@ export class Seguridad {
     location.href = '/entrar';
   }
 
+  // el menú «···» de cada señuelo se cierra al elegir una acción
+  protected cerrarMenu(e: Event): void { ((e.target as HTMLElement).closest('details') as HTMLDetailsElement | null)?.removeAttribute('open'); }
+
   private leerSenuelos(): void {
     firstValueFrom(this.http.get<{ cerrarSesion: boolean; senuelos: { id: number; ruta: string; activo: boolean; disparos: number }[]; plantillas: { id: string; nombre: string }[] }>('/api/senuelos'))
       .then((r) => { this.senuelos.set(r.senuelos); this.plantillasSenuelo.set(r.plantillas); this.cerrarSesionSenuelo.set(r.cerrarSesion); })

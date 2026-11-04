@@ -107,7 +107,28 @@
 .copia--mal { color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--tarjeta-2)); }
 .interruptor em { color: var(--soft); font-style: normal; }
 
-.acciones-senuelo { display: flex; gap: 10px; flex-wrap: wrap; }
+/* señuelos: tarjetas que se apilan en el móvil, la ruta entera sin cortar y las acciones raras en un menú «···» (objetivos táctiles de 44 px) */
+.senuelos { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+.senuelo { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 6px 12px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.senuelo--off { opacity: .6; }
+.senuelo__icono { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 14px; background: color-mix(in srgb, var(--brand) 14%, transparent); font-size: 1.15rem; }
+.senuelo__texto { display: grid; gap: 3px; min-width: 0; }
+.senuelo__texto strong { font-weight: 500; overflow-wrap: anywhere; }
+.senuelo__texto small { color: var(--soft); font-size: .8rem; }
+.senuelo__texto em { margin-left: 8px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--vidrio-borde); font-style: normal; font-size: .72rem; }
+.senuelo__acciones { display: flex; align-items: center; gap: 4px; }
+.senuelo .enlace { min-height: 44px; padding: 0 12px; }
+.mas { position: relative; }
+.mas summary { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--soft); cursor: pointer; list-style: none; }
+.mas summary::-webkit-details-marker { display: none; }
+.mas summary:hover, .mas[open] summary { background: var(--tarjeta-2); color: var(--texto); }
+.mas .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.mas__lista { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; display: grid; min-width: 150px; padding: 6px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta); box-shadow: 0 14px 36px rgba(0, 0, 0, .3); animation: mas-abre 160ms ease-out; }
+.mas__lista button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: none; color: inherit; font: 500 .92rem/1 var(--font-text); text-align: left; cursor: pointer; }
+.mas__lista button:hover { background: var(--tarjeta-2); }
+.mas__peligro { color: var(--bad) !important; }
+@keyframes mas-abre { from { opacity: 0; transform: translateY(-4px); } }
+@media (max-width: 560px) { .senuelo { grid-template-columns: 40px minmax(0, 1fr); } .senuelo__acciones { grid-column: 1 / -1; justify-content: flex-end; border-top: 1px solid var(--linea); padding-top: 6px; } }
 .fila-senuelo { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; }
 .interruptor-senuelo { display: flex; gap: 10px; align-items: center; cursor: pointer; }
 .interruptor-senuelo input { width: 20px; height: 20px; accent-color: var(--brand); }
