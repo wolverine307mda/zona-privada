@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { Avisame } from './avisame';
 import { Aurora } from './aurora';
 import { CalculadoraEstrellas } from './calculadora-estrellas';
+import { DiarioSalidas } from './diario';
 import { EventosCielo } from './eventos';
 import { Niebla } from './niebla';
 import { Puntos } from './puntos';
@@ -28,7 +29,7 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
 // y la semana de un vistazo. El sol y la luna se calculan en el servidor; las nubes vienen de la previsión (Open-Meteo).
 @Component({
   selector: 'app-fotografia',
-  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, EventosCielo, Niebla, Puntos, NgTemplateOutlet, RouterLink],
+  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, DiarioSalidas, EventosCielo, Niebla, Puntos, NgTemplateOutlet, RouterLink],
   styleUrls: ['../gastos/comun.css', './fotografia.css'],
   template: `
     <header class="cab">
@@ -156,6 +157,8 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
       <app-calculadora-estrellas />
 
       <app-eventos-cielo />
+
+      <app-diario-salidas />
 
       <app-avisame [ajustes]="ajustes()" [semana]="semana()" (cambiar)="ajustar($event)" />
     }
