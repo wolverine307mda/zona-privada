@@ -52,8 +52,6 @@
 .menu__item--sub.is-activo { background: color-mix(in srgb, var(--brand) 16%, transparent); }
 .grupo--abierto .menu__item--sub { animation: sub-entra 360ms var(--ease-expo) both; animation-delay: calc(var(--i, 0) * 45ms); }
 @keyframes sub-entra { from { opacity: 0; transform: translateX(-10px); } }
-.menu__grupo { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); padding: 16px 10px 6px; }
-.menu__grupo:first-child { padding-top: 0; }
 .menu__item {
   position: relative; display: flex; align-items: center; gap: 12px;
   min-height: 42px; padding: 0 10px; border-radius: 10px;
@@ -67,11 +65,6 @@
 .menu__item.is-activo::before { content: ''; position: absolute; left: -16px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0; background: var(--brand); }
 .menu__item.is-activo .icon { color: var(--acento); }
 @media (hover: hover) { .menu__item:hover { background: var(--tarjeta-2); color: var(--texto); } }
-.menu__badge {
-  margin-left: auto; padding: 2px 8px; border-radius: 999px;
-  font: 500 10px/1.5 var(--font-code); font-style: normal; text-transform: uppercase; letter-spacing: 0.04em;
-  background: var(--tarjeta-2); color: var(--soft);
-}
 
 /* pie del menú: ajustes y usuario */
 .lateral__pie { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
@@ -189,30 +182,38 @@
   .marco { --abajo: calc(64px + env(safe-area-inset-bottom)); }
   .pantalla { padding-bottom: calc(var(--abajo) + 28px); }
   .barra__menu { display: none; }
+  /* la placa de vidrio va en ::before para poder recortarle el hueco redondo del centro (si se recortara la barra, se recortaría la burbuja) */
   .pestanas-app {
     position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
     padding: 6px 8px env(safe-area-inset-bottom);
-    background: color-mix(in srgb, var(--fondo) 66%, transparent); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
-    border-top: 1px solid var(--vidrio-borde);
     transition: transform 420ms var(--ease-expo);
   }
+  .pestanas-app::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; border-top: 1px solid var(--vidrio-borde);
+    background: color-mix(in srgb, var(--fondo) 66%, transparent); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    -webkit-mask-image: radial-gradient(circle 38px at 50% 0, transparent 37px, #000 38px); mask-image: radial-gradient(circle 38px at 50% 0, transparent 37px, #000 38px);
+  }
   .pestanas-app { view-transition-name: pestanas; }
-  /* se esconde con el menú abierto y mientras se escribe (el teclado la subiría encima del contenido) */
-  .menu-abierto .pestanas-app, .marco:has(.contenido :is(input:not([type=checkbox], [type=radio], [type=file]), select, textarea):focus) .pestanas-app { transform: translateY(110%); }
+  /* se esconde con el menú abierto y mientras se escribe (el teclado la subiría encima del contenido); la burbuja sobresale, de ahí el extra */
+  .menu-abierto .pestanas-app, .marco:has(.contenido :is(input:not([type=checkbox], [type=radio], [type=file]), select, textarea):focus) .pestanas-app { transform: translateY(calc(110% + 44px)); }
   .pestanas-app a, .pestanas-app button {
     position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px;
     border: 0; background: none; color: var(--soft); text-decoration: none; font: 500 11px/1 var(--font-text); cursor: pointer;
   }
   .pestanas-app .icon { width: 23px; height: 23px; transition: transform 380ms var(--ease-expo); }
-  .pestanas-app .is-activo { color: var(--texto); }
-  .pestanas-app .is-activo .icon { color: var(--acento); transform: translateY(-2px) scale(1.08); }
-  .pestanas-app .is-activo::before {
-    content: ''; position: absolute; top: 4px; width: 52px; height: 30px; border-radius: 999px; z-index: -1;
-    background: color-mix(in srgb, var(--brand) 18%, transparent); animation: pastilla 420ms var(--ease-expo);
-  }
   .pestanas-app :active > .icon { transform: scale(0.9); }
+  /* la sección actual: círculo del color de acento con medio cuerpo fuera de la barra, justo en el hueco */
+  .pestanas-app .centro { justify-content: flex-end; padding-bottom: 6px; color: var(--texto); font-weight: 600; }
+  .centro__burbuja {
+    position: absolute; left: 50%; top: -6px; display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%;
+    transform: translate(-50%, -50%); background: linear-gradient(145deg, color-mix(in srgb, var(--brand) 78%, #fff), var(--brand) 62%); color: var(--on-brand);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--brand) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35);
+    animation: burbuja 520ms var(--ease-expo) both;
+  }
+  .centro__burbuja .icon { width: 27px; height: 27px; }
 }
-@keyframes pastilla { from { transform: scaleX(0.4); opacity: 0; } }
+@keyframes burbuja { from { transform: translate(-50%, 10%) scale(.5); opacity: 0; } 60% { transform: translate(-50%, -62%) scale(1.08); opacity: 1; } }
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) { .centro__burbuja { animation: none; } }
 @media (max-width: 560px) {
   .barra { gap: 12px; }
   .barra__titulo p, .reloj { display: none; }

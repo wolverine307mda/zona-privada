@@ -23,6 +23,10 @@ const leer = (k: string): string | null => { try { return localStorage.getItem(k
 const guardar = (k: string, v: string): void => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
 const leerLista = (k: string): string[] => { try { const v = JSON.parse(leer(k) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; } };
 
+const leerUso = (): Record<string, number> => { try { const v = JSON.parse(leer('mda-uso') ?? '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } };
+// de partida, las de siempre: así la barra no empieza vacía de criterio
+const PESO_INICIAL: Record<string, number> = { inicio: 4, gastos: 3, agenda: 2, notas: 1 };
+
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
@@ -47,7 +51,6 @@ export class Shell {
 
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
-  protected readonly pestanas = MODULOS.filter((m) => m.listo && m.pestana);
   protected readonly grupos = GRUPOS;
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
@@ -67,6 +70,17 @@ export class Shell {
     if (id === 'perfil') return { ...INICIO, id: 'perfil', titulo: 'Perfil', resumen: 'Tus datos, tu foto y tu cuenta.' };
     return [INICIO, ...MODULOS].find((m) => m.id === id) ?? INICIO;
   });
+
+  // ---- barra de abajo del móvil: la sección actual en el centro y a los lados las que más usas ----
+  private readonly uso = signal<Record<string, number>>(leerUso());
+  protected readonly centro = computed(() => this.candidatas.find((m) => m.id === this.seccion().id) ?? INICIO);
+  protected readonly laterales = computed(() => {
+    const uso = this.uso();
+    return this.candidatas.filter((m) => m.id !== this.centro().id)
+      .sort((a, b) => ((uso[b.id] ?? 0) + (PESO_INICIAL[b.id] ?? 0)) - ((uso[a.id] ?? 0) + (PESO_INICIAL[a.id] ?? 0)))
+      .slice(0, 3);
+  });
+  private get candidatas() { return [INICIO, ...this.listos]; }
 
   // ---- submenús y modo compacto del lateral (se recuerdan en este navegador) ----
   protected readonly compacto = signal(leer('mda-menu-compacto') === '1');
@@ -119,6 +133,15 @@ export class Shell {
       sinInclinar();
       document.removeEventListener('touchmove', mover);
       document.removeEventListener('touchend', acabar);
+    });
+    // cada visita a una sección suma al uso (la barra de abajo enseña las 3 más usadas)
+    effect(() => {
+      const id = this.seccion().id;
+      untracked(() => {
+        if (!this.candidatas.some((m) => m.id === id)) return;
+        this.uso.update((u) => ({ ...u, [id]: (u[id] ?? 0) + 1 }));
+        guardar('mda-uso', JSON.stringify(this.uso()));
+      });
     });
     // la sección abierta despliega su grupo (sin cerrar los demás)
     effect(() => {

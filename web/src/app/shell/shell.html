@@ -119,13 +119,21 @@
     </main>
   </div>
 
-  <!-- móvil: barra de pestañas abajo, como una app -->
+  <!-- móvil: barra de abajo con lo que más usas; la sección actual va en el centro, elevada en un círculo -->
   <nav class="pestanas-app" aria-label="Accesos rápidos">
-    <a [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg><span>{{ inicio.titulo }}</span>
-    </a>
-    @for (m of pestanas; track m.id) {
-      <a [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page">
+    @for (m of laterales().slice(0, 2); track m.id) {
+      <a [routerLink]="'/' + m.id">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg><span>{{ m.titulo }}</span>
+      </a>
+    }
+    @for (c of [centro()]; track c.id) {
+      <a class="centro" [routerLink]="'/' + c.id" aria-current="page">
+        <span class="centro__burbuja"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="c.icono" /></svg></span>
+        <span>{{ c.titulo }}</span>
+      </a>
+    }
+    @for (m of laterales().slice(2); track m.id) {
+      <a [routerLink]="'/' + m.id">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg><span>{{ m.titulo }}</span>
       </a>
     }
