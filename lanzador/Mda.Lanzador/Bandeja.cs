@@ -24,6 +24,8 @@ sealed class Bandeja : ApplicationContext
     private CancellationTokenSource _agente = new();
     private readonly ToolStripMenuItem _modoNativo = new("Modo escritorio (beta, sin Docker)");
     private readonly ToolStripMenuItem _ensayoItem = new("Ensayo: no avisar ni tocar aparatos");
+    private readonly ToolStripMenuItem _tsServe = new("Ver la versión de escritorio desde mis dispositivos (Tailscale)");
+    private readonly ToolStripMenuItem _tsFunnel = new("Abrir la versión de escritorio a Internet (Funnel)");
     private readonly SynchronizationContext _ui = SynchronizationContext.Current ?? new SynchronizationContext();
 
     // «docker» (lo de siempre) o «nativo» (PostgreSQL y la API como procesos de Windows, sin Docker). En «nativo» el ensayo mantiene a Docker como producción:
@@ -31,6 +33,7 @@ sealed class Bandeja : ApplicationContext
     private string _modo = "docker";
     private bool _ensayo = true;
     private string _instalacion = "";
+    private string _urlNativa = "";   // la dirección de Tailscale de ESTE equipo, si se comparte; los passkeys de la versión de escritorio van atados a ella
     private ServidorNativo? _nativo;
     private Dictionary<string, string> _envNativo = [];
     private bool Nativo => _modo == "nativo";
@@ -55,7 +58,7 @@ sealed class Bandeja : ApplicationContext
         _reloj.Tick += async (_, _) => await Comprobar();
 
         if (!Configurar()) { ExitThread(); return; }
-        _modoNativo.Checked = Nativo; _ensayoItem.Checked = _ensayo;
+        _modoNativo.Checked = Nativo; _ensayoItem.Checked = _ensayo; _tsServe.Checked = _urlNativa.Length > 0;
         _inicio.Checked = Instalador.TareaExiste();
         _ = ArrancarAgente();
         _ = ArrancarTodo(primeraVez: true);
@@ -79,6 +82,7 @@ sealed class Bandeja : ApplicationContext
                 if (raiz.TryGetProperty("modo", out var mo) && mo.GetString() is "nativo" or "docker") _modo = mo.GetString()!;
                 if (raiz.TryGetProperty("ensayo", out var en) && en.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False) _ensayo = en.GetBoolean();
                 if (raiz.TryGetProperty("instalacion", out var ins) && ins.GetString() is { } instalacion) _instalacion = instalacion;
+                if (raiz.TryGetProperty("urlNativa", out var un) && un.GetString() is { } urlNativa) _urlNativa = urlNativa;
             }
         }
         catch (Exception e) when (e is JsonException or KeyNotFoundException or IOException) { }
@@ -115,13 +119,14 @@ sealed class Bandeja : ApplicationContext
             File.Copy(Path.Combine(_carpeta, ".env"), destino);
         if (!Asistente.Completar(r.Config, Log)) return false;
         _envNativo = Entorno.LeerEnv(File.ReadAllLines(destino));
+        if (_urlNativa.Length > 0) _envNativo["NATIVO_URL_PUBLICA"] = _urlNativa;
         return true;
     }
     private string _token = "";
 
     private void GuardarConfig()
     {
-        try { File.WriteAllText(Path.Combine(Datos, "config.json"), JsonSerializer.Serialize(new { carpeta = _carpeta, perfil = _perfil, modo = _modo, ensayo = _ensayo, instalacion = _instalacion })); } catch (IOException) { }
+        try { File.WriteAllText(Path.Combine(Datos, "config.json"), JsonSerializer.Serialize(new { carpeta = _carpeta, perfil = _perfil, modo = _modo, ensayo = _ensayo, instalacion = _instalacion, urlNativa = _urlNativa })); } catch (IOException) { }
     }
 
     // ---------- agente del PC (el mismo bucle que mda-agente.exe) ----------
@@ -199,6 +204,51 @@ sealed class Bandeja : ApplicationContext
         var texto = SeguridadNativa.Texto(r);
         Log("Comprobación de seguridad:" + Environment.NewLine + texto);
         MessageBox.Show(texto, r.All(x => x.Ok) ? "Seguridad: todo bien" : "Seguridad: hay algo que revisar", MessageBoxButtons.OK, r.All(x => x.Ok) ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
+    // Tailscale de Windows: «serve» enseña la versión de escritorio solo a tus dispositivos; «funnel» la abre a Internet (solo sin ensayo y con tu confirmación)
+    private async Task CompartirTailscale()
+    {
+        if (!Nativo) { Aviso("Esto es de la versión de escritorio: cambia primero al modo escritorio."); return; }
+        if (_tsServe.Checked)
+        {
+            if (_tsFunnel.Checked) _ = await TailscaleNativa.Ejecutar(TailscaleOrdenes.CerrarAInternet());
+            _tsFunnel.Checked = false;
+            var (okP, textoP) = await TailscaleNativa.Ejecutar(TailscaleOrdenes.PararServir());
+            _tsServe.Checked = !okP; if (!okP) { Aviso("No se pudo dejar de compartir: " + textoP); return; }
+            _urlNativa = ""; _envNativo.Remove("NATIVO_URL_PUBLICA"); GuardarConfig();
+            await ReiniciarNativo("Ya no se comparte por Tailscale.");
+            return;
+        }
+        var estado = await TailscaleNativa.Estado();
+        if (estado is null) { Aviso("Tailscale no está instalado en Windows. Instálalo desde tailscale.com/download e inicia sesión."); return; }
+        if (!estado.Conectado || estado.Url is null) { Aviso("Tailscale está instalado pero no conectado. Abre Tailscale e inicia sesión."); return; }
+        var (ok, texto) = await TailscaleNativa.Ejecutar(TailscaleOrdenes.Servir(ConfigNativa.PuertoApi));
+        if (!ok) { Aviso("No se pudo compartir con Tailscale: " + texto); return; }
+        _tsServe.Checked = true; _urlNativa = estado.Url; _envNativo["NATIVO_URL_PUBLICA"] = _urlNativa; GuardarConfig();
+        await ReiniciarNativo($"Compartida con tus dispositivos en {_urlNativa}");
+    }
+
+    private async Task FunnelNativo()
+    {
+        if (!Nativo || !_tsServe.Checked) { Aviso("Primero comparte la versión de escritorio con Tailscale (modo escritorio)."); return; }
+        if (_tsFunnel.Checked)
+        {
+            var (okC, textoC) = await TailscaleNativa.Ejecutar(TailscaleOrdenes.CerrarAInternet());
+            _tsFunnel.Checked = !okC; Aviso(okC ? "Versión de escritorio cerrada a Internet." : "No se pudo cerrar: " + textoC);
+            return;
+        }
+        if (_ensayo) { Aviso("La versión de escritorio está en ensayo: Docker sigue siendo la producción. Sal del ensayo antes de abrirla a Internet."); return; }
+        if (MessageBox.Show("Esto abre la versión de escritorio a TODO Internet con HTTPS (Tailscale Funnel), igual que hoy Docker.\n\n¿Seguro?", "Zona privada", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+        var (ok, texto) = await TailscaleNativa.Ejecutar(TailscaleOrdenes.AbrirAInternet(ConfigNativa.PuertoApi));
+        _tsFunnel.Checked = ok; Aviso(ok ? $"Abierta a Internet en {_urlNativa}" : "No se pudo abrir: " + texto);
+    }
+
+    private async Task ReiniciarNativo(string aviso)
+    {
+        Aviso(aviso);
+        if (_nativo is not null) { await _nativo.Parar(); _nativo = null; }
+        await ArrancarTodo();
     }
 
     private async Task CambiarEnsayo()
@@ -377,6 +427,10 @@ sealed class Bandeja : ApplicationContext
         _ensayoItem.Click += async (_, _) => await CambiarEnsayo();
         m.Items.Add(_ensayoItem);
         m.Items.Add(new ToolStripSeparator());
+        _tsServe.Click += async (_, _) => await CompartirTailscale();
+        m.Items.Add(_tsServe);
+        _tsFunnel.Click += async (_, _) => await FunnelNativo();
+        m.Items.Add(_tsFunnel);
         Item("Comprobar seguridad de la versión de escritorio…", () => _ = ComprobarSeguridad());
         Item("Exportar diagnóstico (zip en el escritorio)", () => _ = ExportarDiagnostico());
         Item("Abrir la carpeta", () => Abrir(_carpeta));
