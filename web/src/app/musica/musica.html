@@ -170,5 +170,5 @@
     <p class="pie">Conectado como <strong>{{ c.cuenta ?? 'tu cuenta' }}</strong>. Se desconecta desde <a routerLink="/seguridad">Seguridad</a>.</p>
   }
 } @else {
-  <p class="cargando">Cargando…</p>
+  <div class="caja" aria-busy="true"><app-esqueleto forma="bloque" alto="140px" /><app-esqueleto forma="linea" [lineas]="2" /></div>
 }

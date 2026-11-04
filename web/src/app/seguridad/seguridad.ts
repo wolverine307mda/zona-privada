@@ -12,6 +12,7 @@ import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
 import type { Conexion } from '../musica/musica';
 import { RecargaService } from '../core/recarga';
+import { Esqueleto } from '../ui';
 
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
 interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; }
@@ -33,7 +34,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Atajos, Claves, GloboSondas, Llaves, PinAjustes],
+  imports: [Atajos, Claves, GloboSondas, Llaves, PinAjustes, Esqueleto],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })

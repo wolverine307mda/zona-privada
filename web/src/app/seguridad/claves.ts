@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Reautenticar } from '../core/reautenticar';
+import { Esqueleto } from '../ui';
 
 interface Campo { nombre: string; titulo: string; configurada: boolean; actualizado: string | null; }
 interface Servicio { id: string; titulo: string; resumen: string; campos: Campo[]; }
@@ -14,6 +15,7 @@ const OJO_CERRADO = 'M3 3l18 18M10.6 5.1A9.9 9.9 0 0 1 12 5c6 0 10 7 10 7a17 17 
 // Nunca se muestran enteras: ver, cambiar o quitar una pide confirmar con Face ID o la contraseña, y el valor vuelve a ocultarse a los 20 s.
 @Component({
   selector: 'app-claves',
+  imports: [Esqueleto],
   styleUrls: ['../gastos/comun.css', './claves.css'],
   template: `
     <section class="caja">
@@ -90,7 +92,7 @@ const OJO_CERRADO = 'M3 3l18 18M10.6 5.1A9.9 9.9 0 0 1 12 5c6 0 10 7 10 7a17 17 
           </ul>
         </article>
       } @empty {
-        <p class="nada">Cargando…</p>
+        <app-esqueleto forma="linea" [lineas]="3" />
       }
       <p class="nada">Si cambias una clave aquí, vale al momento y la del <code>.env</code> deja de usarse. Pasa lo mismo al quitarla.</p>
     </section>

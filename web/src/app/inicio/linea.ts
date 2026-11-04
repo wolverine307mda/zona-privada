@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Suceso { hora: string; tipo: string; titulo: string; detalle: string; }
 
@@ -10,6 +11,7 @@ const hoyIso = (): string => new Date().toLocaleDateString('sv-SE');
 // La línea del tiempo de un día: gastos, salidas de fotografía, órdenes al PC y accesos a la app, todo en orden.
 @Component({
   selector: 'app-linea',
+  imports: [Esqueleto],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="linea tarjeta">
@@ -31,7 +33,7 @@ const hoyIso = (): string => new Date().toLocaleDateString('sv-SE');
             </li>
           }
         </ol>
-      } @else { <p class="vacio">{{ cargado() ? 'Nada apuntado este día.' : 'Cargando…' }}</p> }
+      } @else if (cargado()) { <p class="vacio">Nada apuntado este día.</p> } @else { <app-esqueleto forma="linea" [lineas]="3" /> }
     </section>
   `,
   styles: `

@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Entidad { id: string; dominio: string; nombre: string; estado: string; brillo: number | null; }
 interface Estado { homeAssistant: boolean; adguard: boolean; }
@@ -13,7 +14,7 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
 // La casa conectada: luces, enchufes, ventiladores y escenas de Home Assistant, con un toque. Se configura en Seguridad → Claves (la dirección y el token van cifrados).
 @Component({
   selector: 'app-hogar',
-  imports: [RouterLink],
+  imports: [RouterLink, Esqueleto],
   styleUrls: ['../gastos/comun.css', './modulos.css'],
   template: `
     @if (estado(); as e) {
@@ -31,7 +32,7 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
                 @if (c.dominio === 'scene') { <button class="enlace" type="button" (click)="llamar(c, 'activar')" [disabled]="ocupado() === c.id">Activar</button> }
                 @else { <button class="interruptor-pastilla" type="button" role="switch" [attr.aria-checked]="c.estado === 'on'" [attr.aria-label]="c.nombre" (click)="llamar(c, 'alternar')" [disabled]="ocupado() === c.id"><i></i></button> }
               </li>
-            } @empty { <li class="nada">{{ cargado() ? 'Home Assistant no tiene luces, enchufes ni escenas que enseñar.' : 'Cargando…' }}</li> }
+            } @empty { <li class="nada">@if (cargado()) { Home Assistant no tiene luces, enchufes ni escenas que enseñar. } @else { <app-esqueleto forma="linea" [lineas]="2" /> }</li> }
           </ul>
         }
       </section>
@@ -56,7 +57,7 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
               @if (r.protegido) { <button class="boton" type="button" (click)="proteccion(false, 10)" [disabled]="pausando()">Pausar 10 min</button> }
               @else { <button class="button" type="button" (click)="proteccion(true, null)" [disabled]="pausando()">Reanudar la protección</button> }
             </div>
-          } @else if (!errorAg()) { <p class="nada">Cargando…</p> }
+          } @else if (!errorAg()) { <app-esqueleto forma="linea" [lineas]="2" /> }
         </section>
       }
     }
@@ -78,7 +79,7 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
     .bloqueo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
     .bloqueo__cifra { display: grid; justify-items: center; padding: 6px 14px; color: #3fb96a; }
     .bloqueo__cifra--pausa { color: #f0b53a; }
-    .bloqueo__cifra b { font: 700 2.2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+    .bloqueo__cifra b { font: var(--peso-ligero) 2.2rem/1 var(--font-text); font-variant-numeric: tabular-nums; }
     .bloqueo__cifra small { color: var(--soft); font-size: .72rem; max-width: 14ch; text-align: center; }
     .bloqueo dl { display: grid; gap: 8px; margin: 0; }
     .bloqueo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .88rem; }

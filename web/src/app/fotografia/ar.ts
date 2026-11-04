@@ -41,7 +41,7 @@ interface EventoOrientacion extends DeviceOrientationEvent { webkitCompassHeadin
     .ar { position: fixed; inset: 0; z-index: 60; background: #000; color: #fff; }
     video, canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .ar__inicio { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; background: rgb(0 0 0 / .7); }
-    .ar__inicio h1 { margin: 0; font: 700 1.5rem/1.2 var(--font-display); }
+    .ar__inicio h1 { margin: 0; font: var(--peso-ligero) 1.5rem/1.2 var(--font-text); }
     .ar__inicio p { margin: 0; max-width: 40ch; opacity: .85; }
     .ar__error { color: #ff8a8a; }
     .ar__barra { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / .55); backdrop-filter: blur(8px); }

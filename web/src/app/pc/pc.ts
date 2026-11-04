@@ -13,6 +13,7 @@ import { Hogar } from './hogar';
 import { Velocidad } from './velocidad';
 import { PortapapelesPc } from './portapapeles';
 import { RedCasa } from './red';
+import { Esqueleto } from '../ui';
 
 interface Disco { nombre: string; modelo: string; salud: string; estado: string; temperaturaC: number | null; desgastePct: number | null; erroresLectura: number | null; }
 interface Volumen { nombre: string; libreBytes: number; totalBytes: number; }
@@ -42,7 +43,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, BateriaSalud, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad],
+  imports: [Pc3d, BateriaSalud, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
   template: `
     <nav class="pestanas-pc" role="tablist" aria-label="Secciones de Mi PC">
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'equipo'" (click)="ponerPestana('equipo')">Equipo</button>
@@ -105,7 +106,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
           <p class="sub">La temperatura y el desgaste del disco solo se leen si el agente se ejecuta como administrador.</p>
         }
       } @else {
-        <p class="vacio">{{ cargado() ? 'Aún no ha llegado la salud del PC: el agente la manda cada 5 minutos.' : 'Cargando…' }}</p>
+        @if (cargado()) { <p class="vacio">Aún no ha llegado la salud del PC: el agente la manda cada 5 minutos.</p> } @else { <app-esqueleto forma="linea" [lineas]="3" /> }
       }
     </section>
 

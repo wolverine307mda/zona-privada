@@ -62,7 +62,7 @@
 /* tarjetas y formularios propios de esta pantalla (antes dependían de estilos de otras) */
 .caja { display: grid; gap: 14px; min-width: 0; padding: 20px; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: var(--desenfoque); box-shadow: var(--sombra); }
 .caja__cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
-.caja__cab h3 { margin: 0; font: 700 0.95rem/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+.caja__cab h3 { margin: 0; font: 500 0.95rem/1.1 var(--font-text); letter-spacing: -0.02em; }
 .sub { color: var(--soft); font-size: 13px; }
 .interruptor { padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--texto) 4%, transparent); }
 .campo { display: grid; gap: 6px; min-width: 0; }

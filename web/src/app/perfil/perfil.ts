@@ -94,7 +94,7 @@ import { Errores, erroresDe, reducirFoto } from '../gastos/gastos.service';
     .foto__cambiar:active { transform: scale(0.9); }
     .foto__cambiar .icon { width: 19px; height: 19px; }
     .identidad { position: relative; z-index: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-    .identidad h2 { font: 700 clamp(1.6rem, 1rem + 3vw, 3rem)/1 var(--font-display); letter-spacing: -0.045em; text-transform: uppercase; overflow-wrap: anywhere; }
+    .identidad h2 { font: var(--peso-ligero) clamp(1.6rem, 1rem + 3vw, 3rem)/1 var(--font-text); letter-spacing: -0.045em; overflow-wrap: anywhere; }
     .identidad p { color: rgba(255, 255, 255, 0.78); }
     .identidad .enlace { color: #fff; opacity: 0.8; align-self: flex-start; }
     .formulario { gap: 16px; }

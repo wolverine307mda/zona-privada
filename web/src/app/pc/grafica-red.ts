@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Punto { hora: string; ms: number | null; enLinea: boolean; caidas: number; muestras: number; }
 interface Datos { puntos: Punto[]; resumen: { muestras: number; caidas: number; disponibilidad: number | null; mediaMs: number | null; maximaMs: number | null }; }
@@ -10,6 +11,7 @@ const RANGOS = [{ h: 24, nombre: '24 h' }, { h: 168, nombre: '7 días' }, { h: 7
 // La gráfica de latencia de un aparato (el router): una línea con los milisegundos y bandas rojas donde no contestó.
 @Component({
   selector: 'app-grafica-red',
+  imports: [Esqueleto],
   template: `
     <div class="rangos" role="group" aria-label="Periodo de la gráfica">
       @for (r of rangos; track r.h) { <button type="button" [attr.aria-pressed]="horas() === r.h" (click)="ver(r.h)">{{ r.nombre }}</button> }
@@ -29,7 +31,7 @@ const RANGOS = [{ h: 24, nombre: '24 h' }, { h: 168, nombre: '7 días' }, { h: 7
       } @else {
         <p class="nada">Aún no hay lecturas: se guarda una cada minuto. Vuelve en unos minutos.</p>
       }
-    } @else { <p class="nada">Cargando…</p> }
+    } @else { <app-esqueleto forma="grafica" alto="120px" /> }
   `,
   styles: `
     :host { display: grid; gap: 10px; padding: 10px 2px 2px; }

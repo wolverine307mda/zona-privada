@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Cancion { id: string; nombre: string; artistas: string; album: string | null; imagen: string | null; url: string | null; duracion: number; }
 interface Artista { id: string; nombre: string; imagen: string | null; url: string | null; generos: string[]; popularidad: number; }
@@ -18,7 +19,7 @@ const MENSAJES: Record<string, string> = {
 // Todo pasa por la API, que guarda la cuenta de Spotify: el navegador nunca ve los tokens.
 @Component({
   selector: 'app-musica',
-  imports: [RouterLink],
+  imports: [RouterLink, Esqueleto],
   templateUrl: './musica.html',
   styleUrls: ['../gastos/comun.css', '../gastos/dialogos.css', './musica.css'],
 })

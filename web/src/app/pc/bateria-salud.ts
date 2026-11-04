@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Medida { fecha: string; diseno: number; completa: number; ciclos: number | null; desgastePct: number; }
 
@@ -32,7 +33,7 @@ interface Medida { fecha: string; diseno: number; completa: number; ciclos: numb
           </svg>
         }
       } @else {
-        <p class="nada">{{ cargado() ? 'Aún no hay ninguna medida: pulsa «Medir ahora» (hay que tener el agente en marcha).' : 'Cargando…' }}</p>
+        @if (cargado()) { <p class="nada">Aún no hay ninguna medida: pulsa «Medir ahora» (hay que tener el agente en marcha).</p> } @else { <app-esqueleto forma="linea" [lineas]="2" /> }
       }
       <div class="acciones"><button class="button" type="button" (click)="medir()" [disabled]="midiendo()">{{ midiendo() ? 'Midiendo…' : 'Medir ahora' }}</button></div>
       @if (aviso()) { <p class="msg" role="status">{{ aviso() }}</p> }
@@ -42,7 +43,7 @@ interface Medida { fecha: string; diseno: number; completa: number; ciclos: numb
     .salud { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px 26px; align-items: center; }
     .salud__numero { display: grid; justify-items: center; padding: 6px 14px; color: #3fb96a; }
     .salud__numero--regular { color: #f0b53a; } .salud__numero--mal { color: var(--bad); }
-    .salud__numero b { font: 700 2.4rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+    .salud__numero b { font: var(--peso-ligero) 2.4rem/1 var(--font-text); font-variant-numeric: tabular-nums; }
     .salud__numero small { color: var(--soft); font-size: .72rem; max-width: 12ch; text-align: center; }
     dl { display: grid; gap: 8px; margin: 0; }
     dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .88rem; }
@@ -51,7 +52,7 @@ interface Medida { fecha: string; diseno: number; completa: number; ciclos: numb
     .acciones { margin-top: 12px; display: flex; justify-content: flex-end; }
     @media (max-width: 480px) { .salud { grid-template-columns: minmax(0, 1fr); } }
   `,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, Esqueleto],
 })
 export class BateriaSalud implements OnInit {
   private readonly http = inject(HttpClient);

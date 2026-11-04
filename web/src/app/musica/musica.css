@@ -7,7 +7,7 @@
 .enlazar::before { content: ''; position: absolute; inset: -30% -30% auto; height: 70%; background: radial-gradient(closest-side, rgba(30, 215, 96, 0.22), transparent); pointer-events: none; }
 .logo-spotify svg { width: 76px; height: 76px; filter: drop-shadow(0 12px 30px rgba(30, 215, 96, 0.45)); animation: late 2.4s var(--ease-in-out) infinite; }
 @keyframes late { 50% { transform: scale(1.06) rotate(-4deg); } }
-.enlazar h2 { font: 700 clamp(1.8rem, 1.2rem + 2.4vw, 3rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.05em; }
+.enlazar h2 { font: var(--peso-ligero) clamp(1.8rem, 1.2rem + 2.4vw, 3rem)/1 var(--font-text); letter-spacing: -0.05em; }
 .enlazar__lead { max-width: 54ch; color: var(--soft); }
 .boton-spotify { background: #1ed760; color: #000; min-height: 52px; padding: 0 30px; font-weight: 600; }
 .pasos { display: flex; flex-direction: column; gap: 12px; text-align: left; max-width: 620px; width: 100%; counter-reset: paso; list-style: none; padding: 0; margin: 8px 0 0; }
@@ -57,7 +57,7 @@
 .parado .ahora__estado { color: rgba(255, 255, 255, 0.7); }
 .dispositivo { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.86); text-transform: none; letter-spacing: 0; font-weight: 500; }
 .dispositivo .icon { width: 14px; height: 14px; }
-.ahora__titulo { font: 700 clamp(1.7rem, 1rem + 2.8vw, 3.5rem)/0.98 var(--font-display); letter-spacing: -0.045em; overflow-wrap: anywhere; text-wrap: balance; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.25); }
+.ahora__titulo { font: var(--peso-ligero) clamp(1.7rem, 1rem + 2.8vw, 3.5rem)/0.98 var(--font-text); letter-spacing: -0.045em; overflow-wrap: anywhere; text-wrap: balance; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.25); }
 .ahora__artista { font-size: var(--step-lead); color: rgba(255, 255, 255, 0.92); }
 .ahora__artista span { color: rgba(255, 255, 255, 0.6); }
 .ondas { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
@@ -79,7 +79,7 @@
 .ahora__nada { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px; text-align: center; color: rgba(255, 255, 255, 0.72); }
 .ahora__nada .ondas { height: 30px; color: #1ed760; }
 .ahora__nada .ondas i { width: 5px; }
-.ahora__nada h2 { font: 700 var(--step-head)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.04em; color: #fff; }
+.ahora__nada h2 { font: var(--peso-ligero) var(--step-head)/1 var(--font-text); letter-spacing: -0.04em; color: #fff; }
 
 /* ---------- acceso a «Tu año en música» ---------- */
 .wrapped { position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: calc(var(--radio) + 4px); color: #fff; text-decoration: none;
@@ -87,7 +87,7 @@
 @keyframes wrapped-mueve { to { background-position: 100% 0; } }
 .wrapped__brillo { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.5px) 0 0 / 14px 14px; mask: linear-gradient(90deg, transparent, #000); }
 .wrapped__texto { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.wrapped__texto strong { font: 700 var(--step-lead)/1.05 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.wrapped__texto strong { font: 500 var(--step-lead)/1.05 var(--font-text); letter-spacing: -0.03em; }
 .wrapped__texto span { font-size: var(--step-small); opacity: 0.9; }
 .wrapped__ir { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #000; font-size: 16px; transition: transform 300ms var(--ease-out); }
 @media (hover: hover) { .wrapped:hover .wrapped__ir { transform: scale(1.1); } }
@@ -96,7 +96,7 @@
 .rejilla { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
 .lado { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .top__cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.top__cab h3 { font: 700 var(--step-body)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+.top__cab h3 { font: 500 var(--step-body)/1.1 var(--font-text); letter-spacing: -0.02em; }
 .top__filtros { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* el podio: las tres primeras, grandes */
@@ -105,7 +105,7 @@
 .podio a { position: relative; display: flex; flex-direction: column; gap: 10px; color: var(--texto); text-decoration: none; transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 400ms var(--ease-out); }
 .podio img, .podio__img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 14px; object-fit: cover; background: var(--tarjeta-2); box-shadow: 0 20px 40px -22px rgba(0, 0, 0, 0.7); transition: transform 300ms var(--ease-out); }
 @media (hover: hover) { .podio a:hover img { transform: translateY(-3px); } }
-.podio__n { position: absolute; top: 8px; left: 8px; display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font: 700 16px/1 var(--font-display); }
+.podio__n { position: absolute; top: 8px; left: 8px; display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font: 500 16px/1 var(--font-text); }
 .podio li:first-child .podio__n { background: var(--brand); color: var(--on-brand); }
 .podio__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .podio__texto strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -115,7 +115,7 @@
 .top li, .lista li { min-width: 0; }
 .top a, .lista a { display: flex; align-items: center; gap: 12px; padding: 7px 8px; border-radius: 12px; color: var(--texto); text-decoration: none; min-width: 0; transition: background-color 160ms ease; }
 @media (hover: hover) { .top a:hover, .lista a:hover { background: var(--tarjeta-2); } }
-.top__n { flex: none; width: 22px; text-align: center; font: 700 14px/1 var(--font-display); color: var(--soft); }
+.top__n { flex: none; width: 22px; text-align: center; font: 500 14px/1 var(--font-text); color: var(--soft); }
 .top img, .top__img { flex: none; width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: var(--tarjeta-2); }
 .top__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .top__texto strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -126,7 +126,7 @@
 .artistas a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border-radius: 16px; text-align: center; color: var(--texto); text-decoration: none; min-width: 0; transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 400ms var(--ease-out), background-color 160ms ease; }
 @media (hover: hover) { .artistas a:hover { background: var(--tarjeta-2); } }
 .artistas img, .artistas__img { width: 100%; height: auto; max-width: 140px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; background: var(--tarjeta-2); box-shadow: 0 16px 34px -16px rgba(0, 0, 0, 0.6); }
-.artistas__n { position: absolute; top: 10px; left: 12px; display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font: 700 13px/1 var(--font-display); }
+.artistas__n { position: absolute; top: 10px; left: 12px; display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font: 500 13px/1 var(--font-text); }
 .artistas li:first-child .artistas__n { background: var(--brand); color: var(--on-brand); }
 .artistas strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .artistas span { font-size: 12px; color: var(--soft); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }

@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Esqueleto } from '../ui';
 
 interface Medida { id: number; hora: string; bajadaMbps: number; subidaMbps: number; pingMs: number | null; }
 interface Datos { actual: Medida | null; historial: Medida[]; resumen: { medidas: number; bajadaMedia: number | null; subidaMedia: number | null; bajadaMinima: number | null }; }
@@ -28,7 +29,7 @@ interface Datos { actual: Medida | null; historial: Medida[]; resumen: { medidas
           </svg>
           <div class="leyenda"><span class="baja">↓ bajada</span><span class="sube">↑ subida</span></div>
         }
-      } @else { <p class="nada">{{ cargado() ? 'Aún no hay ninguna medida: pulsa «Medir ahora» (hace falta el agente en marcha).' : 'Cargando…' }}</p> }
+      } @else if (cargado()) { <p class="nada">Aún no hay ninguna medida: pulsa «Medir ahora» (hace falta el agente en marcha).</p> } @else { <app-esqueleto forma="linea" [lineas]="2" /> }
       <div class="acciones"><button class="button" type="button" (click)="medir()" [disabled]="midiendo()">{{ midiendo() ? 'Midiendo… (≈30 s)' : 'Medir ahora' }}</button></div>
       @if (aviso()) { <p class="msg" role="status">{{ aviso() }}</p> }
     </section>
@@ -36,7 +37,7 @@ interface Datos { actual: Medida | null; historial: Medida[]; resumen: { medidas
   styles: `
     .veloz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 8px; }
     .veloz__cifra { display: grid; gap: 2px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--texto) 4%, transparent); }
-    .veloz__cifra b { font: 700 1.8rem/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--acento); }
+    .veloz__cifra b { font: var(--peso-ligero) 1.8rem/1 var(--font-text); font-variant-numeric: tabular-nums; color: var(--acento); }
     .veloz__cifra--sube b { color: #3fb96a; } .veloz__cifra--ping b { color: var(--texto); font-size: 1.4rem; }
     .veloz__cifra small { color: var(--soft); font-size: .72rem; }
     .curva { width: 100%; height: 84px; margin-top: 6px; border-radius: 12px; background: color-mix(in srgb, var(--texto) 4%, transparent); }
@@ -47,7 +48,7 @@ interface Datos { actual: Medida | null; historial: Medida[]; resumen: { medidas
     .acciones { margin-top: 10px; display: flex; justify-content: flex-end; }
     @media (max-width: 420px) { .veloz__cifra b { font-size: 1.4rem; } }
   `,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, Esqueleto],
 })
 export class Velocidad implements OnInit {
   private readonly http = inject(HttpClient);

@@ -44,7 +44,7 @@ const RECORTES = [{ v: 1, n: 'Pleno formato (1×)' }, { v: 1.5, n: 'APS-C Nikon/
     .ayuda-px summary { cursor: pointer; min-height: 32px; }
     .resultado { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .resultado div { display: grid; gap: 2px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--brand) 12%, transparent); }
-    .resultado b { font: 700 1.6rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+    .resultado b { font: var(--peso-ligero) 1.6rem/1.1 var(--font-text); font-variant-numeric: tabular-nums; }
     .resultado small { color: var(--soft); }
     .nota { margin: 10px 0 0; color: var(--soft); font-size: .8rem; }
   `,

@@ -88,7 +88,7 @@
 
 .menu-item {
   position: absolute; top: 50px; right: 10px; z-index: 5; display: flex; flex-direction: column; min-width: 200px; padding: 6px;
-  border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--tarjeta) 88%, transparent); backdrop-filter: blur(20px) saturate(1.4);
+  border-radius: 14px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta); backdrop-filter: blur(20px) saturate(1.4);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); transform-origin: top right; animation: menu-entra 260ms var(--ease-expo);
 }
 @keyframes menu-entra { from { opacity: 0; transform: perspective(600px) rotateX(-14deg) scale(0.94); } }
@@ -131,14 +131,14 @@
 .soltar { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--brand) 14%, rgba(3, 8, 11, 0.55)); backdrop-filter: blur(6px); pointer-events: none; animation: aparece-suave 200ms ease; }
 .soltar__caja { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 56px; border-radius: 28px; border: 2px dashed var(--brand); background: var(--vidrio); color: var(--texto); animation: soltar-flota 1.4s var(--ease-in-out) infinite alternate; }
 .soltar__caja .icon { width: 44px; height: 44px; color: var(--acento); }
-.soltar__caja strong { font: 700 var(--step-lead)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.soltar__caja strong { font: 500 var(--step-lead)/1 var(--font-text); letter-spacing: -0.03em; }
 .soltar__caja span { color: var(--soft); }
 @keyframes soltar-flota { from { transform: perspective(800px) rotateX(8deg) translateY(4px); } to { transform: perspective(800px) rotateX(-6deg) translateY(-4px); } }
 @keyframes aparece-suave { from { opacity: 0; } }
 
 .subidas, .musica, .aviso {
   position: fixed; z-index: 12; right: var(--margin); border-radius: 18px; border: 1px solid var(--vidrio-borde);
-  background: color-mix(in srgb, var(--tarjeta) 82%, transparent); backdrop-filter: blur(22px) saturate(1.5); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.5);
+  background: var(--tarjeta); backdrop-filter: blur(22px) saturate(1.5); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.5);
   animation: sube-panel 420ms var(--ease-expo);
 }
 @keyframes sube-panel { from { opacity: 0; transform: translateY(20px) scale(0.97); } }
@@ -171,7 +171,7 @@
 .dlg-nombre::backdrop { background: rgba(3, 8, 11, 0.55); backdrop-filter: blur(6px); }
 @keyframes dlg-entra { from { opacity: 0; transform: perspective(900px) rotateX(16deg) translateY(20px) scale(0.96); } }
 .dlg-nombre form { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
-.dlg-nombre h2 { font: 700 var(--step-lead)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.03em; }
+.dlg-nombre h2 { font: 500 var(--step-lead)/1 var(--font-text); letter-spacing: -0.03em; }
 .campo { width: 100%; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--tarjeta-2); color: var(--texto); font: 500 var(--step-body)/1 var(--font-text); }
 .campo:focus { outline: none; border-color: var(--brand); }
 .error { color: var(--bad); font-size: var(--step-small); margin-top: -6px; }

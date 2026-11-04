@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { EstadoError } from '../ui';
 
 interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; enGlobo?: boolean; lat?: number | null; lon?: number | null; lugar?: string; }
 interface Sitio { nombre: string; lat: number; lon: number; region?: string | null; }
@@ -13,6 +14,7 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
 // Nada se publica hasta activar el interruptor general y marcar cada foto; el original nunca sale del equipo.
 @Component({
   selector: 'app-galeria',
+  imports: [EstadoError],
   template: `
     <nav class="pestanas" role="tablist" aria-label="Partes de la galería">
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'fotos'" (click)="pestana.set('fotos')">Fotos <small>{{ estado()?.publicadas ?? 0 }}</small></button>
@@ -64,7 +66,7 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
           @for (m of migas(); track m.ruta) { / <button class="enlace" type="button" (click)="abrir(m.ruta)">{{ m.nombre }}</button> }
         </span>
       </header>
-      @if (fallo()) { <p class="error">No se pudo leer la carpeta. ¿Está montada «Imágenes» en el equipo?</p> }
+      @if (fallo()) { <app-estado-error mensaje="No se pudo leer la carpeta. ¿Está montada «Imágenes» en el equipo?" (reintentar)="reintentar()" /> }
       <ul class="rejilla" [attr.aria-busy]="cargando()">
         @if (cargando()) { @for (_ of esqueletos; track $index) { <li class="foto-esqueleto" aria-hidden="true"></li> } }
         @for (e of elementos(); track e.ruta) {
@@ -177,6 +179,7 @@ export class Galeria implements OnInit {
   protected readonly ruta = signal('');
   protected readonly elementos = signal<Elemento[]>([]);
   protected readonly fallo = signal(false);
+  protected reintentar(): void { void Promise.all([this.cargar(), this.abrir(this.ruta())]); }
   protected readonly cargando = signal(true);
   protected readonly esqueletos = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly actual = signal<(Partial<Foto> & { ruta: string }) | null>(null);

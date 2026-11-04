@@ -53,7 +53,7 @@
           <button class="button button--ghost sesion__cerrar" type="button" (click)="cerrar(s)">Cerrar</button>
         }
       </li>
-    } @empty { <p class="nada esta-cargando">Cargando…</p> }
+    } @empty { <li aria-busy="true"><app-esqueleto forma="linea" [lineas]="3" /></li> }
   </ul>
 </section>
 

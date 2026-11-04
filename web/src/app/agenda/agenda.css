@@ -1,6 +1,6 @@
 .cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
 .mes { display: flex; align-items: center; gap: 10px; }
-.mes__nombre { min-width: 0; font: 700 clamp(1.5rem, 1rem + 2vw, 2.6rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.045em; }
+.mes__nombre { min-width: 0; font: var(--peso-ligero) clamp(1.5rem, 1rem + 2vw, 2.6rem)/1 var(--font-text); letter-spacing: -0.045em; }
 .mes__flecha { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque); color: var(--texto); cursor: pointer; }
 .mes__flecha:active { transform: scale(0.92); }
 .mes__hoy { min-height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--acento); font-weight: 500; cursor: pointer; }
@@ -27,7 +27,7 @@
 .semana span { text-align: center; font: 600 11px/1 var(--font-text); letter-spacing: 0.08em; color: var(--soft); padding: 6px 0; }
 .dia {
   position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-height: 96px; padding: 6px; min-width: 0;
-  border-radius: 12px; border: 1px solid transparent; background: color-mix(in srgb, var(--tarjeta-2) 60%, transparent); color: var(--texto);
+  border-radius: 12px; border: 1px solid transparent; background: var(--tarjeta-2); color: var(--texto);
   cursor: pointer; font: inherit; text-align: left; transition: border-color 160ms ease, background-color 160ms ease, transform 200ms var(--ease-out);
 }
 @media (hover: hover) { .dia:hover { border-color: var(--linea); } }

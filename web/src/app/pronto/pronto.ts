@@ -36,7 +36,7 @@ import { MODULOS } from '../core/modulos';
     .pronto__icono { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; background: var(--brand); color: var(--on-brand); box-shadow: 5px 5px 0 color-mix(in srgb, var(--brand) 40%, var(--texto)); }
     .pronto__icono .icon { width: 30px; height: 30px; }
     .pronto__chip { margin-top: 8px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--acento); background: color-mix(in srgb, var(--brand) 14%, transparent); }
-    .pronto__titulo { font: 700 clamp(2rem, 1.2rem + 3vw, 3.6rem)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: -0.05em; }
+    .pronto__titulo { font: var(--peso-ligero) clamp(2rem, 1.2rem + 3vw, 3.6rem)/0.95 var(--font-text); letter-spacing: -0.05em; }
     .pronto__resumen { color: var(--soft); font-size: var(--step-lead); }
     .pronto__planes { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 12px; width: 100%; }
     .pronto__planes li { display: flex; gap: 14px; align-items: baseline; padding: 12px 14px; border-radius: 12px; background: var(--tarjeta-2); }

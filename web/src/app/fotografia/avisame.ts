@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { AjustesLuz, Semana, colorNota } from './modelo';
+import { Esqueleto } from '../ui';
 
 const BORTLE = [
   { n: 1, nombre: 'Cielo excelente', color: '#05070d' }, { n: 2, nombre: 'Muy oscuro', color: '#0a0f1e' }, { n: 3, nombre: 'Rural', color: '#101a33' },
@@ -11,6 +12,7 @@ const BORTLE = [
 // esta semana habrían avisado; el cielo de tu zona (Bortle) se elige con muestras de lo oscuro que es.
 @Component({
   selector: 'app-avisame',
+  imports: [Esqueleto],
   template: `
     <section class="caja">
       <header class="caja__cab"><h3>Avísame</h3><span class="sub">te escribo cuando merezca la pena salir</span></header>
@@ -58,7 +60,7 @@ const BORTLE = [
           <input type="checkbox" role="switch" class="interruptor" [checked]="a.astro" (change)="cambiar.emit({ astro: $any($event.target).checked })"></label>
         <p class="ayuda">La hora dorada de la tarde se avisa {{ a.antelacionMin }} min antes.</p>
       } @else {
-        <p class="ayuda">Cargando…</p>
+        <app-esqueleto forma="linea" [lineas]="2" />
       }
     </section>
   `,
