@@ -24,10 +24,11 @@ sealed class CredencialServicio
 // Lanza una orden de un solo disparo (initdb, pg_ctl…) y espera; con credencial, como la cuenta de servicio
 static class Proc
 {
-    public static async Task<(int Codigo, string Salida)> Ejecutar(string exe, string args, string? carpeta, TimeSpan limite, CredencialServicio? cred = null)
+    public static async Task<(int Codigo, string Salida)> Ejecutar(string exe, string args, string? carpeta, TimeSpan limite, CredencialServicio? cred = null, IReadOnlyDictionary<string, string>? entorno = null)
     {
         var psi = new ProcessStartInfo(exe, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = carpeta ?? "" };
         cred?.Aplicar(psi);
+        if (entorno is not null) foreach (var (k, v) in entorno) psi.Environment[k] = v;
         try
         {
             using var p = Process.Start(psi)!;

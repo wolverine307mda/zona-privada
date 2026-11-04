@@ -12,6 +12,7 @@ sealed class ServidorNativo
     private ProcesoHijo? _pg, _api;
     private bool _ensayo;
     private CredencialServicio? _cred;
+    private CancellationTokenSource? _copias;
 
     public ServidorNativo(RutasNativas rutas, Action<string> log) { _r = rutas; _log = log; }
 
@@ -65,6 +66,14 @@ sealed class ServidorNativo
             _api.Iniciar();
         }
         if (!await EsperarApi(TimeSpan.FromMinutes(2), ct)) return (false, "La API no contesta en 2 minutos. Mira los registros en " + _r.Registros);
+
+        // copias diarias, copia cifrada y simulacro semanal (lo que hacía el contenedor «copias»)
+        if (_copias is null)
+        {
+            _copias = new CancellationTokenSource();
+            var copias = new CopiasNativas(_r, clave, env.GetValueOrDefault("COPIAS_AGE_PUBLICA", ""), env.GetValueOrDefault("COPIAS_NUBE", ""), _log);
+            _ = Task.Run(() => copias.Bucle(_copias.Token));
+        }
         return (true, "En marcha");
     }
 
@@ -143,6 +152,7 @@ sealed class ServidorNativo
     // La API primero y PostgreSQL con calma («pg_ctl stop -m fast»); si no se va, se mata. No toca Docker.
     public async Task Parar()
     {
+        _copias?.Cancel(); _copias = null;
         if (_api is not null) { await _api.Parar(TimeSpan.FromSeconds(10)); _api = null; }
         if (_pg is not null)
         {
