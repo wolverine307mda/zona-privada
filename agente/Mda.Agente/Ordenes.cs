@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -64,6 +64,7 @@ static partial class Ordenes
                 return await Dispositivos.PonerPortapapeles(texto) ? new(true, "copiado al portapapeles del PC") : new(false, "Windows no dejó copiarlo");
             }
             if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
+            if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
             if (o.Tipo == "copiar")
             {
                 var texto = await Dispositivos.LeerPortapapeles();
@@ -118,6 +119,19 @@ static partial class Ordenes
         if (d.Tipo == "url") Process.Start(new ProcessStartInfo("explorer.exe", d.Valor) { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
         else Process.Start(new ProcessStartInfo(d.Valor) { UseShellExecute = true })?.Dispose();
         return new(true, d.Tipo == "url" ? "dirección abierta en el navegador del PC" : $"{parametro.Trim().ToLowerInvariant()} abierto");
+    }
+
+    // Test de velocidad: mide contra Cloudflare (unos 35 MB) y manda a la API las tres cifras
+    static async Task<ResultadoOrden> TestDeVelocidad(HttpClient http, CancellationToken ct)
+    {
+        try
+        {
+            var m = await Velocidad.Medir(ct);
+            var r = await http.PostAsJsonAsync("/api/sistema/agente/velocidad", m, ct);
+            var texto = $"↓ {m.BajadaMbps:0} Mbps · ↑ {m.SubidaMbps:0} Mbps" + (m.PingMs is { } p ? $" · {p} ms" : "");
+            return r.IsSuccessStatusCode ? new(true, texto) : new(false, $"la API responde {(int)r.StatusCode}");
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return new(false, "no se pudo medir: " + e.Message); }
     }
 
     // Informe de batería: Windows lo genera en XML, el agente lo interpreta y manda a la API solo tres números (diseño, actual y ciclos)

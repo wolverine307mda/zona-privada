@@ -221,11 +221,11 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
     public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
-    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe"];
+    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
     public static readonly string[] Perfiles = ["equilibrado", "rendimiento", "ahorro", "cine"];
     public const int MaxAbrir = 300;
@@ -276,6 +276,7 @@ public static class OrdenesPc
         "limpiar" => "limpiar los temporales y vaciar la papelera",
         "bateria-informe" => "medir el desgaste de la batería",
         "abrir" => $"abrir en el PC: {o.Parametro}",
+        "velocidad" => "medir la velocidad de Internet",
         _ => o.Tipo,
     };
 

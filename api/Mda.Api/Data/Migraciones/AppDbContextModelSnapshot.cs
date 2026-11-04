@@ -916,6 +916,33 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("red_lecturas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.MedidaVelocidad", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("BajadaMbps")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTimeOffset>("Hora")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("PingMs")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("SubidaMbps")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Hora");
+
+                    b.ToTable("velocidades", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Pc.OrdenPc", b =>
                 {
                     b.Property<int>("Id")

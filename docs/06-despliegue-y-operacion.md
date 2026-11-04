@@ -193,3 +193,9 @@ Para los móviles, un «conexión rechazada» cuenta como «está en la red» (n
 Marcando «Guardar su historial de latencia» en un aparato (hasta 3, pensado para el router) el vigilante guarda **una lectura por minuto** (`red_lecturas`). Pasadas 48 horas se resumen en una fila por hora completa
 (`red_horas`: lecturas, caídas, latencia media y máxima) y a los 30 días se borran, así la gráfica del mes son 720 puntos y la base no crece sin parar. La latencia es el tiempo de abrir una conexión TCP: dentro del contenedor
 no hay permiso para ICMP (ping), y para ver si la red va lenta o se corta da lo mismo. En Mi PC → Aparatos de casa sale el botón «Gráfica» con 24 h, 7 días o 30 días.
+
+## Test de velocidad de Internet
+
+El agente mide contra el servidor público de Cloudflare (`speed.cloudflare.com`): latencia (mediana de 4 peticiones), bajada (hasta 25 MB o 12 s) y subida (8 MB), unos **35 MB por prueba**, y manda las tres cifras a la API
+(tabla `velocidades`, últimas 400). `VelocidadNocturna` pide una cada noche entre las 3 y las 5 (hora de casa) si hace más de 20 horas de la última y el agente está en marcha; en Mi PC → «Velocidad de Internet» hay
+«Medir ahora» y la curva del mes. Para quitar la prueba nocturna, para el agente por la noche o quita el servicio en `Program.cs`.

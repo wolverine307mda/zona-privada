@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Secreto> Secretos => Set<Secreto>();
     public DbSet<Mda.Api.Pc.SaludBateria> SaludBaterias => Set<Mda.Api.Pc.SaludBateria>();
     public DbSet<Mda.Api.Pc.Escena> Escenas => Set<Mda.Api.Pc.Escena>();
+    public DbSet<Mda.Api.Pc.MedidaVelocidad> MedidasVelocidad => Set<Mda.Api.Pc.MedidaVelocidad>();
     public DbSet<Mda.Api.Pc.LecturaRed> LecturasRed => Set<Mda.Api.Pc.LecturaRed>();
     public DbSet<Mda.Api.Pc.LecturaHora> LecturasHora => Set<Mda.Api.Pc.LecturaHora>();
 
@@ -193,6 +194,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             e.ToTable("red_horas");
             e.HasKey(x => new { x.DispositivoId, x.Hora });
+        });
+
+        b.Entity<Mda.Api.Pc.MedidaVelocidad>(e =>
+        {
+            e.ToTable("velocidades");
+            e.HasIndex(x => x.Hora);
         });
 
         b.Entity<Mda.Api.Pc.Escena>(e =>
