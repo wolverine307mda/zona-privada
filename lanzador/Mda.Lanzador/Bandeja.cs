@@ -193,6 +193,14 @@ sealed class Bandeja : ApplicationContext
         await ArrancarTodo();
     }
 
+    private async Task ComprobarSeguridad()
+    {
+        var r = await SeguridadNativa.Comprobar(Rutas);
+        var texto = SeguridadNativa.Texto(r);
+        Log("Comprobación de seguridad:" + Environment.NewLine + texto);
+        MessageBox.Show(texto, r.All(x => x.Ok) ? "Seguridad: todo bien" : "Seguridad: hay algo que revisar", MessageBoxButtons.OK, r.All(x => x.Ok) ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
     private async Task CambiarEnsayo()
     {
         if (_ocupado) return;
@@ -369,6 +377,7 @@ sealed class Bandeja : ApplicationContext
         _ensayoItem.Click += async (_, _) => await CambiarEnsayo();
         m.Items.Add(_ensayoItem);
         m.Items.Add(new ToolStripSeparator());
+        Item("Comprobar seguridad de la versión de escritorio…", () => _ = ComprobarSeguridad());
         Item("Exportar diagnóstico (zip en el escritorio)", () => _ = ExportarDiagnostico());
         Item("Abrir la carpeta", () => Abrir(_carpeta));
         Item("Abrir el registro del lanzador", () => Abrir(Path.Combine(Datos, "lanzador.log")));

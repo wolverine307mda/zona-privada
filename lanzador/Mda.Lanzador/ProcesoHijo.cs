@@ -77,14 +77,15 @@ sealed class ProcesoHijo : IDisposable
     private readonly Func<ProcessStartInfo> _crear;
     private readonly Action<string> _log;
     private readonly long? _memoria;
+    private readonly CredencialServicio? _credencial;
     private readonly CancellationTokenSource _cancelar = new();
     private Process? _proceso;
     private JobObject? _job;
     private Task? _bucle;
 
-    public ProcesoHijo(string nombre, Func<ProcessStartInfo> crear, Action<string> log, long? memoriaMaxima = null)
+    public ProcesoHijo(string nombre, Func<ProcessStartInfo> crear, Action<string> log, long? memoriaMaxima = null, CredencialServicio? credencial = null)
     {
-        _nombre = nombre; _crear = crear; _log = log; _memoria = memoriaMaxima;
+        _nombre = nombre; _crear = crear; _log = log; _memoria = memoriaMaxima; _credencial = credencial;
     }
 
     public bool EnMarcha => _proceso is { HasExited: false };
@@ -102,6 +103,7 @@ sealed class ProcesoHijo : IDisposable
             {
                 var psi = _crear();
                 psi.UseShellExecute = false; psi.CreateNoWindow = true;
+                _credencial?.Aplicar(psi); // PostgreSQL y la API corren con la cuenta de servicio, no con la tuya
                 psi.RedirectStandardOutput = true; psi.RedirectStandardError = true;
                 _job?.Dispose();
                 _job = new JobObject(_memoria);

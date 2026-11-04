@@ -11,6 +11,7 @@ sealed class ServidorNativo
     private readonly Action<string> _log;
     private ProcesoHijo? _pg, _api;
     private bool _ensayo;
+    private CredencialServicio? _cred;
 
     public ServidorNativo(RutasNativas rutas, Action<string> log) { _r = rutas; _log = log; }
 
@@ -35,12 +36,17 @@ sealed class ServidorNativo
         var clave = env.GetValueOrDefault("POSTGRES_PASSWORD", "");
         if (clave.Length < 16) return (false, "Falta POSTGRES_PASSWORD en la configuración de la versión de escritorio.");
 
-        if (!File.Exists(Path.Combine(_r.PgDatos, "PG_VERSION")) && !await IniciarBase(clave)) return (false, "No se pudo crear la base de datos (mira el registro).");
+        // cuenta sin privilegios, permisos mínimos y cortafuegos: sin esto no se arranca nada
+        var (cred, errorSeguridad) = await SeguridadNativa.Preparar(_r, env, _log);
+        if (cred is null) return (false, errorSeguridad ?? "No se pudo preparar la seguridad.");
+        _cred = cred;
+
+        if (!File.Exists(Path.Combine(_r.PgDatos, "PG_VERSION")) && !await IniciarBase(clave, cred)) return (false, "No se pudo crear la base de datos (mira el registro).");
 
         if (_pg is not { } pg0 || !pg0.EnMarcha)
         {
             _pg?.Dispose();
-            _pg = new ProcesoHijo("postgres", () => new ProcessStartInfo(Pg("postgres.exe"), $"-D \"{_r.PgDatos}\"") { WorkingDirectory = _r.PgBin }, _log);
+            _pg = new ProcesoHijo("postgres", () => new ProcessStartInfo(Pg("postgres.exe"), $"-D \"{_r.PgDatos}\"") { WorkingDirectory = _r.PgBin }, _log, credencial: cred);
             _pg.Iniciar();
         }
         if (!await EsperarPostgres(TimeSpan.FromSeconds(60), ct)) return (false, "PostgreSQL no arranca en 60 segundos.");
@@ -55,7 +61,7 @@ sealed class ServidorNativo
                 var psi = new ProcessStartInfo(_r.ApiExe) { WorkingDirectory = _r.ApiDir };
                 foreach (var (k, v) in entorno) psi.Environment[k] = v;
                 return psi;
-            }, _log, memoriaMaxima: 1L << 30);
+            }, _log, memoriaMaxima: 1L << 30, credencial: cred);
             _api.Iniciar();
         }
         if (!await EsperarApi(TimeSpan.FromMinutes(2), ct)) return (false, "La API no contesta en 2 minutos. Mira los registros en " + _r.Registros);
@@ -63,13 +69,13 @@ sealed class ServidorNativo
     }
 
     // initdb con contraseña por fichero temporal (no por línea de órdenes, que se ve en la lista de procesos)
-    private async Task<bool> IniciarBase(string clave)
+    private async Task<bool> IniciarBase(string clave, CredencialServicio cred)
     {
         var pwfile = Path.Combine(_r.Temporal, "pg.pwd");
         try
         {
             await File.WriteAllTextAsync(pwfile, clave);
-            var (codigo, salida) = await Docker.Ejecutar(Pg("initdb.exe"), $"-D \"{_r.PgDatos}\" -U mda -E UTF8 --locale=C --auth=scram-sha-256 --pwfile=\"{pwfile}\"", _r.PgBin, TimeSpan.FromMinutes(2));
+            var (codigo, salida) = await Proc.Ejecutar(Pg("initdb.exe"), $"-D \"{_r.PgDatos}\" -U mda -E UTF8 --locale=C --auth=scram-sha-256 --pwfile=\"{pwfile}\"", _r.PgBin, TimeSpan.FromMinutes(2), cred);
             _log($"initdb → {codigo}: {Recorte(salida)}");
             if (codigo != 0) return false;
             await File.WriteAllTextAsync(Path.Combine(_r.PgDatos, "postgresql.conf"), ConfigNativa.PostgresConf());
@@ -141,7 +147,7 @@ sealed class ServidorNativo
         if (_pg is not null)
         {
             _pg.NoReiniciar();
-            var (c, s) = await Docker.Ejecutar(Pg("pg_ctl.exe"), $"stop -D \"{_r.PgDatos}\" -m fast -w -t 30", _r.PgBin, TimeSpan.FromSeconds(45));
+            var (c, s) = await Proc.Ejecutar(Pg("pg_ctl.exe"), $"stop -D \"{_r.PgDatos}\" -m fast -w -t 30", _r.PgBin, TimeSpan.FromSeconds(45), _cred);
             _log($"pg_ctl stop → {c}: {Recorte(s)}");
             await _pg.Parar(TimeSpan.FromSeconds(10));
             _pg = null;
