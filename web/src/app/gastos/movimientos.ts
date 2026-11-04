@@ -1,12 +1,10 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { GastosService } from './gastos.service';
 import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from './modelo';
 
 // Todos los movimientos del mes, agrupados por día, con buscador y filtros por tipo y categoría
 @Component({
   selector: 'app-movimientos',
-  imports: [RouterLink],
   template: `
     <section class="caja filtros">
       <label class="buscar">
@@ -24,8 +22,6 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
         @for (c of categorias; track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
       </select>
     </section>
-
-    <a routerLink="/gastos/importar" class="enlace">Importar extracto del banco (CSV)</a>
 
     <section class="caja totales">
       <div><span class="etq">Movimientos</span><strong>{{ filtrados().length }}</strong></div>

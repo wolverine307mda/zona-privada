@@ -4,12 +4,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Avisame } from './avisame';
-import { Aurora } from './aurora';
-import { CalculadoraEstrellas } from './calculadora-estrellas';
-import { DiarioSalidas } from './diario';
-import { EventosCielo } from './eventos';
-import { Niebla } from './niebla';
-import { Puntos } from './puntos';
+import { PestanasFoto } from './pestanas-foto';
+import { PuntoService } from './punto.service';
 import { Cielo } from './cielo';
 import { AjustesLuz, Dia, DiaSemana, Semana, Ventana, cardinal, colorNota, creciente, hhmm, instante } from './modelo';
 
@@ -29,13 +25,14 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
 // y la semana de un vistazo. El sol y la luna se calculan en el servidor; las nubes vienen de la previsión (Open-Meteo).
 @Component({
   selector: 'app-fotografia',
-  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, DiarioSalidas, EventosCielo, Niebla, Puntos, NgTemplateOutlet, RouterLink],
+  imports: [Avisame, Cielo, NgTemplateOutlet, PestanasFoto, RouterLink],
   styleUrls: ['../gastos/comun.css', './fotografia.css'],
   template: `
     <header class="cab">
       <h2 class="cab__titulo">Cuándo salir a hacer fotografía</h2>
       <p class="cab__sub">{{ dia()?.lugar ? 'Desde ' + dia()!.lugar + ' · ' + fechaLarga() : 'El cielo de hoy, hora a hora' }}</p>
     </header>
+    <app-pestanas-foto />
 
     @if (dia()?.sinLugar) {
       <section class="caja"><p class="nada">Para calcular el cielo hace falta tu ciudad. Elígela en la tarjeta del tiempo de <a routerLink="/">Inicio</a>.</p></section>
@@ -148,20 +145,6 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
         </section>
       }
 
-      <a routerLink="/fotografia/ar" class="boton">Ver el sol y la luna en AR con la cámara</a>
-
-      <app-puntos (cambiar)="elegirPunto($event)" />
-
-      <app-niebla />
-
-      <app-aurora />
-
-      <app-calculadora-estrellas />
-
-      <app-eventos-cielo />
-
-      <app-diario-salidas />
-
       <app-avisame [ajustes]="ajustes()" [semana]="semana()" (cambiar)="ajustar($event)" />
     }
 
@@ -182,7 +165,8 @@ export class Fotografia implements OnInit {
   private readonly destruido = inject(DestroyRef);
   protected readonly dia = signal<Dia | null>(null);
   protected readonly semana = signal<Semana | null>(null);
-  private punto: number | null = null;
+  private readonly seleccion = inject(PuntoService);
+  private punto: number | null = this.seleccion.elegido();
   protected readonly ajustes = signal<AjustesLuz | null>(null);
   protected readonly cargando = signal(true);
   protected readonly min = signal(720);
@@ -270,9 +254,6 @@ export class Fotografia implements OnInit {
   private leerSemana(): void {
     firstValueFrom(this.http.get<Semana>('/api/luz/semana' + (this.punto !== null ? `?punto=${this.punto}` : ''))).then((s) => this.semana.set(s)).catch(() => {});
   }
-
-  // ver el cielo de uno de tus sitios (o volver al lugar de siempre)
-  protected elegirPunto(id: number | null): void { this.punto = id; this.leerSemana(); void this.cargar(); }
 
   private minutoAhora(): number { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
 

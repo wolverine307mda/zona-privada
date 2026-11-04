@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { PuntoService } from './punto.service';
 
 export interface PuntoFoto { id: number; nombre: string; lat: number; lon: number; orientacion: string; notas: string; }
 interface Hoy { punto: PuntoFoto; mejor: { titulo: string; puntuacion: number; inicio: string } | null; }
@@ -84,11 +85,11 @@ const ORIENTACIONES = ['', 'N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
 })
 export class Puntos implements OnInit {
   private readonly http = inject(HttpClient);
-  readonly cambiar = output<number | null>();
+  private readonly seleccion = inject(PuntoService);
   protected readonly orientaciones = ORIENTACIONES;
   protected readonly hoy = signal<Hoy[]>([]);
   protected readonly lista = computed(() => this.hoy().map((h) => h.punto));
-  protected readonly elegido = signal<number | null>(null);
+  protected readonly elegido = this.seleccion.elegido;
   protected readonly error = signal('');
   protected readonly nombre = signal('');
   protected readonly lat = signal('');
@@ -114,7 +115,7 @@ export class Puntos implements OnInit {
   protected x(p: PuntoFoto): number { const [a, b] = this.rango((q) => q.lon); return 30 + ((p.lon - a) / (b - a)) * 240; }
   protected y(p: PuntoFoto): number { const [a, b] = this.rango((q) => q.lat); return 125 - ((p.lat - a) / (b - a)) * 90; }
 
-  protected elegir(id: number | null): void { this.elegido.set(id); this.cambiar.emit(id); }
+  protected elegir(id: number | null): void { this.seleccion.elegido.set(id); }
 
   protected miUbicacion(): void {
     navigator.geolocation?.getCurrentPosition(

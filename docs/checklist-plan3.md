@@ -65,5 +65,5 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ⬜ 2 Tarpit en los señuelos
 - ⬜ 8 Vigilante del Funnel y del certificado
 - ⬜ 49 Semáforo de vida
-- ⬜ 51 Línea del tiempo unificada
-- ⬜ 55 Sonificación
+Línea del tiempo unificada
+Sonificación
