@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Reautenticar } from '../core/reautenticar';
 import { SistemaService } from '../inicio/sistema.service';
 import { DatosPc, Pc3d } from '../inicio/pc-3d';
+import { BateriaSalud } from './bateria-salud';
 import { CasaPc } from './casa';
 import { PortapapelesPc } from './portapapeles';
 import { RedCasa } from './red';
@@ -36,7 +37,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, CasaPc, RedCasa, PortapapelesPc],
+  imports: [Pc3d, BateriaSalud, CasaPc, RedCasa, PortapapelesPc],
   template: `
     <section class="caja pc3d">
       <header class="caja__cab"><h3>Tu PC por dentro</h3><span class="sub">{{ a()?.origen === 'equipo' ? 'en directo · arrastra para girarlo' : 'midiendo Docker · arranca el agente' }}</span></header>
@@ -63,6 +64,8 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
         @if (aviso()) { <p class="msg" role="status">{{ aviso() }}</p> }
       </section>
     }
+
+    @if (e()?.agenteConectado && a()?.bateria != null) { <app-bateria-salud /> }
 
     @if (e()?.agenteConectado) {
       <section class="caja">

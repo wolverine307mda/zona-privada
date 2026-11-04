@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -63,6 +63,7 @@ static partial class Ordenes
                 if (string.IsNullOrEmpty(texto)) return new(false, "ese texto ya no está");
                 return await Dispositivos.PonerPortapapeles(texto) ? new(true, "copiado al portapapeles del PC") : new(false, "Windows no dejó copiarlo");
             }
+            if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
             if (o.Tipo == "copiar")
             {
                 var texto = await Dispositivos.LeerPortapapeles();
@@ -108,6 +109,20 @@ static partial class Ordenes
         return new(false, "sin acción");
     }
 
+    // Informe de batería: Windows lo genera en XML, el agente lo interpreta y manda a la API solo tres números (diseño, actual y ciclos)
+    static async Task<ResultadoOrden> InformeDeBateria(HttpClient http, CancellationToken ct)
+    {
+        var ruta = Path.Combine(Path.GetTempPath(), $"mda-bateria-{Guid.NewGuid():N}.xml");
+        try
+        {
+            if (Correr("powercfg", $"/batteryreport /xml /output \"{ruta}\"", 45_000) != 0 || !File.Exists(ruta)) return new(false, "Windows no pudo hacer el informe (¿este equipo no tiene batería?)");
+            if (InformeBateria.Parsear(await File.ReadAllTextAsync(ruta, ct)) is not { } d) return new(false, "el informe no trae datos de batería");
+            var r = await http.PostAsJsonAsync("/api/sistema/agente/bateria", new { d.Diseno, d.Completa, d.Ciclos }, ct);
+            return r.IsSuccessStatusCode ? new(true, $"desgaste del {d.Desgaste:0} %: carga {d.Completa / 1000.0:0.0} Wh de {d.Diseno / 1000.0:0.0}") : new(false, $"la API responde {(int)r.StatusCode}");
+        }
+        finally { try { File.Delete(ruta); } catch (IOException) { } }
+    }
+
     // Limpiar: los temporales del usuario y de Windows con más de un día (lo que esté en uso se queda) y la papelera de reciclaje.
     // Solo esas carpetas fijas: la orden no lleva ninguna ruta.
     static ResultadoOrden LimpiarTemporales()
@@ -144,12 +159,12 @@ static partial class Ordenes
         return new(true, perfil switch { "rendimiento" => "plan de alto rendimiento", "ahorro" => "plan de ahorro de energía", "cine" => "modo cine: equilibrado y sin que se apague la pantalla", _ => "plan equilibrado" });
     }
 
-    static int Correr(string exe, string args)
+    static int Correr(string exe, string args, int milisegundos = 15_000)
     {
         using var p = Process.Start(new ProcessStartInfo(exe, args) { CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true });
         if (p is null) return -1;
         p.StandardOutput.ReadToEnd(); p.StandardError.ReadToEnd();
-        return p.WaitForExit(15_000) ? p.ExitCode : -1;
+        return p.WaitForExit(milisegundos) ? p.ExitCode : -1;
     }
 
     // lo manda desde cada interfaz IPv4 activa: la de casa, la de Tailscale… (la que no deje difundir se salta)

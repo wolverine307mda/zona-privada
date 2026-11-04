@@ -859,6 +859,25 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("ordenes_pc", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.SaludBateria", b =>
+                {
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("Ciclos")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Completa")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Diseno")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Fecha");
+
+                    b.ToTable("salud_bateria", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Pc.SaludDia", b =>
                 {
                     b.Property<DateOnly>("Fecha")

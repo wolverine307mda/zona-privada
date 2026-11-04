@@ -31,9 +31,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 11 Perfiles de energía
 - ✅ 12 Limpiador de temporales
 - ✅ 14 Temporizador de apagado
-- 🔄 15 Informe de batería
-- ⏭️ 16 Aviso de temperatura
-- ⬜ 17 Abrir URL o app en el PC
+- ✅ 15 Informe de batería
+- 🔄 16 Aviso de temperatura
+- ⏭️ 17 Abrir URL o app en el PC
 - ⬜ 19 Presencia automática
 - ⬜ 20 Escenas
 - ⬜ 21 Home Assistant

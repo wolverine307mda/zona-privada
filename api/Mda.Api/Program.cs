@@ -286,6 +286,7 @@ app.MapMusica();
 app.MapSeguridad();
 app.MapSecretos();
 app.MapPin();
+app.MapBateria();
 app.MapCartera();
 app.MapCoche();
 app.MapPush();
