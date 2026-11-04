@@ -143,6 +143,8 @@ public static class SondasMiddleware
         if (Sondas.EsSonda(ctx.Request.Path))
         {
             sondas.Anotar(ip, ctx.Request.Path.Value!);
+            // a una IP de fuera se le hace perder el tiempo (tarpit); a una de casa, o con el tope lleno, el 404 de siempre
+            if (Sondas.Bloqueable(ip) && await ctx.RequestServices.GetRequiredService<Tarpit>().Gotear(ctx)) return;
             ctx.Response.StatusCode = StatusCodes.Status404NotFound; // idéntico a lo que da una ruta que no existe
             return;
         }
