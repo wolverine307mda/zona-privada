@@ -93,7 +93,7 @@ builder.Services.ConfigureApplicationCookie(o =>
     // App:CookieSegura=peticion (versión de escritorio por http://localhost): Secure solo cuando la petición llega por HTTPS
     o.Cookie.SecurePolicy = builder.Environment.IsProduction() && builder.Configuration["App:CookieSegura"] != "peticion" ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     // la cookie dura lo mismo que el tope de la sesión apuntada (Sesiones.Maxima): antes caducaba a las 8 h y pedía entrar de nuevo.
-    // La seguridad la dan «Face ID al volver», el PIN de Documentos y poder cerrar sesiones desde otro equipo
+    // La seguridad la dan «Face ID al volver», el PIN de Seguridad y poder cerrar sesiones desde otro equipo
     o.ExpireTimeSpan = TimeSpan.FromDays(30);
     o.SlidingExpiration = true;
     // una API no redirige a una página de login: responde 401 / 403

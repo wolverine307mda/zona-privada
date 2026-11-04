@@ -28,10 +28,9 @@ sealed class ServidorNativo
         return falta.Count == 0 ? null : "Faltan componentes de la versión de escritorio: " + string.Join(", ", falta.Select(Path.GetFileName)) + ". Se instalan con el empaquetado (docs/09-escritorio.md).";
     }
 
-    // true si todo queda en marcha; si no, el texto de lo que falló
-    public async Task<(bool Ok, string Mensaje)> Arrancar(IReadOnlyDictionary<string, string> env, bool ensayo, CancellationToken ct)
+    // Solo la base de datos (seguridad, PostgreSQL y la base «zonaprivada»), sin la API: para importar datos o repararla
+    public async Task<(bool Ok, string Mensaje)> ArrancarBase(IReadOnlyDictionary<string, string> env, CancellationToken ct)
     {
-        _ensayo = ensayo;
         if (FaltaAlgo() is { } falta) return (false, falta);
         foreach (var d in _r.DirectoriosDeDatos) Directory.CreateDirectory(d);
         var clave = env.GetValueOrDefault("POSTGRES_PASSWORD", "");
@@ -52,6 +51,17 @@ sealed class ServidorNativo
         }
         if (!await EsperarPostgres(TimeSpan.FromSeconds(60), ct)) return (false, "PostgreSQL no arranca en 60 segundos.");
         if (!await CrearBaseSiFalta(clave)) return (false, "No se pudo crear la base «zonaprivada».");
+        return (true, "");
+    }
+
+    // true si todo queda en marcha; si no, el texto de lo que falló
+    public async Task<(bool Ok, string Mensaje)> Arrancar(IReadOnlyDictionary<string, string> env, bool ensayo, CancellationToken ct)
+    {
+        _ensayo = ensayo;
+        var (okBase, mensajeBase) = await ArrancarBase(env, ct);
+        if (!okBase) return (false, mensajeBase);
+        var clave = env.GetValueOrDefault("POSTGRES_PASSWORD", "");
+        var cred = _cred!;
 
         if (_api is not { } api0 || !api0.EnMarcha)
         {
@@ -147,6 +157,11 @@ sealed class ServidorNativo
     {
         try { using var r = await Http.GetAsync(ConfigNativa.UrlApi + "/api/salud"); return r.IsSuccessStatusCode; }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return false; }
+    }
+
+    public async Task PararApi()
+    {
+        if (_api is not null) { await _api.Parar(TimeSpan.FromSeconds(10)); _api = null; }
     }
 
     // La API primero y PostgreSQL con calma («pg_ctl stop -m fast»); si no se va, se mata. No toca Docker.

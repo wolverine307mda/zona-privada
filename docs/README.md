@@ -12,5 +12,6 @@ Lee en este orden si llegas de nuevas:
 | 6 | [Despliegue y operación](06-despliegue-y-operacion.md) | Docker, Tailscale, `.env`, copias y restauración, base de datos, agente, problemas típicos |
 | 7 | [Seguridad](07-seguridad.md) | modelo de amenazas y todas las protecciones |
 | 8 | [Desarrollo](08-desarrollo.md) | convenciones, tests, migraciones, cómo añadir cosas, trucos y trampas conocidas |
+| 9 | [Versión de escritorio](09-escritorio.md) | la app sin Docker: instalación, ensayo, blindaje, corte y vuelta atrás |
 
 Cómo levantarlo todo: al principio del [README principal](../README.md).

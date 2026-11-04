@@ -38,5 +38,6 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | la pantalla de fotografía | `web/src/app/fotografia/` (escena en `cielo.ts`, datos en `modelo.ts`) y `api/Mda.Api/Luz/` |
 | llaves de acceso | `api/Mda.Api/Auth/Passkeys.cs`, `PasskeyInfo.cs`, `Seguridad/Reautenticar.cs`; front `seguridad/llaves.ts` |
 | lo que hace el PC desde la app (casa, concentración, música, red, portapapeles, avisos) | `api/Mda.Api/Pc/Casa.cs`, `Red.cs`, `Portapapeles.cs`; agente: `agente/Mda.Agente/Dispositivos.cs`, `Vigias.cs`, `Ordenes.cs`; front `web/src/app/pc/` |
+| la versión de escritorio sin Docker (procesos, seguridad, copias, instalación) | `lanzador/Mda.Lanzador/{ServidorNativo,ProcesoHijo,SeguridadNativa,CopiasNativas,TailscaleNativa}.cs`, lógica en `Logica/`, `herramientas/empaquetar-nativo.ps1`, [docs/09-escritorio.md](docs/09-escritorio.md) |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |
 | medir la velocidad de la galería | `python herramientas/medir-galeria.py` |

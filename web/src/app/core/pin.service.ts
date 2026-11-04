@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 export interface ResultadoPin { ok: boolean; detalle?: string; restantes?: number; bloqueado?: boolean; }
 
-// PIN de Documentos: cuando el servidor contesta 403 «pin», el interceptor abre el teclado (app-pin) y repite la petición al acertar.
+// PIN de Seguridad: cuando el servidor contesta 403 «pin», el interceptor abre el teclado (app-pin) y repite la petición al acertar.
 // Varias peticiones a la vez comparten un solo teclado. Si se cancela y estás en Documentos o Galería, vuelves a Inicio.
 @Injectable({ providedIn: 'root' })
 export class PinService {

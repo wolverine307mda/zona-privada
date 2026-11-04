@@ -61,7 +61,7 @@ public static class ArchivosEndpoints
 
     public static void MapArchivos(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/archivos").RequireAuthorization().AddEndpointFilter<Seguridad.PinFiltro>(); // pide el PIN de Documentos
+        var g = app.MapGroup("/api/archivos").RequireAuthorization().AddEndpointFilter<Seguridad.PinFiltro>(); // pide el PIN de Seguridad
 
         // contar elementos es recorrer cada carpeta (en Windows, por un montaje de Docker, es lento): se recuerda un minuto
         g.MapGet("/raices", (Carpetas c, IMemoryCache cache) => cache.GetOrCreate("archivos-raices", e =>

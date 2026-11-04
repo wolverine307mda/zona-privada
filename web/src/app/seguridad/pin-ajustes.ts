@@ -3,14 +3,14 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmarService } from '../core/confirmar.service';
 
-// El PIN de Documentos: cuatro cifras que se piden al entrar en Documentos, en «tu carpeta de imágenes» y en la lista de señuelos.
+// El PIN de Seguridad: cuatro cifras que se piden al entrar en Documentos, en «tu carpeta de imágenes» y en la lista de señuelos.
 // Cambiarlo pide confirmar con Face ID o la contraseña.
 @Component({
   selector: 'app-pin-ajustes',
   styleUrls: ['../gastos/comun.css', './claves.css'],
   template: `
     <section class="caja">
-      <header class="caja__cab"><h3>PIN de Documentos</h3><span class="sub">Una capa más: se pide al entrar y vale 10 minutos desde el último uso</span></header>
+      <header class="caja__cab"><h3>PIN de Seguridad</h3><span class="sub">Una capa más: se pide al entrar y vale 10 minutos desde el último uso</span></header>
       @if (requerido() === false) {
         <p class="nada">Aún no hay PIN: Documentos se abre sin pedirlo. Crea uno de cuatro cifras.</p>
       } @else if (requerido()) {

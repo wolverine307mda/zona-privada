@@ -251,6 +251,29 @@ sealed class Bandeja : ApplicationContext
         await ArrancarTodo();
     }
 
+    // Trae la base de datos y las claves de Docker a la versión de escritorio. Docker solo se lee.
+    private async Task ImportarDeDocker()
+    {
+        if (!Nativo) { Aviso("Esto es de la versión de escritorio: cambia primero al modo escritorio."); return; }
+        if (_carpeta.Length == 0 || !File.Exists(Path.Combine(_carpeta, ".env"))) { Aviso("No encuentro la carpeta de Docker (compose.yaml y .env) de la que importar."); return; }
+        if (_ocupado) return;
+        if (MessageBox.Show("Voy a COPIAR la base de datos y las claves de Docker a la versión de escritorio.\n\n· Docker solo se lee: no se para ni se modifica.\n· Lo que haya ahora en la versión de escritorio se sustituye (antes se guarda una copia).\n\n¿Sigo?",
+            "Importar datos de Docker", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        _ocupado = true;
+        string mensaje; bool ok;
+        try
+        {
+            _nativo ??= new ServidorNativo(Rutas, Log);
+            Estado("Importando datos de Docker…", Nivel.Ambar);
+            var envDocker = Entorno.LeerEnv(File.ReadAllLines(Path.Combine(_carpeta, ".env")));
+            (ok, mensaje) = await ImportarDockerNativo.Importar(Rutas, _carpeta, envDocker, _envNativo, _nativo, Log);
+        }
+        finally { _ocupado = false; }
+        Log("importar: " + mensaje);
+        MessageBox.Show(mensaje, ok ? "Importado" : "No se pudo importar", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        await ArrancarTodo();
+    }
+
     private async Task CambiarEnsayo()
     {
         if (_ocupado) return;
@@ -431,6 +454,7 @@ sealed class Bandeja : ApplicationContext
         m.Items.Add(_tsServe);
         _tsFunnel.Click += async (_, _) => await FunnelNativo();
         m.Items.Add(_tsFunnel);
+        Item("Importar datos de Docker (solo lectura)…", () => _ = ImportarDeDocker());
         Item("Comprobar seguridad de la versión de escritorio…", () => _ = ComprobarSeguridad());
         Item("Exportar diagnóstico (zip en el escritorio)", () => _ = ExportarDiagnostico());
         Item("Abrir la carpeta", () => Abrir(_carpeta));

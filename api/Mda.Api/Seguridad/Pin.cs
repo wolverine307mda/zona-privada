@@ -30,7 +30,7 @@ public static class Pin
         if (config["Documentos:PinInicial"] is not { } inicial || !Valido(inicial.Trim())) return;
         if (await Requerido(db)) return;
         await Guardar(db, hasher, inicial.Trim(), ct);
-        log.LogInformation("PIN de Documentos creado a partir de Documentos:PinInicial (ya se puede quitar del .env y cambiar desde Seguridad)");
+        log.LogInformation("PIN de Seguridad creado a partir de Documentos:PinInicial (ya se puede quitar del .env y cambiar desde Seguridad)");
     }
 
     public static async Task Guardar(AppDbContext db, IPasswordHasher<IdentityUser> hasher, string pin, CancellationToken ct = default)
@@ -93,7 +93,7 @@ public static class Pin
             var bloquear = s.PinFallos >= MaxFallos;
             if (bloquear) { s.PinBloqueadoHasta = ahora + Bloqueo; s.PinFallos = 0; }
             await db.SaveChangesAsync();
-            if (bloquear) await avisos.PorTelegram($"🔒 PIN de Documentos: {MaxFallos} fallos seguidos desde {IpCliente.De(ctx)}. Esa sesión queda bloqueada {(int)Bloqueo.TotalMinutes} minutos.");
+            if (bloquear) await avisos.PorTelegram($"🔒 PIN de Seguridad: {MaxFallos} fallos seguidos desde {IpCliente.De(ctx)}. Esa sesión queda bloqueada {(int)Bloqueo.TotalMinutes} minutos.");
             return Results.Json(new { detalle = bloquear ? $"Demasiados intentos: espera {(int)Bloqueo.TotalMinutes} minutos." : "PIN incorrecto.", restantes = Math.Max(0, MaxFallos - s.PinFallos), bloqueadoHasta = s.PinBloqueadoHasta },
                 statusCode: bloquear ? StatusCodes.Status429TooManyRequests : StatusCodes.Status401Unauthorized);
         }).RequireRateLimiting(Limites.Reauth);

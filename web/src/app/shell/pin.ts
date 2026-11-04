@@ -3,7 +3,7 @@ import { PinService } from '../core/pin.service';
 
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-// Teclado del PIN de Documentos: cuatro casillas que se rellenan número a número, teclado grande para el dedo (y el teclado físico),
+// Teclado del PIN de Seguridad: cuatro casillas que se rellenan número a número, teclado grande para el dedo (y el teclado físico),
 // sacudida si falla, destello al acertar y cuenta atrás si se bloquea la sesión tras cinco fallos.
 @Component({
   selector: 'app-pin',
@@ -12,7 +12,7 @@ const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
       <div class="velo" role="dialog" aria-modal="true" aria-labelledby="pin-titulo" (click)="cancelar()">
         <div class="tarjeta" [class.tiembla]="temblor()" [class.acierto]="acierto()" (click)="$event.stopPropagation()">
           <span class="candado" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5zM12 15v2"/></svg></span>
-          <h2 id="pin-titulo">PIN de Documentos</h2>
+          <h2 id="pin-titulo">PIN de Seguridad</h2>
           <p class="aviso" [class.aviso--mal]="mal()" role="status" aria-live="polite">{{ mensaje() }}</p>
           <div class="casillas" aria-hidden="true">
             @for (i of cuatro; track i) { <i [class.llena]="digitos().length > i" [class.activa]="digitos().length === i && !bloqueado()"></i> }

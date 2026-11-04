@@ -109,7 +109,7 @@ Telegram, WhatsApp, correo, Spotify, Google y el latido externo se editan desde 
 - La pantalla nunca recibe los valores: ver, cambiar o quitar pide confirmar con Face ID o contraseña (`Reautenticar`, 2 minutos) y el valor se oculta solo a los 20 s.
 - Con la base en memoria (pruebas y desarrollo) no se importa nada del `.env`.
 
-## PIN de Documentos
+## PIN de Seguridad
 
 Cuatro cifras que se piden al entrar en Documentos, en «tu carpeta de imágenes» de la galería y en la lista de señuelos
 (`api/Mda.Api/Seguridad/Pin.cs`). Solo se guarda su huella (PBKDF2). Vale 10 minutos desde el último uso y solo en la sesión donde se
