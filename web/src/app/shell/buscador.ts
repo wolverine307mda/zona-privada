@@ -42,7 +42,7 @@ const quitarTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').t
   styles: `
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .buscador { width: min(620px, calc(100vw - 24px)); margin: 12vh auto auto; padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 22px; color: var(--texto);
-      background: var(--brillo), color-mix(in srgb, var(--tarjeta) 88%, transparent); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5); }
+      background: var(--brillo), var(--tarjeta); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5); }
     .buscador[open] { animation: cae 340ms var(--ease-expo); }
     @keyframes cae { from { opacity: 0; transform: perspective(900px) rotateX(-14deg) translateY(-18px) scale(0.97); } }
     .buscador::backdrop { background: rgba(3, 8, 11, 0.45); backdrop-filter: blur(3px); }

@@ -99,7 +99,7 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     .vinilo { position: absolute; top: 6%; left: 22%; width: 90%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tono) 70%, #000) 0 18%, #0a0a0a 19% 22%, transparent 23%), repeating-radial-gradient(circle, #151515 0 2px, #0b0b0b 3px 4px); box-shadow: 0 8px 24px rgba(0, 0, 0, .5); transition: transform 700ms var(--ease-expo); animation: gira 4s linear infinite paused; }
     .portada--suena .vinilo { transform: translateX(14%); animation-play-state: running; }
     .datos { display: grid; gap: 2px; max-width: 100%; }
-    h2 { margin: 0; font: 700 1.25rem/1.2 var(--font-display); overflow-wrap: anywhere; }
+    h2 { margin: 0; font: 500 1.25rem/1.2 var(--font-text); overflow-wrap: anywhere; }
     .artistas { margin: 0; color: var(--texto); font-size: .95rem; opacity: .9; }
     .album { margin: 0; color: var(--soft); font-size: .82rem; }
     .progreso { width: 100%; height: 6px; margin-top: 12px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 14%, transparent); overflow: hidden; }

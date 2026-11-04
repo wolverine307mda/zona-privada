@@ -100,7 +100,7 @@ import { PerfilService } from '../core/perfil.service';
     .escaner[data-fase='ok'] .insignia, .escaner[data-fase='fallo'] .insignia { color: #fff; }
     .insignia .icon { width: 17px; height: 17px; stroke-width: 2.2; }
 
-    .reloj { margin: 4px 0 0; font: 700 clamp(2.6rem, 12vw, 3.4rem)/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .reloj { margin: 4px 0 0; font: var(--peso-ligero) clamp(2.6rem, 12vw, 3.4rem)/1 var(--font-text); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
     .fecha { margin: 0; font-size: .86rem; color: var(--soft); text-transform: capitalize; }
     h2 { margin: 6px 0 0; font: 600 1.15rem/1.2 var(--font-text); }
     .aviso { margin: 0 0 6px; min-height: 2.6em; color: var(--soft); font-size: .92rem; max-width: 30ch; }

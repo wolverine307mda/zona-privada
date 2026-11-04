@@ -207,14 +207,14 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
   styles: `
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .asis { width: min(560px, calc(100vw - 24px)); max-height: calc(100svh - 24px); margin: 9vh auto auto; padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 26px; color: var(--texto); overflow: auto;
-      background: var(--brillo), color-mix(in srgb, var(--tarjeta) 90%, transparent); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 40px 110px rgba(0, 0, 0, 0.5); }
+      background: var(--brillo), var(--tarjeta); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 40px 110px rgba(0, 0, 0, 0.5); }
     .asis[open] { animation: sube 420ms var(--ease-expo); }
     @keyframes sube { from { opacity: 0; transform: translateY(24px) scale(0.97); } }
     .asis::backdrop { background: rgba(3, 8, 11, 0.5); backdrop-filter: blur(4px); }
     .asis__caja { display: flex; flex-direction: column; gap: 14px; padding: 18px; }
 
     .asis__cabeza { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
-    .asis__cabeza h2 { margin: 0; font: 700 1.25rem/1.1 var(--font-display); letter-spacing: -0.02em; }
+    .asis__cabeza h2 { margin: 0; font: 500 1.25rem/1.1 var(--font-text); letter-spacing: -0.02em; }
     .asis__cabeza p { margin: 3px 0 0; font-size: 13px; color: var(--soft); }
     .asis__cerrar { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 12px; background: var(--tarjeta-2); color: var(--soft); cursor: pointer; }
     .orbe { position: relative; width: 44px; height: 44px; border-radius: 50%; flex: none;
@@ -250,7 +250,7 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .canales { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
     .canales .chip { color: var(--soft); transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
     .canales .chip.on { background: color-mix(in srgb, var(--brand) 18%, var(--tarjeta-2)); border-color: var(--brand); color: var(--texto); }
-    .importe { display: flex; align-items: baseline; justify-content: center; gap: 4px; font: 700 clamp(2rem, 9vw, 2.8rem)/1 var(--font-display); letter-spacing: -0.03em; color: var(--texto); }
+    .importe { display: flex; align-items: baseline; justify-content: center; gap: 4px; font: var(--peso-ligero) clamp(2rem, 9vw, 2.8rem)/1 var(--font-text); letter-spacing: -0.03em; color: var(--texto); }
     .importe.ingreso { color: var(--ok); }
     .importe span { opacity: 0.7; }
     .importe input { width: 5ch; max-width: 9ch; min-width: 0; border: 0; border-bottom: 2px dashed var(--linea); background: none; color: inherit; font: inherit; text-align: center; -moz-appearance: textfield; }
@@ -273,7 +273,7 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .hucha { display: flex; align-items: center; gap: 12px; }
     .hucha__emoji { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--tarjeta-2); font-size: 26px; }
     .hucha small { display: block; font-size: 12px; color: var(--soft); }
-    .hucha strong { font: 700 1.1rem/1.2 var(--font-display); }
+    .hucha strong { font: 500 1.1rem/1.2 var(--font-text); }
     .respuesta { margin: 0; font: 500 1.08rem/1.5 var(--font-text); }
     .pista { margin: 0; color: var(--soft); }
     .duda { margin: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 13%, transparent); font-size: 13px; }
