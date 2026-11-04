@@ -9,7 +9,9 @@ public record MovimientoEntrada(
     TipoMovimiento Tipo, DateOnly Fecha, decimal Importe, string Categoria, string Concepto, string? Notas,
     int? RecurrenteId, decimal? Litros, decimal? PrecioLitro, int? Kilometros,
     // al crear: «se repite» convierte el apunte en el primero de un recurrente (cada mes, trimestre o año)
-    Frecuencia? Repite = null, bool Variable = false);
+    Frecuencia? Repite = null, bool Variable = false,
+    // en otra moneda: el importe de arriba ya viene en euros (convertido), esto es lo que costó de verdad
+    string? Moneda = null, decimal? ImporteOriginal = null);
 
 public record RecurrenteEntrada(
     string Nombre, TipoMovimiento Tipo, string Categoria, decimal Importe, bool Variable, int Dia,
@@ -263,6 +265,9 @@ public static class GastosEndpoints
         m.Litros = gasolina ? e.Litros : null;
         m.PrecioLitro = gasolina ? e.PrecioLitro ?? (e.Litros is > 0 ? Math.Round(m.Importe / e.Litros.Value, 3, MidpointRounding.AwayFromZero) : null) : null;
         m.Kilometros = gasolina ? e.Kilometros : null;
+        var extranjera = ServicioDivisas.MonedaValida(e.Moneda) && e.Moneda != "EUR" && e.ImporteOriginal is > 0 and < 100_000_000_000m;
+        m.Moneda = extranjera ? e.Moneda : null;
+        m.ImporteOriginal = extranjera ? Math.Round(e.ImporteOriginal!.Value, 2) : null;
     }
 
     private static void Copiar(RecurrenteEntrada e, Recurrente r)

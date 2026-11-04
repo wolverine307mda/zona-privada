@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Consejos, Deudas, PrevisionCierre, Estadisticas, Frecuencia, Gasolina, Hucha, Mantenimiento, Movimiento, Presupuesto, Recurrente, ResumenMes, Saldo, Tipo } from './modelo';
 import { RecargaService } from '../core/recarga';
 
-export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId' | 'tieneTicket'> & { recurrenteId?: number | null; repite?: Frecuencia | null; variable?: boolean };
+export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId' | 'tieneTicket' | 'moneda' | 'importeOriginal'> & { moneda?: string | null; importeOriginal?: number | null } & { recurrenteId?: number | null; repite?: Frecuencia | null; variable?: boolean };
 export type RecurrenteEntrada = Omit<Recurrente, 'id' | 'mensual'>;
 
 // Errores de validación de la API (ValidationProblem): campo -> mensajes

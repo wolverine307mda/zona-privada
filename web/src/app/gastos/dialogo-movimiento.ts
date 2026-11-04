@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Errores, GastosService, erroresDe, reducirFoto } from './gastos.service';
+import { firstValueFrom } from 'rxjs';
 import { seguirTeclado } from './teclado';
 import { CATEGORIAS, FRECUENCIAS, Frecuencia, Tipo, euros, hoyIso, numero } from './modelo';
 
@@ -26,6 +28,12 @@ export class DialogoMovimiento {
   protected readonly precio = signal('');
   protected readonly km = signal('');
   protected readonly importeAMano = signal(false);
+  // pagado en otra moneda: se convierte a euros con el tipo del BCE del día del gasto
+  protected readonly monedas = ['USD', 'GBP', 'CHF', 'JPY', 'MXN', 'ARS', 'COP', 'BRL', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'TRY', 'MAD'];
+  protected readonly moneda = signal('');
+  protected readonly original = signal('');
+  protected readonly cambio = signal('');
+  private readonly http = inject(HttpClient);
   protected readonly errores = signal<Errores>({});
   protected readonly guardando = signal(false);
   protected readonly confirmarBorrado = signal(false);
@@ -77,6 +85,9 @@ export class DialogoMovimiento {
     this.precio.set(m?.precioLitro != null ? this.coma(m.precioLitro) : '');
     this.km.set(m?.kilometros != null ? String(m.kilometros) : '');
     this.importeAMano.set(!!m);
+    this.moneda.set(m?.moneda ?? '');
+    this.original.set(m?.importeOriginal != null ? this.coma(m.importeOriginal) : '');
+    this.cambio.set('');
     this.repite.set(false);
     this.frecuencia.set('Mensual');
     this.variable.set(false);
@@ -135,6 +146,19 @@ export class DialogoMovimiento {
     this.categoria.set(t === 'Gasto' ? 'supermercado' : 'nomina');
   }
 
+  protected ponerMoneda(e: Event): void { this.moneda.set((e.target as HTMLSelectElement).value); void this.convertir(); }
+  protected ponerOriginal(e: Event): void { this.original.set(this.valor(e)); void this.convertir(); }
+
+  private async convertir(): Promise<void> {
+    const o = this.num(this.original());
+    if (!this.moneda() || !o || o <= 0) { this.cambio.set(''); return; }
+    try {
+      const r = await firstValueFrom(this.http.get<{ euros: number; tipo: number; fechaTipo: string }>('/api/gastos/divisas/convertir', { params: { moneda: this.moneda(), importe: o, fecha: this.fecha() } }));
+      this.importe.set(this.coma(r.euros)); this.importeAMano.set(true);
+      this.cambio.set(`1 € = ${r.tipo} ${this.moneda()} · tipo del BCE del ${r.fechaTipo}`);
+    } catch { this.cambio.set('No pude consultar el cambio: escribe tú los euros.'); }
+  }
+
   protected ponerImporte(e: Event): void {
     this.importe.set(this.valor(e));
     this.importeAMano.set(true);
@@ -153,6 +177,8 @@ export class DialogoMovimiento {
         kilometros: this.esGasolina() && this.num(this.km()) != null ? Math.round(this.num(this.km())!) : null,
         repite: !this.id() && this.repite() ? this.frecuencia() : null,
         variable: this.repite() && this.variable(),
+        moneda: this.moneda() && this.num(this.original()) ? this.moneda() : null,
+        importeOriginal: this.moneda() ? this.num(this.original()) : null,
       }, this.id() ?? undefined);
       // el ticket va aparte, cuando el apunte ya tiene id
       const foto = this.ticketNuevo();

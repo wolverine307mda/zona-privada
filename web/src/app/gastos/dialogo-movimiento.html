@@ -19,6 +19,17 @@
       <span class="importe__simbolo">€</span>
     </label>
     @if (errores()['importe']) { <p class="error">{{ errores()['importe'][0] }}</p> }
+    <details class="divisa" [open]="!!moneda()">
+      <summary>Pagado en otra moneda</summary>
+      <div class="divisa__campos">
+        <select aria-label="Moneda" (change)="ponerMoneda($event)">
+          <option value="">—</option>
+          @for (m of monedas; track m) { <option [value]="m" [selected]="m === moneda()">{{ m }}</option> }
+        </select>
+        <input type="text" inputmode="decimal" placeholder="Importe en esa moneda" aria-label="Importe en la moneda original" [value]="original()" (input)="ponerOriginal($event)">
+      </div>
+      @if (cambio()) { <p class="divisa__nota">{{ cambio() }}</p> }
+    </details>
 
     <fieldset class="cats">
       <legend class="campo__etiqueta">Categoría</legend>

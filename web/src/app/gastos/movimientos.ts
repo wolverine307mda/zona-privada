@@ -45,7 +45,7 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
             <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(m.categoria).icono" /></svg></span>
             <span class="mov__texto">
               <strong>{{ m.concepto }}@if (m.recurrenteId) {<em class="chip-fijo">fijo</em>}@if (m.porConfirmar) {<em class="chip-fijo" title="Entró solo con Apple Pay: edítalo o confírmalo en Telegram">por confirmar</em>}</strong>
-              <span>{{ categoria(m.categoria).nombre }}@if (m.litros) { · {{ numero(m.litros) }} L a {{ numero(m.precioLitro, 3) }} €/L }@if (m.notas) { · {{ m.notas }} }</span>
+              <span>{{ categoria(m.categoria).nombre }}@if (m.moneda) { · {{ numero(m.importeOriginal) }} {{ m.moneda }} }@if (m.litros) { · {{ numero(m.litros) }} L a {{ numero(m.precioLitro, 3) }} €/L }@if (m.notas) { · {{ m.notas }} }</span>
             </span>
             <span class="mov__importe" [class.ingreso]="m.tipo === 'Ingreso'">{{ m.tipo === 'Ingreso' ? '+' : '−' }}{{ euros(m.importe) }}</span>
           </button>

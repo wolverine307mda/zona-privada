@@ -227,6 +227,7 @@ builder.Services.AddSingleton<ServicioTiempo>();
 builder.Services.AddSingleton<ServicioLuz>();
 builder.Services.AddSingleton<ServicioAurora>();
 builder.Services.AddSingleton<ServicioNiebla>();
+builder.Services.AddSingleton<Mda.Api.Gastos.ServicioDivisas>();
 builder.Services.AddSingleton<AvisosLuz>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AvisosLuz>());
 builder.Services.AddSingleton<IAvisos, Avisos>();
@@ -308,6 +309,7 @@ app.MapPuntos();
 app.MapLugares();
 app.MapReglas();
 app.MapExtractos();
+app.MapDivisas();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
 app.MapFallbackToFile("{*ruta:regex(^(?!api/|hubs/).*$)}", "index.html");

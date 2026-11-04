@@ -16,6 +16,8 @@ export interface Movimiento {
   precioLitro: number | null;
   kilometros: number | null;
   tieneTicket?: boolean;
+  moneda?: string | null;          // si se pagó en otra moneda (el importe va siempre en euros)
+  importeOriginal?: number | null;
 }
 
 export interface Recurrente {

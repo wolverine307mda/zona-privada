@@ -576,6 +576,10 @@ namespace Mda.Api.Data.Migraciones
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
 
+                    b.Property<decimal?>("ImporteOriginal")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
                     b.Property<int?>("Kilometros")
                         .HasColumnType("integer");
 
@@ -588,6 +592,10 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<double?>("Lon")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("Moneda")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
 
                     b.Property<string>("Notas")
                         .HasMaxLength(500)
