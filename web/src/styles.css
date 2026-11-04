@@ -202,9 +202,9 @@ a { color: inherit; }
 
 /* sin movimiento: se apagan las animaciones decorativas, pero no los indicadores de carga (si no, no se sabe que algo está cargando) */
 @media (prefers-reduced-motion: reduce) {
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true']),
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true'])::before,
-  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, .button[aria-busy='true'])::after { animation: none !important; transition: none !important; }
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, app-esqueleto *, .button[aria-busy='true']),
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, app-esqueleto *, .button[aria-busy='true'])::before,
+  *:not([class*="cargando"], [class*="cargando"] *, .esqueleto *, app-esqueleto *, .button[aria-busy='true'])::after { animation: none !important; transition: none !important; }
   [data-inclina] { transform: none !important; }
 }
 
