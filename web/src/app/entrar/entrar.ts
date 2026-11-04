@@ -2,7 +2,7 @@ import { Component, ElementRef, OnDestroy, afterNextRender, inject, signal, view
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { pedirCredencial, soportaPasskeys } from '../core/passkey';
+import { pedirCredencial, soportaCondicional, soportaPasskeys } from '../core/passkey';
 import { ResultadoEntrar, SesionService } from '../core/sesion.service';
 import { crearCandado } from './candado-3d';
 
@@ -25,6 +25,7 @@ export class Entrar implements OnDestroy {
   protected readonly conPasskey = soportaPasskeys();
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('escena');
   private escena?: ReturnType<typeof crearCandado>;
+  private aborto?: AbortController;
 
   protected readonly usuario = signal('');
   protected readonly password = signal('');
@@ -40,6 +41,7 @@ export class Entrar implements OnDestroy {
   constructor() {
     afterNextRender(() => {
       void this.comprobarServidor();
+      if (this.conPasskey) void this.entrarConPasskey(true);
       try { this.escena = crearCandado(this.canvas().nativeElement); } catch { /* sin WebGL: solo la tarjeta */ }
     });
   }
@@ -80,26 +82,42 @@ export class Entrar implements OnDestroy {
   }
 
   // Face ID / Windows Hello: el dispositivo guarda el passkey y solo hay que mirar a la cámara
-  protected async entrarConPasskey(): Promise<void> {
+  // `auto`: se intenta al abrir la pantalla, sin que hayas tocado nada; si no se puede, se calla y queda el botón
+  protected async entrarConPasskey(auto = false): Promise<void> {
     if (this.ocupado()) return;
+    this.aborto?.abort(); // el autocompletado pendiente cede ante la ventana de Face ID
     this.ocupado.set(true);
     this.error.set('');
-    this.escena?.intento();
+    if (!auto) this.escena?.intento();
     try {
       const opciones = await firstValueFrom(this.http.post<unknown>('/api/auth/passkey/entrada/opciones', null));
-      const credencial = await pedirCredencial(opciones);
-      await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
-      if (await this.sesion.trasPasskey()) {
-        this.escena?.abrir();
-        setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
-      }
+      await this.terminar(await pedirCredencial(opciones));
     } catch (e) {
       // cancelar el diálogo del sistema no es un error que haya que gritar
       const cancelado = e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'AbortError');
-      if (!cancelado) this.fallo('Ese passkey no sirve aquí. Entra con tu contraseña y registra uno nuevo en Seguridad.');
+      if (!cancelado && !auto) this.fallo('Ese passkey no sirve aquí. Entra con tu contraseña y registra uno nuevo en Seguridad.');
+      if (cancelado && auto) void this.ofrecerEnElCampo(); // Safari pide un gesto: la llave sale al tocar el campo de usuario
     } finally {
       this.ocupado.set(false);
     }
+  }
+
+  private async terminar(credencial: unknown): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
+    if (await this.sesion.trasPasskey()) {
+      this.escena?.abrir();
+      setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
+    }
+  }
+
+  // autocompletado condicional: la llave aparece como sugerencia en el campo de usuario, sin ventana aparte
+  private async ofrecerEnElCampo(): Promise<void> {
+    if (!(await soportaCondicional())) return;
+    this.aborto = new AbortController();
+    try {
+      const opciones = await firstValueFrom(this.http.post<unknown>('/api/auth/passkey/entrada/opciones', null));
+      await this.terminar(await pedirCredencial(opciones, { condicional: true, senal: this.aborto.signal }));
+    } catch { /* cancelado o sin llave: se sigue con la contraseña */ }
   }
 
   private fallo(texto: string): void {
@@ -110,6 +128,7 @@ export class Entrar implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.aborto?.abort();
     this.escena?.destruir();
   }
 }

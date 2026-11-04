@@ -19,6 +19,25 @@ public static class PasskeysEndpoints
 {
     private const int Maximo = 5;
 
+    // Pistas para el navegador: que use la llave del propio dispositivo (Face ID / Windows Hello) y no la de Chrome ni el «otro
+    // dispositivo» con código QR. Si el navegador no entiende alguna, la ignora. Al registrar se pide además un autenticador de plataforma.
+    public static string ConPistas(string json, bool registro)
+    {
+        try
+        {
+            if (System.Text.Json.Nodes.JsonNode.Parse(json) is not System.Text.Json.Nodes.JsonObject o) return json;
+            o["hints"] = new System.Text.Json.Nodes.JsonArray("client-device");
+            if (registro)
+            {
+                var sel = o["authenticatorSelection"] as System.Text.Json.Nodes.JsonObject ?? new System.Text.Json.Nodes.JsonObject();
+                sel["authenticatorAttachment"] = "platform";
+                o["authenticatorSelection"] = sel;
+            }
+            return o.ToJsonString();
+        }
+        catch (JsonException) { return json; }
+    }
+
     public static void MapPasskeys(this IEndpointRouteBuilder app)
     {
         // ---- entrar (sin sesión) ----
@@ -26,7 +45,7 @@ public static class PasskeysEndpoints
 
         // el reto: sin saber quién eres (el passkey de este dispositivo dice de quién es)
         e.MapPost("/entrada/opciones", async (SignInManager<IdentityUser> signIn) =>
-            Results.Content(await signIn.MakePasskeyRequestOptionsAsync(null), "application/json"));
+            Results.Content(ConPistas(await signIn.MakePasskeyRequestOptionsAsync(null), registro: false), "application/json"));
 
         e.MapPost("/entrada", async (CredencialEntrada c, SignInManager<IdentityUser> signIn, AppDbContext db, HttpContext ctx, TimeProvider reloj) =>
         {
@@ -67,7 +86,7 @@ public static class PasskeysEndpoints
             if (u is null) return Results.Unauthorized();
             var nombre = await users.GetUserNameAsync(u) ?? "usuario";
             var json = await signIn.MakePasskeyCreationOptionsAsync(new PasskeyUserEntity { Id = await users.GetUserIdAsync(u), Name = nombre, DisplayName = nombre });
-            return Results.Content(json, "application/json");
+            return Results.Content(ConPistas(json, registro: true), "application/json");
         }).RequireRateLimiting(Limites.Sensible);
 
         g.MapPost("/", async (CredencialEntrada c, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn, ClaimsPrincipalAccessor yo, AppDbContext db, HttpContext ctx, TimeProvider reloj, IAvisos avisos) =>

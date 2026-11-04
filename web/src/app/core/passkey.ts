@@ -14,9 +14,19 @@ export async function crearCredencial(opciones: unknown): Promise<unknown> {
   return cred.toJSON();
 }
 
-export async function pedirCredencial(opciones: unknown): Promise<unknown> {
+// ¿puede el navegador ofrecer la llave dentro del campo de usuario (autocompletado), sin ventana aparte?
+export async function soportaCondicional(): Promise<boolean> {
+  const pk = (globalThis as { PublicKeyCredential?: { isConditionalMediationAvailable?: () => Promise<boolean> } }).PublicKeyCredential;
+  try { return !!pk?.isConditionalMediationAvailable && (await pk.isConditionalMediationAvailable()); } catch { return false; }
+}
+
+export async function pedirCredencial(opciones: unknown, extra?: { condicional?: boolean; senal?: AbortSignal }): Promise<unknown> {
   const pk = (globalThis as { PublicKeyCredential: Api }).PublicKeyCredential;
-  const cred = (await navigator.credentials.get({ publicKey: pk.parseRequestOptionsFromJSON!(opciones) })) as (PublicKeyCredential & { toJSON(): unknown }) | null;
+  const cred = (await navigator.credentials.get({
+    publicKey: pk.parseRequestOptionsFromJSON!(opciones),
+    ...(extra?.condicional ? { mediation: 'conditional' as CredentialMediationRequirement } : {}),
+    ...(extra?.senal ? { signal: extra.senal } : {}),
+  })) as (PublicKeyCredential & { toJSON(): unknown }) | null;
   if (!cred) throw new Error('cancelado');
   return cred.toJSON();
 }

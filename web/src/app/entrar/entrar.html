@@ -20,7 +20,7 @@
 
     <label class="campo">
       <span class="etiqueta"><code>usuario</code></span>
-      <input class="entrada" type="text" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required
+      <input class="entrada" type="text" name="usuario" autocomplete="username webauthn" autocapitalize="none" spellcheck="false" required
              [value]="usuario()" (input)="usuario.set(valor($event))">
       <span class="linea" aria-hidden="true"></span>
     </label>
@@ -50,7 +50,7 @@
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
     @if (conPasskey) {
-      <button class="button entrar entrar--passkey" type="button" (click)="entrarConPasskey()" [disabled]="ocupado()">Entrar con Face ID / passkey</button>
+      <button class="button entrar entrar--passkey" type="button" (click)="entrarConPasskey(false)" [disabled]="ocupado()">Entrar con Face ID / passkey</button>
     }
     <p class="mensaje" role="status" aria-live="polite">{{ error() }}</p>
   </form>
