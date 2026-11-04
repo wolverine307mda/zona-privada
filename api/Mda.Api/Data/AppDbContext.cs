@@ -43,6 +43,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Pc.Escena> Escenas => Set<Mda.Api.Pc.Escena>();
     public DbSet<Mda.Api.Seguridad.SondaRegistrada> SondasRegistradas => Set<Mda.Api.Seguridad.SondaRegistrada>();
     public DbSet<Mda.Api.Gastos.ReglaCategoria> ReglasCategoria => Set<Mda.Api.Gastos.ReglaCategoria>();
+    public DbSet<Mda.Api.Domotica.Estancia> Estancias => Set<Mda.Api.Domotica.Estancia>();
+    public DbSet<Mda.Api.Domotica.Aparato> Aparatos => Set<Mda.Api.Domotica.Aparato>();
+    public DbSet<Mda.Api.Domotica.Entidad> Entidades => Set<Mda.Api.Domotica.Entidad>();
+    public DbSet<Mda.Api.Domotica.LecturaCasa> Lecturas => Set<Mda.Api.Domotica.LecturaCasa>();
+    public DbSet<Mda.Api.Domotica.PanelCasa> Paneles => Set<Mda.Api.Domotica.PanelCasa>();
     public DbSet<Mda.Api.Luz.PuntoFoto> PuntosFoto => Set<Mda.Api.Luz.PuntoFoto>();
     public DbSet<Mda.Api.Luz.SalidaFoto> SalidasFoto => Set<Mda.Api.Luz.SalidaFoto>();
     public DbSet<Mda.Api.Pc.MedidaVelocidad> MedidasVelocidad => Set<Mda.Api.Pc.MedidaVelocidad>();
@@ -217,6 +222,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Pais).HasMaxLength(60);
             e.Property(x => x.Ciudad).HasMaxLength(100);
             e.HasIndex(x => x.Hora);
+        });
+
+        // ---- Casa (domótica propia) ----
+        b.Entity<Mda.Api.Domotica.Estancia>(e =>
+        {
+            e.ToTable("casa_estancias");
+            e.Property(x => x.Nombre).HasMaxLength(30);
+            e.Property(x => x.Icono).HasMaxLength(16);
+        });
+        b.Entity<Mda.Api.Domotica.Aparato>(e =>
+        {
+            e.ToTable("casa_aparatos");
+            e.Property(x => x.Nombre).HasMaxLength(40);
+            e.Property(x => x.Tipo).HasMaxLength(16);
+            e.Property(x => x.Driver).HasMaxLength(16);
+            e.Property(x => x.Config).Cifrada("casa"); // IP, ids y claves locales: cifradas con la clave maestra
+            e.HasOne<Mda.Api.Domotica.Estancia>().WithMany().HasForeignKey(x => x.EstanciaId).OnDelete(DeleteBehavior.SetNull);
+        });
+        b.Entity<Mda.Api.Domotica.Entidad>(e =>
+        {
+            e.ToTable("casa_entidades");
+            e.Property(x => x.Clave).HasMaxLength(24);
+            e.Property(x => x.Valor).HasMaxLength(64);
+            e.HasIndex(x => new { x.AparatoId, x.Clave }).IsUnique();
+            e.HasOne<Mda.Api.Domotica.Aparato>().WithMany().HasForeignKey(x => x.AparatoId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Domotica.LecturaCasa>(e =>
+        {
+            e.ToTable("casa_lecturas");
+            e.HasIndex(x => new { x.EntidadId, x.Fecha });
+            e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Domotica.PanelCasa>(e =>
+        {
+            e.ToTable("casa_paneles");
+            e.Property(x => x.Clave).HasMaxLength(24);
+            e.HasIndex(x => x.Clave).IsUnique();
         });
 
         b.Entity<Mda.Api.Gastos.ReglaCategoria>(e =>

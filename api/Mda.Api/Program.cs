@@ -200,6 +200,12 @@ builder.Services.AddSingleton(sp => new Tarpit(sp.GetRequiredService<TimeProvide
 builder.Services.AddSingleton<IComprobadorRed, ComprobadorTcp>();
 builder.Services.AddHostedService<ResumenSondas>();
 builder.Services.AddHostedService<VelocidadNocturna>();
+// Casa propia: drivers (los de ejemplo ya; Tuya y Cast llegan después), servicio y vigilante que refresca los aparatos cada minuto
+builder.Services.AddSingleton<Mda.Api.Domotica.DriverDemo>();
+builder.Services.AddSingleton<Mda.Api.Domotica.IDriverCasa>(sp => sp.GetRequiredService<Mda.Api.Domotica.DriverDemo>());
+foreach (var pendiente in new[] { "tuya", "cast", "hogar" }) builder.Services.AddSingleton<Mda.Api.Domotica.IDriverCasa>(new Mda.Api.Domotica.DriverPendiente(pendiente));
+builder.Services.AddSingleton<Mda.Api.Domotica.ServicioCasa>();
+builder.Services.AddHostedService<Mda.Api.Domotica.VigilanteCasa>();
 builder.Services.AddHostedService<LatidoExterno>();
 builder.Services.AddSingleton<Pregenerar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
@@ -306,6 +312,7 @@ app.MapSecretos();
 app.MapPin();
 app.MapBateria();
 app.MapEscenas();
+Mda.Api.Domotica.CasaEndpoints.MapDomotica(app);
 app.MapVelocidad();
 app.MapHogar();
 app.MapCartera();
