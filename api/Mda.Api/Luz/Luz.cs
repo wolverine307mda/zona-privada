@@ -237,6 +237,20 @@ public static class LuzEndpoints
             return Results.Ok(new { sinLugar = false, lugar = lugar.Nombre, hayPrevision = nubes is not null, dias, mejores = momentos.OrderByDescending(v => v.Puntuacion).ThenBy(v => v.Inicio).Take(5) });
         });
 
+        // Lluvias de meteoros y eclipses de los próximos meses, con la luna de esa noche y, si cae dentro de la previsión, las nubes
+        g.MapGet("/eventos", async (ServicioTiempo tiempo, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var lista = Eventos.Proximos(reloj.GetUtcNow(), zona.Info, 180);
+            IReadOnlyList<HoraNubes>? nubes = null;
+            if (await tiempo.LugarGuardado(ct) is { } lugar) nubes = await luz.Nubes(lugar, ct);
+            return Results.Ok(lista.Select(e =>
+            {
+                var local = TimeZoneInfo.ConvertTime(e.Pico, zona.Info).DateTime;
+                var h = nubes?.FirstOrDefault(x => x.Hora == new DateTime(local.Year, local.Month, local.Day, local.Hour, 0, 0));
+                return new { e.Tipo, e.Nombre, e.Pico, e.Detalle, e.Zhr, e.LunaPct, e.Cielo, nubes = h?.Total };
+            }));
+        });
+
         g.MapPut("/ajustes", async (AjustesLuz a, AppDbContext db, CancellationToken ct) =>
         {
             await ServicioLuz.Guardar(db, a, ct);
