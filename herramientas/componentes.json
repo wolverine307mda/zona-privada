@@ -1,0 +1,15 @@
+{
+  "_nota": "Binarios de terceros de la version de escritorio. Se bajan a mano de la web oficial (nunca de otro sitio) y el empaquetado solo los usa si su SHA-256 coincide con el de aqui. Con 'sha256' vacio el script se niega a seguir y te ensena el hash del archivo para que lo compruebes contra la web oficial y lo pongas.",
+  "postgres": {
+    "descripcion": "PostgreSQL para Windows (binarios en zip de EDB, sin instalador)",
+    "web_oficial": "https://www.enterprisedb.com/download-postgresql-binaries",
+    "archivo": "postgresql-17.*-windows-x64-binaries.zip",
+    "sha256": ""
+  },
+  "age": {
+    "descripcion": "age: cifrado de las copias que salen del PC",
+    "web_oficial": "https://github.com/FiloSottile/age/releases",
+    "archivo": "age-v1.*-windows-amd64.zip",
+    "sha256": ""
+  }
+}

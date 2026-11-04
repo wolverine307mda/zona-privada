@@ -4,6 +4,7 @@ using Mda.Lanzador;
 //   (sin argumentos)  arranca todo y se queda en la bandeja
 //   --silencioso      igual, pero sin avisar si ya estaba abierto (lo usa la tarea de inicio de Windows)
 //   --instalar        crea la tarea de inicio (un aviso de administrador) y los accesos directos
+//   --instalar-escritorio  instala el paquete de la versión de escritorio (sin Docker) en Archivos de programa
 //   --desinstalar     los quita
 static class Programa
 {
@@ -11,6 +12,7 @@ static class Programa
     static int Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        if (args.Contains("--instalar-escritorio")) return Instalador.InstalarEscritorio();
         if (args.Contains("--instalar")) return Instalador.Instalar();
         if (args.Contains("--desinstalar")) return Instalador.Desinstalar();
 

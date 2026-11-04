@@ -1,4 +1,5 @@
 # secretos y datos locales
+dist/
 .env
 copias/
 carpetas/
