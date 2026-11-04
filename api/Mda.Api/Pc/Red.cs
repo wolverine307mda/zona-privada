@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using Mda.Api.Avisos;
 using Mda.Api.Data;
+using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,22 +20,25 @@ public class DispositivoRed
     public bool Avisar { get; set; } = true;
     // la dirección física (AA:BB:CC:DD:EE:FF): con ella se puede despertar el aparato (Wake-on-LAN) desde el agente del PC
     public string Mac { get; set; } = "";
+    // «es mi móvil»: si está en la red, estás en casa; al llegar y al irte se aplica solo el «llegué» / «me voy»
+    public bool Presencia { get; set; }
     public bool? EnLinea { get; set; }
     public int? LatenciaMs { get; set; }
     public DateTimeOffset? Comprobado { get; set; }
     public DateTimeOffset? Cambio { get; set; }
 }
 
-public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true, string? Mac = null);
+public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true, string? Mac = null, bool Presencia = false);
 
 public interface IComprobadorRed
 {
-    Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct);
+    // rechazoEsVivo: un «conexión rechazada» también es una respuesta (el móvil está en la red aunque no tenga ese puerto abierto)
+    Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct, bool rechazoEsVivo = false);
 }
 
 public sealed class ComprobadorTcp : IComprobadorRed
 {
-    public async Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct)
+    public async Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct, bool rechazoEsVivo = false)
     {
         using var limite = CancellationTokenSource.CreateLinkedTokenSource(ct);
         limite.CancelAfter(TimeSpan.FromSeconds(2));
@@ -45,6 +49,7 @@ public sealed class ComprobadorTcp : IComprobadorRed
             await c.ConnectAsync(host, puerto, limite.Token);
             return (true, (int)reloj.ElapsedMilliseconds);
         }
+        catch (SocketException e) when (rechazoEsVivo && e.SocketErrorCode == SocketError.ConnectionRefused) { return (true, (int)reloj.ElapsedMilliseconds); }
         catch (Exception e) when (e is SocketException or OperationCanceledException or IOException) { return (false, null); }
     }
 }
@@ -88,7 +93,7 @@ public static class RedCasa
 
     public static async Task Aplicar(AppDbContext db, DispositivoRed d, IComprobadorRed comprobador, DateTimeOffset ahora, CancellationToken ct)
     {
-        var (en, ms) = await comprobador.Comprobar(d.Host, d.Puerto, ct);
+        var (en, ms) = await comprobador.Comprobar(d.Host, d.Puerto, ct, d.Presencia);
         if (d.EnLinea != en) d.Cambio = ahora;
         (d.EnLinea, d.LatenciaMs, d.Comprobado) = (en, ms, ahora);
         await db.SaveChangesAsync(ct);
@@ -113,7 +118,7 @@ public static class RedCasa
         {
             d.Nombre = e.Nombre.Trim(); d.Host = e.Host.Trim(); d.Puerto = e.Puerto;
             d.Icono = Iconos.Contains((e.Icono ?? "").ToLowerInvariant()) ? e.Icono!.ToLowerInvariant() : "otro"; d.Avisar = e.Avisar;
-            d.Mac = NormalizarMac(e.Mac) ?? "";
+            d.Mac = NormalizarMac(e.Mac) ?? ""; d.Presencia = e.Presencia;
         }
 
         g.MapPost("/", async (DispositivoEntrada e, AppDbContext db, IComprobadorRed comprobador, TimeProvider reloj, CancellationToken ct) =>
@@ -170,7 +175,7 @@ public static class RedCasa
 
 // Cada minuto prueba cada aparato; avisa cuando cambia (apagado o de vuelta), pero solo tras dos lecturas iguales seguidas
 // para no avisar por un fallo suelto de la red.
-public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobador, IAvisos avisos, TimeProvider reloj, ILogger<VigilanteRed> log) : BackgroundService
+public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobador, IAvisos avisos, EstadoAgente agente, TimeProvider reloj, ILogger<VigilanteRed> log) : BackgroundService
 {
     private readonly Dictionary<int, int> _seguidas = [];
 
@@ -192,7 +197,7 @@ public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobad
         foreach (var d in await db.DispositivosRed.ToListAsync(ct))
         {
             if (await RedCasa.ValidarHost(d.Host, ct) is not null) continue;
-            var (en, ms) = await comprobador.Comprobar(d.Host, d.Puerto, ct);
+            var (en, ms) = await comprobador.Comprobar(d.Host, d.Puerto, ct, d.Presencia);
             var ahora = reloj.GetUtcNow();
             d.Comprobado = ahora; d.LatenciaMs = en ? ms : null;
             if (d.EnLinea is null) { d.EnLinea = en; d.Cambio = ahora; }               // la primera lectura no avisa
@@ -206,5 +211,38 @@ public class VigilanteRed(IServiceScopeFactory scopes, IComprobadorRed comprobad
             else _seguidas[d.Id] = _seguidas.GetValueOrDefault(d.Id) + 1;
             await db.SaveChangesAsync(ct);
         }
+        await Presencia(db, ct);
+    }
+
+    // Presencia: con algún móvil marcado, llegar a casa y salir de ella aplica solo el «llegué» / «me voy». El primer estado que se ve solo se apunta.
+    private async Task Presencia(AppDbContext db, CancellationToken ct)
+    {
+        var moviles = (await db.DispositivosRed.AsNoTracking().Where(d => d.Presencia).ToListAsync(ct)).Select(d => (d.EnLinea, d.Cambio)).ToList();
+        var ahora = reloj.GetUtcNow();
+        if (PresenciaCasa.Estado(moviles, ahora) is not { } estado) return;
+        var guardado = await db.Ajustes.FindAsync([PresenciaCasa.Clave], ct);
+        if (guardado?.Valor == estado) return;
+        if (guardado is null) db.Ajustes.Add(guardado = new Ajuste { Clave = PresenciaCasa.Clave });
+        var primera = string.IsNullOrEmpty(guardado.Valor);
+        guardado.Valor = estado;
+        await db.SaveChangesAsync(ct);
+        if (primera) return; // la primera lectura no hace nada: solo se sabe dónde estabas
+        var (ok, mensaje) = await Casa.Aplicar(estado, db, agente, avisos, reloj, "presencia automática (tu móvil)", ct);
+        if (!ok) await avisos.PorTelegram($"🏠 {(estado == "llegada" ? "Parece que has llegado a casa" : "Parece que te has ido de casa")}, pero no he tocado el PC: {mensaje}", ct);
+    }
+}
+
+// Estás en casa si algún móvil marcado está en la red; te has ido si todos llevan un rato sin estarlo (los móviles se duermen y dejan de contestar un momento).
+public static class PresenciaCasa
+{
+    public const string Clave = "presencia-estado";
+    public static readonly TimeSpan Reposo = TimeSpan.FromMinutes(10);
+
+    // «llegada», «salida» o null si aún no se sabe (sin móviles, sin primera lectura o ausencia demasiado corta)
+    public static string? Estado(IReadOnlyCollection<(bool? EnLinea, DateTimeOffset? Cambio)> moviles, DateTimeOffset ahora)
+    {
+        if (moviles.Count == 0 || moviles.Any(m => m.EnLinea is null)) return moviles.Any(m => m.EnLinea == true) ? "llegada" : null;
+        if (moviles.Any(m => m.EnLinea == true)) return "llegada";
+        return moviles.All(m => m.Cambio is { } c && ahora - c >= Reposo) ? "salida" : null;
     }
 }

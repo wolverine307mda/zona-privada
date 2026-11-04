@@ -3,7 +3,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { firstValueFrom } from 'rxjs';
 import { ConfirmarService } from '../core/confirmar.service';
 
-interface Aparato { id: number; nombre: string; host: string; puerto: number; icono: string; avisar: boolean; mac: string; enLinea: boolean | null; latenciaMs: number | null; comprobado: string | null; cambio: string | null; }
+interface Aparato { id: number; nombre: string; host: string; puerto: number; icono: string; avisar: boolean; mac: string; presencia: boolean; enLinea: boolean | null; latenciaMs: number | null; comprobado: string | null; cambio: string | null; }
 
 const ICONOS: Record<string, string> = { pc: '🖥️', movil: '📱', nas: '🗄️', impresora: '🖨️', camara: '📷', tv: '📺', router: '📡', otro: '🔌' };
 const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas: 'NAS / disco', impresora: 'Impresora', camara: 'Cámara', tv: 'Televisión', router: 'Router', otro: 'Otro' };
@@ -19,7 +19,7 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
         @for (a of aparatos(); track a.id) {
           <li class="aparato" [class.aparato--caido]="a.enLinea === false">
             <span class="aparato__icono" aria-hidden="true">{{ iconos[a.icono] ?? '🔌' }}</span>
-            <span class="aparato__texto"><strong>{{ a.nombre }}</strong>
+            <span class="aparato__texto"><strong>{{ a.nombre }}{{ a.presencia ? ' · 📍 presencia' : '' }}</strong>
               <small>{{ a.host }}:{{ a.puerto }} · {{ a.enLinea === null ? 'sin comprobar' : a.enLinea ? 'en línea' + (a.latenciaMs != null ? ' · ' + a.latenciaMs + ' ms' : '') : 'sin respuesta' + (a.cambio ? ' desde ' + hace(a.cambio) : '') }}</small></span>
             <span class="punto" [class.punto--ok]="a.enLinea === true" [class.punto--mal]="a.enLinea === false" [attr.aria-label]="a.enLinea ? 'en línea' : 'sin respuesta'"></span>
             <span class="aparato__acciones">
@@ -45,6 +45,7 @@ const NOMBRES: Record<string, string> = { pc: 'Ordenador', movil: 'Móvil', nas:
           <label class="campo"><span class="campo__etiqueta">Tipo</span>
             <select class="campo__input" [value]="icono()" (change)="icono.set($any($event.target).value)">@for (k of claves; track k) { <option [value]="k">{{ iconos[k] }} {{ nombres[k] }}</option> }</select></label>
           <p class="nada">Se comprueba abriendo una conexión a ese puerto (80 o 443 para la web del aparato, 9100 impresoras, 445 NAS, 554 cámaras). Solo direcciones de tu red de casa o de Tailscale.</p>
+          <label class="interruptor"><input type="checkbox" [checked]="presencia()" (change)="presencia.set($any($event.target).checked)"><span><strong>Es mi móvil: úsalo para saber si estoy en casa</strong><small>Al llegar se aplica «llegué a casa» y, si lleva 10 minutos sin estar en la red, «me voy». Pon la IP fija del móvil en la red de casa (o su IP de Tailscale).</small></span></label>
           <label class="interruptor"><input type="checkbox" [checked]="avisar()" (change)="avisar.set($any($event.target).checked)"><span><strong>Avisarme por Telegram si se apaga</strong></span></label>
           @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
           <div class="acciones"><button class="enlace" type="button" (click)="formulario.set(false)">Cancelar</button><button class="button" type="submit" [disabled]="ocupado()">{{ ocupado() ? 'Probando…' : 'Añadir' }}</button></div>
@@ -69,6 +70,7 @@ export class RedCasa implements OnInit {
   protected readonly puerto = signal('80');
   protected readonly icono = signal('otro');
   protected readonly mac = signal('');
+  protected readonly presencia = signal(false);
   protected readonly mensaje = signal('');
   private readonly confirmar = inject(ConfirmarService);
   protected readonly avisar = signal(true);
@@ -93,8 +95,8 @@ export class RedCasa implements OnInit {
     ev.preventDefault();
     this.ocupado.set(true); this.error.set('');
     try {
-      await firstValueFrom(this.http.post('/api/red', { nombre: this.nombre(), host: this.host(), puerto: Number(this.puerto()), icono: this.icono(), avisar: this.avisar(), mac: this.mac() }));
-      this.formulario.set(false); this.nombre.set(''); this.host.set(''); this.puerto.set('80'); this.mac.set('');
+      await firstValueFrom(this.http.post('/api/red', { nombre: this.nombre(), host: this.host(), puerto: Number(this.puerto()), icono: this.icono(), avisar: this.avisar(), mac: this.mac(), presencia: this.presencia() }));
+      this.formulario.set(false); this.nombre.set(''); this.host.set(''); this.puerto.set('80'); this.mac.set(''); this.presencia.set(false);
       await this.leer();
     } catch (e) {
       const d = (e as HttpErrorResponse).error as { errors?: Record<string, string[]> } | undefined;

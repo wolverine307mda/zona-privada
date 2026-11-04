@@ -780,6 +780,9 @@ namespace Mda.Api.Data.Migraciones
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<bool>("Presencia")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Puerto")
                         .HasColumnType("integer");
 

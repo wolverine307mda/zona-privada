@@ -215,7 +215,7 @@ public class RedFactory : ModulosFactory
 
     private sealed class Falso : IComprobadorRed
     {
-        public Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct) =>
+        public Task<(bool EnLinea, int? Ms)> Comprobar(string host, int puerto, CancellationToken ct, bool rechazoEsVivo = false) =>
             Task.FromResult((RedFactory.EnLinea.GetValueOrDefault(host), RedFactory.EnLinea.GetValueOrDefault(host) ? (int?)3 : null));
     }
 

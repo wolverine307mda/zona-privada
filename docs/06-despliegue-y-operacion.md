@@ -180,3 +180,10 @@ Un solo programa que lo arranca todo y vive junto al reloj. Desde la 1.1 se vale
 - La lógica pura (`Logica/Entorno.cs`, `Logica/Primera.cs`) tiene pruebas en `Mda.Lanzador.Tests`; las ventanas y el arranque real se prueban a mano.
 
 Se publica con `dotnet publish lanzador/Mda.Lanzador -c Release -o lanzador/nuevo-1.2`. Si el `.exe` anterior está abierto, ciérralo desde la bandeja antes de sustituirlo.
+
+## Presencia automática (llegué / me voy)
+
+Al añadir tu móvil en «Mi PC → Aparatos de casa» y marcar **«Es mi móvil»**, el vigilante de la red (`VigilanteRed`, cada minuto) decide si estás en casa: con el móvil en la red, **llegada** (al momento); con
+todos los móviles marcados fuera durante **10 minutos**, **salida** (los móviles se duermen y dejan de contestar un rato). Al cambiar de estado aplica solo `Casa.Aplicar` («llegué a casa» / «me voy»), como el atajo del iPhone.
+El primer estado que se ve solo se apunta (`presencia-estado` en `ajustes`) para no tocar el PC al activarlo. Si el agente no está en marcha, te lo cuenta por Telegram.
+Para los móviles, un «conexión rechazada» cuenta como «está en la red» (no suelen tener ningún puerto abierto). Usa una IP fija del móvil en el router (o su IP de Tailscale); con la dirección Wi-Fi privada de iOS cambiante no funciona.
