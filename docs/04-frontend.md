@@ -25,11 +25,15 @@ provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
 | `/entrar` | `entrar/entrar.ts` (candado 3D con Three.js, login + código 2FA) | `sinSesion` |
 | `/` → `/inicio` | `shell/shell.ts` (marco) con hijos: | `conSesion` |
 | `/inicio` | `inicio/inicio.ts` + `inicio/panel.ts` + `inicio/tiempo.ts` | |
-| `/gastos` (+ `movimientos`, `fijos`, `huchas`, `gasolina`, `deudas`, `estadisticas`) | `gastos/*` | |
+| `/gastos` (+ `movimientos`, `importar`, `fijos`, `huchas`, `gasolina`, `deudas`, `estadisticas`) | `gastos/*` | |
 | `/agenda` | `agenda/agenda.ts` | |
 | `/notas` | `notas/notas.ts` | |
 | `/documentos` | `documentos/documentos.ts` | |
+| `/fotos` | `galeria/galeria.ts` | |
 | `/musica`, `/musica/resumen` | `musica/*` | |
+| `/fotografia` (+ `previsiones`, `sitios`, `herramientas`, `ar`) | `fotografia/*` (el cielo en `cielo.ts`, los datos en `modelo.ts`) | |
+| `/pc` | `pc/pc.ts` (pestañas Equipo, Controles y Casa y red) | |
+| `/casa` | `casa/casa.ts` (domótica propia: habitaciones, aparatos, escenas y automatizaciones) | |
 | `/perfil`, `/seguridad` | `perfil/perfil.ts`, `seguridad/seguridad.ts` | |
 | `/pronto/:id` | `pronto/pronto.ts` (secciones futuras: fotos, proyectos) | |
 
@@ -50,19 +54,55 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
 
 ## Estilos y diseño
 
-- **Tokens CSS** en `:root` (`styles.css`): `--brand`, `--fondo`, `--tarjeta`, `--texto`, `--soft`, `--ok/--warn/--bad`,
-  tipografías, escalas fluidas (`--step-*` con `clamp`), radios, curvas (`--ease-*`), «vidrio» (`--vidrio`, `--desenfoque`).
-- **Tipografías** locales (`public/fonts`): *Panchang* 700 (títulos, ancha), *Switzer* 400/500 (texto),
-  *JetBrains Mono* (código, cifras que no deben bailar como el reloj).
-- **Temas**: modo Día / Noche / Sistema y 5 colores (naranja, lima, cobalto, rosa, rojo), guardados en el navegador.
-  El cambio de tema se anima con View Transitions en círculo desde el botón; durante esa transición
-  `.vt-tema * { view-transition-name: none }` evita que barras y pantalla se superpongan.
+- **Tokens CSS** en `:root` (`styles.css`): `--brand` y `--brand-2`, `--fondo`, `--lateral`, `--tarjeta`, `--tarjeta-2`, `--texto`, `--soft`,
+  `--ok/--warn/--bad` (con variante de día), escala de radios (`--radio-s/m/l/xl` = 12/20/28/36 px y `--radio-pildora`; `--radio` es un alias heredado de
+  `--radio-l`), espacios (`--esp-1..7`), `--tactil` (44 px), sombras (`--sombra`, `--sombra-flota`, `--sombra-pulsa`), la tarjeta negra (`--negra`, `--on-negra`…),
+  escalas fluidas (`--step-*`, `--step-saludo`, `--step-cifra`), curvas y duraciones (`--ease-*`, `--dur-*`, `--stagger`).
+- **Superficies sólidas**: las tarjetas van rellenas y opacas (`--vidrio` y `--vidrio-fuerte` valen `--tarjeta`; `--desenfoque` es `none`). Solo el menú lateral
+  deja ver el fondo animado cuando se elige uno.
+- **Tipografías** locales (`public/fonts`): *Switzer* 300 (cifras y saludos grandes), 400 y 500 (texto y títulos de tarjeta), *Panchang* 700 (solo marca y rótulos
+  que se quieran muy anchos; ya no se usa para cifras) y *JetBrains Mono* (código, cifras que no deben bailar como el reloj). Clase `.cifra` para una cifra grande ligera con su unidad.
+- **Paletas** (Ajustes → Paleta de colores): 11, en dos grupos. Los **morados** (Amatista, Ultravioleta, Lavanda, Ciruela, Orquídea e Índigo) además del acento
+  y un segundo tono (`--brand-2`) tiñen las superficies con su matiz (`--tinte` y su fuerza `--tn`), así que cambian el fondo, las tarjetas y el menú; los clásicos
+  (naranja, lima, cobalto, rosa, rojo) solo cambian el acento. Cada paleta se define en `styles.css` (`[data-color=…]`) y se lista en `core/tema.service.ts` (`COLORES`);
+  modo Día / Noche / Sistema aparte, todo guardado en el navegador. Con la paleta nueva se comprobó el contraste (texto ≥ 12:1, texto atenuado ≥ 5:1, botones ≥ 4,5:1).
+  El cambio de tema se anima con View Transitions en círculo desde el botón; durante esa transición `.vt-tema * { view-transition-name: none }` evita que barras y pantalla se superpongan.
+- **Fondos** (Ajustes → Fondo): aura, líquido, isométrico, cómic, píxel art, partículas o nada, con intensidad, velocidad y dónde se ven (todo, páginas o menú).
+  Van en una capa `z-index: -1` (`shell/fondo.ts`, y el aura en `body::before`): **el color de fondo va solo en `html`**, porque si el `body` también lo pinta
+  tapa esas capas y ningún fondo se ve (fue el fallo de que Ajustes no hiciera nada).
 - **Mosaico de Inicio** (`panel.css`): `flex-wrap` con ancho mínimo por caja (`flex: 1 1 300px`, dinero y tiempo 420px,
   pequeñas 200px) → cada fila crece hasta el borde salgan las cajas que salgan. En móvil (≤ 640px) las pequeñas van de dos en dos.
 - **Móvil**: los diálogos son hojas que suben desde abajo; con un diálogo abierto el fondo no se mueve;
   `input/select/textarea` a 16px mínimo (iOS no hace zoom); campos de fecha/hora con `appearance: none` y
   `min-width: 0` (iOS les impone un ancho propio y se salían del formulario).
 - Accesibilidad: `aria-*` en botones de icono, `prefers-reduced-motion` desactiva animaciones, foco visible.
+
+## Sistema de diseño: `web/src/app/ui/`
+
+Componentes standalone y `OnPush` que usan todas las pantallas (se importan de `ui/index.ts`). Documentados con un comentario en cada archivo.
+
+| Componente | Para qué |
+|---|---|
+| `<app-tarjeta>` | superficie con variantes `vidrio` (sólida con sombra), `plana`, `negra` (alto contraste) y `acento`; radios `m`, `l`, `xl` |
+| `<app-esqueleto>` | hueco de carga con barrido de luz (`linea`, `bloque`, `circulo`, `grafica`); reserva el alto final. Con movimiento reducido late en vez de barrer |
+| `<app-estado-vacio>` / `<app-estado-error>` | «no hay nada» con icono y acción / «ha fallado» con **Reintentar** (`(reintentar)`, y `ocupado` para no pulsarlo dos veces) |
+| `<app-etiqueta-flotante>` | píldora icono + nombre + dato para anclar a un punto del 3D (`x`, `y` en %) |
+| `<app-control-radial>` | arco de marcas con valor grande y − / +; `[(valor)]`, `(confirmado)` al soltar; slider accesible (teclado) |
+| `<app-interruptor>` | interruptor en píldora de 44 px con `ocupado` y `desactivado` |
+| `<app-numero>` | número que rueda al cambiar (salta con movimiento reducido; los lectores solo oyen el valor final) |
+| `<app-tarjeta-metrica>` | tarjeta negra con cifra grande, chip de variación y barras con rayado; con `cargando` mantiene su alto |
+
+La lógica pura (geometría del arco, interpolación del número, alturas de barras y variación) está aparte en `arco.ts`, `numero.ts` y `barras.ts`, con sus `*.spec.ts`.
+
+**Norma para compartir CSS (fase 1C).** Angular encapsula los estilos de cada componente, por eso `gastos/comun.css` se importa en ~44 componentes. Reglas:
+1. Lo que sea una pieza reutilizable (tarjeta, interruptor, esqueleto, estado vacío o de error, control radial…) va como **componente de `ui/`**, no como CSS copiado.
+2. Lo que sea una clase global y pequeña (`.button`, `.cifra`, `.icon`, `.esqueleto`, `.cargando`) va en `styles.css`.
+3. `comun.css` y `dialogos.css` quedan para las piezas de listas y formularios que aún no son componentes; no se les añaden piezas nuevas.
+4. Ni colores, ni radios ni sombras «a mano»: se usan los tokens. Ni `backdrop-filter` ni fondos translúcidos en tarjetas.
+5. Cada pantalla enseña esqueleto mientras carga (nunca «Cargando…» ni un «0» falso), estado vacío con icono y, si falla, estado de error con Reintentar.
+
+**Menú y marco** (`shell/`): el menú es una tarjeta flotante con buscador (abre el de Ctrl+K), cada apartado con su icono en un círculo, el activo en píldora (clara en noche, negra
+en día) con el círculo en el color de acento, y el usuario abajo. Ajustes (`shell/ajustes.ts`) es su propio componente. En el móvil la barra superior y la de abajo son sólidas.
 
 ## PWA
 
