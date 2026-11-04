@@ -16,6 +16,7 @@ public class SemillaAdmin(IServiceProvider services, IConfiguration config, ILog
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         if (db.Database.IsRelational()) await db.Database.MigrateAsync(ct);
         else await db.Database.EnsureCreatedAsync(ct);
+        await CifrarExistentes(db, ct);
 
         var email = config["Admin:Email"];
         var password = config["Admin:Password"];
@@ -62,7 +63,22 @@ public class SemillaAdmin(IServiceProvider services, IConfiguration config, ILog
         await db.SaveChangesAsync(ct);
     }
 
-    private const string ClaveHuella = "admin-clave-env";
+    private const string ClaveHuella = "admin-clave-env", ClaveBoveda = "boveda-v1";
+
+    // Una sola vez: lo que ya había en notas, portapapeles y push se guardó sin cifrar. Al leerlo EF lo devuelve tal cual (no tiene
+    // el prefijo «v1:») y al marcarlo como modificado lo vuelve a escribir cifrado. El ajuste «boveda-v1» evita repetirlo.
+    private async Task CifrarExistentes(AppDbContext db, CancellationToken ct)
+    {
+        if (await db.Ajustes.FindAsync([ClaveBoveda], ct) is not null) return;
+        var n = 0;
+        foreach (var x in await db.Notas.ToListAsync(ct)) { db.Entry(x).Property(p => p.Titulo).IsModified = true; db.Entry(x).Property(p => p.Contenido).IsModified = true; n++; }
+        foreach (var x in await db.Portapapeles.ToListAsync(ct)) { db.Entry(x).Property(p => p.Texto).IsModified = true; n++; }
+        foreach (var x in await db.Push.ToListAsync(ct)) { db.Entry(x).Property(p => p.P256dh).IsModified = true; db.Entry(x).Property(p => p.Auth).IsModified = true; n++; }
+        if (await db.Ajustes.FindAsync(["vapid-privada"], ct) is { } v && !Boveda.EstaCifrado(v.Valor)) { v.Valor = Boveda.Cifrar(v.Valor, "ajustes"); n++; }
+        db.Ajustes.Add(new Ajuste { Clave = ClaveBoveda, Valor = DateTimeOffset.UtcNow.ToString("O") });
+        await db.SaveChangesAsync(ct);
+        log.LogInformation("Cifrado de la base: {N} registros existentes protegidos con la clave maestra", n);
+    }
 
     private void Informar(IdentityResult r, string ok)
     {

@@ -84,3 +84,16 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
   (ver [6. Despliegue](06-despliegue-y-operacion.md#copias-de-seguridad)).
 - Si se filtra un secreto: cambiarlo en el proveedor (BotFather `/revoke`, Google/Spotify, contraseña de aplicación),
   actualizar `.env`, `docker compose up -d api`.
+
+## Cifrado de datos en la base (clave maestra)
+
+Notas (título y contenido), portapapeles, claves del push y la clave privada VAPID se guardan **cifradas** con AES-256-GCM
+(`api/Mda.Api/Seguridad/Boveda.cs`). La clave es `MDA_CLAVE_MAESTRA` del `.env` (`openssl rand -base64 32`); cada tipo de dato
+usa su propia subclave (HKDF) y GCM detecta si alguien toca un dato. En la base se ve `v1:…`; la API lo devuelve en claro.
+
+- **Guárdala también fuera del PC.** Sin ella esos datos no se pueden leer, ni siquiera con una copia de la base.
+- En producción la API no arranca sin ella. En desarrollo y pruebas se usa una clave fija conocida.
+- Al primer arranque con la clave se cifra lo que ya había (una sola vez, marcado en `ajustes` como `boveda-v1`).
+- La búsqueda de notas se hace en memoria, porque en la base el texto ya no se puede buscar.
+- Un hash (SHA) no sirve para esto: no se puede deshacer. Las contraseñas de acceso sí van con hash (PBKDF2 de Identity).
+- Pendiente: el secreto del 2FA y el resto de ajustes siguen como antes; las claves de servicios (Telegram, WhatsApp…) pasan a la bóveda en la tarea 1.3.

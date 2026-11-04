@@ -92,6 +92,30 @@ public class PostgresTests(PostgresFactory f) : IClassFixture<PostgresFactory>
     }
 
     [Fact]
+    public async Task Las_notas_y_el_portapapeles_se_guardan_cifrados_y_la_api_los_devuelve_en_claro()
+    {
+        if (!f.Disponible) return;
+        var c = await f.Dentro();
+        var nota = await (await c.PostAsJsonAsync("/api/notas", new { titulo = "Claves del wifi", contenido = "contraseña-muy-secreta-123", color = "", etiquetas = new[] { "casa" } })).Content.ReadFromJsonAsync<JsonElement>();
+        var id = nota.GetProperty("id").GetInt32();
+        using var scope = f.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var crudo = await db.Database.SqlQueryRaw<string>("SELECT \"Contenido\" AS \"Value\" FROM notas WHERE \"Id\" = {0}", id).SingleAsync();
+        Assert.StartsWith(Boveda.Prefijo, crudo);
+        Assert.DoesNotContain("secreta", crudo);
+        var leida = (await c.GetFromJsonAsync<JsonElement>("/api/notas")).EnumerateArray().Single(x => x.GetProperty("id").GetInt32() == id);
+        Assert.Equal("contraseña-muy-secreta-123", leida.GetProperty("contenido").GetString());
+        // la búsqueda sigue funcionando aunque el texto esté cifrado en la base
+        var hallada = await c.GetFromJsonAsync<JsonElement>("/api/notas?q=SECRETA");
+        Assert.Contains(hallada.EnumerateArray(), x => x.GetProperty("id").GetInt32() == id);
+
+        Assert.True((await c.PostAsJsonAsync("/api/portapapeles", new { texto = "token-que-no-debe-verse" })).IsSuccessStatusCode);
+        var clip = await db.Database.SqlQueryRaw<string>("SELECT \"Texto\" AS \"Value\" FROM portapapeles ORDER BY \"Id\" DESC LIMIT 1").SingleAsync();
+        Assert.StartsWith(Boveda.Prefijo, clip);
+        Assert.DoesNotContain("token-que", clip);
+    }
+
+    [Fact]
     public async Task Los_passkeys_se_guardan_se_renombran_y_se_quitan()
     {
         if (!f.Disponible) return;

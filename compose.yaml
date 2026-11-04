@@ -60,6 +60,8 @@ services:
       DataProtection__Ruta: /claves
       # miniaturas WebP de la galería pública (se pueden borrar: se regeneran)
       Galeria__Derivados: /derivados
+      # clave que cifra notas, portapapeles y claves de servicios en la base. Si se pierde, esos datos no se pueden leer: guárdala fuera del PC
+      Boveda__Clave: "${MDA_CLAVE_MAESTRA:?Falta MDA_CLAVE_MAESTRA en .env, genérala con openssl rand -base64 32}"
       Agente__Token: ${AGENTE_TOKEN:-}
       Healthcheck__Url: ${HEALTHCHECK_URL:-}
       Archivos__Base: /carpetas

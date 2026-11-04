@@ -40,12 +40,12 @@ public class Push(IServiceScopeFactory scopes, IConfiguration config, ILogger<Pu
                 var k = VapidHelper.GenerateVapidKeys();
                 db.Ajustes.RemoveRange(new[] { pub, priv }.Where(x => x is not null)!);
                 pub = new Ajuste { Clave = "vapid-publica", Valor = k.PublicKey };
-                priv = new Ajuste { Clave = "vapid-privada", Valor = k.PrivateKey };
+                priv = new Ajuste { Clave = "vapid-privada", Valor = Boveda.Cifrar(k.PrivateKey, "ajustes") };
                 db.Ajustes.AddRange(pub, priv);
                 await db.SaveChangesAsync(ct);
             }
             var sujeto = config["Correo:Para"] is { Length: > 0 } c ? $"mailto:{c}" : config["App:UrlPublica"] is { Length: > 0 } u ? u : "mailto:admin@localhost";
-            return vapid = new VapidDetails(sujeto, pub.Valor, priv.Valor);
+            return vapid = new VapidDetails(sujeto, pub.Valor, Boveda.Descifrar(priv.Valor, "ajustes"));
         }
         finally { cerrojo.Release(); }
     }

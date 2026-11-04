@@ -251,8 +251,7 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<string>("Auth")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("Creado")
                         .HasColumnType("timestamp with time zone");
@@ -269,8 +268,7 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<string>("P256dh")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -715,8 +713,7 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -789,8 +786,7 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<string>("Texto")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

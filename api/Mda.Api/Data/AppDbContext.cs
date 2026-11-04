@@ -82,7 +82,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         b.Entity<Nota>(e =>
         {
             e.ToTable("notas");
-            e.Property(x => x.Titulo).HasMaxLength(200);
+            e.Property(x => x.Titulo).Cifrada("notas"); // cifrados con la clave maestra: sin tope de columna (el cifrado la alarga)
+            e.Property(x => x.Contenido).Cifrada("notas");
             e.Property(x => x.Color).HasMaxLength(20);
             e.Property(x => x.Etiquetas).HasMaxLength(900);
             e.HasIndex(x => new { x.Archivada, x.Fijada, x.Modificado });
@@ -156,7 +157,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         b.Entity<Mda.Api.Pc.ElementoPortapapeles>(e =>
         {
             e.ToTable("portapapeles");
-            e.Property(x => x.Texto).HasMaxLength(2000);
+            e.Property(x => x.Texto).Cifrada("portapapeles"); // puede llevar contraseñas copiadas
             e.Property(x => x.Origen).HasMaxLength(40);
             e.HasIndex(x => x.Creado);
         });
@@ -261,8 +262,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             e.ToTable("push");
             e.Property(x => x.Endpoint).HasMaxLength(1000);
-            e.Property(x => x.P256dh).HasMaxLength(200);
-            e.Property(x => x.Auth).HasMaxLength(100);
+            e.Property(x => x.P256dh).Cifrada("push");
+            e.Property(x => x.Auth).Cifrada("push");
             e.Property(x => x.Dispositivo).HasMaxLength(120);
             e.HasIndex(x => x.Endpoint).IsUnique();
         });

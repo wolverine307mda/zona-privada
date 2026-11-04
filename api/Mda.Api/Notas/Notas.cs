@@ -31,14 +31,15 @@ public static class NotasEndpoints
         g.MapGet("/", async (bool? archivadas, string? q, AppDbContext db) =>
         {
             var arch = archivadas ?? false;
-            var consulta = db.Notas.AsNoTracking().Where(n => n.Archivada == arch);
-            // la búsqueda va en la base de datos: antes se cortaba a 500 y se filtraba después
+            var consulta = db.Notas.AsNoTracking().Where(n => n.Archivada == arch).OrderByDescending(n => n.Fijada).ThenByDescending(n => n.Modificado);
+            // título y contenido están cifrados en la base: la búsqueda se hace aquí, ya descifrados (son pocas notas)
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var ql = q.Trim().ToLowerInvariant();
-                consulta = consulta.Where(n => n.Titulo.ToLower().Contains(ql) || n.Contenido.ToLower().Contains(ql) || n.Etiquetas.ToLower().Contains(ql));
+                var todas = await consulta.ToListAsync();
+                return Results.Ok(todas.Where(n => n.Titulo.Contains(ql, StringComparison.OrdinalIgnoreCase) || n.Contenido.Contains(ql, StringComparison.OrdinalIgnoreCase) || n.Etiquetas.Contains(ql, StringComparison.OrdinalIgnoreCase)).Take(500).Select(Salida));
             }
-            var lista = await consulta.OrderByDescending(n => n.Fijada).ThenByDescending(n => n.Modificado).Take(500).ToListAsync();
+            var lista = await consulta.Take(500).ToListAsync();
             return Results.Ok(lista.Select(Salida));
         });
 

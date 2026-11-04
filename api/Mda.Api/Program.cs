@@ -37,6 +37,9 @@ builder.Host.UseSerilog((ctx, cfg) =>
     if (!string.IsNullOrWhiteSpace(seq)) cfg.WriteTo.Seq(seq);
 });
 
+// ---- Clave maestra que cifra notas, portapapeles y claves de servicios en la base (en producción es obligatoria) ----
+Boveda.Iniciar(builder.Configuration["Boveda:Clave"], exigir: builder.Environment.IsProduction());
+
 // ---- Base de datos: PostgreSQL; en desarrollo, sin Docker, se puede usar una en memoria (Datos:EnMemoria=true) ----
 var enMemoria = builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Datos:EnMemoria");
 builder.Services.AddDbContext<AppDbContext>(o =>
