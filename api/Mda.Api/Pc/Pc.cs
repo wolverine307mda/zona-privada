@@ -203,11 +203,13 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
     public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
-    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar"];
+    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia"];
+    // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
+    public static readonly string[] Perfiles = ["equilibrado", "rendimiento", "ahorro", "cine"];
     public static readonly TimeSpan Validez = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan AgenteConectado = TimeSpan.FromSeconds(15);
 
@@ -239,6 +241,7 @@ public static class OrdenesPc
         "portapapeles" => "copiar un texto al portapapeles del PC",
         "copiar" => "traer el portapapeles del PC",
         "wol" => $"despertar un aparato de la red ({o.Parametro})",
+        "energia" => $"plan de energía: {o.Parametro}",
         _ => o.Tipo,
     };
 
@@ -275,6 +278,11 @@ public static class OrdenesPc
             var tipo = (e.Tipo ?? "").ToLowerInvariant();
             if (!Tipos.Contains(tipo) || Dedicadas.Contains(tipo)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["tipo"] = ["Orden no permitida."] });
             var parametro = tipo == "despierto" ? (e.Parametro == "off" ? "off" : "on") : "";
+            if (tipo == "energia")
+            {
+                if (!Perfiles.Contains(e.Parametro ?? "")) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"El plan es uno de: {string.Join(", ", Perfiles)}."] });
+                parametro = e.Parametro!;
+            }
             if (tipo is "volumen" or "brillo")
             {
                 if (!int.TryParse(e.Parametro, out var nivel) || nivel is < 0 or > 100) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = ["Pon un número de 0 a 100."] });

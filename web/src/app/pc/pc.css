@@ -47,3 +47,11 @@
 .caja__cab { flex-wrap: wrap; row-gap: 4px; }
 .caja__cab h3 { flex: none; max-width: 100%; }
 .caja__cab .sub { flex: 1 1 200px; text-align: right; }
+
+/* planes de energía */
+.planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.plan { display: grid; justify-items: start; gap: 2px; padding: 12px; border-radius: 16px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); color: inherit; text-align: left; cursor: pointer; transition: border-color 160ms, background 160ms, transform 160ms; }
+.plan span { font-size: 1.4rem; }
+.plan small { color: var(--soft); font-size: .76rem; }
+.plan[aria-pressed='true'] { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.plan:active { transform: scale(.97); }

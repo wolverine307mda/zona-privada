@@ -60,6 +60,18 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
       </section>
     }
 
+    @if (e()?.agenteConectado) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Energía</h3><span class="sub">el plan de energía de Windows, con un toque</span></header>
+        <div class="planes" role="group" aria-label="Plan de energía">
+          @for (p of planes; track p.id) {
+            <button type="button" class="plan" [attr.aria-pressed]="energia() === p.id" (click)="plan(p.id)"><span aria-hidden="true">{{ p.icono }}</span><strong>{{ p.nombre }}</strong><small>{{ p.nota }}</small></button>
+          }
+        </div>
+        @if (avisoEnergia()) { <p class="msg" role="status">{{ avisoEnergia() }}</p> }
+      </section>
+    }
+
     <app-casa-pc />
     <app-red-casa />
     <app-portapapeles-pc />
@@ -167,6 +179,15 @@ export class Pc implements OnInit, OnDestroy {
     return { cpu: m?.cpu ?? 0, memoria: pct(m?.memoriaUsada, m?.memoriaTotal), disco: pct(m?.discoUsado, m?.discoTotal), real: m?.origen === 'equipo' };
   });
   protected readonly volumen = signal<number | null>(null);
+  // el plan de energía no se puede leer del PC: se recuerda el último que se eligió desde aquí
+  protected readonly planes = [
+    { id: 'equilibrado', nombre: 'Equilibrado', icono: '⚖️', nota: 'El de siempre' },
+    { id: 'rendimiento', nombre: 'Rendimiento', icono: '🚀', nota: 'Todo a tope' },
+    { id: 'ahorro', nombre: 'Ahorro', icono: '🍃', nota: 'Más batería' },
+    { id: 'cine', nombre: 'Cine', icono: '🎬', nota: 'No apaga la pantalla' },
+  ];
+  protected readonly energia = signal<string | null>((() => { try { return localStorage.getItem('mda-energia'); } catch { return null; } })());
+  protected readonly avisoEnergia = signal('');
   protected readonly brillo = signal<number | null>(null);
   protected readonly aviso = signal('');
   protected readonly verClave = signal(false);
@@ -246,9 +267,22 @@ export class Pc implements OnInit, OnDestroy {
     setTimeout(() => { if (tipo === 'volumen') this.volumen.set(null); else this.brillo.set(null); }, 6000);
   }
 
+  // plan de energía: orden inocua, no pide confirmar con Face ID
+  protected async plan(id: string): Promise<void> {
+    this.avisoEnergia.set('');
+    try {
+      await firstValueFrom(this.http.post('/api/pc/ordenes', { tipo: 'energia', parametro: id }));
+      this.energia.set(id);
+      try { localStorage.setItem('mda-energia', id); } catch { /* sin almacenamiento */ }
+      this.avisoEnergia.set(`Plan «${this.planes.find((p) => p.id === id)?.nombre}» enviado al PC.`);
+    } catch (err) {
+      this.avisoEnergia.set((err as HttpErrorResponse).status === 409 ? 'El agente de Windows no está en marcha.' : 'No se pudo cambiar el plan.');
+    }
+  }
+
   protected usado(v: Volumen): number { return v.totalBytes ? Math.round(100 - (100 * v.libreBytes) / v.totalBytes) : 0; }
   protected gb(b: number): string { return `${(b / 1_073_741_824).toFixed(b < 10_737_418_240 ? 1 : 0)} GB`; }
-  protected nombre(o: Orden): string { return ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
+  protected nombre(o: Orden): string { return o.tipo === 'energia' ? `Energía: ${o.parametro}` : ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
 
   protected elegir(o: (typeof ORDENES)[number]): void {
     this.pendiente.set(o); this.error.set(''); this.mensaje.set('');

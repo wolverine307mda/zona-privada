@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -91,6 +91,7 @@ static partial class Ordenes
                 case "multimedia":
                     return Dispositivos.TeclaMultimedia(o.Parametro) ? new(true, $"música: {o.Parametro}") : new(false, "acción de música no válida");
                 case "wol": return Despertar(o.Parametro);
+                case "energia": return PlanEnergia(o.Parametro);
                 case "volumen":
                     if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
                     return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");
@@ -101,6 +102,29 @@ static partial class Ordenes
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return new(false, e.Message); }
         return new(false, "sin acción");
+    }
+
+    static bool cineActivo;
+
+    // Plan de energía con «powercfg». Si Windows no trae el de alto rendimiento (los portátiles modernos a veces lo esconden) se vuelve a crear.
+    // «cine» es el equilibrado con el PC y la pantalla despiertos; al elegir otro plan se deja de forzar.
+    static ResultadoOrden PlanEnergia(string perfil)
+    {
+        if (Energia.Plan(perfil) is not { } plan) return new(false, "plan de energía no válido");
+        var codigo = Correr("powercfg", $"/setactive {plan}");
+        if (codigo != 0 && perfil == "rendimiento") { Correr("powercfg", $"-duplicatescheme {plan} {plan}"); codigo = Correr("powercfg", $"/setactive {plan}"); }
+        if (codigo != 0) return new(false, "Windows no tiene ese plan de energía en este equipo");
+        if (perfil == "cine") { Despierto.Poner(true, pantalla: true); cineActivo = true; }
+        else if (cineActivo) { Despierto.Poner(false); cineActivo = false; }
+        return new(true, perfil switch { "rendimiento" => "plan de alto rendimiento", "ahorro" => "plan de ahorro de energía", "cine" => "modo cine: equilibrado y sin que se apague la pantalla", _ => "plan equilibrado" });
+    }
+
+    static int Correr(string exe, string args)
+    {
+        using var p = Process.Start(new ProcessStartInfo(exe, args) { CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true });
+        if (p is null) return -1;
+        p.StandardOutput.ReadToEnd(); p.StandardError.ReadToEnd();
+        return p.WaitForExit(15_000) ? p.ExitCode : -1;
     }
 
     // lo manda desde cada interfaz IPv4 activa: la de casa, la de Tailscale… (la que no deje difundir se salta)
@@ -139,18 +163,19 @@ static partial class Ordenes
 // «Mantener despierto»: Windows pide que SetThreadExecutionState lo llame un hilo que siga vivo, así que hay uno dedicado
 static class Despierto
 {
-    const uint Continuo = 0x80000000, Sistema = 0x00000001;
+    const uint Continuo = 0x80000000, Sistema = 0x00000001, Pantalla = 0x00000002;
     static Thread? hilo;
     static readonly ManualResetEventSlim Parar = new(false);
 
     [DllImport("kernel32.dll")] static extern uint SetThreadExecutionState(uint estado);
 
-    public static void Poner(bool activo)
+    public static void Poner(bool activo, bool pantalla = false)
     {
-        if (!activo) { Parar.Set(); hilo = null; return; }
-        if (hilo is { IsAlive: true }) return;
+        // si ya había uno, se para y se vuelve a crear con lo nuevo (con o sin la pantalla encendida)
+        if (hilo is { IsAlive: true }) { Parar.Set(); hilo.Join(500); hilo = null; }
+        if (!activo) return;
         Parar.Reset();
-        hilo = new Thread(() => { SetThreadExecutionState(Continuo | Sistema); Parar.Wait(); SetThreadExecutionState(Continuo); }) { IsBackground = true, Name = "despierto" };
+        hilo = new Thread(() => { SetThreadExecutionState(Continuo | Sistema | (pantalla ? Pantalla : 0)); Parar.Wait(); SetThreadExecutionState(Continuo); }) { IsBackground = true, Name = "despierto" };
         hilo.Start();
     }
 }
