@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Avisame } from './avisame';
 import { Aurora } from './aurora';
+import { CalculadoraEstrellas } from './calculadora-estrellas';
 import { EventosCielo } from './eventos';
 import { Cielo } from './cielo';
 import { AjustesLuz, Dia, DiaSemana, Semana, Ventana, cardinal, colorNota, creciente, hhmm, instante } from './modelo';
@@ -25,7 +26,7 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
 // y la semana de un vistazo. El sol y la luna se calculan en el servidor; las nubes vienen de la previsión (Open-Meteo).
 @Component({
   selector: 'app-fotografia',
-  imports: [Avisame, Aurora, Cielo, EventosCielo, NgTemplateOutlet, RouterLink],
+  imports: [Avisame, Aurora, CalculadoraEstrellas, Cielo, EventosCielo, NgTemplateOutlet, RouterLink],
   styleUrls: ['../gastos/comun.css', './fotografia.css'],
   template: `
     <header class="cab">
@@ -145,6 +146,8 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
       }
 
       <app-aurora />
+
+      <app-calculadora-estrellas />
 
       <app-eventos-cielo />
 
