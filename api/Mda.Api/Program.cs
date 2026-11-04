@@ -88,7 +88,9 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.SameSite = SameSiteMode.Strict;
     // en producción la cookie solo viaja por HTTPS (el proxy, Tailscale Funnel, avisa con X-Forwarded-Proto)
     o.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-    o.ExpireTimeSpan = TimeSpan.FromHours(8);
+    // la cookie dura lo mismo que el tope de la sesión apuntada (Sesiones.Maxima): antes caducaba a las 8 h y pedía entrar de nuevo.
+    // La seguridad la dan «Face ID al volver», el PIN de Documentos y poder cerrar sesiones desde otro equipo
+    o.ExpireTimeSpan = TimeSpan.FromDays(30);
     o.SlidingExpiration = true;
     // una API no redirige a una página de login: responde 401 / 403
     o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
