@@ -11,7 +11,7 @@
     <p class="grande">Solo<br>con<br>llave</p>
   </section>
 
-  <form class="tarjeta vineta" [class.sacude]="sacude()" (submit)="entrar($event)" novalidate aria-labelledby="titulo">
+  <form class="tarjeta" [class.sacude]="sacude()" (submit)="entrar($event)" novalidate aria-labelledby="titulo">
     <p class="chip" [class.caido]="servidor() === 'apagado'" role="status">
       <span class="punto" aria-hidden="true"></span>
       <code>{{ servidor() === 'apagado' ? 'servidor de casa · sin respuesta' : servidor() === 'comprobando' ? 'servidor de casa · comprobando…' : 'servidor de casa · en línea' }}</code>
@@ -45,12 +45,12 @@
       </label>
     }
 
-    <button class="button entrar" type="submit" [disabled]="ocupado()">
+    <button class="button entrar" type="submit" [disabled]="ocupado()" [attr.aria-busy]="ocupado() || null">
       <span>{{ ocupado() ? 'Comprobando…' : 'Entrar' }}</span>
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
     @if (conPasskey) {
-      <button class="button entrar entrar--passkey" type="button" (click)="entrarConPasskey(false)" [disabled]="ocupado()">Entrar con Face ID / passkey</button>
+      <button class="button entrar entrar--passkey" type="button" (click)="entrarConPasskey(false)" [disabled]="ocupado()" [attr.aria-busy]="ocupado() || null">Entrar con Face ID / passkey</button>
     }
     <p class="mensaje" role="status" aria-live="polite">{{ error() }}</p>
   </form>

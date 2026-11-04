@@ -6,7 +6,7 @@
 }
 
 .top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 20px var(--margin); font-size: var(--step-small); font-weight: 500; }
-.marca { font: 700 var(--step-body)/1 var(--font-display); letter-spacing: -0.04em; color: var(--acento); }
+.marca { font: 600 var(--step-lead)/1 var(--font-text); letter-spacing: -0.04em; color: var(--acento); }
 .volver { text-underline-offset: 0.2em; }
 
 .main {
@@ -17,20 +17,20 @@
 .intro { align-self: end; padding-bottom: 4vh; pointer-events: none; }
 .kicker { font-size: var(--step-small); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--acento); margin-bottom: 18px; }
 .grande {
-  font: 700 clamp(3rem, 9vw, 9rem)/0.84 var(--font-display); text-transform: uppercase; letter-spacing: -0.05em;
-  color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--on-dark) 55%, transparent);
+  font: var(--peso-ligero) clamp(3.2rem, 9vw, 8.5rem)/0.92 var(--font-text); letter-spacing: -0.055em;
+  color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--on-dark) 60%, transparent);
 }
 
-.tarjeta { display: flex; flex-direction: column; gap: 22px; padding: clamp(24px, 3vw, 36px); rotate: -1deg; animation: entra 1100ms var(--ease-expo) 200ms both; }
+.tarjeta { display: flex; flex-direction: column; gap: 22px; padding: clamp(24px, 3vw, 36px); background: var(--tarjeta); color: var(--texto); border: 1px solid var(--vidrio-borde); border-radius: var(--radio-xl); box-shadow: var(--sombra-flota); animation: entra 1100ms var(--ease-expo) 200ms both; }
 .tarjeta.sacude { animation: sacude 520ms var(--ease-out); }
-@keyframes entra { from { opacity: 0; transform: translateY(40px) rotate(3deg); } }
+@keyframes entra { from { opacity: 0; transform: translateY(40px) scale(0.97); } }
 @keyframes sacude { 0%, 100% { translate: 0; } 20% { translate: -10px; } 40% { translate: 9px; } 60% { translate: -6px; } 80% { translate: 3px; } }
 
-.chip { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: var(--dark-2); font-size: var(--step-small); }
+.chip { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--dark-2); font-size: var(--step-small); }
 .chip.caido .punto { background: var(--bad); animation: none; }
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: late 2s var(--ease-out) infinite; }
 @keyframes late { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
-.titulo { font: 700 clamp(1.8rem, 1.2rem + 2vw, 2.6rem)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: -0.04em; }
+.titulo { font: var(--peso-ligero) clamp(2rem, 1.3rem + 2.4vw, 3rem)/1 var(--font-text); letter-spacing: -0.04em; }
 
 .campo { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .etiqueta { font-size: var(--step-small); color: var(--soft); }
@@ -54,7 +54,6 @@
 @media (max-width: 860px) {
   .main { grid-template-columns: minmax(0, 1fr); align-items: end; padding-top: 32vh; }
   .intro { display: none; }
-  .tarjeta { rotate: none; box-shadow: 6px 6px 0 var(--brand); }
 }
 
-.entrar--passkey { margin-top: 10px; background: transparent; color: inherit; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }
+.entrar--passkey { margin-top: 0; background: transparent; color: inherit; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }
