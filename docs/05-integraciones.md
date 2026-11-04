@@ -76,3 +76,8 @@ Si no lo tienes, `docker compose --profile casa up -d` levanta Home Assistant (p
 En **Seguridad → Claves → AdGuard Home** se guardan (cifrados) su dirección (de tu red, de Tailscale o `http://adguard:3000` si usas el perfil `casa`), su usuario y su contraseña. En Mi PC, dentro de «Casa conectada», sale el porcentaje
 de consultas bloqueadas, las consultas y la respuesta media, los dominios que más se bloquean y un botón para **pausar la protección 10 minutos** (por si una web que necesitas no carga; AdGuard la reactiva sola) o reanudarla
 (`ClienteAdGuard` en `api/Mda.Api/Pc/AdGuard.cs`). Para que AdGuard bloquee de verdad, el router (o el PC) tiene que usarlo como servidor DNS. **Pi-hole no está soportado**: tiene otra API y no se ha probado contra uno.
+
+## Tu habitación en 3D (Mi PC)
+
+`web/src/app/pc/habitacion-3d.ts` dibuja tu escritorio con Three.js y lo enlaza con el estado real: la pantalla, la luz y el ventilador de la torre siguen la carga del PC (si el agente está conectado),
+los LED del router se ponen verdes o rojos según `/api/red`, el móvil se enciende si está en casa y cada cubo de la estantería es otro aparato de la red. Se gira arrastrando; si WebGL falla sale un botón de reintento.
