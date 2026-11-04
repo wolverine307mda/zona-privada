@@ -148,6 +148,8 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
         </section>
       }
 
+      <a routerLink="/fotografia/ar" class="boton">Ver el sol y la luna en AR con la cámara</a>
+
       <app-puntos (cambiar)="elegirPunto($event)" />
 
       <app-niebla />

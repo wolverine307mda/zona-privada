@@ -81,3 +81,12 @@ de consultas bloqueadas, las consultas y la respuesta media, los dominios que m�
 
 `web/src/app/pc/habitacion-3d.ts` dibuja tu escritorio con Three.js y lo enlaza con el estado real: la pantalla, la luz y el ventilador de la torre siguen la carga del PC (si el agente está conectado),
 los LED del router se ponen verdes o rojos según `/api/red`, el móvil se enciende si está en casa y cada cubo de la estantería es otro aparato de la red. Se gira arrastrando; si WebGL falla sale un botón de reintento.
+
+## Fotografía: lo que se añadió en la Fase 4
+
+- **Meteoros y eclipses** (`Luz/Eventos.cs`): fechas fijas (las lluvias se repiten cada año; los eclipses visibles desde España hasta 2028) con la luna de esa noche y, si cae en la previsión, las nubes.
+- **Aurora** (`Luz/Aurora.cs`): Kp previsto por el NOAA SWPC (gratis, sin clave) frente al Kp que hace falta en la latitud de tu lugar. Solo hemisferio norte; con latitudes como la de España casi nunca llega a ser posible.
+- **Niebla y mar de nubes** (`Luz/Niebla.cs`): Open-Meteo con temperatura, rocío, humedad, viento, nubes bajas y temperatura a 850 hPa; reglas físicas simples, no un modelo de predicción.
+- **Calculadora 500 / NPF** (`fotografia/npf.ts`): en el navegador, recuerda tu cámara en `localStorage`.
+- **Sitios y diario** (`Luz/Puntos.cs`): hasta 30 sitios; el diario compara la nota prevista con cómo salió y, con 3 salidas o más de cada tipo, dice cuánto fiarte. Aún no sube fotos al diario.
+- **AR** (`/fotografia/ar`): cámara trasera, brújula y giroscopio; el arco del sol y la luna de hoy sobre la imagen. Pide permiso (en iPhone, el de movimiento); funciona solo por HTTPS. Supone el móvil derecho y el campo de visión se ajusta a mano.

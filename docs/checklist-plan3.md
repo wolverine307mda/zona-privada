@@ -49,7 +49,7 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 36 Niebla e inversión térmica
 - ✅ 37 Puntos favoritos
 - ✅ 38 Diario de salidas
-- 🔄 39 AR del sol y la luna
+- ✅ 39 AR del sol y la luna
 
 ## Fase 5 · Cartera
 - ⬜ 27 Previsión de cierre de mes

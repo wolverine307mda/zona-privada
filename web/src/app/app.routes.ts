@@ -25,6 +25,7 @@ export const routes: Routes = [
         ],
       },
       { path: 'pc', title: 'Mi PC · MDA', loadComponent: () => import('./pc/pc').then((m) => m.Pc) },
+      { path: 'fotografia/ar', title: 'Sol y luna en AR · MDA', loadComponent: () => import('./fotografia/ar').then((m) => m.Ar) },
       { path: 'fotografia', title: 'Fotografía · MDA', loadComponent: () => import('./fotografia/fotografia').then((m) => m.Fotografia) },
       { path: 'fotos', title: 'Galería · MDA', loadComponent: () => import('./galeria/galeria').then((m) => m.Galeria) },
       { path: 'documentos', title: 'Documentos · MDA', loadComponent: () => import('./documentos/documentos').then((m) => m.Documentos) },
