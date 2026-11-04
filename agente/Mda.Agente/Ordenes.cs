@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -92,6 +92,7 @@ static partial class Ordenes
                     return Dispositivos.TeclaMultimedia(o.Parametro) ? new(true, $"música: {o.Parametro}") : new(false, "acción de música no válida");
                 case "wol": return Despertar(o.Parametro);
                 case "energia": return PlanEnergia(o.Parametro);
+                case "limpiar": return LimpiarTemporales();
                 case "volumen":
                     if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
                     return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");
@@ -103,6 +104,27 @@ static partial class Ordenes
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return new(false, e.Message); }
         return new(false, "sin acción");
     }
+
+    // Limpiar: los temporales del usuario y de Windows con más de un día (lo que esté en uso se queda) y la papelera de reciclaje.
+    // Solo esas carpetas fijas: la orden no lleva ninguna ruta.
+    static ResultadoOrden LimpiarTemporales()
+    {
+        var limite = DateTime.UtcNow.AddDays(-1);
+        long bytes = 0; var archivos = 0;
+        foreach (var carpeta in new[] { Path.GetTempPath(), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp") })
+        {
+            var (b, n) = Limpieza.Barrer(carpeta, limite);
+            bytes += b; archivos += n;
+        }
+        var papelera = new InfoPapelera { Tamano = Marshal.SizeOf<InfoPapelera>() };
+        var vaciada = false;
+        if (ConsultarPapelera(null, ref papelera) == 0 && papelera.Bytes > 0 && VaciarPapelera(IntPtr.Zero, null, 0x7) == 0) { bytes += papelera.Bytes; vaciada = true; }
+        return new(true, $"liberados {Limpieza.Tam(bytes)}: {archivos} archivos temporales{(vaciada ? " y la papelera" : "")}");
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)] struct InfoPapelera { public int Tamano; public long Bytes; public long Elementos; }
+    [DllImport("shell32.dll", EntryPoint = "SHQueryRecycleBinW", CharSet = CharSet.Unicode)] static extern int ConsultarPapelera(string? raiz, ref InfoPapelera info);
+    [DllImport("shell32.dll", EntryPoint = "SHEmptyRecycleBinW", CharSet = CharSet.Unicode)] static extern int VaciarPapelera(IntPtr ventana, string? raiz, uint opciones);
 
     static bool cineActivo;
 

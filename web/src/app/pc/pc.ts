@@ -25,6 +25,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
   { tipo: 'reiniciar', texto: 'Reiniciar', icono: '🔄', peligro: true, aviso: 'Se reinicia en 30 s. La app vuelve sola cuando arranque Windows y Docker.' },
   { tipo: 'suspender', texto: 'Suspender', icono: '🌙', peligro: true, aviso: 'Un PC suspendido NO se puede despertar desde fuera: no podrás entrar hasta que lo despiertes tú.' },
   { tipo: 'apagar', texto: 'Apagar', icono: '⏻', peligro: true, aviso: 'Se apaga en 30 s y no hay forma de encenderlo desde fuera. Hasta que lo enciendas tú, la app y la web no responden.' },
+  { tipo: 'limpiar', texto: 'Limpiar temporales y papelera', icono: '🧹', aviso: 'Borra los archivos temporales de más de un día (lo que esté en uso se queda) y vacía la papelera de reciclaje. No se puede deshacer.' },
   { tipo: 'cancelar', texto: 'Cancelar apagado o reinicio', icono: '✖' },
 ];
 

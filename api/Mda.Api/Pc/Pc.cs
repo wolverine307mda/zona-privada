@@ -203,7 +203,7 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
     public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
@@ -242,6 +242,7 @@ public static class OrdenesPc
         "copiar" => "traer el portapapeles del PC",
         "wol" => $"despertar un aparato de la red ({o.Parametro})",
         "energia" => $"plan de energía: {o.Parametro}",
+        "limpiar" => "limpiar los temporales y vaciar la papelera",
         _ => o.Tipo,
     };
 
