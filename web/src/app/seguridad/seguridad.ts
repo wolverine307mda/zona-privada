@@ -1,3 +1,4 @@
+import { GloboSondas } from './globo-sondas';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -32,7 +33,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Atajos, Claves, Llaves, PinAjustes],
+  imports: [Atajos, Claves, GloboSondas, Llaves, PinAjustes],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })

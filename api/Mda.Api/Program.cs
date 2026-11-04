@@ -190,6 +190,10 @@ builder.Services.AddSingleton<Derivados>();
 builder.Services.AddSingleton<EstadoFunnel>();
 builder.Services.AddHostedService<VigilanteFunnel>();
 builder.Services.AddSingleton<Sondas>();
+builder.Services.AddSingleton<GeoIp>();
+builder.Services.AddHostedService<ActualizadorGeoIp>();
+builder.Services.AddSingleton<RegistroSondas>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<RegistroSondas>());
 builder.Services.AddSingleton(sp => new Tarpit(sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton<IComprobadorRed, ComprobadorTcp>();
 builder.Services.AddHostedService<ResumenSondas>();
@@ -317,6 +321,7 @@ app.MapExtractos();
 app.MapDivisas();
 app.MapInicioResumen();
 app.MapLinea();
+app.MapSondas();
 app.MapInforme();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html

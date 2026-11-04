@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Secreto> Secretos => Set<Secreto>();
     public DbSet<Mda.Api.Pc.SaludBateria> SaludBaterias => Set<Mda.Api.Pc.SaludBateria>();
     public DbSet<Mda.Api.Pc.Escena> Escenas => Set<Mda.Api.Pc.Escena>();
+    public DbSet<Mda.Api.Seguridad.SondaRegistrada> SondasRegistradas => Set<Mda.Api.Seguridad.SondaRegistrada>();
     public DbSet<Mda.Api.Gastos.ReglaCategoria> ReglasCategoria => Set<Mda.Api.Gastos.ReglaCategoria>();
     public DbSet<Mda.Api.Luz.PuntoFoto> PuntosFoto => Set<Mda.Api.Luz.PuntoFoto>();
     public DbSet<Mda.Api.Luz.SalidaFoto> SalidasFoto => Set<Mda.Api.Luz.SalidaFoto>();
@@ -204,6 +205,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         b.Entity<Mda.Api.Pc.MedidaVelocidad>(e =>
         {
             e.ToTable("velocidades");
+            e.HasIndex(x => x.Hora);
+        });
+
+        b.Entity<Mda.Api.Seguridad.SondaRegistrada>(e =>
+        {
+            e.ToTable("sondas_registradas");
+            e.Property(x => x.Ip).HasMaxLength(45);
+            e.Property(x => x.Ruta).HasMaxLength(200);
+            e.Property(x => x.Pais).HasMaxLength(60);
+            e.Property(x => x.Ciudad).HasMaxLength(100);
             e.HasIndex(x => x.Hora);
         });
 
