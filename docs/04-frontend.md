@@ -115,3 +115,10 @@ fecha, vibración en el móvil al acertar o fallar, y debajo el botón de Face I
 `shell/mini-musica.ts`: al tocar la portada o el título de lo que suena se abre una **ventana** (no se navega): portada grande con un vinilo que sale y gira, título, artistas y álbum,
 progreso con tiempos, anterior / pausa / siguiente, dispositivo y volumen, las tres canciones que vienen después y «Abrir Música» para saltar a la pantalla completa. El color de la
 portada tiñe la ventana. Con la ventana abierta pregunta a Spotify cada 5 s (cada 15 s si no).
+
+## Inicio · «Tu PC por dentro»
+
+Ya no va dentro de una tarjeta: el dibujo 3D flota sobre la página con una luz del color de acento detrás y los bordes difuminados, con **píldoras de vidrio** alrededor
+(procesador, memoria, disco con su temperatura, red y encendido; en el móvil pasan a una fila debajo). Debajo, tres módulos sin caja: **Batería** (`inicio/bateria.ts`, con tres dibujos a elegir —celda de
+barras con la corriente entrando al cargar, anillo y barras— y colores ámbar y rojo con poca carga), **Espacio** (`inicio/espacio.ts`: una barra por disco, ámbar al 85 % y roja al 95 %) y **Ahora mismo**
+(procesador, memoria, temperatura del disco, red, volumen y brillo). La temperatura sale de `/api/pc` (la salud que manda el agente). Las estadísticas de debajo se quedan como estaban.

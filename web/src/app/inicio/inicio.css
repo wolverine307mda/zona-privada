@@ -107,11 +107,33 @@
 }
 
 /* tu PC por dentro (3D) */
-.pc3d { display: grid; gap: 12px; overflow: hidden; background: var(--brillo), radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--brand) 14%, var(--vidrio)), var(--vidrio) 62%); }
-.pc3d__escena { position: relative; height: clamp(300px, 52vw, 460px); border-radius: 18px; overflow: hidden; background: radial-gradient(70% 70% at 50% 45%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 75%); }
-.pc3d__escena app-pc-3d { position: absolute; inset: 0; }
-.pc3d__chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.pc3d__chips li { display: grid; flex: 1 1 90px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); }
-.pc3d__chips b { font: 700 1.05rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
-.pc3d__chips small { color: var(--soft); font-size: .72rem; }
-.pc3d__enlace { justify-self: end; color: var(--acento); font-weight: 600; font-size: .88rem; text-decoration: none; }
+/* «Tu PC por dentro» flota sobre la página, sin caja: una luz del color de acento detrás, bordes que se funden y datos en píldoras de vidrio */
+.pc-vivo { display: grid; gap: 18px; }
+.pc-vivo__cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pc-vivo__cab h3 { font: 700 var(--step-lead)/1.1 var(--font-display); }
+.pc-vivo__cab code { font-size: .78rem; color: var(--soft); }
+.pc-vivo__marco { position: relative; }
+.pc-vivo__marco::before { content: ''; position: absolute; inset: 6% 10%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 22%, transparent), transparent 78%); filter: blur(34px); pointer-events: none; }
+.pc-vivo__escena { position: relative; height: clamp(320px, 54vw, 500px); -webkit-mask-image: radial-gradient(76% 78% at 50% 50%, #000 60%, transparent 100%); mask-image: radial-gradient(76% 78% at 50% 50%, #000 60%, transparent 100%); }
+.pc-vivo__escena app-pc-3d { position: absolute; inset: 0; }
+.etiquetas { list-style: none; margin: 0; padding: 0; }
+.etq { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--fondo) 55%, transparent); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: .8rem; color: var(--soft); white-space: nowrap; pointer-events: auto; }
+.etq .icon { width: 16px; height: 16px; color: var(--acento); }
+.etq b { color: var(--texto); font: 700 .92rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+@media (min-width: 761px) {
+  .etiquetas { position: absolute; inset: 0; pointer-events: none; }
+  .etq { position: absolute; animation: etq-flota 6s ease-in-out infinite alternate; }
+  .etq--cpu { left: 4%; top: 12%; } .etq--mem { right: 4%; top: 20%; animation-delay: -1.5s; } .etq--disco { right: 7%; bottom: 14%; animation-delay: -3s; }
+  .etq--red { left: 6%; bottom: 20%; animation-delay: -4.5s; } .etq--on { left: 0; right: 0; bottom: 1%; margin-inline: auto; width: fit-content; animation: none; }
+}
+@media (max-width: 760px) { .etiquetas { display: flex; flex-wrap: wrap; gap: 8px; } }
+@keyframes etq-flota { to { transform: translateY(-7px); } }
+.pc-vivo__datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 26px 44px; }
+.modulo { display: grid; align-content: start; gap: 14px; min-width: 0; padding-top: 14px; border-top: 1px solid var(--linea); }
+.modulo h4 { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+.modulo dl { display: grid; gap: 10px; margin: 0; }
+.modulo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .9rem; }
+.modulo dt { color: var(--soft); }
+.modulo dd { margin: 0; font: 600 .92rem/1.2 var(--font-code); font-variant-numeric: tabular-nums; text-align: right; }
+.pc-vivo__enlace { color: var(--acento); font-weight: 600; font-size: .88rem; text-decoration: none; }
+@media (prefers-reduced-motion: reduce) { .etq { animation: none; } }

@@ -23,11 +23,11 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 2.7c Señuelos en móvil
 - ✅ 2.7d Música de la barra superior en modal
 - ✅ 2.7e Galería privada: miniaturas y loaders
-- 🔄 2.7f Inicio: «Tu PC por dentro» suspendido, batería y datos
+- ✅ 2.7f Inicio: «Tu PC por dentro» suspendido, batería y datos
 
 ## Fase 3 · PC, agente y ejecutable
-- ⏭️ 3.1 Ejecutable único (asistente, arranque completo, actualización, monitor)
-- ⬜ 9 Wake-on-LAN
+- 🔄 3.1 Ejecutable único (asistente, arranque completo, actualización, monitor)
+- ⏭️ 9 Wake-on-LAN
 - ⬜ 11 Perfiles de energía
 - ⬜ 12 Limpiador de temporales
 - ⬜ 14 Temporizador de apagado

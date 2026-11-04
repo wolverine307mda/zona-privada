@@ -1,6 +1,10 @@
+import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { GastosService } from '../gastos/gastos.service';
 import { Panel } from './panel';
+import { Bateria } from './bateria';
+import { Espacio } from './espacio';
 import { DatosPc, Pc3d } from './pc-3d';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { PerfilService } from '../core/perfil.service';
@@ -21,7 +25,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Panel, RouterLink, Pc3d],
+  imports: [Bateria, Espacio, Panel, RouterLink, Pc3d],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })
@@ -53,6 +57,23 @@ export class Inicio implements OnDestroy {
   protected readonly real = computed(() => this.a()?.origen === 'equipo');
   protected readonly datosPc = computed<DatosPc>(() => ({ cpu: this.a()?.cpu ?? 0, memoria: this.memoria().pct, disco: this.disco().pct, real: this.real() }));
 
+  // la temperatura más alta de los discos (la manda el agente con la salud del equipo); sin dato, no se enseña
+  protected readonly temperatura = signal<number | null>(null);
+  private readonly http = inject(HttpClient);
+  protected readonly discosUso = computed(() => {
+    const m = this.a();
+    if (m?.discos?.length) return m.discos;
+    return m?.discoTotal ? [{ nombre: 'Sistema', usado: m.discoUsado, total: m.discoTotal }] : [];
+  });
+
+  private async leerTemperatura(): Promise<void> {
+    try {
+      const r = await firstValueFrom(this.http.get<{ salud: { discos?: { temperaturaC: number | null }[] } | null }>('/api/pc'));
+      const t = (r.salud?.discos ?? []).map((d) => d.temperaturaC).filter((x): x is number => typeof x === 'number');
+      this.temperatura.set(t.length ? Math.round(Math.max(...t)) : null);
+    } catch { /* se queda como estaba */ }
+  }
+
   protected readonly memoria = computed(() => this.porcentaje(this.a()?.memoriaUsada, this.a()?.memoriaTotal));
   protected readonly disco = computed(() => this.porcentaje(this.a()?.discoUsado, this.a()?.discoTotal));
   protected readonly discos = computed(() => (this.a()?.discos ?? []).map((d) => ({ nombre: d.nombre.replace(/\\$/, ''), ...this.porcentaje(d.usado, d.total) })));
@@ -67,7 +88,9 @@ export class Inicio implements OnDestroy {
 
   constructor() {
     const reloj = setInterval(() => this.ahora.set(new Date()), 1000);
-    this.limpiar = () => clearInterval(reloj);
+    const temp = setInterval(() => { if (!document.hidden) void this.leerTemperatura(); }, 60_000);
+    void this.leerTemperatura();
+    this.limpiar = () => { clearInterval(reloj); clearInterval(temp); };
 
     afterNextRender(() => {
       this.graficaCpu = echarts.init(this.cpuEl().nativeElement);
