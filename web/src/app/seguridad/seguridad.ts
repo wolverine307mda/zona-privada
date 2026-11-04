@@ -3,6 +3,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { soportaPasskeys } from '../core/passkey';
 import { Reautenticar } from '../core/reautenticar';
+import { Atajos } from './atajos';
 import { Claves } from './claves';
 import { Llaves } from './llaves';
 import { PinAjustes } from './pin-ajustes';
@@ -31,7 +32,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Claves, Llaves, PinAjustes],
+  imports: [Atajos, Claves, Llaves, PinAjustes],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })
@@ -61,13 +62,6 @@ export class Seguridad {
   protected readonly codigoBloqueo = signal('');
   protected readonly errorBloqueo = signal('');
   protected readonly origen = location.origin;
-  protected readonly tokens = signal<{ id: number; nombre: string; alcances: string[]; ultimoUso: string | null; revocado: boolean }[]>([]);
-  protected readonly tokenNuevo = signal<string | null>(null);
-  protected readonly nombreToken = signal('');
-  protected readonly alcancesToken = signal<string[]>(['gasto']);
-  protected readonly permisosToken = [
-    { id: 'gasto', texto: 'Apuntar gastos' }, { id: 'pago', texto: 'Apple Pay' }, { id: 'lectura', texto: 'Leer saldo y agenda' }, { id: 'casa', texto: 'Llegar y salir de casa' },
-  ];
   protected readonly senuelos = signal<{ id: number; ruta: string; activo: boolean; disparos: number }[]>([]);
   protected readonly plantillasSenuelo = signal<{ id: string; nombre: string }[]>([]);
   protected readonly cerrarSesionSenuelo = signal(true);
@@ -110,7 +104,6 @@ export class Seguridad {
     const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
     get<Acceso[]>('/api/seguridad/accesos').then((a) => this.accesos.set(a)).catch(() => {});
     this.leerSenuelos();
-    this.leerTokens();
     get<Estado>('/api/seguridad/estado').then((e) => {
       this.estado.set(e);
       // en el iPhone, al ir a la app de códigos y volver, la app se recarga: se retoma la activación a medias
@@ -174,30 +167,6 @@ export class Seguridad {
     this.ocupado.set('panico');
     try { await firstValueFrom(this.http.post('/api/seguridad/panico', null)); } finally { this.ocupado.set(null); }
     location.href = '/entrar';
-  }
-
-  private leerTokens(): void {
-    firstValueFrom(this.http.get<{ id: number; nombre: string; alcances: string[]; ultimoUso: string | null; revocado: boolean }[]>('/api/atajos-tokens'))
-      .then((t) => this.tokens.set(t)).catch(() => {});
-  }
-
-  protected alternarAlcance(id: string): void {
-    this.alcancesToken.update((a) => (a.includes(id) ? a.filter((x) => x !== id) : [...a, id]));
-  }
-
-  protected async crearToken(e: Event): Promise<void> {
-    e.preventDefault();
-    if (!this.nombreToken().trim() || this.alcancesToken().length === 0) { this.aviso.set('Pon un nombre y elige al menos un permiso.'); return; }
-    const r = await firstValueFrom(this.http.post<{ token: string }>('/api/atajos-tokens', { nombre: this.nombreToken().trim(), alcances: this.alcancesToken() }));
-    this.tokenNuevo.set(r.token);
-    this.nombreToken.set('');
-    this.leerTokens();
-  }
-
-  protected async revocarToken(id: number): Promise<void> {
-    if (!confirm('¿Revocar este token? Los atajos que lo usen dejarán de funcionar.')) return;
-    await firstValueFrom(this.http.delete(`/api/atajos-tokens/${id}`));
-    this.leerTokens();
   }
 
   private leerSenuelos(): void {

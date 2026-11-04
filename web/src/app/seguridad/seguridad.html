@@ -263,47 +263,7 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
   </label>
 </section>
 
-<section class="caja">
-  <header class="caja__cab"><h3>Atajos del iPhone</h3><span class="sub">Apunta gastos desde el Centro de control, con Siri o al pagar con Apple Pay</span></header>
-  @if (tokenNuevo(); as t) {
-    <div class="token-nuevo" role="status">
-      <p><strong>Copia el token ahora: no se vuelve a enseñar.</strong></p>
-      <code class="token">{{ t }}</code>
-      <button class="enlace" type="button" (click)="copiar(t)">{{ copiado() === t ? '✓ Copiado' : 'Copiar' }}</button>
-      <button class="enlace" type="button" (click)="tokenNuevo.set(null)">Ya lo he guardado</button>
-    </div>
-  }
-  <ul class="accesos">
-    @for (t of tokens(); track t.id) {
-      <li [class.fallo]="t.revocado">
-        <span class="acceso__marca" aria-hidden="true">{{ t.revocado ? '✕' : '🔑' }}</span>
-        <span class="acceso__texto"><strong>{{ t.nombre }}{{ t.revocado ? ' (revocado)' : '' }}</strong>
-          <span>{{ t.alcances.join(', ') }} · {{ t.ultimoUso ? 'usado ' + fecha(t.ultimoUso) : 'sin usar' }}</span></span>
-        @if (!t.revocado) { <button class="enlace" type="button" (click)="revocarToken(t.id)">Revocar</button> }
-      </li>
-    } @empty { <p class="nada">Aún no tienes ningún token.</p> }
-  </ul>
-  <form class="fila-senuelo" (submit)="crearToken($event)">
-    <input class="campo__input" maxlength="40" placeholder="Nombre (p. ej. iPhone)" [value]="nombreToken()" (input)="nombreToken.set($any($event.target).value)">
-    @for (a of permisosToken; track a.id) {
-      <label class="interruptor-senuelo"><input type="checkbox" [checked]="alcancesToken().includes(a.id)" (change)="alternarAlcance(a.id)"><span>{{ a.texto }}</span></label>
-    }
-    <button class="button" type="submit">Crear token</button>
-  </form>
-  <details class="guia">
-    <summary>Cómo montarlo en la app Atajos</summary>
-    <ol>
-      <li><strong>Gasto rápido:</strong> Atajos › + › acciones «Pedir entrada» (número: importe y texto: concepto), «Elegir del menú» (Gasto / Ingreso) y «Obtener contenido de URL».
-        URL <code>{{ origen }}/api/atajos/movimiento</code>, método POST, cuerpo JSON <code>importe</code>, <code>concepto</code>, <code>tipo</code>, y la cabecera <code>Authorization: Bearer &lt;tu token&gt;</code>.
-        Termina con «Mostrar notificación» con la respuesta (<code>mensaje</code>).</li>
-      <li><strong>Por voz / Siri:</strong> «Dictar texto» + la misma acción hacia <code>{{ origen }}/api/atajos/frase</code> con <code>texto</code>. Ponle de nombre «Apunta gasto».</li>
-      <li><strong>Centro de control:</strong> Ajustes › Centro de control › Añadir control › Atajo, y elige el atajo. También sirve el botón de acción.</li>
-      <li><strong>Apple Pay:</strong> Atajos › Automatización › Transacción › «Ejecutar inmediatamente». Acción «Obtener contenido de URL» a <code>{{ origen }}/api/atajos/pago</code> con <code>comercio</code> (Comercio) e <code>importe</code> (Cantidad). Usa un token con permiso «pago». Solo se prueba pagando de verdad.</li>
-      <li><strong>Llegué a casa / me voy:</strong> Atajos › Automatización › Llegar (o Salir) de un lugar › «Obtener contenido de URL» a <code>{{ origen }}/api/atajos/casa</code>, método POST, cuerpo JSON <code>estado</code> = <code>llegada</code> (o <code>salida</code>). Usa un token con permiso «casa».</li>
-      <li><strong>Pregunta del bot:</strong> automatización por lugar u hora que haga POST a <code>{{ origen }}/api/atajos/ping</code>: el bot te pregunta y respondes desde la notificación de Telegram.</li>
-    </ol>
-  </details>
-</section>
+<app-atajos />
 
 <app-llaves />
 
