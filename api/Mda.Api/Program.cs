@@ -316,6 +316,7 @@ app.MapReglas();
 app.MapExtractos();
 app.MapDivisas();
 app.MapInicioResumen();
+app.MapLinea();
 app.MapInforme();
 
 // el front de Angular: cualquier ruta que no sea de la API ni de SignalR devuelve index.html
