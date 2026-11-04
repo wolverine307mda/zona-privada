@@ -190,7 +190,7 @@
   }
   .pestanas-app::before {
     content: ''; position: absolute; inset: 0; z-index: -1; border-top: 1px solid var(--vidrio-borde);
-    background: color-mix(in srgb, var(--fondo) 66%, transparent); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    background: color-mix(in srgb, var(--fondo) 90%, transparent); backdrop-filter: blur(28px) saturate(1.6); -webkit-backdrop-filter: blur(28px) saturate(1.6);
     -webkit-mask-image: radial-gradient(circle 38px at 50% 0, transparent 37px, #000 38px); mask-image: radial-gradient(circle 38px at 50% 0, transparent 37px, #000 38px);
   }
   .pestanas-app { view-transition-name: pestanas; }
