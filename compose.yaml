@@ -171,9 +171,34 @@ services:
       - ${COPIAS_NUBE:-./copias/nube}:/nube
     entrypoint: ["sh", "/copias.sh"]
 
+  # OPCIONAL (perfil «casa»): Home Assistant y AdGuard Home en este mismo equipo. «docker compose --profile casa up -d» los arranca.
+  # La API los ve por su nombre dentro de Docker: en Seguridad → Claves pon http://homeassistant:8123 (y un token) y http://adguard:3000.
+  # AdGuard bloquea anuncios como servidor DNS: para que sirva hay que apuntar el router (o el PC) a este equipo, y en Windows el puerto 53 suele estar
+  # ocupado, por eso aquí solo se publica su panel (http://localhost:3001; en el asistente deja el panel en el puerto 3000).
+  homeassistant:
+    profiles: ["casa"]
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    volumes:
+      - homeassistant:/config
+    ports:
+      - "8123:8123"
+  adguard:
+    profiles: ["casa"]
+    image: adguard/adguardhome:latest
+    restart: unless-stopped
+    volumes:
+      - adguard-trabajo:/opt/adguardhome/work
+      - adguard-conf:/opt/adguardhome/conf
+    ports:
+      - "3001:3000"
+
 volumes:
   db:
   seq:
   claves:
   derivados:
   tailscale:
+  homeassistant:
+  adguard-trabajo:
+  adguard-conf:

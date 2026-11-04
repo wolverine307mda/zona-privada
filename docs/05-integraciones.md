@@ -63,3 +63,10 @@ Elegir ciudad en la tarjeta del tiempo de Inicio. Aviso la víspera (desde las 2
 No es externo, pero vive fuera de Docker: `agente/Mda.Agente` (consola .NET 10). Variables: `AGENTE_URL`
 (por defecto `http://localhost:8080`) y `AGENTE_TOKEN` (si no está en el entorno lo lee del `.env` del repo).
 Manda cada 2 s CPU, memoria, discos y red reales a `POST /api/sistema/agente` con `X-Agente-Token`. Cada 5 min manda además la **salud** (estado de los discos por WMI, espacio, reinicio pendiente; la temperatura y el desgaste solo con el agente como administrador) y atiende las **órdenes** de «Mi PC» preguntando a la API (bloquear, mantener despierto, reiniciar, suspender, apagar), solo si la firma y la caducidad cuadran. Es un programa para Windows (`net10.0-windows`).
+
+## Home Assistant (casa conectada)
+
+En **Seguridad → Claves → Home Assistant** se guardan (cifradas) su dirección (`http://homeassistant:8123` o la IP de tu red) y un **token de acceso de larga duración** (Home Assistant → tu perfil → Seguridad). La dirección tiene que ser de tu red
+de casa, de Tailscale o de un contenedor: no se acepta una de Internet. En Mi PC aparece «Casa conectada» con un interruptor por cada luz, enchufe, ventilador, interruptor virtual y botón de activar por escena
+(`ClienteHogar` en `api/Mda.Api/Pc/Hogar.cs`). Cerraduras, alarmas y el resto de dominios no se tocan desde aquí.
+Si no lo tienes, `docker compose --profile casa up -d` levanta Home Assistant (panel en `http://localhost:8123`) y AdGuard Home (`http://localhost:3001`) en este mismo equipo.

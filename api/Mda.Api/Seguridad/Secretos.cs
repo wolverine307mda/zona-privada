@@ -45,6 +45,7 @@ public class Secretos(SecretosFuente fuente, IConfiguration config, ILogger<Secr
         ]),
         new("spotify", "Spotify", "Música y lo que suena", [new("ClientId", "Client ID", "Spotify:ClientId"), new("ClientSecret", "Client secret", "Spotify:ClientSecret")]),
         new("google", "Google", "Calendario y cuenta", [new("ClientId", "Client ID", "Google:ClientId"), new("ClientSecret", "Client secret", "Google:ClientSecret")]),
+        new("homeassistant", "Home Assistant", "Luces, enchufes y escenas de casa", [new("Url", "Dirección (http://homeassistant:8123)", "HomeAssistant:Url"), new("Token", "Token de acceso de larga duración", "HomeAssistant:Token")]),
         new("vigilancia", "Latido externo", "Healthchecks.io: te avisa si el PC deja de dar señales", [new("Url", "URL del latido", "Healthcheck:Url")]),
     ];
 
@@ -135,6 +136,8 @@ public static class SecretosEndpoints
             if (valor.Length > 1000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["valor"] = ["Demasiado largo."] });
             if (valor.Length > 0 && servicio == "correo" && nombre == "Puerto" && !(int.TryParse(valor, out var p) && p is > 0 and < 65536))
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["valor"] = ["El puerto es un número entre 1 y 65535."] });
+            if (valor.Length > 0 && nombre == "Url" && servicio is "homeassistant" or "adguard" && await Mda.Api.Pc.Hogar.ValidarUrl(valor) is { } malaUrl)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["valor"] = [malaUrl] });
             if (valor.Length > 0 && servicio == "vigilancia" && !(Uri.TryCreate(valor, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps))
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["valor"] = ["Tiene que ser una dirección https://."] });
             await secretos.Poner(db, servicio, nombre, valor, reloj);

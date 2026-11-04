@@ -207,6 +207,8 @@ builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompre
 // ---- Avisos (correo, WhatsApp), cuentas enlazadas (Spotify, Google) y agenda con recordatorios ----
 builder.Services.AddMemoryCache();
 // sin registros de cada petición: la URL de CallMeBot lleva la apikey
+builder.Services.AddHttpClient("hogar", c => c.Timeout = TimeSpan.FromSeconds(8)); // Home Assistant y AdGuard, de la red de casa
+builder.Services.AddSingleton<ClienteHogar>();
 builder.Services.AddHttpClient("avisos", c => c.Timeout = TimeSpan.FromSeconds(20)).RemoveAllLoggers();
 builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSeconds(15));
 // sin registros de cada petición: el token del bot va en la propia URL y acabaría en los logs y en Seq
@@ -290,6 +292,7 @@ app.MapPin();
 app.MapBateria();
 app.MapEscenas();
 app.MapVelocidad();
+app.MapHogar();
 app.MapCartera();
 app.MapCoche();
 app.MapPush();

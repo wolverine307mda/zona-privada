@@ -188,6 +188,8 @@
 | GET | `/api/red/{id}/historial?horas=` | gráfica de latencia y caídas de un aparato con historial (1 h a 30 días): puntos, disponibilidad, media, máximo y caídas. Hasta 3 aparatos con historial |
 | GET | `/api/red/velocidad?dias=` | las medidas del test de velocidad de Internet (bajada, subida y latencia) y su resumen; se guardan las últimas 400 |
 | POST | `/api/sistema/agente/velocidad` | el agente manda `{ bajadaMbps, subidaMbps, pingMs }` tras la prueba (token). Se pide con la orden `velocidad`, a mano o de madrugada |
+| GET | `/api/hogar/estado` · `/api/hogar/entidades` | qué servicios de casa hay configurados y las luces, enchufes, ventiladores, interruptores virtuales y escenas de Home Assistant (409 si falta configurarlo, 502 si no responde) |
+| POST | `/api/hogar/entidades/{id}/{accion}` | `encender`, `apagar`, `alternar` (o `activar` en una escena) sobre una entidad de esos cinco tipos; nada de cerraduras ni alarmas |
 | POST | `/api/red/{id}/despertar` | Wake-on-LAN: manda al agente una orden `wol` con la MAC del aparato (409 si el agente no está en marcha, 403 `reautenticar` sin Face ID, 400 si no tiene MAC) |
 | GET/POST/PUT/DELETE | `/api/red` · `/{id}` · POST `/{id}/probar` | aparatos de la red de casa (nombre, IP o nombre, puerto, tipo); solo direcciones locales o de Tailscale; se prueban cada minuto |
 | GET/POST/DELETE | `/api/portapapeles` · `/{id}` · POST `/{id}/al-pc` · `/del-pc` | texto compartido móvil ↔ PC (20 últimos, 24 h, 2000 letras) |

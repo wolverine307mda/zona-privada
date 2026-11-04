@@ -8,6 +8,7 @@ import { ConfirmarService } from '../core/confirmar.service';
 import { BateriaSalud } from './bateria-salud';
 import { CasaPc } from './casa';
 import { Escenas } from './escenas';
+import { Hogar } from './hogar';
 import { Velocidad } from './velocidad';
 import { PortapapelesPc } from './portapapeles';
 import { RedCasa } from './red';
@@ -40,7 +41,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, BateriaSalud, CasaPc, Escenas, RedCasa, PortapapelesPc, Velocidad],
+  imports: [Pc3d, BateriaSalud, CasaPc, Escenas, Hogar, RedCasa, PortapapelesPc, Velocidad],
   template: `
     <section class="caja pc3d">
       <header class="caja__cab"><h3>Tu PC por dentro</h3><span class="sub">{{ a()?.origen === 'equipo' ? 'en directo · arrastra para girarlo' : 'midiendo Docker · arranca el agente' }}</span></header>
@@ -102,6 +103,8 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     }
 
     @if (e()?.agenteConectado) { <app-velocidad /> }
+
+    <app-hogar />
 
     <app-casa-pc />
     <app-red-casa />
