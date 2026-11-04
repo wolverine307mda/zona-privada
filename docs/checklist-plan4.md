@@ -24,7 +24,7 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 4.2 Escenas de casa (foto del estado de los aparatos, un toque para volver a ponerla)
 
 ## Fase 5 · Diseño
-- ⬜ 5.1 Componentes (control radial, interruptor, tarjeta métrica, etiqueta flotante)
+- ✅ 5.1 Componentes (control radial, interruptor, tarjeta métrica, etiqueta flotante): `web/src/app/ui/` (commit c1ebe71, fase 1B de `REVISION-DISENO.md`)
 - ⬜ 5.2 Casa con el lenguaje «Domus»
 
 ## Fase 6 · Lo que necesito de ti
