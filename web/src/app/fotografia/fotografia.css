@@ -68,9 +68,6 @@
 .mejores li { color: var(--soft); }
 .mejores b { font-size: 1rem; margin-right: 4px; }
 
-.avisos summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
-.avisos[open] summary { margin-bottom: 12px; }
-.avisos > * + * { margin-top: 10px; }
 
 /* carga */
 .esqueleto { padding: 0; overflow: hidden; }

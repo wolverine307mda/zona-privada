@@ -3,6 +3,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { Avisame } from './avisame';
 import { Cielo } from './cielo';
 import { AjustesLuz, Dia, DiaSemana, Semana, Ventana, cardinal, colorNota, creciente, hhmm, instante } from './modelo';
 
@@ -22,7 +23,7 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
 // y la semana de un vistazo. El sol y la luna se calculan en el servidor; las nubes vienen de la previsión (Open-Meteo).
 @Component({
   selector: 'app-fotografia',
-  imports: [Cielo, NgTemplateOutlet, RouterLink],
+  imports: [Avisame, Cielo, NgTemplateOutlet, RouterLink],
   styleUrls: ['../gastos/comun.css', './fotografia.css'],
   template: `
     <header class="cab">
@@ -141,19 +142,7 @@ const horaDe = (iso: string | null): string => (iso ? iso.slice(11, 16) : '—')
         </section>
       }
 
-      <details class="caja avisos">
-        <summary>Avisarme cuando merezca la pena</summary>
-        @if (ajustes(); as a) {
-          <label class="interruptor"><input type="checkbox" [checked]="a.activa" (change)="ajustar({ activa: $any($event.target).checked })">
-            <span><strong>Notificación y Telegram</strong><small>Solo si la nota llega a {{ a.umbral }}, no estás trabajando y no tienes un evento. La hora dorada, {{ a.antelacionMin }} min antes; la noche de Vía Láctea, la tarde anterior.</small></span></label>
-          <label class="campo"><span class="campo__etiqueta">Nota mínima: {{ a.umbral }}</span>
-            <input type="range" min="1" max="10" [value]="a.umbral" (change)="ajustar({ umbral: +$any($event.target).value })"></label>
-          <label class="campo"><span class="campo__etiqueta">Cielo de tu zona (Bortle 1–9): {{ a.bortle }}</span>
-            <input type="range" min="1" max="9" [value]="a.bortle" (change)="ajustar({ bortle: +$any($event.target).value })"></label>
-          <label class="interruptor"><input type="checkbox" [checked]="a.amanecer" (change)="ajustar({ amanecer: $any($event.target).checked })"><span><strong>Incluir la hora dorada de la mañana</strong></span></label>
-          <label class="interruptor"><input type="checkbox" [checked]="a.astro" (change)="ajustar({ astro: $any($event.target).checked })"><span><strong>Incluir noches de Vía Láctea</strong></span></label>
-        }
-      </details>
+      <app-avisame [ajustes]="ajustes()" [semana]="semana()" (cambiar)="ajustar($event)" />
     }
 
     <ng-template #brujula let-titulo="titulo" let-az="az" let-hora="hora">
