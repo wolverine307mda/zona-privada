@@ -818,6 +818,49 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("portapapeles", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.Escena", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApagarMinutos")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Brillo")
+                        .HasColumnType("integer");
+
+                    b.Property<bool?>("Concentracion")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("Despierto")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Energia")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Icono")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int?>("Volumen")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("escenas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Pc.OrdenPc", b =>
                 {
                     b.Property<int>("Id")

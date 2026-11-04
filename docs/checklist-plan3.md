@@ -35,10 +35,10 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 16 Aviso de temperatura
 - ✅ 17 Abrir URL o app en el PC
 - ✅ 19 Presencia automática
-- 🔄 20 Escenas
+- ✅ 20 Escenas
 - ⬜ 21 Home Assistant
-- ⬜ 23 Ping al router con gráfica
-- ⬜ 24 Test de velocidad
+- 🔄 23 Ping al router con gráfica
+- ⏭️ 24 Test de velocidad
 - ⬜ 25 AdGuard / Pi-hole
 - ⬜ 48 Gemelo digital de la habitación
 

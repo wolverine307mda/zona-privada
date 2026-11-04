@@ -170,6 +170,17 @@ public static class AtajosApi
             return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
         }).Requiere("casa");
 
+        // Una escena del PC por su nombre («Cine», «Trabajo»…); las que apagan el PC se aplican solo desde la app, con Face ID
+        a.MapPost("/escena", async (Mda.Api.Pc.EscenaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
+        {
+            var nombre = (e.Nombre ?? "").Trim();
+            var escena = (await db.Escenas.AsNoTracking().ToListAsync(ct)).FirstOrDefault(x => string.Equals(x.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
+            if (escena is null) return Results.NotFound(new { mensaje = "No hay ninguna escena con ese nombre." });
+            if (escena.ApagarMinutos is not null) return Results.Conflict(new { mensaje = "Esa escena apaga el PC: aplícala desde la app, con Face ID." });
+            var (ok, mensaje) = await Mda.Api.Pc.Escenas.Aplicar(escena, db, agente, avisos, reloj, "Atajo · " + IpCliente.De(ctx), ct);
+            return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
+        }).Requiere("casa");
+
         // Apple Pay: la automatización «Transacción» manda comercio e importe al pagar; entra «por confirmar»
         a.MapPost("/pago", async (PagoAtajo e, AppDbContext db, IAvisos avisos, Bot bot, IMemoryCache cache, ILogger<Movimiento> log, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {

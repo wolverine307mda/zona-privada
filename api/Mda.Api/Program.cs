@@ -287,6 +287,7 @@ app.MapSeguridad();
 app.MapSecretos();
 app.MapPin();
 app.MapBateria();
+app.MapEscenas();
 app.MapCartera();
 app.MapCoche();
 app.MapPush();

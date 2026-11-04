@@ -182,6 +182,9 @@
 | GET | `/api/pc/bateria` | la última medida de la salud de la batería y el historial de 90 días (capacidad de diseño, actual, ciclos y desgaste %) |
 | POST | `/api/sistema/agente/bateria` | el agente manda `{ diseno, completa, ciclos }` tras `powercfg /batteryreport` (token); una medida por día. Se pide con la orden `bateria-informe` |
 | POST | `/api/pc/ordenes` `{ tipo: "abrir", parametro }` | abre en el PC una dirección http(s) (hasta 300 letras, sin usuario ni espacios) o una app de la lista (`calculadora`, `bloc`, `explorador`). Pide Face ID siempre; el agente lo abre con el explorador de Windows, sin consola |
+| GET/POST/PUT/DELETE | `/api/escenas` · `/{id}` | escenas del PC (brillo, volumen, plan de energía, concentración, PC despierto y apagado programado; cada campo vacío = no tocar). La primera vez salen tres de ejemplo (Cine, Trabajo, Dormir) |
+| POST | `/api/escenas/{id}/aplicar` | aplica la escena encolando una orden por ajuste; si programa el apagado pide Face ID (403 `reautenticar`) |
+| POST | `/api/atajos/escena` `{ nombre }` | lo mismo desde el iPhone (token con permiso `casa`); las escenas que apagan el PC no se pueden lanzar así |
 | POST | `/api/red/{id}/despertar` | Wake-on-LAN: manda al agente una orden `wol` con la MAC del aparato (409 si el agente no está en marcha, 403 `reautenticar` sin Face ID, 400 si no tiene MAC) |
 | GET/POST/PUT/DELETE | `/api/red` · `/{id}` · POST `/{id}/probar` | aparatos de la red de casa (nombre, IP o nombre, puerto, tipo); solo direcciones locales o de Tailscale; se prueban cada minuto |
 | GET/POST/DELETE | `/api/portapapeles` · `/{id}` · POST `/{id}/al-pc` · `/del-pc` | texto compartido móvil ↔ PC (20 últimos, 24 h, 2000 letras) |
