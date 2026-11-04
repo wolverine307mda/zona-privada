@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { CasaService } from './casa.service';
-import { AparatoCasa, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
+import { AparatoCasa, DispositivoTuya, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
 import { TarjetaAparato } from './tarjeta-aparato';
 
 type Pestana = 'todo' | number;
@@ -32,6 +32,11 @@ export class Casa implements OnInit {
   protected readonly nuevoTipo = signal('luz');
   protected readonly nuevoDriver = signal('demo');
   protected readonly nuevaEstancia = signal<number | null>(null);
+  protected readonly tuyaId = signal('');
+  protected readonly tuyaIr = signal('');
+  protected readonly tuyaRemoto = signal('');
+  protected readonly tuyaLista = signal<DispositivoTuya[] | null>(null);
+  protected readonly buscandoTuya = signal(false);
   protected readonly estNombre = signal('');
   protected readonly estIcono = signal('🏠');
   protected readonly ajustando = signal<AparatoCasa | null>(null);
@@ -94,6 +99,7 @@ export class Casa implements OnInit {
     this.nuevoTipo.set('luz');
     this.nuevoDriver.set('demo');
     this.nuevaEstancia.set(typeof this.pestana() === 'number' ? (this.pestana() as number) : null);
+    this.tuyaId.set(''); this.tuyaIr.set(''); this.tuyaRemoto.set(''); this.tuyaLista.set(null);
     this.aviso.set('');
     this.dlgAparato()?.nativeElement.showModal();
   }
@@ -103,10 +109,28 @@ export class Casa implements OnInit {
     if (!this.nuevoNombre().trim()) { this.aviso.set('Ponle un nombre.'); return; }
     this.ocupado.set(true);
     try {
-      await this.casa.crearAparato(this.nuevoNombre().trim(), this.nuevoTipo(), this.nuevoDriver(), this.nuevaEstancia());
+      await this.casa.crearAparato(this.nuevoNombre().trim(), this.nuevoTipo(), this.nuevoDriver(), this.nuevaEstancia(),
+        this.nuevoDriver() === 'tuya' ? { deviceId: this.tuyaId(), infraredId: this.tuyaIr(), remoteId: this.tuyaRemoto() } : undefined);
       await this.casa.cargar();
       this.dlgAparato()?.nativeElement.close();
     } catch { this.aviso.set('No se pudo añadir el aparato.'); } finally { this.ocupado.set(false); }
+  }
+
+  // los aparatos de tu cuenta de Tuya: se elige uno y rellena el nombre, el tipo y el identificador
+  protected async buscarTuya(): Promise<void> {
+    this.buscandoTuya.set(true);
+    this.aviso.set('');
+    try { this.tuyaLista.set(await this.casa.tuyaDispositivos()); }
+    catch (e) {
+      const d = (e as { error?: { detalle?: string } }).error?.detalle;
+      this.aviso.set(d ?? 'No se pudo leer tu cuenta de Tuya. Revisa las claves en Seguridad → Claves.');
+    } finally { this.buscandoTuya.set(false); }
+  }
+  protected elegirTuya(d: DispositivoTuya): void {
+    this.tuyaId.set(d.id);
+    if (!this.nuevoNombre().trim()) this.nuevoNombre.set(d.nombre);
+    if (d.tipoSugerido) this.nuevoTipo.set(d.tipoSugerido);
+    this.tuyaLista.set(null);
   }
 
   protected abrirAjustes(a: AparatoCasa): void {

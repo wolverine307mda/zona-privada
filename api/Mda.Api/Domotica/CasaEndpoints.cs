@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Domotica;
 
 public record EstanciaEntrada(string? Nombre, string? Icono);
-public record AparatoEntrada(string? Nombre, string? Tipo, string? Driver, int? EstanciaId);
+public record AparatoEntrada(string? Nombre, string? Tipo, string? Driver, int? EstanciaId, string? DeviceId = null, string? InfraredId = null, string? RemoteId = null);
 public record OrdenCasa(string? Clave, JsonElement Valor);
 public record PanelEntrada(JsonElement Panel);
 
@@ -100,6 +100,7 @@ public static class CasaEndpoints
             if (e.EstanciaId is { } eid && !await db.Estancias.AnyAsync(x => x.Id == eid, ct)) return Mal("estanciaId", "Esa habitación no existe.");
             if (await db.Aparatos.CountAsync(ct) >= MaxAparatos) return Mal("nombre", $"Máximo {MaxAparatos} aparatos.");
             var a = new Aparato { Nombre = e.Nombre.Trim(), Tipo = e.Tipo, Driver = e.Driver ?? "demo", EstanciaId = e.EstanciaId };
+            if (a.Driver == "tuya") a.Config = new ConfigTuya(e.DeviceId?.Trim(), e.InfraredId?.Trim(), e.RemoteId?.Trim()).Json();
             db.Aparatos.Add(a);
             await db.SaveChangesAsync(ct);
             return Results.Ok(new { a.Id, a.Nombre, a.Tipo, a.Driver, a.EstanciaId });
@@ -112,6 +113,11 @@ public static class CasaEndpoints
             if (e.EstanciaId is { } eid && !await db.Estancias.AnyAsync(x => x.Id == eid, ct)) return Mal("estanciaId", "Esa habitación no existe.");
             a.Nombre = e.Nombre.Trim();
             a.EstanciaId = e.EstanciaId;
+            if (a.Driver == "tuya" && (e.DeviceId is not null || e.InfraredId is not null || e.RemoteId is not null))
+            {
+                var antes = ConfigTuya.Leer(a.Config);
+                a.Config = new ConfigTuya(e.DeviceId?.Trim() ?? antes.DeviceId, e.InfraredId?.Trim() ?? antes.InfraredId, e.RemoteId?.Trim() ?? antes.RemoteId).Json();
+            }
             await db.SaveChangesAsync(ct);
             return Results.Ok(new { a.Id, a.Nombre, a.Tipo, a.Driver, a.EstanciaId });
         });
@@ -146,6 +152,14 @@ public static class CasaEndpoints
             if (e is null) return Results.NotFound();
             var puntos = await db.Lecturas.AsNoTracking().Where(l => l.EntidadId == e.Id && l.Fecha >= desde).OrderBy(l => l.Fecha).Select(l => new { fecha = l.Fecha, valor = l.Valor }).ToListAsync(ct);
             return Results.Ok(puntos);
+        });
+
+        // los aparatos de tu cuenta de Tuya, para elegirlos al añadir uno (necesita las claves de Seguridad → Claves)
+        g.MapGet("/tuya/dispositivos", async (ClienteTuya tuya, CancellationToken ct) =>
+        {
+            if (!tuya.Configurado) return Results.Conflict(new { detalle = "Primero pon las claves de Tuya en Seguridad → Claves." });
+            try { return Results.Ok(await tuya.Listar(ct)); }
+            catch (Exception e) when (e is InvalidOperationException or HttpRequestException or TaskCanceledException) { return Results.Problem(e.Message, statusCode: StatusCodes.Status502BadGateway); }
         });
 
         // ---- cómo está colocado el panel ----

@@ -15,7 +15,7 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 ## Fase 3 · Casa: base, aparatos y estancias
 - ✅ 3.1 API Casa (tablas, driver demo, estancias, panel)
 - ✅ 3.2 Pantalla Casa con panel editable
-- 🔄 3.3 Puente en el agente y driver Tuya
+- ✅ 3.3 Driver Tuya en la nube (claves en Seguridad, búsqueda de aparatos, termómetro, lámparas, enchufes y aire IR). El modo local desde el agente queda para más adelante
 - ⏭️ 3.4 Driver Cast (Chromecast y Google Home)
 - ⬜ 3.5 Cámara (go2rtc, perfil casa)
 

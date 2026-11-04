@@ -8,6 +8,7 @@ export interface EstanciaCasa { id: number; nombre: string; icono: string; orden
 export interface EstadoCasa { estancias: EstanciaCasa[]; aparatos: AparatoCasa[]; panel: string | null; }
 export interface TipoCatalogo { id: string; nombre: string; campos: unknown[]; }
 export interface Catalogo { tipos: TipoCatalogo[]; drivers: string[]; }
+export interface DispositivoTuya { id: string; nombre: string; categoria: string; enLinea: boolean; tipoSugerido: string | null; }
 export interface PuntoHistorial { fecha: string; valor: number; }
 
 // Cómo está colocado el panel: el orden de los aparatos en cada habitación y los que has ocultado

@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { AparatoCasa, Catalogo, EstadoCasa, PanelGuardado, PuntoHistorial } from './modelo';
+import { AparatoCasa, Catalogo, DispositivoTuya, EstadoCasa, PanelGuardado, PuntoHistorial } from './modelo';
 
 // Habla con /api/domotica y guarda el estado de la casa en una señal: las tarjetas se pintan solas al cambiar.
 @Injectable({ providedIn: 'root' })
@@ -59,7 +59,10 @@ export class CasaService {
 
   crearEstancia(nombre: string, icono: string) { return firstValueFrom(this.http.post(`${this.base}/estancias`, { nombre, icono })); }
   borrarEstancia(id: number) { return firstValueFrom(this.http.delete(`${this.base}/estancias/${id}`)); }
-  crearAparato(nombre: string, tipo: string, driver: string, estanciaId: number | null) { return firstValueFrom(this.http.post(`${this.base}/aparatos`, { nombre, tipo, driver, estanciaId })); }
+  crearAparato(nombre: string, tipo: string, driver: string, estanciaId: number | null, tuya?: { deviceId?: string; infraredId?: string; remoteId?: string }) {
+    return firstValueFrom(this.http.post(`${this.base}/aparatos`, { nombre, tipo, driver, estanciaId, ...tuya }));
+  }
+  tuyaDispositivos() { return firstValueFrom(this.http.get<DispositivoTuya[]>(`${this.base}/tuya/dispositivos`)); }
   editarAparato(id: number, nombre: string, estanciaId: number | null) { return firstValueFrom(this.http.put(`${this.base}/aparatos/${id}`, { nombre, estanciaId })); }
   borrarAparato(id: number) { return firstValueFrom(this.http.delete(`${this.base}/aparatos/${id}`)); }
   cargarEjemplo() { return firstValueFrom(this.http.post(`${this.base}/ejemplo`, null)); }

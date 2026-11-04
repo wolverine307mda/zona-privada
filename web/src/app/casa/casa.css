@@ -45,3 +45,7 @@
 .dlg__acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
 
 @media (prefers-reduced-motion: reduce) { .rejilla > app-tarjeta-aparato, .esq i { animation: none; } .pestanas button { transition: none; } }
+
+.lista-tuya { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; max-height: 200px; overflow: auto; }
+.lista-tuya button { width: 100%; display: grid; text-align: left; gap: 2px; min-height: 44px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); cursor: pointer; }
+.lista-tuya small { color: var(--soft); }

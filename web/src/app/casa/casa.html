@@ -74,7 +74,19 @@
         @for (h of estado()?.estancias ?? []; track h.id) { <option [value]="h.id" [selected]="nuevaEstancia() === h.id">{{ h.nombre }}</option> }</select></label>
     <label class="campo"><span>Conector</span>
       <select [value]="nuevoDriver()" (change)="nuevoDriver.set(valor($event))">@for (d of drivers(); track d) { <option [value]="d">{{ d === 'demo' ? 'Ejemplo (sin aparato real)' : d }}</option> }</select></label>
-    @if (nuevoDriver() !== 'demo') { <p class="ayuda">Los conectores reales (Tuya, Cast…) se irán activando; mientras tanto el aparato queda «sin conexión».</p> }
+    @if (nuevoDriver() === 'tuya') {
+      <button class="button button--ghost" type="button" (click)="buscarTuya()" [disabled]="buscandoTuya()">{{ buscandoTuya() ? 'Buscando…' : 'Buscar en mi cuenta de Tuya' }}</button>
+      @if (tuyaLista(); as lista) {
+        <ul class="lista-tuya">
+          @for (d of lista; track d.id) { <li><button type="button" (click)="elegirTuya(d)"><strong>{{ d.nombre }}</strong><small>{{ d.categoria }} · {{ d.enLinea ? 'en línea' : 'sin conexión' }}</small></button></li> } @empty { <li class="ayuda">Tu cuenta no tiene aparatos.</li> }
+        </ul>
+      }
+      <label class="campo"><span>Identificador del aparato en Tuya</span><input type="text" [value]="tuyaId()" (input)="tuyaId.set(valor($event))" placeholder="Se rellena al elegirlo"></label>
+      @if (nuevoTipo() === 'clima') {
+        <label class="campo"><span>Emisor IR (infrared id)</span><input type="text" [value]="tuyaIr()" (input)="tuyaIr.set(valor($event))"></label>
+        <label class="campo"><span>Aire en el emisor (remote id)</span><input type="text" [value]="tuyaRemoto()" (input)="tuyaRemoto.set(valor($event))"></label>
+      }
+    } @else if (nuevoDriver() !== 'demo') { <p class="ayuda">Este conector todavía no está activo; el aparato queda «sin conexión» hasta entonces.</p> }
     @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
     <div class="dlg__acciones">
       <button class="button button--ghost" type="button" (click)="dlgAparato.close()">Cancelar</button>
