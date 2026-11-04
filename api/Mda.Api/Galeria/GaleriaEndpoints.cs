@@ -77,14 +77,14 @@ public static class GaleriaEndpoints
             var real = c.Resolver("imagenes", ruta);
             if (real is null || !Directory.Exists(real)) return Results.NotFound();
             var raizReal = Path.GetFullPath(c.RutaRaiz("imagenes"));
-            var publicadas = await db.FotosPublicas.AsNoTracking().ToListAsync(ct);
+            var publicadas = (await db.FotosPublicas.AsNoTracking().ToListAsync(ct)).GroupBy(p => p.Ruta).ToDictionary(g => g.Key, g => g.First()); // por ruta: sin recorrer la lista por cada archivo
             var rel = Path.GetRelativePath(raizReal, real).Replace('\\', '/');
             var elementos = new DirectoryInfo(real).EnumerateFileSystemInfos()
                 .Where(f => !Carpetas.Oculto(f) && (f is DirectoryInfo || Derivados.Soportada(f.Name) || ArchivosEndpoints.TipoDe(f.Name) == "imagen"))
                 .Select(f =>
                 {
                     var r = Path.GetRelativePath(raizReal, f.FullName).Replace('\\', '/');
-                    var foto = f is FileInfo ? publicadas.FirstOrDefault(p => p.Ruta == r) : null;
+                    var foto = f is FileInfo && publicadas.TryGetValue(r, out var pub) ? pub : null;
                     return new
                     {
                         nombre = f.Name, ruta = r, carpeta = f is DirectoryInfo, tamano = f is FileInfo fi ? fi.Length : 0L,

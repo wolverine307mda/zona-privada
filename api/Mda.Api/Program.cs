@@ -193,7 +193,14 @@ builder.Services.AddHostedService<ResumenSondas>();
 builder.Services.AddHostedService<LatidoExterno>();
 builder.Services.AddSingleton<Pregenerar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
-builder.Services.AddResponseCompression(o => { o.EnableForHttps = true; o.MimeTypes = ["application/json"]; });
+// Brotli y gzip para JSON y para el front (JS, CSS, HTML, SVG): antes solo se comprimía el JSON y los bundles salían enteros.
+// Al comprimir en cada petición, Brotli al nivel más rápido: casi igual de pequeño y sin gastar CPU.
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true;
+    o.MimeTypes = Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes.Concat(["application/json", "image/svg+xml", "application/manifest+json"]);
+});
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 
 
 // ---- Avisos (correo, WhatsApp), cuentas enlazadas (Spotify, Google) y agenda con recordatorios ----
@@ -235,7 +242,15 @@ app.UseCabecerasSeguras();
 app.UseSondas();
 app.UseResponseCompression();
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = CacheFront.Poner });
+// el index.html que sirve la ruta comodín del front tampoco se guarda en caché (así un despliegue nuevo se ve al recargar)
+app.Use((ctx, next) =>
+{
+    var ruta = ctx.Request.Path.Value ?? "";
+    if (!ruta.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) && !ruta.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase) && !Path.HasExtension(ruta))
+        ctx.Response.OnStarting(() => { if (!ctx.Response.Headers.ContainsKey("Cache-Control")) ctx.Response.Headers.CacheControl = "no-cache"; return Task.CompletedTask; });
+    return next();
+});
 // el enrutado va después de los archivos: si no, la ruta comodín del front se quedaría con los .js y .css
 app.UseRouting();
 app.UseCors();

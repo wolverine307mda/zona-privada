@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Net.Http.Headers;
 
 namespace Mda.Api.Archivos;
@@ -62,11 +63,16 @@ public static class ArchivosEndpoints
     {
         var g = app.MapGroup("/api/archivos").RequireAuthorization().AddEndpointFilter<Seguridad.PinFiltro>(); // pide el PIN de Documentos
 
-        g.MapGet("/raices", (Carpetas c) => c.Disponibles().Select(r =>
+        // contar elementos es recorrer cada carpeta (en Windows, por un montaje de Docker, es lento): se recuerda un minuto
+        g.MapGet("/raices", (Carpetas c, IMemoryCache cache) => cache.GetOrCreate("archivos-raices", e =>
         {
-            var dir = new DirectoryInfo(c.RutaRaiz(r.Id));
-            var n = dir.EnumerateFileSystemInfos().Count(f => !Carpetas.Oculto(f));
-            return new { r.Id, r.Nombre, elementos = n };
+            e.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60);
+            return c.Disponibles().Select(r =>
+            {
+                var dir = new DirectoryInfo(c.RutaRaiz(r.Id));
+                var n = dir.EnumerateFileSystemInfos().Count(f => !Carpetas.Oculto(f));
+                return new { r.Id, r.Nombre, elementos = n };
+            }).ToList();
         }));
 
         // ---- Contenido de una carpeta ----

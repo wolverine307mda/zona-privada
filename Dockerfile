@@ -12,10 +12,11 @@ RUN npx ng build --configuration production
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
 WORKDIR /src
 COPY api/Mda.Api/Mda.Api.csproj api/Mda.Api/
-RUN dotnet restore api/Mda.Api/Mda.Api.csproj
+# con el runtime de Linux para poder precompilar (ReadyToRun): el arranque y las primeras peticiones van más rápido
+RUN dotnet restore api/Mda.Api/Mda.Api.csproj -r linux-x64 -p:PublishReadyToRun=true
 COPY api/Mda.Api/ api/Mda.Api/
 COPY --from=web /web/dist/web/browser/ api/Mda.Api/wwwroot/
-RUN dotnet publish api/Mda.Api/Mda.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish api/Mda.Api/Mda.Api.csproj -c Release -o /app --no-restore -r linux-x64 --self-contained false -p:PublishReadyToRun=true
 
 # 3) Ejecución: imagen mínima, usuario sin privilegios
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

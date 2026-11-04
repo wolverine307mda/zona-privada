@@ -154,3 +154,12 @@ Sigue valiendo como respaldo (acceso directo a `agente\arrancar.cmd` en `shell:s
 | No llegan correos | contraseña de aplicación de Gmail; probar en Seguridad › Avisos › Probar |
 | `dotnet build` falla con «archivo en uso» | hay una API de desarrollo corriendo; párala antes de compilar |
 | Documentos vacío | las rutas `CARPETA_*` no existen o Docker Desktop no tiene acceso a esa unidad |
+
+## Rendimiento del servidor (medido)
+
+- **Compresión**: Brotli y gzip para JSON y para el front (JS, CSS, HTML, SVG). Antes solo se comprimía el JSON: el `main` salía de 126 KB y ahora de 48 KB; el CSS de 10 KB a 4 KB.
+- **Caché del front**: los archivos con hash en el nombre (`main-XXXXXXXX.js`) se guardan un año (`immutable`); `index.html`, `sw.js` y las rutas de la app se revisan siempre, así un despliegue nuevo se ve al recargar. Código en `Seguridad/CacheFront.cs`.
+- **Imagen Docker**: la API se publica precompilada (ReadyToRun, `linux-x64`) para arrancar y contestar antes; el contenedor `api` tiene `healthcheck` sobre `/api/salud`.
+- **Galería privada**: la lista de «tu carpeta de imágenes» busca las fotos publicadas en un diccionario en vez de recorrer una lista por cada archivo.
+- **Documentos**: el recuento de elementos de las carpetas (`/api/archivos/raices`) se recuerda 60 s.
+- **Front**: las pantallas se descargan en reposo (`PreloadAllModules`), así que al pulsar un menú ya están.

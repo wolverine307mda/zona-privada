@@ -1,6 +1,6 @@
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, ErrorHandler, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
+import { PreloadAllModules, provideRouter, withComponentInputBinding, withPreloading, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
 import { sesionCaducada } from './core/guards';
 import { AvisoDeErrores } from './core/errores';
 import { routes } from './app.routes';
@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([sesionCaducada])),
     // fundido entre pantallas, salvo al entrar o salir de la sesión: ahí cambia toda la página
     // (el candado se abre con su propia animación) y el fundido enseñaba las dos pantallas superpuestas
-    provideRouter(routes, withComponentInputBinding(),
+    provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules), // las pantallas se bajan en reposo: al pulsar ya están
       // tras un despliegue los archivos con huella cambian: si falta el de una pantalla, se recarga una vez para coger los nuevos
       withNavigationErrorHandler(() => {
         try {
