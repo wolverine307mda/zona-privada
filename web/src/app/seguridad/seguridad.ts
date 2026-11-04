@@ -5,6 +5,7 @@ import { soportaPasskeys } from '../core/passkey';
 import { Reautenticar } from '../core/reautenticar';
 import { Claves } from './claves';
 import { Llaves } from './llaves';
+import { PinAjustes } from './pin-ajustes';
 import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
 import type { Conexion } from '../musica/musica';
@@ -30,7 +31,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Claves, Llaves],
+  imports: [Claves, Llaves, PinAjustes],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })

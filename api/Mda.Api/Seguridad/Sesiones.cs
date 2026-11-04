@@ -26,6 +26,10 @@ public class SesionAbierta
     public int? BloquearTrasSegundos { get; set; }
     public DateTimeOffset? SegundoPlano { get; set; }
     public bool Bloqueada { get; set; }
+    // PIN de Documentos: hasta cuándo vale en esta sesión, fallos seguidos y bloqueo tras cinco
+    public DateTimeOffset? PinHasta { get; set; }
+    public int PinFallos { get; set; }
+    public DateTimeOffset? PinBloqueadoHasta { get; set; }
 }
 
 // Cada intento de entrar, bien o mal

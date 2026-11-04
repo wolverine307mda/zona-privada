@@ -94,7 +94,7 @@ public static class GaleriaEndpoints
                 })
                 .OrderByDescending(x => x.carpeta).ThenBy(x => x.nombre, StringComparer.CurrentCultureIgnoreCase).ToList();
             return Results.Ok(new { ruta = rel == "." ? "" : rel, elementos });
-        });
+        }).AddEndpointFilter<PinFiltro>();
 
         g.MapGet("/fotos", async (AppDbContext db, CancellationToken ct) =>
             Results.Ok(await db.FotosPublicas.AsNoTracking().OrderBy(f => f.Orden).ThenBy(f => f.Creada)

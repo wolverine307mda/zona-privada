@@ -14,13 +14,15 @@ import { AsistenteService } from '../core/asistente.service';
 import { RecargaService } from '../core/recarga';
 import { Asistente } from './asistente';
 import { Bloqueo } from './bloqueo';
+import { Confirmar } from './confirmar';
+import { Pin } from './pin';
 import { Buscador } from './buscador';
 import { MiniMusica } from './mini-musica';
 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo, Pin, Confirmar],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {

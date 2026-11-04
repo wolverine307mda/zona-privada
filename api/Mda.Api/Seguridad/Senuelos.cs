@@ -79,7 +79,7 @@ public static class Senuelos
             cerrarSesion = !await db.Ajustes.AnyAsync(a => a.Clave == CerrarSesion && a.Valor == "no", ct),
             senuelos = await db.Senuelos.AsNoTracking().OrderBy(s => s.Id).ToListAsync(ct),
             plantillas = Plantillas.Select(p => new { id = p.Key, nombre = p.Value.Nombre }),
-        }));
+        })).AddEndpointFilter<PinFiltro>(); // la lista da la ruta exacta de cada trampa: detrás del PIN
 
         // crea el archivo falso en una carpeta de Documentos y lo vigila
         g.MapPost("/", async (SenueloEntrada e, Carpetas c, AppDbContext db, CancellationToken ct) =>

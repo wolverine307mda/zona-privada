@@ -60,7 +60,7 @@ public static class ArchivosEndpoints
 
     public static void MapArchivos(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/archivos").RequireAuthorization();
+        var g = app.MapGroup("/api/archivos").RequireAuthorization().AddEndpointFilter<Seguridad.PinFiltro>(); // pide el PIN de Documentos
 
         g.MapGet("/raices", (Carpetas c) => c.Disponibles().Select(r =>
         {

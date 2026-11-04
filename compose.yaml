@@ -62,6 +62,8 @@ services:
       Galeria__Derivados: /derivados
       # clave que cifra notas, portapapeles y claves de servicios en la base. Si se pierde, esos datos no se pueden leer: guárdala fuera del PC
       Boveda__Clave: "${MDA_CLAVE_MAESTRA:?Falta MDA_CLAVE_MAESTRA en .env, genérala con openssl rand -base64 32}"
+      # PIN inicial de Documentos (cuatro cifras): solo se usa si aún no hay ninguno; luego se cambia desde Seguridad y esta línea sobra
+      Documentos__PinInicial: ${DOCUMENTOS_PIN_INICIAL:-}
       Agente__Token: ${AGENTE_TOKEN:-}
       Healthcheck__Url: ${HEALTHCHECK_URL:-}
       Archivos__Base: /carpetas

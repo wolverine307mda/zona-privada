@@ -270,6 +270,7 @@ app.MapConexiones();
 app.MapMusica();
 app.MapSeguridad();
 app.MapSecretos();
+app.MapPin();
 app.MapCartera();
 app.MapCoche();
 app.MapPush();

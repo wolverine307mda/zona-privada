@@ -108,3 +108,15 @@ Telegram, WhatsApp, correo, Spotify, Google y el latido externo se editan desde 
 - Quitar una clave la deja vacía (no vuelve a entrar la del `.env`).
 - La pantalla nunca recibe los valores: ver, cambiar o quitar pide confirmar con Face ID o contraseña (`Reautenticar`, 2 minutos) y el valor se oculta solo a los 20 s.
 - Con la base en memoria (pruebas y desarrollo) no se importa nada del `.env`.
+
+## PIN de Documentos
+
+Cuatro cifras que se piden al entrar en Documentos, en «tu carpeta de imágenes» de la galería y en la lista de señuelos
+(`api/Mda.Api/Seguridad/Pin.cs`). Solo se guarda su huella (PBKDF2). Vale 10 minutos desde el último uso y solo en la sesión donde se
+puso. Cinco fallos seguidos bloquean esa sesión 15 minutos. La app enseña un teclado propio (`shell/pin.ts`) cuando el servidor contesta
+403 `{ pin: true }` y repite la petición al acertar.
+
+- El PIN inicial sale de `DOCUMENTOS_PIN_INICIAL` del `.env` la primera vez; luego se cambia en Seguridad (pide Face ID) y esa línea se puede quitar.
+- Sin PIN guardado no se pide nada.
+- `GET /api/archivos/raices` queda fuera (Inicio solo cuenta carpetas).
+- Las miniaturas van por cookie, no por la app: por eso el PIN es estado de la sesión en el servidor y no una cabecera.

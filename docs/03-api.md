@@ -183,6 +183,7 @@
 | POST | `/api/sistema/agente/eventos` | el agente cuenta una descarga terminada o «Windows pide reiniciar» (token) |
 | GET/POST | `/api/sistema/agente/portapapeles` · `/{id}` | el agente lee el texto a copiar o deja el del PC (token) |
 | GET/PUT/DELETE | `/api/seguridad/claves` · `/{servicio}/{nombre}` | claves de servicios cifradas en la base: la lista no lleva valores; ver (GET), cambiar y quitar piden confirmar (403 `reautenticar`) |
+| GET/POST/DELETE/PUT | `/api/seguridad/pin` | PIN de Documentos: estado, poner el PIN (401 si falla, 429 tras cinco), quitarlo de la sesión, cambiarlo (pide confirmar). Documentos, `/api/galeria/carpeta` y `/api/senuelos` contestan 403 `pin` sin él |
 | GET | `/api/pc/historial` | una foto de la salud por día (espacio libre y desgaste de los discos), 90 días |
 | GET | `/api/pc` | salud del PC, si el agente está conectado, si la reautenticación vale y las últimas órdenes |
 | POST | `/api/pc/ordenes` · GET `/api/pc/ordenes/{id}` | `{ tipo, parametro? }` (`bloquear`, `despierto`, `reiniciar`, `suspender`, `apagar`, `cancelar`); pide reautenticar (403 `reautenticar:true`) y avisa a Telegram |

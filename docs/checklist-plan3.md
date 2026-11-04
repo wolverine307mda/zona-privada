@@ -7,9 +7,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 1.1 Render 3D de Inicio que a veces no sale
 - ✅ 1.2 Cifrado en BD con clave maestra
 - ✅ 1.3 Claves de servicios en Seguridad
-- 🔄 1.4 PIN de Documentos (modal número a número)
-- ⏭️ 1.5 Recordatorios (reintentos, sin duplicados, WhatsApp 5 min antes)
-- ⬜ 1.6 Rendimiento (compresión, caché, lotes, resumen de Inicio)
+- ✅ 1.4 PIN de Documentos (modal número a número)
+- 🔄 1.5 Recordatorios (reintentos, sin duplicados, WhatsApp 5 min antes)
+- ⏭️ 1.6 Rendimiento (compresión, caché, lotes, resumen de Inicio)
 
 ## Fase 2 · Diseño
 - ⬜ 2.1 Menú lateral con submenús y modo compacto

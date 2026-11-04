@@ -1000,6 +1000,15 @@ namespace Mda.Api.Data.Migraciones
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<DateTimeOffset?>("PinBloqueadoHasta")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PinFallos")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PinHasta")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("ReautenticadaHasta")
                         .HasColumnType("timestamp with time zone");
 
