@@ -1,3 +1,4 @@
+import { SemaforoVida } from './semaforo';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -25,7 +26,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Bateria, Espacio, Panel, RouterLink, Pc3d],
+  imports: [Bateria, Espacio, Panel, RouterLink, Pc3d, SemaforoVida],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })

@@ -11,6 +11,7 @@
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/salud` | `{ estado: "ok", hora }`. CORS solo GET para la web pública (GitHub Pages) |
+| GET | `/api/inicio/resumen` | el semáforo de vida: copias, seguridad, dinero, PC y red en verde, ámbar o rojo con su motivo, y el peor como estado global (`Seguridad/Semaforo.cs`) |
 | GET | `/api/publico/galeria` | fotos publicadas (id, título, descripción, alt, categoría, tamaño, color, URLs). 404 si la galería está apagada. CORS GET, 300/min por IP |
 | GET | `/api/publico/galeria/{id}/{mini\|grande}` | la foto en WebP sin EXIF (480 px / 1600 px), `Cache-Control: public, immutable` |
 | GET | `/api/publico/estado` · `/api/publico/estado/vivo` | «en línea» y, si está activado, CPU/RAM redondeadas, minutos encendido y serie de CPU; `/vivo` es SSE cada 3 s (máx. 20 visitantes, 10 min). 404 si está apagado |
