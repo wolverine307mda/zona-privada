@@ -1,0 +1,47 @@
+:host { display: block; }
+.cabecera { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.kicker { margin: 0 0 4px; font: 600 .75rem/1 var(--font-text); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+.titulo { margin: 0; font: 300 clamp(1.8rem, 6vw, 2.6rem)/1.05 var(--font-display); }
+
+.resumen { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+.chip-r { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); font-size: .85rem; color: var(--soft); }
+.chip-r b { color: var(--texto); font-weight: 600; }
+.chip-r--alerta { color: var(--warn, #f0b53a); border-color: color-mix(in srgb, var(--warn, #f0b53a) 50%, transparent); }
+
+.pestanas { display: flex; gap: 6px; padding: 4px; margin: 0 0 16px; width: fit-content; max-width: 100%; overflow-x: auto; border-radius: 999px; background: color-mix(in srgb, var(--texto) 7%, transparent); scrollbar-width: none; }
+.pestanas::-webkit-scrollbar { display: none; }
+.pestanas button { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 600 14px/1 var(--font-text); cursor: pointer; transition: background 200ms, color 200ms; }
+.pestanas button[aria-selected='true'] { background: var(--brand); color: var(--on-brand); }
+.pestanas__mas { border: 1px dashed var(--vidrio-borde) !important; }
+
+.rejilla { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
+.rejilla > app-tarjeta-aparato { animation: entra 420ms var(--ease-expo, ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
+@keyframes entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.ayuda { margin: 0 0 12px; color: var(--soft); font-size: .85rem; }
+.error { margin: 0 0 12px; color: var(--bad, #e5484d); font-size: .88rem; }
+.pie { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.peligro { color: var(--bad, #e5484d); }
+
+.vacio { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 40px 20px; border-radius: 28px; border: 1px dashed var(--vidrio-borde); }
+.vacio__icono { font-size: 2.6rem; }
+.vacio p { margin: 0; max-width: 40ch; color: var(--soft); }
+.vacio__acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+
+/* esqueletos mientras llega la casa */
+.esq { display: grid; gap: 12px; padding: 16px; min-height: 150px; border-radius: 28px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.esq i { display: block; height: 16px; border-radius: 8px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--texto) 12%, transparent), transparent) 0 0 / 200% 100%; background-color: color-mix(in srgb, var(--texto) 6%, transparent); animation: barrido 1.4s linear infinite; }
+.esq i:nth-child(1) { width: 55%; height: 22px; }
+.esq i:nth-child(2) { width: 80%; height: 34px; }
+.esq i:nth-child(3) { width: 40%; }
+@keyframes barrido { to { background-position: -200% 0; } }
+
+/* diálogos */
+.dlg { width: min(92vw, 420px); padding: 20px; border-radius: 28px; border: 1px solid var(--vidrio-borde); background: var(--fondo); color: var(--texto); }
+.dlg::backdrop { background: rgb(0 0 0 / .5); backdrop-filter: blur(4px); }
+.dlg h3 { margin: 0 0 14px; font: 600 1.1rem/1.2 var(--font-text); }
+.campo { display: grid; gap: 6px; margin: 0 0 12px; font-size: .85rem; color: var(--soft); }
+.campo input, .campo select { min-height: 44px; padding: 0 12px; border-radius: 14px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); font: inherit; }
+.dlg__acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) { .rejilla > app-tarjeta-aparato, .esq i { animation: none; } .pestanas button { transition: none; } }

@@ -25,6 +25,7 @@ export const routes: Routes = [
           { path: 'estadisticas', title: 'Estadísticas · MDA', loadComponent: () => import('./gastos/estadisticas').then((m) => m.Estadisticas) },
         ],
       },
+      { path: 'casa', title: 'Casa · MDA', loadComponent: () => import('./casa/casa').then((m) => m.Casa) },
       { path: 'pc', title: 'Mi PC · MDA', loadComponent: () => import('./pc/pc').then((m) => m.Pc) },
       { path: 'fotografia/previsiones', title: 'Previsiones · Fotografía · MDA', loadComponent: () => import('./fotografia/secciones').then((m) => m.Previsiones) },
       { path: 'fotografia/sitios', title: 'Mis sitios · Fotografía · MDA', loadComponent: () => import('./fotografia/secciones').then((m) => m.Sitios) },

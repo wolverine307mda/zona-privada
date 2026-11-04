@@ -1,0 +1,115 @@
+<section class="cabecera">
+  <div>
+    <p class="kicker">Tu casa</p>
+    <h2 class="titulo">{{ saludo }}</h2>
+  </div>
+  @if (estado()) {
+    <button class="button button--ghost" type="button" (click)="editando.set(!editando())" [attr.aria-pressed]="editando()">{{ editando() ? 'Listo' : 'Editar panel' }}</button>
+  }
+</section>
+
+@if (estado(); as e) {
+  <div class="resumen" aria-label="Resumen de la casa">
+    <span class="chip-r"><b>{{ encendidos() }}</b> encendidos</span>
+    @if (temperatura() !== null) { <span class="chip-r"><b>{{ temperatura()!.toLocaleString('es-ES', { maximumFractionDigits: 1 }) }}</b> °C de media</span> }
+    @if (puertaAbierta()) { <span class="chip-r chip-r--alerta">🚪 Puerta abierta</span> }
+  </div>
+
+  <nav class="pestanas" role="tablist" aria-label="Habitaciones">
+    <button type="button" role="tab" [attr.aria-selected]="pestana() === 'todo'" (click)="ponerPestana('todo')">Todo</button>
+    @for (h of e.estancias; track h.id) {
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === h.id" (click)="ponerPestana(h.id)"><span aria-hidden="true">{{ h.icono }}</span> {{ h.nombre }}</button>
+    }
+    @if (editando()) { <button type="button" class="pestanas__mas" (click)="abrirEstancia()" aria-label="Añadir habitación">＋ Habitación</button> }
+  </nav>
+
+  @if (casa.error()) { <p class="error" role="alert">{{ casa.error() }}</p> }
+
+  @if (e.aparatos.length === 0) {
+    <div class="vacio">
+      <span class="vacio__icono" aria-hidden="true">🏠</span>
+      <strong>Tu casa está vacía</strong>
+      <p>Añade tus aparatos (termómetro, lámparas, aire, tele…) o prueba con unos de ejemplo para ver cómo queda.</p>
+      <div class="vacio__acciones">
+        <button class="button" type="button" (click)="abrirAparato()">Añadir aparato</button>
+        <button class="button button--ghost" type="button" (click)="ejemplo()" [disabled]="ocupado()">Cargar ejemplo</button>
+      </div>
+    </div>
+  } @else {
+    @if (editando()) {
+      <p class="ayuda">Modo edición: ordena con ↑ ↓, oculta lo que no quieras ver y toca ⚙︎ para renombrar, cambiar de habitación o quitar.</p>
+    }
+    <div class="rejilla">
+      @for (a of visibles(); track a.id; let i = $index; let p = $first; let u = $last) {
+        <app-tarjeta-aparato [a]="a" [editando]="editando()" [oculto]="esOculto(a)" [primero]="p" [ultimo]="u"
+          (subir)="subir(a)" (bajar)="bajar(a)" (ocultar)="ocultar(a)" (ajustes)="abrirAjustes(a)" [style.--i]="i" />
+      } @empty {
+        <p class="ayuda">No hay aparatos en esta habitación{{ editando() ? '' : ' (o están ocultos)' }}.</p>
+      }
+    </div>
+    <div class="pie">
+      <button class="button button--ghost" type="button" (click)="abrirAparato()">＋ Añadir aparato</button>
+      @if (editando() && pestana() !== 'todo') {
+        <button class="button button--ghost peligro" type="button" (click)="borrarEstancia()">{{ confirmarEstancia() ? '¿Seguro? Pulsa otra vez' : 'Quitar esta habitación' }}</button>
+      }
+    </div>
+  }
+} @else {
+  <div class="rejilla" aria-label="Cargando la casa">
+    @for (n of [1, 2, 3, 4]; track n) { <div class="esq"><i></i><i></i><i></i></div> }
+  </div>
+}
+
+@if (aviso()) { <p class="error" role="status">{{ aviso() }}</p> }
+
+<!-- añadir aparato -->
+<dialog class="dlg" #dlgAparato aria-labelledby="t-aparato">
+  <form (submit)="crearAparato($event)" novalidate>
+    <h3 id="t-aparato">Añadir aparato</h3>
+    <label class="campo"><span>Nombre</span><input type="text" maxlength="40" [value]="nuevoNombre()" (input)="nuevoNombre.set(valor($event))" placeholder="Lámpara del salón"></label>
+    <label class="campo"><span>Tipo</span>
+      <select [value]="nuevoTipo()" (change)="nuevoTipo.set(valor($event))">@for (t of tipos(); track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }</select></label>
+    <label class="campo"><span>Habitación</span>
+      <select (change)="nuevaEstancia.set(numeroOrNull($event))"><option value="" [selected]="nuevaEstancia() === null">Sin habitación</option>
+        @for (h of estado()?.estancias ?? []; track h.id) { <option [value]="h.id" [selected]="nuevaEstancia() === h.id">{{ h.nombre }}</option> }</select></label>
+    <label class="campo"><span>Conector</span>
+      <select [value]="nuevoDriver()" (change)="nuevoDriver.set(valor($event))">@for (d of drivers(); track d) { <option [value]="d">{{ d === 'demo' ? 'Ejemplo (sin aparato real)' : d }}</option> }</select></label>
+    @if (nuevoDriver() !== 'demo') { <p class="ayuda">Los conectores reales (Tuya, Cast…) se irán activando; mientras tanto el aparato queda «sin conexión».</p> }
+    @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
+    <div class="dlg__acciones">
+      <button class="button button--ghost" type="button" (click)="dlgAparato.close()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="ocupado()">{{ ocupado() ? 'Añadiendo…' : 'Añadir' }}</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ajustes de un aparato -->
+<dialog class="dlg" #dlgAjustes aria-labelledby="t-ajustes">
+  <form (submit)="guardarAjustes($event)" novalidate>
+    <h3 id="t-ajustes">Ajustes del aparato</h3>
+    <label class="campo"><span>Nombre</span><input type="text" maxlength="40" [value]="ajNombre()" (input)="ajNombre.set(valor($event))"></label>
+    <label class="campo"><span>Habitación</span>
+      <select (change)="ajEstancia.set(numeroOrNull($event))"><option value="" [selected]="ajEstancia() === null">Sin habitación</option>
+        @for (h of estado()?.estancias ?? []; track h.id) { <option [value]="h.id" [selected]="ajEstancia() === h.id">{{ h.nombre }}</option> }</select></label>
+    @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
+    <div class="dlg__acciones">
+      <button class="button button--ghost peligro" type="button" (click)="borrarAparato()" [disabled]="ocupado()">{{ confirmarBorrar() ? '¿Seguro? Pulsa otra vez' : 'Quitar aparato' }}</button>
+      <button class="button button--ghost" type="button" (click)="dlgAjustes.close()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="ocupado()">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- añadir habitación -->
+<dialog class="dlg" #dlgEstancia aria-labelledby="t-estancia">
+  <form (submit)="crearEstancia($event)" novalidate>
+    <h3 id="t-estancia">Nueva habitación</h3>
+    <label class="campo"><span>Nombre</span><input type="text" maxlength="30" [value]="estNombre()" (input)="estNombre.set(valor($event))" placeholder="Despacho"></label>
+    <label class="campo"><span>Icono (un emoji)</span><input type="text" maxlength="8" [value]="estIcono()" (input)="estIcono.set(valor($event))"></label>
+    @if (aviso()) { <p class="error" role="alert">{{ aviso() }}</p> }
+    <div class="dlg__acciones">
+      <button class="button button--ghost" type="button" (click)="dlgEstancia.close()">Cancelar</button>
+      <button class="button" type="submit" [disabled]="ocupado()">Crear</button>
+    </div>
+  </form>
+</dialog>
