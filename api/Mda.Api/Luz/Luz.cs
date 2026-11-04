@@ -259,6 +259,14 @@ public static class LuzEndpoints
             return Results.Ok(new { sinLugar = false, sinDatos = false, lugar = lugar.Nombre, prevision = ServicioAurora.Evaluar(kps, lugar.Lat, reloj.GetUtcNow()) });
         });
 
+        // Niebla, inversión térmica y mar de nubes de los próximos amaneceres
+        g.MapGet("/niebla", async (ServicioTiempo tiempo, ServicioNiebla niebla, CancellationToken ct) =>
+        {
+            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            if (await niebla.Leer(lugar, ct) is not { } horas) return Results.Ok(new { sinLugar = false, sinDatos = true });
+            return Results.Ok(new { sinLugar = false, sinDatos = false, lugar = lugar.Nombre, dias = ServicioNiebla.PorDias(horas) });
+        });
+
         g.MapPut("/ajustes", async (AjustesLuz a, AppDbContext db, CancellationToken ct) =>
         {
             await ServicioLuz.Guardar(db, a, ct);
