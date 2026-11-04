@@ -85,6 +85,7 @@
   <!-- lo próximo de la agenda -->
   <a class="caja lista" routerLink="/agenda" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /></svg></span><h3>Lo próximo</h3></header>
+    <app-cuenta-atras [eventos]="agenda()" />
     <ul class="agenda">
       @for (a of eventos(); track a.clave) {
         <li [style.--c]="colorEvento(a.color)"><time>{{ cuando(a) }}</time><span>{{ a.titulo }}</span></li>

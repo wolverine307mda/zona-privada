@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CuentaAtras } from './cuenta-atras';
 import { Tiempo } from './tiempo';
 import { firstValueFrom } from 'rxjs';
 import { Aparicion, colorEvento, hora, mismoDia } from '../agenda/agenda.service';
@@ -24,7 +25,7 @@ interface EstadoPcInicio { agenteConectado: boolean; salud: { volumenes: { nombr
 // y, si su sección aún no tiene datos, invita a empezar.
 @Component({
   selector: 'app-panel',
-  imports: [RouterLink, Tiempo],
+  imports: [RouterLink, Tiempo, CuentaAtras],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
