@@ -18,17 +18,23 @@
       </button>
     </div>
 
+    <button class="lateral__buscar" type="button" (click)="buscador().abrir()" aria-label="Buscar (Ctrl+K)">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
+      <span class="menu__txt">Buscar apartado, nota…</span><kbd>Ctrl K</kbd>
+    </button>
+
     <nav class="menu">
       <a class="menu__item" [routerLink]="'/' + inicio.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? inicio.titulo : null">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg>
+        <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="inicio.icono" /></svg></span>
         <span class="menu__txt">{{ inicio.titulo }}</span>
       </a>
 
       @for (g of grupos; track g.id) {
         <div class="grupo" [class.grupo--abierto]="abierto(g.id)" [class.grupo--activo]="grupoActivo() === g.id">
           <button class="menu__item grupo__cab" type="button" (click)="alternar(g.id)" [attr.aria-expanded]="abierto(g.id)" [attr.aria-controls]="'sub-' + g.id" [attr.title]="compacto() ? g.titulo : null">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="g.icono" /></svg>
+            <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="g.icono" /></svg></span>
             <span class="menu__txt">{{ g.titulo }}</span>
+            <span class="menu__cuenta" aria-hidden="true">{{ g.modulos.length }}</span>
             <svg class="grupo__flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
           <div class="grupo__sub" [id]="'sub-' + g.id">
@@ -37,7 +43,7 @@
               @for (m of g.modulos; track m.id; let i = $index) {
                 <li>
                   <a class="menu__item menu__item--sub" [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [style.--i]="i">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg>
+                    <span class="menu__ico menu__ico--sub"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg></span>
                     <span class="menu__txt">{{ m.titulo }}</span>
                   </a>
                 </li>
@@ -51,12 +57,12 @@
     <div class="lateral__pie">
       @if (instalar.disponible()) {
         <button class="menu__item menu__item--ajustes menu__item--instalar" type="button" (click)="instalarApp()">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 7v7M9 11l3 3 3-3M11 18.5h2" /></svg>
+          <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 7v7M9 11l3 3 3-3M11 18.5h2" /></svg></span>
           <span class="menu__txt">Instalar la app</span>
         </button>
       }
       <button class="menu__item menu__item--ajustes" type="button" (click)="abrirAjustes()" aria-haspopup="dialog" [attr.title]="compacto() ? 'Ajustes' : null">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
+        <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span>
         <span class="menu__txt">Ajustes</span>
         <span class="menu__muestra" aria-hidden="true"></span>
       </button>
@@ -150,70 +156,4 @@
 <app-confirmar />
 <app-asistente />
 
-<!-- Ajustes de la app: apariencia (modo y color) y la sesión -->
-<dialog class="ajustes" #ajustes aria-labelledby="ajustes-titulo" (click)="cerrarFuera($event)">
-  <div class="ajustes__caja">
-    <header class="ajustes__cabeza">
-      <h2 id="ajustes-titulo">Ajustes</h2>
-      <button class="ajustes__cerrar" type="button" (click)="ajustes.close()" aria-label="Cerrar los ajustes">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-      </button>
-    </header>
-
-    <section class="ajustes__seccion" aria-labelledby="ajustes-modo">
-      <h3 id="ajustes-modo">Modo</h3>
-      <div class="modos" role="group" aria-labelledby="ajustes-modo">
-        @for (m of modos; track m.id) {
-          <button type="button" class="modo" [attr.data-modo]="m.id" [attr.aria-pressed]="tema.modo() === m.id"
-                  (click)="tema.ponerModo(m.id, $any($event.currentTarget))">
-            <span class="modo__vista" aria-hidden="true"><span></span><span></span><span></span></span>
-            <span class="modo__nombre">{{ m.nombre }}</span>
-          </button>
-        }
-      </div>
-    </section>
-
-    <section class="ajustes__seccion" aria-labelledby="ajustes-color">
-      <h3 id="ajustes-color">Color de acento</h3>
-      <div class="colores" role="group" aria-labelledby="ajustes-color">
-        @for (c of colores; track c.id) {
-          <button type="button" class="color" [style.--m]="c.muestra" [attr.aria-pressed]="tema.color() === c.id"
-                  (click)="tema.ponerColor(c.id, $any($event.currentTarget))">
-            <span class="color__punto" aria-hidden="true"></span>
-            <span>{{ c.nombre }}</span>
-          </button>
-        }
-      </div>
-    </section>
-
-    <app-ajustes-fondo />
-    <app-ajustes-sonido />
-
-    @if (instalar.disponible()) {
-      <section class="ajustes__seccion instalar" aria-labelledby="ajustes-app">
-        <h3 id="ajustes-app">App en la pantalla de inicio</h3>
-        @if (instalar.puede()) {
-          <p class="ajustes__nota">Se abre a pantalla completa, con su icono y sin la barra del navegador.</p>
-          <button class="button" type="button" (click)="instalar.instalar()">Instalar la app</button>
-        } @else {
-          <ol class="instalar__pasos">
-            <li>Abre esta página en <strong>Safari</strong> (en Chrome del iPhone también vale, desde su botón de compartir).</li>
-            <li>Pulsa <strong>Compartir</strong> <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg> en la barra de abajo.</li>
-            <li>Baja y elige <strong>Añadir a pantalla de inicio</strong>; luego, <strong>Añadir</strong>.</li>
-          </ol>
-          <p class="ajustes__nota">Desde el icono nuevo se abre a pantalla completa y entra directamente.</p>
-        }
-      </section>
-    }
-
-    <section class="ajustes__seccion ajustes__seccion--fila">
-      <div>
-        <h3>Sesión</h3>
-        <p class="ajustes__nota">Has entrado como <strong>{{ usuario() }}</strong>.</p>
-      </div>
-      <button class="button button--ghost" type="button" (click)="ajustes.close(); salir()">Cerrar sesión</button>
-    </section>
-
-    <p class="ajustes__nota ajustes__nota--pie">El tema se guarda en este navegador.</p>
-  </div>
-</dialog>
+<app-ajustes #ajustes (salir)="salir()" />

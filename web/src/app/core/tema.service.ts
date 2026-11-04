@@ -1,15 +1,26 @@
 import { Injectable, signal } from '@angular/core';
 
 export type Modo = 'light' | 'dark' | 'system';
-export type Color = 'naranja' | 'lima' | 'cobalto' | 'rosa' | 'rojo';
+export type Color = 'naranja' | 'lima' | 'cobalto' | 'rosa' | 'rojo' | 'amatista' | 'ultravioleta' | 'lavanda' | 'ciruela' | 'orquidea' | 'indigo';
 
-export const COLORES: { id: Color; nombre: string; muestra: string }[] = [
-  { id: 'naranja', nombre: 'Naranja', muestra: '#ff7a1f' },
-  { id: 'lima', nombre: 'Lima', muestra: '#c8f53c' },
-  { id: 'cobalto', nombre: 'Cobalto', muestra: '#3355ff' },
-  { id: 'rosa', nombre: 'Rosa', muestra: '#ff5fa2' },
-  { id: 'rojo', nombre: 'Rojo', muestra: '#e62429' },
+/** Una paleta: el acento (`muestra`), su segundo tono y el color de las superficies en noche y en día, para enseñarla en Ajustes. Los valores reales viven en styles.css. */
+export interface Paleta { id: Color; nombre: string; grupo: 'Morados' | 'Clásicos'; muestra: string; segundo: string; noche: string; dia: string; }
+
+export const COLORES: Paleta[] = [
+  { id: 'amatista', nombre: 'Amatista', grupo: 'Morados', muestra: '#8a4fd8', segundo: '#c9a6f5', noche: '#150d24', dia: '#f1ecf7' },
+  { id: 'ultravioleta', nombre: 'Ultravioleta', grupo: 'Morados', muestra: '#5b3df5', segundo: '#a597ff', noche: '#120b2e', dia: '#eeeafc' },
+  { id: 'lavanda', nombre: 'Lavanda', grupo: 'Morados', muestra: '#b79cff', segundo: '#e2d7ff', noche: '#14101f', dia: '#f3f0fa' },
+  { id: 'ciruela', nombre: 'Ciruela', grupo: 'Morados', muestra: '#a23fc4', segundo: '#e0a4f0', noche: '#190b22', dia: '#f4ecf7' },
+  { id: 'orquidea', nombre: 'Orquídea', grupo: 'Morados', muestra: '#e06cf5', segundo: '#f6bffc', noche: '#170e1d', dia: '#f7edf9' },
+  { id: 'indigo', nombre: 'Índigo', grupo: 'Morados', muestra: '#5558e6', segundo: '#a9b2ff', noche: '#0e0f28', dia: '#ecedfb' },
+  { id: 'naranja', nombre: 'Naranja', grupo: 'Clásicos', muestra: '#ff7a1f', segundo: '#ffbc88', noche: '#070d12', dia: '#f4f2ee' },
+  { id: 'lima', nombre: 'Lima', grupo: 'Clásicos', muestra: '#c8f53c', segundo: '#e4fa9d', noche: '#070d12', dia: '#f4f2ee' },
+  { id: 'cobalto', nombre: 'Cobalto', grupo: 'Clásicos', muestra: '#3355ff', segundo: '#99aaff', noche: '#070d12', dia: '#f4f2ee' },
+  { id: 'rosa', nombre: 'Rosa', grupo: 'Clásicos', muestra: '#ff5fa2', segundo: '#ffafd0', noche: '#070d12', dia: '#f4f2ee' },
+  { id: 'rojo', nombre: 'Rojo', grupo: 'Clásicos', muestra: '#e62429', segundo: '#f39194', noche: '#070d12', dia: '#f4f2ee' },
 ];
+
+const COLOR_IDS = COLORES.map((c) => c.id);
 
 export const MODOS: { id: Modo; nombre: string }[] = [
   { id: 'light', nombre: 'Día' },
@@ -48,7 +59,7 @@ const entre = (n: number, min: number, max: number, defecto: number) => (Number.
 export class TemaService {
   private readonly sistemaOscuro = matchMedia('(prefers-color-scheme: dark)');
   readonly modo = signal<Modo>(leer('mode', 'dark') as Modo);
-  readonly color = signal<Color>(leer('color', 'naranja') as Color);
+  readonly color = signal<Color>(COLOR_IDS.includes(leer('color', 'naranja') as Color) ? (leer('color', 'naranja') as Color) : 'naranja');
   readonly cambio = signal(0);
 
   // fondo animado de toda la app: cuál, cuánto se ve (0-100), cuánto se mueve (25-200 %) y dónde
@@ -77,7 +88,8 @@ export class TemaService {
     d.dataset['color'] = this.color();
     d.dataset['fondo'] = this.fondo();
     d.dataset['ambito'] = this.ambito();
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#070d12' : '#f4f2ee');
+    // la barra del navegador del móvil toma el color de fondo de la paleta (los morados lo tiñen)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(d).backgroundColor || (oscuro ? '#070d12' : '#f4f2ee'));
     this.cambio.update((n) => n + 1);
   }
 

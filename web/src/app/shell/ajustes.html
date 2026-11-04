@@ -1,0 +1,71 @@
+<dialog class="ajustes" #ajustes aria-labelledby="ajustes-titulo" (click)="cerrarFuera($event)">
+  <div class="ajustes__caja">
+    <header class="ajustes__cabeza">
+      <h2 id="ajustes-titulo">Ajustes</h2>
+      <button class="ajustes__cerrar" type="button" (click)="ajustes.close()" aria-label="Cerrar los ajustes">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+    </header>
+
+    <section class="ajustes__seccion" aria-labelledby="ajustes-modo">
+      <h3 id="ajustes-modo">Modo</h3>
+      <div class="modos" role="group" aria-labelledby="ajustes-modo">
+        @for (m of modos; track m.id) {
+          <button type="button" class="modo" [attr.data-modo]="m.id" [attr.aria-pressed]="tema.modo() === m.id"
+                  (click)="tema.ponerModo(m.id, $any($event.currentTarget))">
+            <span class="modo__vista" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="modo__nombre">{{ m.nombre }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="ajustes__seccion" aria-labelledby="ajustes-color">
+      <h3 id="ajustes-color">Paleta de colores</h3>
+      @for (g of gruposPaleta; track g) {
+        <p class="paletas__grupo" [id]="'paletas-' + g">{{ g }}</p>
+        <div class="paletas" role="group" [attr.aria-labelledby]="'paletas-' + g">
+          @for (c of colores; track c.id) {
+            @if (c.grupo === g) {
+              <button type="button" class="paleta" [style.--m]="c.muestra" [style.--m2]="c.segundo" [style.--sup]="tema.modo() === 'light' ? c.dia : c.noche" [attr.aria-pressed]="tema.color() === c.id"
+                      (click)="tema.ponerColor(c.id, $any($event.currentTarget))">
+                <span class="paleta__vista" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="paleta__nombre">{{ c.nombre }}</span>
+              </button>
+            }
+          }
+        </div>
+      }
+    </section>
+
+    <app-ajustes-fondo />
+    <app-ajustes-sonido />
+
+    @if (instalar.disponible()) {
+      <section class="ajustes__seccion instalar" aria-labelledby="ajustes-app">
+        <h3 id="ajustes-app">App en la pantalla de inicio</h3>
+        @if (instalar.puede()) {
+          <p class="ajustes__nota">Se abre a pantalla completa, con su icono y sin la barra del navegador.</p>
+          <button class="button" type="button" (click)="instalar.instalar()">Instalar la app</button>
+        } @else {
+          <ol class="instalar__pasos">
+            <li>Abre esta página en <strong>Safari</strong> (en Chrome del iPhone también vale, desde su botón de compartir).</li>
+            <li>Pulsa <strong>Compartir</strong> <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg> en la barra de abajo.</li>
+            <li>Baja y elige <strong>Añadir a pantalla de inicio</strong>; luego, <strong>Añadir</strong>.</li>
+          </ol>
+          <p class="ajustes__nota">Desde el icono nuevo se abre a pantalla completa y entra directamente.</p>
+        }
+      </section>
+    }
+
+    <section class="ajustes__seccion ajustes__seccion--fila">
+      <div>
+        <h3>Sesión</h3>
+        <p class="ajustes__nota">Has entrado como <strong>{{ usuario() }}</strong>.</p>
+      </div>
+      <button class="button button--ghost" type="button" (click)="ajustes.close(); salir.emit()">Cerrar sesión</button>
+    </section>
+
+    <p class="ajustes__nota ajustes__nota--pie">El tema se guarda en este navegador.</p>
+  </div>
+</dialog>

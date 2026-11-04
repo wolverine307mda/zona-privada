@@ -22,11 +22,15 @@
   /* el color de marca como TEXTO: se mezcla con el color del texto para llegar a 4,5:1 en cualquier tema y color (el naranja puro sobre blanco daba 2,6) */
   --acento: color-mix(in srgb, var(--brand) 60%, var(--texto));
 
-  --fondo: #070d12;
-  --lateral: #0a1218;
-  --tarjeta: #0f1920;
-  --tarjeta-2: #15222b;
-  --linea: #1c2a34;
+  /* paleta: la de cada color de acento define --brand y --brand-2 y, si quiere teñir las superficies (los morados), el matiz --tinte y su fuerza --tn (0–100) */
+  --tinte: #000; --tn: 0;
+  --brand-2: color-mix(in srgb, var(--brand) 55%, #fff); /* segundo tono de la paleta: degradados, segunda serie de una gráfica */
+
+  --fondo: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #070d12);
+  --lateral: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1.1%), #0a1218);
+  --tarjeta: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1.5%), #0f1920);
+  --tarjeta-2: color-mix(in srgb, var(--tinte) calc(var(--tn) * 2%), #15222b);
+  --linea: color-mix(in srgb, var(--tinte) calc(var(--tn) * 2.4%), #1c2a34);
   --texto: #e8edf0;
   --soft: #8d979e;
   --sombra: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35); /* relieve de las tarjetas */
@@ -34,6 +38,9 @@
   --sombra-interior: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.18); /* canto de luz del vidrio */
   --sombra-flota: 0 8px 24px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.06) inset; /* etiquetas y menús que flotan */
   --sombra-pulsa: 0 2px 8px rgba(0, 0, 0, 0.25); /* controles pequeños */
+
+  /* el apartado activo del menú: en noche una píldora clara, en día la píldora negra */
+  --menu-activo: color-mix(in srgb, var(--texto) 13%, var(--lateral)); --menu-activo-txt: var(--texto);
 
   /* tarjeta negra de la métrica principal: es negra también de día */
   --negra: #060606; --on-negra: #f5f2ec; --negra-soft: #a29e97; --negra-linea: rgba(255, 255, 255, 0.12);
@@ -54,7 +61,7 @@
   --step-lead: clamp(1.1rem, 1rem + 0.4vw, 1.35rem);
   --step-head: clamp(1.35rem, 1rem + 1.2vw, 2rem);
   --margin: clamp(16px, 2.4vw, 32px);
-  --radio: 16px; /* heredado: cada pantalla pasa a la escala de abajo al rediseñarla y la fase 4.1 lo retira */
+  --radio: var(--radio-l); /* heredado: las tarjetas de siempre ya usan la escala (28 px); la fase 4.1 lo retira */
   /* radios: superficies grandes en 28–36, cajas pequeñas en 12–20 y los controles en píldora */
   --radio-s: 12px; --radio-m: 20px; --radio-l: 28px; --radio-xl: 36px; --radio-pildora: 999px;
   /* espacios (múltiplos de 4) y tamaño mínimo de un objetivo táctil */
@@ -71,11 +78,12 @@
   --dur-1: 160ms; --dur-2: 240ms; --dur-3: 420ms; --dur-4: 700ms; --stagger: 40ms;
 
   /* vidrio: tarjetas y barras translúcidas sobre el fondo con degradado del color elegido */
-  --vidrio: color-mix(in srgb, var(--tarjeta) 68%, transparent);
-  --vidrio-fuerte: color-mix(in srgb, var(--tarjeta) 84%, transparent);
+  /* superficies SÓLIDAS: las tarjetas van rellenas y opacas (sin transparencias ni desenfoque); solo el menú lateral deja ver el fondo animado */
+  --vidrio: var(--tarjeta);
+  --vidrio-fuerte: var(--tarjeta);
   --vidrio-borde: color-mix(in srgb, var(--texto) 9%, transparent);
-  --desenfoque: blur(18px) saturate(1.4);
-  --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 42%);
+  --desenfoque: none;
+  --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 38%);
   --aura-1: color-mix(in srgb, var(--brand) 26%, transparent);
   --aura-2: color-mix(in srgb, var(--brand) 12%, #3a5bff 10%);
   color-scheme: dark;
@@ -83,11 +91,11 @@
 
 /* ---------- Día ---------- */
 [data-mode="light"] {
-  --fondo: #f4f2ee;
-  --lateral: #ffffff;
-  --tarjeta: #ffffff;
-  --tarjeta-2: #f0ede7;
-  --linea: #e4e0d8;
+  --fondo: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.6%), #f4f2ee);
+  --lateral: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.2%), #ffffff);
+  --tarjeta: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.2%), #ffffff);
+  --tarjeta-2: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #f0ede7);
+  --linea: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #e4e0d8);
   --texto: #0b151c;
   --soft: #5f6870;
   --sombra: 0 1px 2px rgba(11, 21, 28, 0.04), 0 10px 28px rgba(11, 21, 28, 0.07); /* relieve de las tarjetas */
@@ -96,8 +104,9 @@
   --sombra-pulsa: 0 2px 8px rgba(11, 21, 28, 0.10);
   /* verde, ámbar y rojo más oscuros para que el texto llegue a 4,5:1 sobre blanco */
   --ok: #0f7a42; --warn: #9a6200; --bad: #c62f34; --on-bad: #ffffff;
-  --vidrio: color-mix(in srgb, #ffffff 70%, transparent);
-  --vidrio-fuerte: color-mix(in srgb, #ffffff 86%, transparent);
+  --menu-activo: var(--negra); --menu-activo-txt: var(--on-negra);
+  --vidrio: var(--tarjeta);
+  --vidrio-fuerte: var(--tarjeta);
   --vidrio-borde: rgba(11, 21, 28, 0.08);
   --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent 40%);
   --aura-1: color-mix(in srgb, var(--brand) 20%, transparent);
@@ -110,11 +119,20 @@
 [data-color="cobalto"] { --brand: #3355ff; --on-brand: #ffffff; }
 [data-color="rosa"]    { --brand: #ff5fa2; --on-brand: #1a0510; }
 [data-color="rojo"]    { --brand: #e62429; --on-brand: #ffffff; }
+/* los morados: cada uno tiñe además las superficies con su matiz (--tinte/--tn), así que cambian el fondo, las tarjetas y el menú, no solo el acento */
+[data-color="amatista"]     { --brand: #8a4fd8; --on-brand: #ffffff; --brand-2: #c9a6f5; --tinte: #6a2fb5; --tn: 10; }
+[data-color="ultravioleta"] { --brand: #5b3df5; --on-brand: #ffffff; --brand-2: #a597ff; --tinte: #3a1fd0; --tn: 13; }
+[data-color="lavanda"]      { --brand: #b79cff; --on-brand: #1c1040; --brand-2: #e2d7ff; --tinte: #8a76d6; --tn: 9; }
+[data-color="ciruela"]      { --brand: #a23fc4; --on-brand: #ffffff; --brand-2: #e0a4f0; --tinte: #7a1d9c; --tn: 12; }
+[data-color="orquidea"]     { --brand: #e06cf5; --on-brand: #2a0535; --brand-2: #f6bffc; --tinte: #a92fc4; --tn: 10; }
+[data-color="indigo"]       { --brand: #5558e6; --on-brand: #ffffff; --brand-2: #a9b2ff; --tinte: #2b2fa8; --tn: 12; }
 /* la lima sobre blanco no se lee: en día, el texto de acento va más oscuro */
 
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--fondo); color: var(--texto); overflow-x: clip; }
+/* el color de fondo va SOLO en html: si el body también lo pintara, taparía el aura y el fondo animado (z-index: -1) que van detrás */
+html { background: var(--fondo); }
+html, body { margin: 0; min-height: 100%; color: var(--texto); overflow-x: clip; }
 body { font: 400 var(--step-body)/1.5 var(--font-text); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
 
 /* fondo: dos auras suaves del color de acento que respiran muy despacio, y un grano de puntos encima */

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -7,13 +7,12 @@ import { activarInclinacion } from '../core/inclinar';
 import { Instalar } from '../core/instalar';
 import { GRUPOS, INICIO, MODULOS } from '../core/modulos';
 import { SesionService } from '../core/sesion.service';
-import { COLORES, MODOS, TemaService } from '../core/tema.service';
+import { TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
 import { PerfilService } from '../core/perfil.service';
 import { AsistenteService } from '../core/asistente.service';
 import { RecargaService } from '../core/recarga';
-import { AjustesFondo } from './ajustes-fondo';
-import { AjustesSonido } from './ajustes-sonido';
+import { Ajustes } from './ajustes';
 import { Asistente } from './asistente';
 import { Bloqueo } from './bloqueo';
 import { Confirmar } from './confirmar';
@@ -33,7 +32,7 @@ const PESO_INICIAL: Record<string, number> = { inicio: 4, gastos: 3, agenda: 2, 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo, Pin, Confirmar, Fondo, AjustesFondo, AjustesSonido],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo, Pin, Confirmar, Fondo, Ajustes],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {
@@ -55,13 +54,11 @@ export class Shell {
   protected readonly inicio = INICIO;
   protected readonly listos = MODULOS.filter((m) => m.listo);
   protected readonly grupos = GRUPOS;
-  protected readonly colores = COLORES;
-  protected readonly modos = MODOS;
   protected readonly usuario = this.sesion.usuario;
   protected readonly menuAbierto = signal(false);
   protected readonly ahora = signal(new Date());
   protected readonly hora = computed(() => this.ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-  private readonly ajustes = viewChild.required<ElementRef<HTMLDialogElement>>('ajustes');
+  private readonly ajustes = viewChild.required(Ajustes);
   protected readonly buscador = viewChild.required(Buscador);
 
   // título de la barra superior según la sección abierta
@@ -147,7 +144,7 @@ export class Shell {
       });
     });
     // el fondo «solo del menú» o «solo de las páginas» necesita saber cuánto mide el menú ahora
-    effect(() => document.documentElement.style.setProperty('--ancho-lateral-html', this.compacto() ? '78px' : '272px'));
+    effect(() => document.documentElement.style.setProperty('--ancho-lateral-html', this.compacto() ? '112px' : '312px'));
     // la sección abierta despliega su grupo (sin cerrar los demás)
     effect(() => {
       const g = this.grupoActivo();
@@ -181,10 +178,10 @@ export class Shell {
     this.x0 = null;
   }
 
-  // Ajustes en un modal: se cierra con Esc, con la X o pulsando fuera de la caja
+  // Ajustes en un modal (ajustes.ts)
   protected abrirAjustes(): void {
     this.menuAbierto.set(false);
-    this.ajustes().nativeElement.showModal();
+    this.ajustes().abrir();
   }
 
   // Android y PC: el diálogo del navegador; iPhone: los pasos, dentro de Ajustes
@@ -194,9 +191,6 @@ export class Shell {
     this.abrirAjustes();
   }
 
-  protected cerrarFuera(e: MouseEvent): void {
-    if (e.target === this.ajustes().nativeElement) this.ajustes().nativeElement.close();
-  }
 
   protected async salir(): Promise<void> {
     await this.sistema.parar();
