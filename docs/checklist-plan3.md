@@ -26,9 +26,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 2.7f Inicio: «Tu PC por dentro» suspendido, batería y datos
 
 ## Fase 3 · PC, agente y ejecutable
-- 🔄 3.1 Ejecutable único (asistente, arranque completo, actualización, monitor)
-- ⏭️ 9 Wake-on-LAN
-- ⬜ 11 Perfiles de energía
+- ✅ 3.1 Ejecutable único (asistente, arranque completo, actualización, monitor)
+- 🔄 9 Wake-on-LAN
+- ⏭️ 11 Perfiles de energía
 - ⬜ 12 Limpiador de temporales
 - ⬜ 14 Temporizador de apagado
 - ⬜ 15 Informe de batería

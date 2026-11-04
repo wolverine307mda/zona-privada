@@ -163,3 +163,20 @@ Sigue valiendo como respaldo (acceso directo a `agente\arrancar.cmd` en `shell:s
 - **Galería privada**: la lista de «tu carpeta de imágenes» busca las fotos publicadas en un diccionario en vez de recorrer una lista por cada archivo.
 - **Documentos**: el recuento de elementos de las carpetas (`/api/archivos/raices`) se recuerda 60 s.
 - **Front**: las pantallas se descargan en reposo (`PreloadAllModules`), así que al pulsar un menú ya están.
+
+## Ejecutable «ZonaPrivada.exe» (lanzador 1.1)
+
+Un solo programa que lo arranca todo y vive junto al reloj. Desde la 1.1 se vale solo:
+
+- **Primer arranque**: si falta algo en el `.env`, inventa las claves que se pueden inventar (contraseña de la base, de Seq, token del agente y la **clave maestra de cifrado**), pide el correo y la
+  contraseña del administrador (mínimo 12 caracteres) y enseña la clave maestra para guardarla fuera del PC. Nunca cambia una clave que ya tiene valor (cambiar la de la base o la maestra dejaría los datos ilegibles)
+  y deja una copia `.env.copia-…` (ignorada por git).
+- **Docker Desktop**: si no está instalado, ofrece instalarlo con `winget`.
+- **Arranque**: Docker → `compose up -d` → espera a que `/api/salud` conteste de verdad (hasta 3 min) → agente → comprobación de la salida a Internet.
+- **Salida a Internet** (menú): enciende o apaga el perfil `publico` (Tailscale); se guarda en `%AppData%\ZonaPrivada\config.json`.
+- **Actualizar**: `git pull --ff-only` (si la carpeta es un clon) y reconstruye la API; también hay «reconstruir sin traer cambios».
+- **Monitor del PC y registro…**: ventana con procesador, memoria, disco, red, los procesos que más gastan y el registro del lanzador en vivo.
+- **Exportar diagnóstico**: un zip en el escritorio con el estado de Docker, los últimos registros de la API, el registro del lanzador y los **nombres** del `.env` con «definida / vacía» (nunca los valores).
+- La lógica pura (`Logica/Entorno.cs`, `Logica/Primera.cs`) tiene pruebas en `Mda.Lanzador.Tests`; las ventanas y el arranque real se prueban a mano.
+
+Se publica con `dotnet publish lanzador/Mda.Lanzador -c Release -o lanzador/nuevo-1.1`. Si el `.exe` anterior está abierto, ciérralo desde la bandeja antes de sustituirlo.

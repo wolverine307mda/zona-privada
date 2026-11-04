@@ -29,4 +29,4 @@ agente/publicado/
 
 # ejecutable del lanzador y del agente (se generan con dotnet publish)
 lanzador/publicado/
-lanzador/nuevo/
+lanzador/nuevo*/

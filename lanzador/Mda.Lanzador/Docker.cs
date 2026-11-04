@@ -20,6 +20,17 @@ static class Docker
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Docker", "Docker", "Docker Desktop.exe"),
         ], File.Exists);
 
+    // ¿está Docker Desktop instalado? (docker.exe o su aplicación)
+    public static bool Instalado => File.Exists(Exe) || DockerDesktop is not null;
+
+    // instala Docker Desktop con winget (viene con Windows 11); tarda varios minutos y puede pedir reiniciar
+    public static async Task<(bool Ok, string Salida)> InstalarConWinget()
+    {
+        var (codigo, salida) = await Ejecutar("winget.exe", "install -e --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements", null, TimeSpan.FromMinutes(25));
+        _exe = null; // que vuelva a buscar docker.exe
+        return (codigo == 0, salida);
+    }
+
     private static string? EnPath(string nombre) =>
         (Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(d => { try { return Path.Combine(d.Trim(), nombre); } catch (ArgumentException) { return null; } })

@@ -20,6 +20,7 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <DebugType>none</DebugType>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <!-- El mismo agente que el de consola, sin duplicar código -->

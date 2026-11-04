@@ -8,7 +8,10 @@ namespace Mda.Lanzador;
 // (verde = todo en marcha, ámbar = funciona pero algo falla, rojo = no hay app).
 sealed class Bandeja : ApplicationContext
 {
-    private const string Perfil = "publico";
+    // «publico» arranca también Tailscale (la salida a Internet); vacío, solo en este PC. Se cambia desde el menú y se guarda en config.json
+    private string _perfil = "publico";
+    private string Opc => _perfil.Length > 0 ? $"--profile {_perfil} " : "";
+    private static readonly string Version = typeof(Bandeja).Assembly.GetName().Version?.ToString(3) ?? "1.0";
     private static readonly string Datos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ZonaPrivada");
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
@@ -17,6 +20,7 @@ sealed class Bandeja : ApplicationContext
     private readonly System.Windows.Forms.Timer _reloj = new() { Interval = 15_000 };
     private readonly ToolStripMenuItem _estado = new("Arrancando…") { Enabled = false };
     private readonly ToolStripMenuItem _inicio = new("Iniciar con Windows") { CheckOnClick = false };
+    private readonly ToolStripMenuItem _internet = new("Salida a Internet (Tailscale)");
     private readonly CancellationTokenSource _agente = new();
     private readonly SynchronizationContext _ui = SynchronizationContext.Current ?? new SynchronizationContext();
 
@@ -50,7 +54,16 @@ sealed class Bandeja : ApplicationContext
         Directory.CreateDirectory(Datos);
         var guardado = Path.Combine(Datos, "config.json");
         string? carpeta = null;
-        try { if (File.Exists(guardado)) carpeta = JsonDocument.Parse(File.ReadAllText(guardado)).RootElement.GetProperty("carpeta").GetString(); } catch (Exception e) when (e is JsonException or KeyNotFoundException or IOException) { }
+        try
+        {
+            if (File.Exists(guardado))
+            {
+                var raiz = JsonDocument.Parse(File.ReadAllText(guardado)).RootElement;
+                carpeta = raiz.GetProperty("carpeta").GetString();
+                if (raiz.TryGetProperty("perfil", out var p) && p.GetString() is { } perfil) _perfil = perfil;
+            }
+        }
+        catch (Exception e) when (e is JsonException or KeyNotFoundException or IOException) { }
         if (carpeta is null || !File.Exists(Path.Combine(carpeta, "compose.yaml")))
             carpeta = Entorno.BuscarCarpeta([AppContext.BaseDirectory, Environment.CurrentDirectory, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Proyectos", "zona-privada")]);
         if (carpeta is null)
@@ -60,13 +73,20 @@ sealed class Bandeja : ApplicationContext
             carpeta = d.SelectedPath;
         }
         _carpeta = carpeta;
-        File.WriteAllText(guardado, JsonSerializer.Serialize(new { carpeta }));
+        GuardarConfig();
+        // primer arranque: si falta algo en el .env se completa (o se piden el correo y la contraseña)
+        if (!Asistente.Completar(carpeta, Log)) return false;
         var env = File.Exists(Path.Combine(carpeta, ".env")) ? Entorno.LeerEnv(File.ReadAllLines(Path.Combine(carpeta, ".env"))) : [];
         _urlPublica = env.GetValueOrDefault("URL_PUBLICA", "").TrimEnd('/');
         _token = env.GetValueOrDefault("AGENTE_TOKEN", "");
         return true;
     }
     private string _token = "";
+
+    private void GuardarConfig()
+    {
+        try { File.WriteAllText(Path.Combine(Datos, "config.json"), JsonSerializer.Serialize(new { carpeta = _carpeta, perfil = _perfil })); } catch (IOException) { }
+    }
 
     // ---------- agente del PC (el mismo bucle que mda-agente.exe) ----------
 
@@ -88,6 +108,7 @@ sealed class Bandeja : ApplicationContext
         _ocupado = true; _ultimoArranque = DateTime.UtcNow;
         try
         {
+            if (!Docker.Instalado && !await InstalarDocker()) { Estado("Falta Docker Desktop", Nivel.Rojo); return; }
             Estado("Arrancando Docker…", Nivel.Ambar);
             if (!await Docker.Responde())
             {
@@ -97,13 +118,49 @@ sealed class Bandeja : ApplicationContext
                 if (!await Docker.Responde()) { Estado("Docker no arranca", Nivel.Rojo); Aviso("Docker no ha arrancado en 4 minutos. Ábrelo a mano."); return; }
             }
             Estado("Arrancando la zona privada…", Nivel.Ambar);
-            var (codigo, salida) = await Docker.Cmd($"compose --profile {Perfil} up -d", _carpeta, 300);
+            var (codigo, salida) = await Docker.Cmd($"compose {Opc}up -d", _carpeta, 300);
             Log($"up -d → {codigo}: {salida.Trim()}");
             if (codigo != 0) Aviso("No se pudieron arrancar los contenedores. Mira el registro del lanzador.");
-            else if (primeraVez) Aviso("Zona privada en marcha.");
+            else
+            {
+                // «up -d» vuelve en cuanto crea los contenedores: se espera a que la API conteste de verdad (la primera vez aplica las migraciones)
+                Estado("Esperando a la API…", Nivel.Ambar);
+                var limiteApi = DateTime.UtcNow.AddMinutes(3);
+                while (DateTime.UtcNow < limiteApi && !await Responde("http://localhost:8080/api/salud")) await Task.Delay(3000);
+                if (!await Responde("http://localhost:8080/api/salud")) Aviso("La API no contesta tras 3 minutos. Mira «Exportar diagnóstico» o el monitor.");
+                else if (primeraVez) Aviso("Zona privada en marcha.");
+            }
         }
         finally { _ocupado = false; }
         await Comprobar();
+    }
+
+    // Docker Desktop no está: se ofrece instalarlo con winget (una sola vez)
+    private async Task<bool> InstalarDocker()
+    {
+        var r = MessageBox.Show("Falta Docker Desktop, que es lo que ejecuta la zona privada.\n\n¿Lo instalo ahora con winget? Tarda unos minutos y puede pedirte reiniciar el PC.",
+            "Zona privada", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (r != DialogResult.Yes) return false;
+        Estado("Instalando Docker Desktop…", Nivel.Ambar);
+        var (ok, salida) = await Docker.InstalarConWinget();
+        Log($"winget Docker Desktop → {(ok ? "ok" : "falló")}: {salida.Trim()}");
+        if (!ok) { Aviso("No se pudo instalar Docker Desktop. Instálalo a mano desde docker.com."); return false; }
+        Aviso("Docker Desktop instalado. Si Windows pide reiniciar, hazlo y vuelve a abrir la zona privada.");
+        return Docker.Instalado;
+    }
+
+    // «Actualizar»: si la carpeta es un clon de git, trae los cambios; luego reconstruye la API (el front va dentro de su imagen)
+    private async Task Actualizar()
+    {
+        if (_ocupado) return;
+        if (Directory.Exists(Path.Combine(_carpeta, ".git")))
+        {
+            Estado("Trayendo cambios…", Nivel.Ambar);
+            var (c, salida) = await Docker.Ejecutar("git.exe", "pull --ff-only", _carpeta, TimeSpan.FromMinutes(2));
+            Log($"git pull → {c}: {salida.Trim()}");
+            if (c != 0) { Aviso("No se pudieron traer los cambios (¿hay cambios sin guardar?). Mira el registro."); await Comprobar(); return; }
+        }
+        await Accion("Reconstruyendo la API", $"compose {Opc}up -d --build api", 900);
     }
 
     private async Task Accion(string texto, string argumentos, int segundos = 300)
@@ -130,8 +187,8 @@ sealed class Bandeja : ApplicationContext
         HashSet<string> esperados = [], corriendo = [];
         if (docker)
         {
-            esperados = Entorno.Servicios((await Docker.Cmd($"compose --profile {Perfil} config --services", _carpeta, 20)).Salida);
-            corriendo = Entorno.Servicios((await Docker.Cmd($"compose --profile {Perfil} ps --services --filter status=running", _carpeta, 20)).Salida);
+            esperados = Entorno.Servicios((await Docker.Cmd($"compose {Opc}config --services", _carpeta, 20)).Salida);
+            corriendo = Entorno.Servicios((await Docker.Cmd($"compose {Opc}ps --services --filter status=running", _carpeta, 20)).Salida);
         }
         var api = await Responde("http://localhost:8080/api/salud");
         bool? publico = _urlPublica.Length > 0 && api ? await Responde(_urlPublica + "/api/salud") : null;
@@ -170,16 +227,19 @@ sealed class Bandeja : ApplicationContext
     {
         var m = new ContextMenuStrip();
         void Item(string texto, Action alHacer) => m.Items.Add(texto, null, (_, _) => alHacer());
+        m.Items.Add(new ToolStripMenuItem($"Zona privada · lanzador {Version}") { Enabled = false });
         m.Items.Add(_estado);
         m.Items.Add(new ToolStripSeparator());
         Item("Abrir la zona privada", () => Abrir(_urlPublica.Length > 0 ? _urlPublica : "http://localhost:8080"));
         Item("Abrir en este PC (localhost)", () => Abrir("http://localhost:8080"));
+        Item("Monitor del PC y registro…", AbrirMonitor);
         Item("Registros (Seq)", () => Abrir("http://localhost:5341"));
         m.Items.Add(new ToolStripSeparator());
-        Item("Reiniciar la API", () => _ = Accion("Reiniciando la API", $"compose --profile {Perfil} restart api", 120));
-        Item("Actualizar (reconstruir la API)", () => _ = Accion("Reconstruyendo la API", $"compose --profile {Perfil} up -d --build api", 900));
+        Item("Reiniciar la API", () => _ = Accion("Reiniciando la API", $"compose {Opc}restart api", 120));
+        Item("Actualizar (traer cambios y reconstruir)", () => _ = Actualizar());
+        Item("Reconstruir la API sin traer cambios", () => _ = Accion("Reconstruyendo la API", $"compose {Opc}up -d --build api", 900));
         Item("Arrancar todo", () => _ = ArrancarTodo());
-        Item("Parar todo", () => _ = Accion("Parando todo", $"compose --profile {Perfil} stop", 120));
+        Item("Parar todo", () => _ = Accion("Parando todo", $"compose {Opc}stop", 120));
         m.Items.Add(new ToolStripSeparator());
         _inicio.Click += async (_, _) =>
         {
@@ -187,11 +247,41 @@ sealed class Bandeja : ApplicationContext
             if (ok) _inicio.Checked = !_inicio.Checked; else Aviso("No se pudo cambiar el inicio con Windows.");
         };
         m.Items.Add(_inicio);
+        _internet.CheckOnClick = false; _internet.Checked = _perfil == "publico";
+        _internet.Click += (_, _) =>
+        {
+            _perfil = _perfil == "publico" ? "" : "publico"; _internet.Checked = _perfil == "publico"; GuardarConfig();
+            Aviso(_perfil == "publico" ? "Salida a Internet activada: levanto también Tailscale." : "Salida a Internet desactivada: la app solo se verá en este PC.");
+            _ = ArrancarTodo();
+        };
+        m.Items.Add(_internet);
+        Item("Exportar diagnóstico (zip en el escritorio)", () => _ = ExportarDiagnostico());
         Item("Abrir la carpeta", () => Abrir(_carpeta));
         Item("Abrir el registro del lanzador", () => Abrir(Path.Combine(Datos, "lanzador.log")));
         m.Items.Add(new ToolStripSeparator());
         Item("Salir (deja Docker en marcha)", Salir);
         return m;
+    }
+
+    private Monitor? _monitor;
+    private void AbrirMonitor()
+    {
+        if (_monitor is { IsDisposed: false }) { _monitor.Activate(); return; }
+        _monitor = new Monitor(Path.Combine(Datos, "lanzador.log"), () => _estadoAgente);
+        _monitor.Show();
+    }
+
+    private async Task ExportarDiagnostico()
+    {
+        try
+        {
+            Estado("Preparando el diagnóstico…", Nivel.Ambar);
+            var zip = await Diagnostico.Crear(_carpeta, Datos, _estado.Text ?? "", Version);
+            Aviso("Diagnóstico guardado en el escritorio (sin ninguna clave).");
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{zip}\"") { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Aviso("No se pudo crear el diagnóstico: " + e.Message); }
+        await Comprobar();
     }
 
     private static void Abrir(string destino)
