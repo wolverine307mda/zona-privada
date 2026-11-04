@@ -60,3 +60,9 @@
 .abrir { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
 .abrir .campo__input { flex: 1 1 240px; min-height: 46px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: inherit; }
 .plan:disabled { opacity: .6; }
+
+.pestanas-pc { display: flex; gap: 6px; padding: 4px; margin: 0 0 16px; width: fit-content; max-width: 100%; overflow-x: auto; border-radius: 999px; background: color-mix(in srgb, var(--texto) 7%, transparent); scrollbar-width: none; }
+.pestanas-pc::-webkit-scrollbar { display: none; }
+.pestanas-pc button { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 600 14px/1 var(--font-text); cursor: pointer; transition: background 200ms, color 200ms; }
+.pestanas-pc button[aria-selected='true'] { background: var(--brand); color: var(--on-brand); }
+@media (prefers-reduced-motion: reduce) { .pestanas-pc button { transition: none; } }

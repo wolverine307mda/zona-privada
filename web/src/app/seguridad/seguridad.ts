@@ -38,6 +38,15 @@ const ICONOS: Record<string, string> = {
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })
 export class Seguridad {
+  // las secciones de la pantalla; se recuerda la última que miraste
+  protected readonly pestana = signal<'cuenta' | 'vigilancia' | 'claves'>(((): 'cuenta' | 'vigilancia' | 'claves' => {
+    try { const g = localStorage.getItem('mda.seg.pestana'); return g === 'vigilancia' || g === 'claves' ? g : 'cuenta'; } catch { return 'cuenta'; }
+  })());
+  protected ponerPestana(p: 'cuenta' | 'vigilancia' | 'claves'): void {
+    this.pestana.set(p);
+    try { localStorage.setItem('mda.seg.pestana', p); } catch { /* sin almacenamiento */ }
+  }
+
   private readonly http = inject(HttpClient);
   protected readonly usuario = inject(SesionService).usuario;
   protected readonly push = inject(Notificaciones);

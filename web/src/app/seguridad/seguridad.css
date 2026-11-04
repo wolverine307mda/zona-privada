@@ -138,3 +138,9 @@
 .confirmar-panico { display: grid; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--bad); }
 .acciones-panico { display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
 .button.peligro { background: var(--bad); color: #fff; }
+
+.pestanas-seg { display: flex; gap: 6px; padding: 4px; margin: 0 0 16px; width: fit-content; max-width: 100%; overflow-x: auto; border-radius: 999px; background: color-mix(in srgb, var(--texto) 7%, transparent); scrollbar-width: none; }
+.pestanas-seg::-webkit-scrollbar { display: none; }
+.pestanas-seg button { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 600 14px/1 var(--font-text); cursor: pointer; transition: background 200ms, color 200ms; }
+.pestanas-seg button[aria-selected='true'] { background: var(--brand); color: var(--on-brand); }
+@media (prefers-reduced-motion: reduce) { .pestanas-seg button { transition: none; } }

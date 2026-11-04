@@ -44,6 +44,13 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
   selector: 'app-pc',
   imports: [Pc3d, BateriaSalud, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad],
   template: `
+    <nav class="pestanas-pc" role="tablist" aria-label="Secciones de Mi PC">
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'equipo'" (click)="ponerPestana('equipo')">Equipo</button>
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'controles'" (click)="ponerPestana('controles')">Controles</button>
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'casa'" (click)="ponerPestana('casa')">Casa y red</button>
+    </nav>
+
+    @if (pestana() === 'equipo') {
     <section class="caja pc3d">
       <header class="caja__cab"><h3>Tu PC por dentro</h3><span class="sub">{{ a()?.origen === 'equipo' ? 'en directo · arrastra para girarlo' : 'midiendo Docker · arranca el agente' }}</span></header>
       <div class="pc3d__escena"><app-pc-3d [datos]="datosPc()" /></div>
@@ -71,47 +78,6 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     }
 
     @if (e()?.agenteConectado && a()?.bateria != null) { <app-bateria-salud /> }
-
-    @if (e()?.agenteConectado) { <app-escenas /> }
-
-    @if (e()?.agenteConectado) {
-      <section class="caja">
-        <header class="caja__cab"><h3>Energía</h3><span class="sub">el plan de energía de Windows, con un toque</span></header>
-        <div class="planes" role="group" aria-label="Plan de energía">
-          @for (p of planes; track p.id) {
-            <button type="button" class="plan" [attr.aria-pressed]="energia() === p.id" (click)="plan(p.id)"><span aria-hidden="true">{{ p.icono }}</span><strong>{{ p.nombre }}</strong><small>{{ p.nota }}</small></button>
-          }
-        </div>
-        @if (avisoEnergia()) { <p class="msg" role="status">{{ avisoEnergia() }}</p> }
-      </section>
-    }
-
-    @if (e()?.agenteConectado) {
-      <section class="caja">
-        <header class="caja__cab"><h3>Abrir en el PC</h3><span class="sub">manda un enlace o una aplicación al ordenador</span></header>
-        <form class="abrir" (submit)="abrirEnPc($event)" novalidate>
-          <input class="campo__input" type="url" inputmode="url" placeholder="https://…" aria-label="Dirección web para abrir en el PC" autocapitalize="off" spellcheck="false" maxlength="300"
-                 [value]="destino()" (input)="destino.set($any($event.target).value)">
-          <button class="button" type="submit" [disabled]="!destino().trim() || abriendo()">{{ abriendo() ? 'Enviando…' : 'Abrir' }}</button>
-        </form>
-        <div class="planes" role="group" aria-label="Aplicaciones del PC">
-          @for (a of aplicaciones; track a.id) {
-            <button type="button" class="plan" [disabled]="abriendo()" (click)="pedirAbrir(a.id, a.nombre)"><span aria-hidden="true">{{ a.icono }}</span><strong>{{ a.nombre }}</strong></button>
-          }
-        </div>
-        @if (avisoAbrir()) { <p class="msg" role="status">{{ avisoAbrir() }}</p> }
-      </section>
-    }
-
-    @if (e()?.agenteConectado) { <app-velocidad /> }
-
-    <app-habitacion-3d />
-
-    <app-hogar />
-
-    <app-casa-pc />
-    <app-red-casa />
-    <app-portapapeles-pc />
 
     <section class="caja">
       <header class="caja__cab">
@@ -159,6 +125,41 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
         </div>
       </section>
     }
+    }
+
+    @if (pestana() === 'controles') {
+    @if (e()?.agenteConectado) { <app-escenas /> }
+
+    @if (e()?.agenteConectado) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Energía</h3><span class="sub">el plan de energía de Windows, con un toque</span></header>
+        <div class="planes" role="group" aria-label="Plan de energía">
+          @for (p of planes; track p.id) {
+            <button type="button" class="plan" [attr.aria-pressed]="energia() === p.id" (click)="plan(p.id)"><span aria-hidden="true">{{ p.icono }}</span><strong>{{ p.nombre }}</strong><small>{{ p.nota }}</small></button>
+          }
+        </div>
+        @if (avisoEnergia()) { <p class="msg" role="status">{{ avisoEnergia() }}</p> }
+      </section>
+    }
+
+    @if (e()?.agenteConectado) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Abrir en el PC</h3><span class="sub">manda un enlace o una aplicación al ordenador</span></header>
+        <form class="abrir" (submit)="abrirEnPc($event)" novalidate>
+          <input class="campo__input" type="url" inputmode="url" placeholder="https://…" aria-label="Dirección web para abrir en el PC" autocapitalize="off" spellcheck="false" maxlength="300"
+                 [value]="destino()" (input)="destino.set($any($event.target).value)">
+          <button class="button" type="submit" [disabled]="!destino().trim() || abriendo()">{{ abriendo() ? 'Enviando…' : 'Abrir' }}</button>
+        </form>
+        <div class="planes" role="group" aria-label="Aplicaciones del PC">
+          @for (a of aplicaciones; track a.id) {
+            <button type="button" class="plan" [disabled]="abriendo()" (click)="pedirAbrir(a.id, a.nombre)"><span aria-hidden="true">{{ a.icono }}</span><strong>{{ a.nombre }}</strong></button>
+          }
+        </div>
+        @if (avisoAbrir()) { <p class="msg" role="status">{{ avisoAbrir() }}</p> }
+      </section>
+    }
+
+    <app-portapapeles-pc />
 
     <section class="caja">
       <header class="caja__cab"><h3>Órdenes</h3><span class="sub">Piden Face ID o tu contraseña · avisan a Telegram · caducan a los 60 s</span></header>
@@ -202,10 +203,31 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
         </ul>
       }
     </section>
+    }
+
+    @if (pestana() === 'casa') {
+    @if (e()?.agenteConectado) { <app-velocidad /> }
+
+    <app-habitacion-3d />
+
+    <app-hogar />
+
+    <app-casa-pc />
+    <app-red-casa />
+    }
   `,
   styleUrls: ['../gastos/comun.css', './pc.css'],
 })
 export class Pc implements OnInit, OnDestroy {
+  // las secciones de la pantalla; se recuerda la última que miraste
+  protected readonly pestana = signal<'equipo' | 'controles' | 'casa'>(((): 'equipo' | 'controles' | 'casa' => {
+    try { const g = localStorage.getItem('mda.pc.pestana'); return g === 'controles' || g === 'casa' ? g : 'equipo'; } catch { return 'equipo'; }
+  })());
+  protected ponerPestana(p: 'equipo' | 'controles' | 'casa'): void {
+    this.pestana.set(p);
+    try { localStorage.setItem('mda.pc.pestana', p); } catch { /* sin almacenamiento */ }
+  }
+
   private readonly http = inject(HttpClient);
   protected readonly reauth = inject(Reautenticar);
   private readonly sistema = inject(SistemaService);

@@ -2,6 +2,13 @@
   <p class="aviso" role="status"><span>{{ aviso() }}</span><button type="button" (click)="aviso.set('')" aria-label="Cerrar el aviso">×</button></p>
 }
 
+<nav class="pestanas-seg" role="tablist" aria-label="Secciones de seguridad">
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'cuenta'" (click)="ponerPestana('cuenta')">Cuenta</button>
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'vigilancia'" (click)="ponerPestana('vigilancia')">Vigilancia</button>
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'claves'" (click)="ponerPestana('claves')">Claves y atajos</button>
+</nav>
+
+@if (pestana() === 'cuenta') {
 <section class="kpis">
   <article data-inclina class="caja kpi">
     <span class="etq">Sesiones abiertas</span>
@@ -220,6 +227,51 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
   </ul>
 </section>
 
+<app-llaves />
+
+<app-pin-ajustes />
+
+@if (conPasskey) {
+<section class="caja">
+  <header class="caja__cab"><h3>Pedir Face ID al volver</h3><span class="sub">Ajuste de este dispositivo</span></header>
+  <div class="bloqueo-app">
+    <label class="campo"><span class="campo__etiqueta">Al volver a la app</span>
+      <select class="campo__input" [value]="bloqueoSeg()" (change)="cambiarBloqueo($any($event.target).value)">
+        @for (o of opcionesBloqueo; track o.s) { <option [value]="o.s" [selected]="bloqueoSeg() === o.s">{{ o.t }}</option> }
+      </select></label>
+    <p class="nada">Al salir de la app, la sesión se bloquea en el servidor y no enseña nada hasta que la desbloquees con Face ID (o con la contraseña).</p>
+    @if (pedirClaveBloqueo()) {
+      <button class="button" type="button" (click)="confirmarBloqueoConCara()">Confirmar con Face ID</button>
+      <form class="fila-senuelo" (submit)="confirmarBloqueo($event)">
+        <input type="text" autocomplete="username" hidden>
+        <input class="campo__input" type="password" autocomplete="current-password" placeholder="o tu contraseña" [value]="claveBloqueo()" (input)="claveBloqueo.set($any($event.target).value)">
+        <input class="campo__input" inputmode="numeric" autocomplete="one-time-code" placeholder="Código (si lo tienes)" [value]="codigoBloqueo()" (input)="codigoBloqueo.set($any($event.target).value)">
+        <button class="button" type="submit">Confirmar</button>
+      </form>
+    }
+    @if (errorBloqueo()) { <p class="error">{{ errorBloqueo() }}</p> }
+  </div>
+</section>
+}
+
+<section class="caja">
+  <header class="caja__cab"><h3>Botón de pánico</h3><span class="sub">Si crees que alguien tiene acceso</span></header>
+  <p class="nada">Cierra todas las sesiones (también esta), revoca los tokens de los atajos, apaga la galería y el estado públicos y no deja iniciar sesión durante una hora. Desde Telegram: <strong>/panico</strong> para cortarlo y <strong>/desbloquear</strong> para volver a entrar.</p>
+  @if (!confirmarPanico()) {
+    <button class="button peligro" type="button" (click)="confirmarPanico.set(true)">Cortar todo</button>
+  } @else {
+    <div class="confirmar-panico" role="alert">
+      <strong>¿Seguro? Te quedarás sin sesión y sin poder entrar durante una hora.</strong>
+      <div class="acciones-panico">
+        <button class="enlace" type="button" (click)="confirmarPanico.set(false)">Cancelar</button>
+        <button class="button peligro" type="button" (click)="panico()" [disabled]="ocupado() === 'panico'">{{ ocupado() === 'panico' ? 'Cortando…' : 'Sí, cortar todo' }}</button>
+      </div>
+    </div>
+  }
+</section>
+}
+
+@if (pestana() === 'vigilancia') {
 <!-- historial de accesos -->
 <section class="caja">
   <header class="caja__cab"><h3>Últimos intentos de entrar</h3><span class="sub">bien y mal</span></header>
@@ -272,50 +324,10 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
 </section>
 
 <app-globo-sondas />
-
-<app-atajos />
-
-<app-llaves />
-
-<app-pin-ajustes />
-
-<app-claves />
-
-@if (conPasskey) {
-<section class="caja">
-  <header class="caja__cab"><h3>Pedir Face ID al volver</h3><span class="sub">Ajuste de este dispositivo</span></header>
-  <div class="bloqueo-app">
-    <label class="campo"><span class="campo__etiqueta">Al volver a la app</span>
-      <select class="campo__input" [value]="bloqueoSeg()" (change)="cambiarBloqueo($any($event.target).value)">
-        @for (o of opcionesBloqueo; track o.s) { <option [value]="o.s" [selected]="bloqueoSeg() === o.s">{{ o.t }}</option> }
-      </select></label>
-    <p class="nada">Al salir de la app, la sesión se bloquea en el servidor y no enseña nada hasta que la desbloquees con Face ID (o con la contraseña).</p>
-    @if (pedirClaveBloqueo()) {
-      <button class="button" type="button" (click)="confirmarBloqueoConCara()">Confirmar con Face ID</button>
-      <form class="fila-senuelo" (submit)="confirmarBloqueo($event)">
-        <input type="text" autocomplete="username" hidden>
-        <input class="campo__input" type="password" autocomplete="current-password" placeholder="o tu contraseña" [value]="claveBloqueo()" (input)="claveBloqueo.set($any($event.target).value)">
-        <input class="campo__input" inputmode="numeric" autocomplete="one-time-code" placeholder="Código (si lo tienes)" [value]="codigoBloqueo()" (input)="codigoBloqueo.set($any($event.target).value)">
-        <button class="button" type="submit">Confirmar</button>
-      </form>
-    }
-    @if (errorBloqueo()) { <p class="error">{{ errorBloqueo() }}</p> }
-  </div>
-</section>
 }
 
-<section class="caja">
-  <header class="caja__cab"><h3>Botón de pánico</h3><span class="sub">Si crees que alguien tiene acceso</span></header>
-  <p class="nada">Cierra todas las sesiones (también esta), revoca los tokens de los atajos, apaga la galería y el estado públicos y no deja iniciar sesión durante una hora. Desde Telegram: <strong>/panico</strong> para cortarlo y <strong>/desbloquear</strong> para volver a entrar.</p>
-  @if (!confirmarPanico()) {
-    <button class="button peligro" type="button" (click)="confirmarPanico.set(true)">Cortar todo</button>
-  } @else {
-    <div class="confirmar-panico" role="alert">
-      <strong>¿Seguro? Te quedarás sin sesión y sin poder entrar durante una hora.</strong>
-      <div class="acciones-panico">
-        <button class="enlace" type="button" (click)="confirmarPanico.set(false)">Cancelar</button>
-        <button class="button peligro" type="button" (click)="panico()" [disabled]="ocupado() === 'panico'">{{ ocupado() === 'panico' ? 'Cortando…' : 'Sí, cortar todo' }}</button>
-      </div>
-    </div>
-  }
-</section>
+@if (pestana() === 'claves') {
+<app-atajos />
+
+<app-claves />
+}
