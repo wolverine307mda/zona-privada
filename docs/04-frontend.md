@@ -103,3 +103,9 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
 estudio generado al vuelo (`RoomEnvironment`, sin descargar imágenes); anillos holográficos y de partículas, rejilla y estrellas. Tres animaciones:
 `intento()` (LED que parpadea y un anillo que escanea), `abrir()` (la llave gira, LED verde, el arco sube y se abre sobre su pata) y `rechazar()` (LED rojo, sacudida y el arco cae).
 Con «reducir movimiento» se ve el resultado sin animar. Al salir libera geometrías, texturas y el contexto WebGL.
+
+## Pantalla de «Face ID al volver»
+
+`shell/bloqueo.ts`: el escáner alrededor de tu foto tiene cuatro estados que se ven a la vez en el anillo, las esquinas, la insignia y el mensaje: **esperando**
+(anillo lento), **comprobando** (línea que barre la foto y anillo rápido), **abierto** (todo en verde, 650 ms antes de recargar) y **fallo** (rojo y sacudida). Lleva reloj grande con la
+fecha, vibración en el móvil al acertar o fallar, y debajo el botón de Face ID, la contraseña con el código de dos pasos y «Cerrar sesión».

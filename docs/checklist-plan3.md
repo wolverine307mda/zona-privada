@@ -17,9 +17,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 2.3 Fondos de la app editables desde el tema
 - ✅ 2.4 Loaders y skeletons estilo Jarvis
 - ✅ 2.5 Login: candado nuevo
-- 🔄 2.6 Pantalla de Face ID al volver
-- ⏭️ 2.7a Atajos del iPhone
-- ⬜ 2.7b Fotografía · Avísame
+- ✅ 2.6 Pantalla de Face ID al volver
+- 🔄 2.7a Atajos del iPhone
+- ⏭️ 2.7b Fotografía · Avísame
 - ⬜ 2.7c Señuelos en móvil
 - ⬜ 2.7d Música de la barra superior en modal
 - ⬜ 2.7e Galería privada: miniaturas y loaders
