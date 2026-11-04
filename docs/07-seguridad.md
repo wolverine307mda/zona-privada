@@ -128,3 +128,5 @@ El agente lee las zonas térmicas de ACPI por WMI (`MSAcpi_ThermalZoneTemperatur
 aconsejando el plan «Ahorro» de energía, y avisa de nuevo cuando baja. La salud se evalúa cada 10 minutos, así que el aviso llega en la segunda lectura caliente seguida.
 Limitaciones: es la zona térmica de la placa, que en muchos portátiles sigue de cerca al procesador pero no es la lectura del chip, y hay equipos que no la exponen (entonces no hay dato ni aviso).
 Para la temperatura exacta del chip haría falta una librería con su propio controlador (LibreHardwareMonitor), que no se ha añadido.
+- **Vigilante del Funnel** (`Seguridad/VigilanteFunnel.cs`): cada 10 minutos pide `/api/salud` a `App:UrlPublica` como lo haría alguien de fuera y mira cuánto le queda al certificado; avisa por Telegram si deja de responder (a la segunda vez seguida), cuando vuelve y cuando el certificado está a menos de 10 días de caducar.
+- **Tarpit** (`Seguridad/Tarpit.cs`): las rutas de sonda reciben el 404 a un byte cada 2 s durante un minuto (tope de 20 conexiones a la vez); las IP de casa no.

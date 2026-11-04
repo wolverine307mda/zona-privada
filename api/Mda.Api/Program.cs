@@ -187,6 +187,8 @@ builder.Services.AddHostedService<VigilanteRed>();
 builder.Services.AddSingleton<Carpetas>();
 // miniaturas WebP de la galería pública (sin EXIF)
 builder.Services.AddSingleton<Derivados>();
+builder.Services.AddSingleton<EstadoFunnel>();
+builder.Services.AddHostedService<VigilanteFunnel>();
 builder.Services.AddSingleton<Sondas>();
 builder.Services.AddSingleton(sp => new Tarpit(sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton<IComprobadorRed, ComprobadorTcp>();
