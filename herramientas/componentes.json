@@ -3,13 +3,15 @@
   "postgres": {
     "descripcion": "PostgreSQL para Windows (binarios en zip de EDB, sin instalador)",
     "web_oficial": "https://www.enterprisedb.com/download-postgresql-binaries",
-    "archivo": "postgresql-17.*-windows-x64-binaries.zip",
-    "sha256": ""
+    "archivo": "postgresql-17.11-1-windows-x64-binaries.zip",
+    "sha256": "6eabdf00d2893713b75db4336a23c3fdf505f056e217ec6e2e95d901750cfea3",
+    "procedencia": "Bajado por HTTPS de get.enterprisedb.com el 2026-11-05 (misma version 17.11 que el contenedor de Docker). EDB no publica hash ni firma los ejecutables: este hash es el del archivo bajado ese dia (confianza en la primera descarga)."
   },
   "age": {
     "descripcion": "age: cifrado de las copias que salen del PC",
     "web_oficial": "https://github.com/FiloSottile/age/releases",
-    "archivo": "age-v1.*-windows-amd64.zip",
-    "sha256": ""
+    "archivo": "age-v1.3.2-windows-amd64.zip",
+    "sha256": "f48d8f8f9ebe903ab5027ed067652f2cc1db94bc206976430133b905dcd8e8c7",
+    "procedencia": "Bajado de github.com/FiloSottile/age/releases (v1.3.2) el 2026-11-05; coincide con el digest sha256 que publica GitHub para ese archivo."
   }
 }

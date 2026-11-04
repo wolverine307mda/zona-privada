@@ -45,7 +45,7 @@ if (Test-Path $web) {
     $destinoWeb = Join-Path $componentes "api\wwwroot"
     if (Test-Path $destinoWeb) { Remove-Item -Recurse -Force $destinoWeb }
     Copy-Item -Recurse $web $destinoWeb
-} else { Write-Warning "No hay build del front en $web: la API no tendra web." }
+} else { Write-Warning "No hay build del front en ${web}: la API no tendra web." }
 
 # 2) El lanzador (un solo exe)
 dotnet publish (Join-Path $raiz "lanzador\Mda.Lanzador\Mda.Lanzador.csproj") -c Release -o $Salida
