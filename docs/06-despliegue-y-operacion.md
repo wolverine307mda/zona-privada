@@ -164,7 +164,7 @@ Sigue valiendo como respaldo (acceso directo a `agente\arrancar.cmd` en `shell:s
 - **Documentos**: el recuento de elementos de las carpetas (`/api/archivos/raices`) se recuerda 60 s.
 - **Front**: las pantallas se descargan en reposo (`PreloadAllModules`), así que al pulsar un menú ya están.
 
-## Ejecutable «ZonaPrivada.exe» (lanzador 1.1)
+## Ejecutable «ZonaPrivada.exe» (lanzador 1.2)
 
 Un solo programa que lo arranca todo y vive junto al reloj. Desde la 1.1 se vale solo:
 
@@ -179,4 +179,4 @@ Un solo programa que lo arranca todo y vive junto al reloj. Desde la 1.1 se vale
 - **Exportar diagnóstico**: un zip en el escritorio con el estado de Docker, los últimos registros de la API, el registro del lanzador y los **nombres** del `.env` con «definida / vacía» (nunca los valores).
 - La lógica pura (`Logica/Entorno.cs`, `Logica/Primera.cs`) tiene pruebas en `Mda.Lanzador.Tests`; las ventanas y el arranque real se prueban a mano.
 
-Se publica con `dotnet publish lanzador/Mda.Lanzador -c Release -o lanzador/nuevo-1.1`. Si el `.exe` anterior está abierto, ciérralo desde la bandeja antes de sustituirlo.
+Se publica con `dotnet publish lanzador/Mda.Lanzador -c Release -o lanzador/nuevo-1.2`. Si el `.exe` anterior está abierto, ciérralo desde la bandeja antes de sustituirlo.
