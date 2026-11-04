@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Secreto> Secretos => Set<Secreto>();
     public DbSet<Mda.Api.Pc.SaludBateria> SaludBaterias => Set<Mda.Api.Pc.SaludBateria>();
     public DbSet<Mda.Api.Pc.Escena> Escenas => Set<Mda.Api.Pc.Escena>();
+    public DbSet<Mda.Api.Gastos.ReglaCategoria> ReglasCategoria => Set<Mda.Api.Gastos.ReglaCategoria>();
     public DbSet<Mda.Api.Luz.PuntoFoto> PuntosFoto => Set<Mda.Api.Luz.PuntoFoto>();
     public DbSet<Mda.Api.Luz.SalidaFoto> SalidasFoto => Set<Mda.Api.Luz.SalidaFoto>();
     public DbSet<Mda.Api.Pc.MedidaVelocidad> MedidasVelocidad => Set<Mda.Api.Pc.MedidaVelocidad>();
@@ -202,6 +203,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             e.ToTable("velocidades");
             e.HasIndex(x => x.Hora);
+        });
+
+        b.Entity<Mda.Api.Gastos.ReglaCategoria>(e =>
+        {
+            e.ToTable("reglas_categoria");
+            e.HasKey(x => x.Comercio);
+            e.Property(x => x.Comercio).HasMaxLength(120);
+            e.Property(x => x.Categoria).HasMaxLength(40);
+            e.Property(x => x.Nombre).HasMaxLength(120);
         });
 
         b.Entity<Mda.Api.Luz.PuntoFoto>(e =>

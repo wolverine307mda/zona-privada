@@ -698,6 +698,33 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("recurrentes", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Gastos.ReglaCategoria", b =>
+                {
+                    b.Property<string>("Comercio")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("Actualizado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Veces")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Comercio");
+
+                    b.ToTable("reglas_categoria", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Luz.PuntoFoto", b =>
                 {
                     b.Property<int>("Id")

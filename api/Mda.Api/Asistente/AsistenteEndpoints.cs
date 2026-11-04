@@ -59,6 +59,7 @@ public static class AsistenteEndpoints
             .Where(x => x.Key.Length >= 3)
             .ToDictionary(x => x.Key, x => x.GroupBy(m => m.Categoria).OrderByDescending(c => c.Count()).First().Key);
         var huchas = await db.Huchas.AsNoTracking().OrderBy(h => h.Id).Select(h => new HuchaConocida(h.Id, h.Nombre, h.Emoji)).ToListAsync(ct);
+        aprendido = Reglas.Mezclar(aprendido, await db.ReglasCategoria.AsNoTracking().ToListAsync(ct));
         return new Contexto(ahora, zona.Info, aprendido, huchas, await Horario.Leer(db, ct));
     }
 

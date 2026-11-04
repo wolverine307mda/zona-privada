@@ -125,7 +125,7 @@ public class Conversacion(
                     if (accion == "pd") { db.Movimientos.Remove(mov); await db.SaveChangesAsync(ct); await Editar(chat, idMensaje, "↩️ Deshecho: no se ha guardado nada.", null, ct); }
                     else
                     {
-                        if (accion == "pc" && trozos.Length > 1 && Categorias.Valida(trozos[1], mov.Tipo)) mov.Categoria = trozos[1];
+                        if (accion == "pc" && trozos.Length > 1 && Categorias.Valida(trozos[1], mov.Tipo)) { mov.Categoria = trozos[1]; await Reglas.Aprender(db, mov.Concepto, mov.Categoria, mov.Tipo, ct); }
                         mov.PorConfirmar = false;
                         await db.SaveChangesAsync(ct);
                         await Editar(chat, idMensaje, $"✅ {H(mov.Concepto)} {Cartera.Euros(mov.Importe)} · {H(Categorias.Todas[mov.Categoria].Nombre)}", Botones(("↩️ Deshacer", $"pd:{mov.Id}")), ct);

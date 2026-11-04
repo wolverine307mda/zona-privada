@@ -55,10 +55,10 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 27 Previsión de cierre de mes
 - ✅ 28 Objetivos con fecha (ya estaba del Plan 2: cada hucha con fecha calcula cuánto meter al mes)
 - ✅ 29 Gasto por lugar
-- 🔄 30 Informe mensual en PDF
-- ⬜ 31 Importar extracto CSV
+- ⬜ 30 Informe mensual en PDF
+- 🔄 31 Importar extracto CSV
 - ⬜ 32 Tipos de cambio
-- ⬜ 50 Reglas que aprenden
+- ✅ 50 Reglas que aprenden
 
 ## Fase 6 · Seguridad extra e Inicio
 - ⬜ 1 Mapa de atacantes en el globo
