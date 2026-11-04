@@ -47,9 +47,9 @@ services:
     mem_limit: 1g
     pids_limit: 512
     logging: *registros
-    # sano cuando /api/salud responde 200 (el contenedor no trae curl: se abre el puerto con bash)
+    # sano cuando /api/salud responde 200 (el contenedor no trae curl: se abre el puerto con bash; CMD-SHELL usaría sh, que no sabe hacerlo)
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/salud HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q '200 OK' <&3"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/salud HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q '200 OK' <&3"]
       interval: 30s
       timeout: 5s
       retries: 3
