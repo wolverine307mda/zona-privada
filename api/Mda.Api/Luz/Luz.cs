@@ -251,6 +251,14 @@ public static class LuzEndpoints
             }));
         });
 
+        // ¿Habrá aurora? El Kp previsto por el NOAA contra el que hace falta en la latitud de tu lugar
+        g.MapGet("/aurora", async (ServicioTiempo tiempo, ServicioAurora aurora, TimeProvider reloj, CancellationToken ct) =>
+        {
+            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            if (await aurora.Leer(ct) is not { } kps) return Results.Ok(new { sinLugar = false, sinDatos = true });
+            return Results.Ok(new { sinLugar = false, sinDatos = false, lugar = lugar.Nombre, prevision = ServicioAurora.Evaluar(kps, lugar.Lat, reloj.GetUtcNow()) });
+        });
+
         g.MapPut("/ajustes", async (AjustesLuz a, AppDbContext db, CancellationToken ct) =>
         {
             await ServicioLuz.Guardar(db, a, ct);

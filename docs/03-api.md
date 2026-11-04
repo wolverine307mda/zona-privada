@@ -161,6 +161,7 @@
 | GET | `/api/luz/dia?fecha=` | «Cuándo salir a hacer fotografía»: efemérides (amanecer, atardecer con acimut, crepúsculos, luna), serie de 145 puntos (cada 10 min) con sol, luna y núcleo galáctico (altura y acimut), sombra, nubes por capas y nota, y las ventanas del día. De ayer a 7 días |
 | GET | `/api/luz/semana` | los próximos 7 días: ventanas, mejor momento de cada uno, nubes y los 5 mejores momentos con su porqué |
 | GET | `/api/luz/eventos` | lluvias de meteoros y eclipses de los próximos 6 meses con la luna de esa noche y las nubes si caen en la previsión (fechas fijas en `Luz/Eventos.cs`) |
+| GET | `/api/luz/aurora` | Kp previsto por el NOAA SWPC, el Kp que hace falta en la latitud de tu lugar y si hoy es posible (solo hemisferio norte; en `Luz/Aurora.cs`) |
 | GET/POST | `/api/senuelos` · PUT/DELETE `/{id}` · POST `/{id}/probar` · PUT `/ajustes` | archivos señuelo en Documentos |
 | GET/POST/DELETE | `/api/atajos-tokens` | tokens para Atajos de iOS (con sesión); el token solo sale al crearlo |
 | GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |

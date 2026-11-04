@@ -225,6 +225,7 @@ builder.Services.AddHostedService<Sondeo>();
 builder.Services.AddSingleton<ServicioTiempo>();
 // avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
 builder.Services.AddSingleton<ServicioLuz>();
+builder.Services.AddSingleton<ServicioAurora>();
 builder.Services.AddSingleton<AvisosLuz>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AvisosLuz>());
 builder.Services.AddSingleton<IAvisos, Avisos>();

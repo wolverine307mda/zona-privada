@@ -44,8 +44,8 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 
 ## Fase 4 · Fotografía
 - ✅ 33 Lluvias de meteoros y eclipses
-- 🔄 34 Aurora (Kp)
-- ⬜ 35 Regla 500 / NPF
+- ✅ 34 Aurora (Kp)
+- 🔄 35 Regla 500 / NPF
 - ⬜ 36 Niebla e inversión térmica
 - ⬜ 37 Puntos favoritos
 - ⬜ 38 Diario de salidas
