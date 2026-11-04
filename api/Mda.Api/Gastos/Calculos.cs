@@ -43,7 +43,7 @@ public static class Calculos
             .ToList();
 
     // Resumen de un mes: totales, comparación con el anterior, reparto, gasto por día y fijos pendientes
-    public static ResumenMes Mes(int anio, int mes, IReadOnlyList<Movimiento> delMes, IReadOnlyList<Movimiento> delAnterior, IReadOnlyList<Recurrente> recurrentes)
+    public static ResumenMes Mes(int anio, int mes, IReadOnlyList<Movimiento> delMes, IReadOnlyList<Movimiento> delAnterior, IReadOnlyList<Recurrente> recurrentes, IReadOnlySet<int>? cubiertos = null)
     {
         var t = TotalesDe(delMes);
         var dias = DateTime.DaysInMonth(anio, mes);
@@ -51,7 +51,9 @@ public static class Calculos
         foreach (var m in delMes.Where(m => m.Tipo == TipoMovimiento.Gasto)) porDia[m.Fecha.Day - 1] += m.Importe;
 
         var tocan = recurrentes.Where(r => r.TocaEn(anio, mes)).ToList();
-        var registrados = delMes.Where(m => m.RecurrenteId is not null).Select(m => m.RecurrenteId!.Value).ToHashSet();
+        // un fijo está cubierto si hay un apunte de ESTE mes, aunque esté fechado en otro (cobrado antes de su día)
+        var clave = Movimiento.ClavePeriodo(anio, mes);
+        var registrados = cubiertos ?? delMes.Where(m => m.RecurrenteId is not null && m.PeriodoEfectivo == clave).Select(m => m.RecurrenteId!.Value).ToHashSet();
         var pendientes = tocan.Where(r => !registrados.Contains(r.Id))
             .Select(r => new Pendiente(r.Id, r.Nombre, r.Tipo, r.Categoria, r.Importe, r.Variable, new DateOnly(anio, mes, Math.Min(r.Dia, dias))))
             .OrderBy(p => p.Fecha).ThenBy(p => p.Nombre)

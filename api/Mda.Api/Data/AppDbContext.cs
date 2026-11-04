@@ -74,6 +74,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Concepto).HasMaxLength(120);
             e.Property(x => x.Notas).HasMaxLength(500);
             e.Property(x => x.Moneda).HasMaxLength(3);
+            e.Property(x => x.Periodo).HasMaxLength(7);
             e.Property(x => x.ImporteOriginal).HasPrecision(14, 2);
             e.HasIndex(x => x.Fecha);
             e.HasIndex(x => new { x.Categoria, x.Fecha });

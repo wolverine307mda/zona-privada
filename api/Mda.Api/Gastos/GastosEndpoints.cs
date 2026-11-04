@@ -17,7 +17,7 @@ public record RecurrenteEntrada(
     string Nombre, TipoMovimiento Tipo, string Categoria, decimal Importe, bool Variable, int Dia,
     Frecuencia Frecuencia, DateOnly Inicio, DateOnly? Fin, bool Activo = true);
 
-public record Registro(decimal? Importe, DateOnly? Fecha);
+public record Registro(decimal? Importe, DateOnly? Fecha, string? Periodo = null);
 
 // API del módulo de gastos: apuntes, fijos (suscripciones, alquiler, nómina…), resumen del mes,
 // estadísticas y gasolina. Todo con sesión iniciada.
@@ -37,8 +37,13 @@ public static class GastosEndpoints
             var ant = desde.AddMonths(-1);
             var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha >= ant && m.Fecha < desde.AddMonths(1)).ToListAsync();
             var recurrentes = await db.Recurrentes.AsNoTracking().ToListAsync();
+            // los fijos cubiertos este mes, también los cobrados antes y fechados en otro mes
+            var clave = Movimiento.ClavePeriodo(anio, mes);
+            var cubiertos = (await db.Movimientos.AsNoTracking()
+                .Where(m => m.RecurrenteId != null && (m.Periodo == clave || (m.Periodo == null && m.Fecha >= desde && m.Fecha < desde.AddMonths(1))))
+                .Select(m => m.RecurrenteId!.Value).ToListAsync()).ToHashSet();
             return Results.Ok(Calculos.Mes(anio, mes,
-                movs.Where(m => m.Fecha >= desde).ToList(), movs.Where(m => m.Fecha < desde).ToList(), recurrentes));
+                movs.Where(m => m.Fecha >= desde).ToList(), movs.Where(m => m.Fecha < desde).ToList(), recurrentes, cubiertos));
         });
 
         // ---- Estadísticas de los últimos N meses ----
@@ -181,11 +186,15 @@ public static class GastosEndpoints
             var fecha = reg.Fecha ?? Cartera.Hoy(reloj, zona);
             var importe = reg.Importe ?? r.Importe;
             if (importe <= 0 || importe > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["importe"] = ["El importe tiene que ser mayor que 0."] });
-            var desde = new DateOnly(fecha.Year, fecha.Month, 1);
-            var hasta = desde.AddMonths(1);
-            if (await db.Movimientos.AnyAsync(m => m.RecurrenteId == id && m.Fecha >= desde && m.Fecha < hasta))
+            // «cobrada ya»: la fecha es la del cobro real (hoy) y el periodo, el mes de la ocurrencia que cubre
+            var periodo = reg.Periodo ?? Movimiento.ClavePeriodo(fecha.Year, fecha.Month);
+            if (!System.Text.RegularExpressions.Regex.IsMatch(periodo, @"^\d{4}-(0[1-9]|1[0-2])$"))
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["periodo"] = ["El periodo tiene que ser como 2026-11."] });
+            var d1 = new DateOnly(int.Parse(periodo[..4]), int.Parse(periodo[5..]), 1);
+            var d2 = d1.AddMonths(1);
+            if (await db.Movimientos.AnyAsync(m => m.RecurrenteId == id && (m.Periodo == periodo || (m.Periodo == null && m.Fecha >= d1 && m.Fecha < d2))))
                 return Results.Conflict(new { detail = "Este fijo ya está apuntado este mes." });
-            var m = new Movimiento { Tipo = r.Tipo, Fecha = fecha, Importe = importe, Categoria = r.Categoria, Concepto = r.Nombre, RecurrenteId = r.Id };
+            var m = new Movimiento { Tipo = r.Tipo, Fecha = fecha, Importe = importe, Categoria = r.Categoria, Concepto = r.Nombre, RecurrenteId = r.Id, Periodo = periodo == Movimiento.ClavePeriodo(fecha.Year, fecha.Month) ? null : periodo };
             db.Movimientos.Add(m);
             await db.SaveChangesAsync();
             return Results.Created($"/api/gastos/movimientos/{m.Id}", m);

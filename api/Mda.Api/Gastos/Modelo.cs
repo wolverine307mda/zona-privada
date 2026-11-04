@@ -20,6 +20,13 @@ public class Movimiento
     public int? RecurrenteId { get; set; }
     public Recurrente? Recurrente { get; set; }
 
+    // el mes («2026-11») de la ocurrencia del fijo que cubre este apunte. Casi siempre es el de la fecha, pero una suscripción cobrada
+    // antes de su día (el 30 por el cargo del 2) cubre el mes siguiente. Vacío = el de la fecha
+    public string? Periodo { get; set; }
+
+    public static string ClavePeriodo(int anio, int mes) => $"{anio:0000}-{mes:00}";
+    public string PeriodoEfectivo => Periodo ?? ClavePeriodo(Fecha.Year, Fecha.Month);
+
     // si es un pago de una deuda (el coche, un préstamo…), de cuál
     public int? DeudaId { get; set; }
 

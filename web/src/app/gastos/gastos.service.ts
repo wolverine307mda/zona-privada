@@ -72,8 +72,9 @@ export class GastosService {
     return firstValueFrom(id ? this.http.put<Recurrente>(`${this.base}/recurrentes/${id}`, r) : this.http.post<Recurrente>(`${this.base}/recurrentes`, r));
   }
   borrarFijo(id: number) { return firstValueFrom(this.http.delete(`${this.base}/recurrentes/${id}`)); }
-  registrarFijo(id: number, fecha: string, importe?: number) {
-    return firstValueFrom(this.http.post<Movimiento>(`${this.base}/recurrentes/${id}/registrar`, { fecha, importe: importe ?? null }));
+  // `periodo` (2026-11): el mes de la ocurrencia que cubre, si el cobro cae en otro (cobrada antes de su día)
+  registrarFijo(id: number, fecha: string, importe?: number, periodo?: string) {
+    return firstValueFrom(this.http.post<Movimiento>(`${this.base}/recurrentes/${id}/registrar`, { fecha, importe: importe ?? null, periodo: periodo ?? null }));
   }
 
   // ---- Saldo, huchas, presupuestos y consejos ----

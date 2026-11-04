@@ -167,7 +167,7 @@
               </div>
               <span class="mov__importe" [class.ingreso]="p.tipo === 'Ingreso'">{{ p.tipo === 'Ingreso' ? '+' : '−' }}{{ euros(p.importe) }}@if (p.variable) {<small>≈</small>}</span>
               <button class="pend__boton" type="button" (click)="aplicar(p)" [disabled]="apuntando() === p.recurrenteId">
-                {{ apuntando() === p.recurrenteId ? '…' : 'Aplicar' }}
+                {{ apuntando() === p.recurrenteId ? '…' : esFutura(p) ? 'Cobrada ya' : 'Aplicar' }}
               </button>
             </li>
           }

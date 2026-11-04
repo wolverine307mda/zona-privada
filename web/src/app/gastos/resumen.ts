@@ -136,6 +136,12 @@ export class Resumen implements OnDestroy {
   }
   protected valor(e: Event): string { return (e.target as HTMLInputElement).value; }
 
+  private hoyISO(): string {
+    const h = new Date();
+    return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+  }
+  protected esFutura(p: Pendiente): boolean { return p.fecha > this.hoyISO(); }
+
   // «Aplicar»: lo que se repite pasa a ser un apunte del mes. Si su importe puede variar, primero se pregunta.
   protected async aplicar(p: Pendiente): Promise<void> {
     if (p.variable) {
@@ -161,7 +167,8 @@ export class Resumen implements OnDestroy {
   private async registrar(p: Pendiente, importe?: number): Promise<boolean> {
     this.apuntando.set(p.recurrenteId);
     try {
-      await this.g.registrarFijo(p.recurrenteId, p.fecha, importe);
+      // si aún no ha llegado su día, se apunta hoy (cuando te la cobraron) y cubre la ocurrencia de su mes
+      await this.g.registrarFijo(p.recurrenteId, this.esFutura(p) ? this.hoyISO() : p.fecha, importe, p.fecha.slice(0, 7));
       this.g.recargar();
       return true;
     } catch {

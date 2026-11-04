@@ -148,4 +148,25 @@ public class GastosApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var mes = await c.GetFromJsonAsync<JsonElement>("/api/gastos/mes/2026/7");
         Assert.Contains(mes.GetProperty("movimientos").EnumerateArray(), m => m.GetProperty("concepto").GetString() == "Spotify" && m.GetProperty("importe").GetDecimal() == 10.99m);
     }
+
+    [Fact]
+    public async Task Una_suscripcion_cobrada_antes_cubre_su_mes_y_el_siguiente_sale_pendiente()
+    {
+        var c = await Dentro();
+        var alta = await c.PostAsJsonAsync("/api/gastos/recurrentes", new
+        {
+            nombre = "HBO", tipo = "Gasto", categoria = "suscripciones", importe = 9.99, variable = false, dia = 2, frecuencia = "Mensual", inicio = "2026-01-01",
+        });
+        var id = (await alta.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
+        async Task<bool> Pendiente(int mes) => (await c.GetFromJsonAsync<JsonElement>($"/api/gastos/mes/2026/{mes}")).GetProperty("pendientes")
+            .EnumerateArray().Any(p => p.GetProperty("recurrenteId").GetInt32() == id);
+
+        // te la cobran el 30 de septiembre, antes del 2 de octubre
+        Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync($"/api/gastos/recurrentes/{id}/registrar", new { fecha = "2026-09-30", periodo = "2026-10" })).StatusCode);
+        Assert.False(await Pendiente(10));   // octubre ya está cubierto aunque el apunte sea de septiembre
+        Assert.True(await Pendiente(9));     // y septiembre sigue con su propia ocurrencia pendiente
+        Assert.True(await Pendiente(11));
+        Assert.Equal(HttpStatusCode.Conflict, (await c.PostAsJsonAsync($"/api/gastos/recurrentes/{id}/registrar", new { fecha = "2026-10-02" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync($"/api/gastos/recurrentes/{id}/registrar", new { fecha = "2026-10-02", periodo = "octubre" })).StatusCode);
+    }
 }

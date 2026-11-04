@@ -601,6 +601,10 @@ namespace Mda.Api.Data.Migraciones
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("Periodo")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
                     b.Property<bool>("PorConfirmar")
                         .HasColumnType("boolean");
 
