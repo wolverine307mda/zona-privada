@@ -104,6 +104,7 @@ export class Entrar implements OnDestroy {
 
   private fallo(texto: string): void {
     this.error.set(texto);
+    this.escena?.rechazar(); // el candado se pone en rojo y se sacude
     this.sacude.set(false);
     requestAnimationFrame(() => this.sacude.set(true));
   }

@@ -96,3 +96,10 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
 - **«Cargando…»** (`.cargando`, `.esta-cargando`): mini reactor delante del texto, en todas las pantallas a la vez.
 - **Esqueletos** (`.esqueleto`): líneas y tarjetas con un barrido de luz del color de acento.
 - Con «reducir movimiento» el reactor queda quieto; las líneas y tarjetas del esqueleto siguen moviéndose porque indican que se está cargando.
+
+## Pantalla de entrar: el candado
+
+`entrar/candado-3d.ts` (Three.js, se carga solo en esa ruta): candado de metal con cuerpo pulido, placa, cilindro con llave, arco de acero y LED de estado; reflejos con un
+estudio generado al vuelo (`RoomEnvironment`, sin descargar imágenes); anillos holográficos y de partículas, rejilla y estrellas. Tres animaciones:
+`intento()` (LED que parpadea y un anillo que escanea), `abrir()` (la llave gira, LED verde, el arco sube y se abre sobre su pata) y `rechazar()` (LED rojo, sacudida y el arco cae).
+Con «reducir movimiento» se ve el resultado sin animar. Al salir libera geometrías, texturas y el contexto WebGL.
