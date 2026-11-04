@@ -25,7 +25,14 @@
 .rejilla { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .carpeta { width: 100%; padding: 22px 12px; border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--texto) 25%, transparent); background: transparent; color: var(--texto); cursor: pointer; text-align: left; }
 .foto { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: 2px solid transparent; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--texto) 8%, transparent); cursor: pointer; }
-.foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity 420ms ease; }
+.foto.lista img { opacity: 1; }
+/* hasta que la miniatura llega, un barrido de luz del color de acento; en las carpetas que aún se abren, tarjetas vacías con el mismo barrido */
+.foto::before, .foto-esqueleto::before { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--brand) 16%, transparent) 50%, transparent 70%) 0 0 / 250% 100%; animation: barrido-foto 1.5s linear infinite; }
+.foto.lista::before { display: none; }
+.foto-esqueleto { position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--texto) 8%, transparent); list-style: none; }
+@keyframes barrido-foto { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .foto img { transition: none; } .foto::before, .foto-esqueleto::before { animation: none; } }
 .foto.puesta { border-color: var(--brand); }
 .foto:disabled { opacity: .4; cursor: not-allowed; }
 .marca { position: absolute; left: 8px; bottom: 8px; padding: 3px 9px; border-radius: 999px; font-size: 12px; background: rgb(0 0 0 / .6); color: #fff; }

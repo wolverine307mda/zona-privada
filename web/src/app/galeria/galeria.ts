@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; enGlobo?: boolean; lat?: number | null; lon?: number | null; lugar?: string; }
 interface Sitio { nombre: string; lat: number; lon: number; region?: string | null; }
-interface Elemento { nombre: string; ruta: string; carpeta: boolean; tamano: number; soportada: boolean; foto: { id: string; publicada: boolean } | null; }
+interface Elemento { nombre: string; ruta: string; carpeta: boolean; tamano: number; soportada: boolean; v: string | null; foto: { id: string; publicada: boolean } | null; }
 interface Estado { activa: boolean; publicadas: number; total: number; }
 
 const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
@@ -65,7 +65,8 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
         </span>
       </header>
       @if (fallo()) { <p class="error">No se pudo leer la carpeta. ¿Está montada «Imágenes» en el equipo?</p> }
-      <ul class="rejilla">
+      <ul class="rejilla" [attr.aria-busy]="cargando()">
+        @if (cargando()) { @for (_ of esqueletos; track $index) { <li class="foto-esqueleto" aria-hidden="true"></li> } }
         @for (e of elementos(); track e.ruta) {
           <li>
             @if (e.carpeta) {
@@ -74,7 +75,7 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
               <button class="foto" type="button" [disabled]="!e.soportada" (click)="elegir(e)" [class.puesta]="e.foto?.publicada"
                       [attr.aria-label]="(e.foto ? 'Editar ' : 'Publicar ') + e.nombre"
                       [title]="e.soportada ? e.nombre : 'Formato no publicable: pásalo a JPG, PNG o WebP'">
-                <img [src]="'/api/archivos/archivo?raiz=imagenes&ruta=' + codificar(e.ruta) + '&ver=true'" alt="" loading="lazy" decoding="async">
+                <img [src]="miniatura(e)" alt="" width="360" height="270" loading="lazy" decoding="async" (load)="lista($event)" (error)="lista($event)">
                 <span class="marca">{{ e.foto ? (e.foto.publicada ? '✓ publicada' : 'oculta') : e.soportada ? 'publicar' : 'no soportada' }}</span>
               </button>
             }
@@ -176,6 +177,8 @@ export class Galeria implements OnInit {
   protected readonly ruta = signal('');
   protected readonly elementos = signal<Elemento[]>([]);
   protected readonly fallo = signal(false);
+  protected readonly cargando = signal(true);
+  protected readonly esqueletos = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly actual = signal<(Partial<Foto> & { ruta: string }) | null>(null);
   protected readonly guardando = signal(false);
   protected readonly errorForm = signal('');
@@ -189,6 +192,16 @@ export class Galeria implements OnInit {
   }
 
   protected codificar(r: string): string { return encodeURIComponent(r); }
+
+  // la rejilla pide miniaturas de 360 px (con la versión en la dirección, así el navegador las guarda para siempre) y no las fotos enteras
+  protected miniatura(e: Elemento): string {
+    return e.soportada && e.v
+      ? `/api/galeria/carpeta/mini?ruta=${encodeURIComponent(e.ruta)}&v=${e.v}`
+      : `/api/archivos/archivo?raiz=imagenes&ruta=${encodeURIComponent(e.ruta)}&ver=true`;
+  }
+
+  // mientras llega la miniatura se ve un barrido de luz; al llegar (o fallar) la foto aparece con un fundido
+  protected lista(ev: Event): void { (ev.target as HTMLElement).parentElement?.classList.add('lista'); }
 
   private async cargar(): Promise<void> {
     const [e, f, p] = await Promise.all([
@@ -249,6 +262,7 @@ export class Galeria implements OnInit {
   }
 
   protected async abrir(ruta: string): Promise<void> {
+    this.cargando.set(true);
     try {
       const r = await firstValueFrom(this.http.get<{ ruta: string; elementos: Elemento[] }>(`/api/galeria/carpeta?ruta=${encodeURIComponent(ruta)}`));
       this.ruta.set(r.ruta);
@@ -257,7 +271,7 @@ export class Galeria implements OnInit {
     } catch {
       this.fallo.set(true);
       this.elementos.set([]);
-    }
+    } finally { this.cargando.set(false); }
   }
 
   protected async activar(e: Event): Promise<void> {

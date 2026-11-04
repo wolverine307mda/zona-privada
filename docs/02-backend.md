@@ -188,3 +188,9 @@ archivada, fechas. CRUD en `/api/notas`.
 - `Galeria.cs`: `FotoPublica` (tabla `fotos_publicas`) y `Derivados` (SkiaSharp: decodifica, aplica la orientación EXIF, reduce a 480/1600 px, codifica WebP y lo guarda en `Galeria:Derivados`; hasta dos a la vez). Solo JPG, PNG, WebP, GIF y BMP; HEIC hay que convertirlo.
 - `GaleriaEndpoints.cs`: gestión con sesión (`/api/galeria`) y lectura pública (`/api/publico/galeria`).
 - `EstadoPublico.cs`: ajustes `publico-estado` y `publico-cpu` y los endpoints públicos `/api/publico/estado` (+ SSE `/vivo`).
+
+## Miniaturas de la galería
+
+`Galeria/Galeria.cs` (`Derivados`): los derivados WebP se generan con SkiaSharp y se guardan en `/derivados`. `Reducir` decodifica ya a 1/2, 1/4 o 1/8 cuando el códec lo permite (JPEG):
+una foto de 24 Mpx ya no se abre entera para sacar una miniatura (menos tiempo y mucha menos memoria). `ObtenerDeRuta` hace lo mismo para cualquier imagen de «Imágenes», publicada o no
+(`c-<ruta>-<hash>-<tam>.webp`), y la rejilla de «tu carpeta de imágenes» la usa en lugar de pedir las fotos enteras.

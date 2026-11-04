@@ -72,7 +72,20 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
     public async Task<string?> Obtener(FotoPublica f, string tam, CancellationToken ct)
     {
         if (!Tamanos.TryGetValue(tam, out var lado) || RutaReal(f) is not { } origen) return null;
-        var destino = Path.Combine(Directorio, $"{f.Id}-{f.Hash}-{tam}.webp");
+        return await Generar(origen, Path.Combine(Directorio, $"{f.Id}-{f.Hash}-{tam}.webp"), tam, lado, f.Id, ct);
+    }
+
+    // Lo mismo para cualquier imagen de la carpeta «Imágenes», publicada o no: la galería privada enseña miniaturas de 360 px en vez de las fotos enteras.
+    // El nombre lleva la ruta y el hash de tamaño y fecha: si la foto cambia, sale una miniatura nueva.
+    public async Task<string?> ObtenerDeRuta(string ruta, string tam, CancellationToken ct)
+    {
+        if (!Tamanos.TryGetValue(tam, out var lado) || carpetas.Resolver("imagenes", ruta) is not { } origen || !File.Exists(origen) || !Soportada(origen)) return null;
+        var clave = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(ruta.ToLowerInvariant())))[..12].ToLowerInvariant();
+        return await Generar(origen, Path.Combine(Directorio, $"c-{clave}-{HashDe(new FileInfo(origen))}-{tam}.webp"), tam, lado, ruta, ct);
+    }
+
+    private async Task<string?> Generar(string origen, string destino, string tam, int lado, string nombre, CancellationToken ct)
+    {
         if (File.Exists(destino)) return destino;
         await _cupo.WaitAsync(ct);
         try
@@ -90,7 +103,7 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            log.LogWarning(e, "No se pudo generar el derivado {Tam} de {Id}", tam, f.Id);
+            log.LogWarning(e, "No se pudo generar el derivado {Tam} de {Id}", tam, nombre);
             return null;
         }
         finally { _cupo.Release(); }
@@ -142,14 +155,25 @@ public sealed class Derivados(IConfiguration config, Carpetas carpetas, ILogger<
     {
         using var codec = SKCodec.Create(ruta);
         if (codec is null) return null;
-        using var original = SKBitmap.Decode(codec);
-        if (original is null) return null;
+        // los JPEG se pueden decodificar ya a 1/2, 1/4 o 1/8 (más rápido y con mucha menos memoria); se pide el doble del lado para no perder calidad al ajustar
+        var mayorOriginal = Math.Max(codec.Info.Width, codec.Info.Height);
+        var deseada = Math.Min(1f, (lado * 2f) / mayorOriginal);
+        var tam = deseada < 1f ? codec.GetScaledDimensions(deseada) : codec.Info.Size;
+        var info = new SKImageInfo(Math.Max(1, tam.Width), Math.Max(1, tam.Height), SKImageInfo.PlatformColorType, SKAlphaType.Premul);
+        var original = new SKBitmap(info);
+        var r = codec.GetPixels(info, original.GetPixels());
+        if (r is not (SKCodecResult.Success or SKCodecResult.IncompleteInput))
+        {
+            original.Dispose();
+            original = SKBitmap.Decode(codec) ?? throw new InvalidDataException("No se pudo decodificar la imagen");
+        }
         using var orientada = Orientar(original, codec.EncodedOrigin);
+        original.Dispose();
         var mayor = Math.Max(orientada.Width, orientada.Height);
         if (mayor <= lado) return orientada.Copy();
         var k = (double)lado / mayor;
-        var info = new SKImageInfo(Math.Max(1, (int)Math.Round(orientada.Width * k)), Math.Max(1, (int)Math.Round(orientada.Height * k)));
-        return orientada.Resize(info, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
+        var destino = new SKImageInfo(Math.Max(1, (int)Math.Round(orientada.Width * k)), Math.Max(1, (int)Math.Round(orientada.Height * k)));
+        return orientada.Resize(destino, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
     }
 
     private static string Medio(SKBitmap b)

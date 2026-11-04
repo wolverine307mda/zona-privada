@@ -89,11 +89,21 @@ public static class GaleriaEndpoints
                     {
                         nombre = f.Name, ruta = r, carpeta = f is DirectoryInfo, tamano = f is FileInfo fi ? fi.Length : 0L,
                         soportada = f is FileInfo && Derivados.Soportada(f.Name),
+                        v = f is FileInfo fv && Derivados.Soportada(f.Name) ? Derivados.HashDe(fv) : null, // cambia si cambia la foto: la miniatura se guarda para siempre
                         foto = foto is null ? null : new { foto.Id, foto.Publicada },
                     };
                 })
                 .OrderByDescending(x => x.carpeta).ThenBy(x => x.nombre, StringComparer.CurrentCultureIgnoreCase).ToList();
             return Results.Ok(new { ruta = rel == "." ? "" : rel, elementos });
+        }).AddEndpointFilter<PinFiltro>();
+
+        // miniatura de 360 px de una imagen de la carpeta (publicada o no): la rejilla de «tu carpeta de imágenes» ya no baja las fotos enteras
+        g.MapGet("/carpeta/mini", async (string ruta, string? tam, Derivados d, HttpContext ctx, CancellationToken ct) =>
+        {
+            if (await d.ObtenerDeRuta(ruta, tam is "media" ? "media" : "mini", ct) is not { } archivo) return Results.NotFound();
+            // con ?v=<hash> la dirección es única para esa versión de la foto: se puede guardar un año
+            ctx.Response.Headers.CacheControl = ctx.Request.Query.ContainsKey("v") ? "private, max-age=31536000, immutable" : "private, max-age=3600";
+            return Results.File(archivo, "image/webp");
         }).AddEndpointFilter<PinFiltro>();
 
         g.MapGet("/fotos", async (AppDbContext db, CancellationToken ct) =>
