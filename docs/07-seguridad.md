@@ -96,4 +96,15 @@ usa su propia subclave (HKDF) y GCM detecta si alguien toca un dato. En la base 
 - Al primer arranque con la clave se cifra lo que ya había (una sola vez, marcado en `ajustes` como `boveda-v1`).
 - La búsqueda de notas se hace en memoria, porque en la base el texto ya no se puede buscar.
 - Un hash (SHA) no sirve para esto: no se puede deshacer. Las contraseñas de acceso sí van con hash (PBKDF2 de Identity).
-- Pendiente: el secreto del 2FA y el resto de ajustes siguen como antes; las claves de servicios (Telegram, WhatsApp…) pasan a la bóveda en la tarea 1.3.
+- Pendiente: el secreto del 2FA y el resto de ajustes siguen como antes.
+
+## Claves de servicios (Seguridad → Claves)
+
+Telegram, WhatsApp, correo, Spotify, Google y el latido externo se editan desde la app y se guardan **cifradas** en la tabla `secretos`
+(`api/Mda.Api/Seguridad/Secretos.cs`). Funcionan como una fuente más de configuración con la prioridad más alta: el código sigue leyendo
+`config["Telegram:Token"]` y ve el valor de la base, así que cambiar una clave vale al momento, sin reiniciar.
+
+- Al primer arranque lo que haya en el `.env` se importa a la base (una vez por campo); a partir de ahí **manda la base** y esas líneas del `.env` se pueden quitar.
+- Quitar una clave la deja vacía (no vuelve a entrar la del `.env`).
+- La pantalla nunca recibe los valores: ver, cambiar o quitar pide confirmar con Face ID o contraseña (`Reautenticar`, 2 minutos) y el valor se oculta solo a los 20 s.
+- Con la base en memoria (pruebas y desarrollo) no se importa nada del `.env`.

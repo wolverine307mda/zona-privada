@@ -904,6 +904,28 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("ajustes", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Seguridad.Secreto", b =>
+                {
+                    b.Property<string>("Servicio")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Nombre")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTimeOffset>("Actualizado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Servicio", "Nombre");
+
+                    b.ToTable("secretos", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Senuelo", b =>
                 {
                     b.Property<int>("Id")

@@ -40,6 +40,12 @@ builder.Host.UseSerilog((ctx, cfg) =>
 // ---- Clave maestra que cifra notas, portapapeles y claves de servicios en la base (en producción es obligatoria) ----
 Boveda.Iniciar(builder.Configuration["Boveda:Clave"], exigir: builder.Environment.IsProduction());
 
+// ---- Claves de servicios (Telegram, WhatsApp…): se guardan cifradas en la base y ganan al .env, sin que el resto del código cambie ----
+var secretosFuente = new SecretosFuente();
+((Microsoft.Extensions.Configuration.IConfigurationBuilder)builder.Configuration).Add(secretosFuente);
+builder.Services.AddSingleton(secretosFuente);
+builder.Services.AddSingleton<Secretos>();
+
 // ---- Base de datos: PostgreSQL; en desarrollo, sin Docker, se puede usar una en memoria (Datos:EnMemoria=true) ----
 var enMemoria = builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Datos:EnMemoria");
 builder.Services.AddDbContext<AppDbContext>(o =>
@@ -263,6 +269,7 @@ app.MapAgenda();
 app.MapConexiones();
 app.MapMusica();
 app.MapSeguridad();
+app.MapSecretos();
 app.MapCartera();
 app.MapCoche();
 app.MapPush();

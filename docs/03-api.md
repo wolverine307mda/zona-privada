@@ -182,6 +182,7 @@
 | GET/POST/DELETE | `/api/portapapeles` · `/{id}` · POST `/{id}/al-pc` · `/del-pc` | texto compartido móvil ↔ PC (20 últimos, 24 h, 2000 letras) |
 | POST | `/api/sistema/agente/eventos` | el agente cuenta una descarga terminada o «Windows pide reiniciar» (token) |
 | GET/POST | `/api/sistema/agente/portapapeles` · `/{id}` | el agente lee el texto a copiar o deja el del PC (token) |
+| GET/PUT/DELETE | `/api/seguridad/claves` · `/{servicio}/{nombre}` | claves de servicios cifradas en la base: la lista no lleva valores; ver (GET), cambiar y quitar piden confirmar (403 `reautenticar`) |
 | GET | `/api/pc/historial` | una foto de la salud por día (espacio libre y desgaste de los discos), 90 días |
 | GET | `/api/pc` | salud del PC, si el agente está conectado, si la reautenticación vale y las últimas órdenes |
 | POST | `/api/pc/ordenes` · GET `/api/pc/ordenes/{id}` | `{ tipo, parametro? }` (`bloquear`, `despierto`, `reiniciar`, `suspender`, `apagar`, `cancelar`); pide reautenticar (403 `reautenticar:true`) y avisa a Telegram |

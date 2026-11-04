@@ -3,6 +3,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { soportaPasskeys } from '../core/passkey';
 import { Reautenticar } from '../core/reautenticar';
+import { Claves } from './claves';
 import { Llaves } from './llaves';
 import { Notificaciones } from '../core/notificaciones';
 import { SesionService } from '../core/sesion.service';
@@ -29,7 +30,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Llaves],
+  imports: [Claves, Llaves],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })

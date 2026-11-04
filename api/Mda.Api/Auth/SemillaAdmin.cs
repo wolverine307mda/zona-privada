@@ -17,6 +17,7 @@ public class SemillaAdmin(IServiceProvider services, IConfiguration config, ILog
         if (db.Database.IsRelational()) await db.Database.MigrateAsync(ct);
         else await db.Database.EnsureCreatedAsync(ct);
         await CifrarExistentes(db, ct);
+        await scope.ServiceProvider.GetRequiredService<Secretos>().Iniciar(db, ct); // claves de servicios: .env → base la primera vez
 
         var email = config["Admin:Email"];
         var password = config["Admin:Password"];

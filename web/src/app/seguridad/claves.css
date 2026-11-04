@@ -1,0 +1,52 @@
+:host { display: block; }
+.nada { color: var(--soft); margin: 12px 0 0; font-size: .86rem; }
+.nada code { font-size: .84em; }
+.error { margin: 8px 0; color: var(--bad); font-size: .9rem; }
+
+/* cada servicio es un bloque con su cabecera y una fila por clave */
+.servicio { margin-top: 14px; padding: 14px; border-radius: 18px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+.servicio__cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.servicio__cab h4 { margin: 0; font-size: 1rem; }
+.servicio__cab small { color: var(--soft); font-size: .82rem; }
+.estado { flex: none; padding: 4px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; border: 1px solid var(--vidrio-borde); color: var(--soft); }
+.estado--ok { color: #3fb96a; border-color: color-mix(in srgb, #3fb96a 50%, transparent); }
+.estado--falta { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+
+.campos { list-style: none; margin: 0; padding: 0; display: grid; }
+.clave { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) auto; align-items: center; gap: 6px 12px; padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--texto) 8%, transparent); }
+.clave:first-child { border-top: 0; }
+.clave__titulo { font-size: .88rem; color: var(--soft); }
+.clave__valor { min-width: 0; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .9rem; letter-spacing: .06em; overflow-wrap: anywhere; }
+.clave__valor--visible { letter-spacing: 0; color: var(--acento); }
+.clave--falta .clave__valor { color: var(--soft); font-family: inherit; letter-spacing: 0; font-style: italic; }
+.clave__acciones { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.clave__edicion { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clave__edicion .campo__input { flex: 1 1 220px; }
+
+.campo { display: grid; gap: 6px; margin-top: 8px; }
+.campo__etiqueta { font-size: .8rem; color: var(--soft); }
+.campo__input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: inherit; }
+.ojo { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 12px; background: none; color: var(--acento); cursor: pointer; }
+.ojo:hover, .ojo:focus-visible, .ojo[aria-pressed='true'] { background: color-mix(in srgb, var(--acento) 16%, transparent); }
+.ojo .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.enlace { border: 0; background: none; color: var(--acento); font: 600 .84rem/1.2 var(--font-text); cursor: pointer; padding: 8px 6px; min-height: 36px; }
+.enlace--peligro { color: var(--bad); }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--brand); color: var(--on-brand); font: 700 .92rem/1 var(--font-text); cursor: pointer; }
+.button:disabled { opacity: .55; }
+.cara .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* confirmación con Face ID o contraseña */
+.confirmar { display: grid; gap: 8px; justify-items: start; margin: 12px 0 0; padding: 14px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--acento) 50%, transparent); background: color-mix(in srgb, var(--acento) 8%, transparent); }
+.confirmar p { margin: 0; }
+.confirmar .campo, .confirmar .acciones { width: 100%; }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 4px; }
+
+/* móvil: el título arriba, el valor debajo y las acciones en su línea */
+@media (max-width: 560px) {
+  .servicio { padding: 12px; }
+  .clave { grid-template-columns: minmax(0, 1fr) auto; }
+  .clave__titulo { grid-column: 1 / -1; }
+  .clave__valor { grid-column: 1; }
+  .clave__acciones { grid-column: 2; }
+  .clave__edicion { grid-column: 1 / -1; }
+}
