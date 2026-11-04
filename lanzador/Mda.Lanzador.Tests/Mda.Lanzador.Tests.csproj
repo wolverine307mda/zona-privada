@@ -19,6 +19,7 @@
     <Compile Include="..\..\agente\Mda.Agente\Limpieza.cs" Link="Agente\Limpieza.cs" />
     <Compile Include="..\..\agente\Mda.Agente\InformeBateria.cs" Link="Agente\InformeBateria.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Termica.cs" Link="Agente\Termica.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Abrir.cs" Link="Agente\Abrir.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -97,6 +97,7 @@ static partial class Ordenes
                 case "wol": return Despertar(o.Parametro);
                 case "energia": return PlanEnergia(o.Parametro);
                 case "limpiar": return LimpiarTemporales();
+                case "abrir": return AbrirEnElPc(o.Parametro);
                 case "volumen":
                     if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
                     return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");
@@ -107,6 +108,16 @@ static partial class Ordenes
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return new(false, e.Message); }
         return new(false, "sin acción");
+    }
+
+    // Abrir en el PC: la dirección se abre con el explorador de Windows (así el navegador no hereda los permisos de administrador del agente)
+    // y las aplicaciones son solo las de la lista. Nada pasa por una consola.
+    static ResultadoOrden AbrirEnElPc(string parametro)
+    {
+        if (Abrir.Destino(parametro) is not { } d) return new(false, "eso no se puede abrir: solo direcciones http(s) o las aplicaciones de la lista");
+        if (d.Tipo == "url") Process.Start(new ProcessStartInfo("explorer.exe", d.Valor) { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
+        else Process.Start(new ProcessStartInfo(d.Valor) { UseShellExecute = true })?.Dispose();
+        return new(true, d.Tipo == "url" ? "dirección abierta en el navegador del PC" : $"{parametro.Trim().ToLowerInvariant()} abierto");
     }
 
     // Informe de batería: Windows lo genera en XML, el agente lo interpreta y manda a la API solo tres números (diseño, actual y ciclos)

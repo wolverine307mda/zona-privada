@@ -841,8 +841,8 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<string>("Parametro")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("Resultado")
                         .IsRequired()

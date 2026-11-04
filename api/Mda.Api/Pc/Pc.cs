@@ -221,13 +221,26 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
     public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
     public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
     public static readonly string[] Perfiles = ["equilibrado", "rendimiento", "ahorro", "cine"];
+    public const int MaxAbrir = 300;
+    public static readonly string[] AplicacionesAbrir = ["calculadora", "bloc", "explorador"];
+
+    // lo que se puede abrir en el PC: una dirección http(s) sin usuario, clave ni espacios, o una aplicación de la lista (el agente lo vuelve a comprobar)
+    public static bool DestinoAbrirValido(string? p)
+    {
+        p = (p ?? "").Trim();
+        if (p.Length is 0 or > MaxAbrir) return false;
+        if (AplicacionesAbrir.Contains(p, StringComparer.OrdinalIgnoreCase)) return true;
+        if (p.Any(c => char.IsWhiteSpace(c) || char.IsControl(c) || c is '"' or '<' or '>' or '^' or '`' or '\\')) return false;
+        return Uri.TryCreate(p, UriKind.Absolute, out var u) && u.Scheme is "http" or "https" && !string.IsNullOrEmpty(u.Host) && u.UserInfo.Length == 0;
+    }
+
     public static readonly TimeSpan Validez = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan AgenteConectado = TimeSpan.FromSeconds(15);
 
@@ -262,6 +275,7 @@ public static class OrdenesPc
         "energia" => $"plan de energía: {o.Parametro}",
         "limpiar" => "limpiar los temporales y vaciar la papelera",
         "bateria-informe" => "medir el desgaste de la batería",
+        "abrir" => $"abrir en el PC: {o.Parametro}",
         _ => o.Tipo,
     };
 
@@ -302,6 +316,11 @@ public static class OrdenesPc
             {
                 if (!Perfiles.Contains(e.Parametro ?? "")) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"El plan es uno de: {string.Join(", ", Perfiles)}."] });
                 parametro = e.Parametro!;
+            }
+            if (tipo == "abrir")
+            {
+                if (!DestinoAbrirValido(e.Parametro)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"Una dirección web (http o https, hasta {MaxAbrir} letras) o una aplicación: {string.Join(", ", AplicacionesAbrir)}."] });
+                parametro = e.Parametro!.Trim();
             }
             if (tipo == "apagar" && !string.IsNullOrWhiteSpace(e.Parametro))
             {

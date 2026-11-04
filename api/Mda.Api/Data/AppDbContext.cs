@@ -210,7 +210,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             e.ToTable("ordenes_pc");
             e.Property(x => x.Tipo).HasMaxLength(20);
-            e.Property(x => x.Parametro).HasMaxLength(20);
+            e.Property(x => x.Parametro).HasMaxLength(300); // una dirección web para «abrir en el PC»
             e.Property(x => x.Estado).HasMaxLength(12);
             e.Property(x => x.Resultado).HasMaxLength(200);
             e.Property(x => x.Desde).HasMaxLength(200);

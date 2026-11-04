@@ -55,3 +55,8 @@
 .plan small { color: var(--soft); font-size: .76rem; }
 .plan[aria-pressed='true'] { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 12%, transparent); }
 .plan:active { transform: scale(.97); }
+
+/* abrir en el PC */
+.abrir { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.abrir .campo__input { flex: 1 1 240px; min-height: 46px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 6%, transparent); color: inherit; font: inherit; }
+.plan:disabled { opacity: .6; }

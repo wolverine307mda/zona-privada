@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Reautenticar } from '../core/reautenticar';
 import { SistemaService } from '../inicio/sistema.service';
 import { DatosPc, Pc3d } from '../inicio/pc-3d';
+import { ConfirmarService } from '../core/confirmar.service';
 import { BateriaSalud } from './bateria-salud';
 import { CasaPc } from './casa';
 import { PortapapelesPc } from './portapapeles';
@@ -76,6 +77,23 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
           }
         </div>
         @if (avisoEnergia()) { <p class="msg" role="status">{{ avisoEnergia() }}</p> }
+      </section>
+    }
+
+    @if (e()?.agenteConectado) {
+      <section class="caja">
+        <header class="caja__cab"><h3>Abrir en el PC</h3><span class="sub">manda un enlace o una aplicación al ordenador</span></header>
+        <form class="abrir" (submit)="abrirEnPc($event)" novalidate>
+          <input class="campo__input" type="url" inputmode="url" placeholder="https://…" aria-label="Dirección web para abrir en el PC" autocapitalize="off" spellcheck="false" maxlength="300"
+                 [value]="destino()" (input)="destino.set($any($event.target).value)">
+          <button class="button" type="submit" [disabled]="!destino().trim() || abriendo()">{{ abriendo() ? 'Enviando…' : 'Abrir' }}</button>
+        </form>
+        <div class="planes" role="group" aria-label="Aplicaciones del PC">
+          @for (a of aplicaciones; track a.id) {
+            <button type="button" class="plan" [disabled]="abriendo()" (click)="pedirAbrir(a.id, a.nombre)"><span aria-hidden="true">{{ a.icono }}</span><strong>{{ a.nombre }}</strong></button>
+          }
+        </div>
+        @if (avisoAbrir()) { <p class="msg" role="status">{{ avisoAbrir() }}</p> }
       </section>
     }
 
@@ -195,6 +213,12 @@ export class Pc implements OnInit, OnDestroy {
   ];
   protected readonly energia = signal<string | null>((() => { try { return localStorage.getItem('mda-energia'); } catch { return null; } })());
   protected readonly avisoEnergia = signal('');
+  // «abrir en el PC»: una dirección web o una aplicación de la lista; siempre pide Face ID (o la contraseña)
+  protected readonly aplicaciones = [{ id: 'calculadora', nombre: 'Calculadora', icono: '🧮' }, { id: 'bloc', nombre: 'Bloc de notas', icono: '📝' }, { id: 'explorador', nombre: 'Explorador', icono: '🗂️' }];
+  protected readonly destino = signal('');
+  protected readonly abriendo = signal(false);
+  protected readonly avisoAbrir = signal('');
+  private readonly confirmador = inject(ConfirmarService);
   protected readonly brillo = signal<number | null>(null);
   protected readonly aviso = signal('');
   protected readonly verClave = signal(false);
@@ -274,6 +298,32 @@ export class Pc implements OnInit, OnDestroy {
     setTimeout(() => { if (tipo === 'volumen') this.volumen.set(null); else this.brillo.set(null); }, 6000);
   }
 
+  protected async abrirEnPc(ev: Event): Promise<void> {
+    ev.preventDefault();
+    const d = this.destino().trim();
+    if (!d) return;
+    await this.pedirAbrir(/^[a-z][a-z0-9+.-]*:/i.test(d) ? d : 'https://' + d, d);
+  }
+
+  protected async pedirAbrir(parametro: string, etiqueta: string): Promise<void> {
+    this.avisoAbrir.set(''); this.abriendo.set(true);
+    try {
+      for (let intento = 0; intento < 2; intento++) {
+        try {
+          await firstValueFrom(this.http.post('/api/pc/ordenes', { tipo: 'abrir', parametro }));
+          this.avisoAbrir.set(`Enviado al PC: ${etiqueta}`);
+          if (parametro === this.destino().trim() || parametro === 'https://' + this.destino().trim()) this.destino.set('');
+          return;
+        } catch (err) {
+          const x = err as HttpErrorResponse;
+          if (x.status === 403 && x.error?.reautenticar && intento === 0) { if (!(await this.confirmador.pedir('Confirma que eres tú para abrir algo en el PC.'))) return; continue; }
+          this.avisoAbrir.set(x.status === 409 ? 'El agente de Windows no está en marcha.' : (x.error?.errors?.parametro?.[0] ?? 'No se pudo enviar.'));
+          return;
+        }
+      }
+    } finally { this.abriendo.set(false); }
+  }
+
   // plan de energía: orden inocua, no pide confirmar con Face ID
   protected async plan(id: string): Promise<void> {
     this.avisoEnergia.set('');
@@ -289,7 +339,7 @@ export class Pc implements OnInit, OnDestroy {
 
   protected usado(v: Volumen): number { return v.totalBytes ? Math.round(100 - (100 * v.libreBytes) / v.totalBytes) : 0; }
   protected gb(b: number): string { return `${(b / 1_073_741_824).toFixed(b < 10_737_418_240 ? 1 : 0)} GB`; }
-  protected nombre(o: Orden): string { return o.tipo === 'energia' ? `Energía: ${o.parametro}` : ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
+  protected nombre(o: Orden): string { return o.tipo === 'energia' ? `Energía: ${o.parametro}` : o.tipo === 'abrir' ? `Abrir en el PC: ${o.parametro}` : ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
 
   protected elegir(o: (typeof ORDENES)[number]): void {
     this.pendiente.set(o); this.error.set(''); this.mensaje.set('');
