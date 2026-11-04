@@ -21,8 +21,22 @@ sealed class Bandeja : ApplicationContext
     private readonly ToolStripMenuItem _estado = new("Arrancando…") { Enabled = false };
     private readonly ToolStripMenuItem _inicio = new("Iniciar con Windows") { CheckOnClick = false };
     private readonly ToolStripMenuItem _internet = new("Salida a Internet (Tailscale)");
-    private readonly CancellationTokenSource _agente = new();
+    private CancellationTokenSource _agente = new();
+    private readonly ToolStripMenuItem _modoNativo = new("Modo escritorio (beta, sin Docker)");
+    private readonly ToolStripMenuItem _ensayoItem = new("Ensayo: no avisar ni tocar aparatos");
     private readonly SynchronizationContext _ui = SynchronizationContext.Current ?? new SynchronizationContext();
+
+    // «docker» (lo de siempre) o «nativo» (PostgreSQL y la API como procesos de Windows, sin Docker). En «nativo» el ensayo mantiene a Docker como producción:
+    // la copia de escritorio no avisa ni toca aparatos, y el agente del PC sigue hablando con la API de Docker.
+    private string _modo = "docker";
+    private bool _ensayo = true;
+    private string _instalacion = "";
+    private ServidorNativo? _nativo;
+    private Dictionary<string, string> _envNativo = [];
+    private bool Nativo => _modo == "nativo";
+    private string UrlLocal => Nativo ? ConfigNativa.UrlApi : "http://localhost:8080";
+    private RutasNativas Rutas => new(_instalacion.Length > 0 ? _instalacion : AppContext.BaseDirectory,
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ZonaPrivada"));
 
     private string _carpeta = "";
     private string _urlPublica = "";
@@ -37,10 +51,11 @@ sealed class Bandeja : ApplicationContext
         _icono.Icon = _iconos[Nivel.Ambar];
         _icono.Text = "Zona privada: arrancando…";
         _icono.ContextMenuStrip = Menu();
-        _icono.DoubleClick += (_, _) => Abrir(_urlPublica.Length > 0 ? _urlPublica : "http://localhost:8080");
+        _icono.DoubleClick += (_, _) => Abrir(!Nativo && _urlPublica.Length > 0 ? _urlPublica : UrlLocal);
         _reloj.Tick += async (_, _) => await Comprobar();
 
         if (!Configurar()) { ExitThread(); return; }
+        _modoNativo.Checked = Nativo; _ensayoItem.Checked = _ensayo;
         _inicio.Checked = Instalador.TareaExiste();
         _ = ArrancarAgente();
         _ = ArrancarTodo(primeraVez: true);
@@ -61,49 +76,138 @@ sealed class Bandeja : ApplicationContext
                 var raiz = JsonDocument.Parse(File.ReadAllText(guardado)).RootElement;
                 carpeta = raiz.GetProperty("carpeta").GetString();
                 if (raiz.TryGetProperty("perfil", out var p) && p.GetString() is { } perfil) _perfil = perfil;
+                if (raiz.TryGetProperty("modo", out var mo) && mo.GetString() is "nativo" or "docker") _modo = mo.GetString()!;
+                if (raiz.TryGetProperty("ensayo", out var en) && en.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False) _ensayo = en.GetBoolean();
+                if (raiz.TryGetProperty("instalacion", out var ins) && ins.GetString() is { } instalacion) _instalacion = instalacion;
             }
         }
         catch (Exception e) when (e is JsonException or KeyNotFoundException or IOException) { }
         if (carpeta is null || !File.Exists(Path.Combine(carpeta, "compose.yaml")))
             carpeta = Entorno.BuscarCarpeta([AppContext.BaseDirectory, Environment.CurrentDirectory, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Proyectos", "zona-privada")]);
-        if (carpeta is null)
+        if (carpeta is null && !Nativo)
         {
             using var d = new FolderBrowserDialog { Description = "Elige la carpeta de la zona privada (la que tiene compose.yaml)", UseDescriptionForTitle = true };
             if (d.ShowDialog() != DialogResult.OK || !File.Exists(Path.Combine(d.SelectedPath, "compose.yaml"))) return false;
             carpeta = d.SelectedPath;
         }
-        _carpeta = carpeta;
+        _carpeta = carpeta ?? "";
         GuardarConfig();
-        // primer arranque: si falta algo en el .env se completa (o se piden el correo y la contraseña)
-        if (!Asistente.Completar(carpeta, Log)) return false;
-        var env = File.Exists(Path.Combine(carpeta, ".env")) ? Entorno.LeerEnv(File.ReadAllLines(Path.Combine(carpeta, ".env"))) : [];
-        _urlPublica = env.GetValueOrDefault("URL_PUBLICA", "").TrimEnd('/');
-        _token = env.GetValueOrDefault("AGENTE_TOKEN", "");
+        if (carpeta is not null)
+        {
+            // primer arranque: si falta algo en el .env se completa (o se piden el correo y la contraseña)
+            if (!Nativo && !Asistente.Completar(carpeta, Log)) return false;
+            var env = File.Exists(Path.Combine(carpeta, ".env")) ? Entorno.LeerEnv(File.ReadAllLines(Path.Combine(carpeta, ".env"))) : [];
+            _urlPublica = env.GetValueOrDefault("URL_PUBLICA", "").TrimEnd('/');
+            _token = env.GetValueOrDefault("AGENTE_TOKEN", "");
+        }
+        return !Nativo || PrepararNativo();
+    }
+
+    // la configuración (.env) de la versión de escritorio vive en su carpeta de datos; la primera vez se ofrece copiar la de Docker (mismas claves y administrador)
+    private bool PrepararNativo()
+    {
+        var r = Rutas;
+        Directory.CreateDirectory(r.Config);
+        var destino = Path.Combine(r.Config, ".env");
+        if (!File.Exists(destino) && _carpeta.Length > 0 && File.Exists(Path.Combine(_carpeta, ".env")) &&
+            MessageBox.Show("Primera vez con la versión de escritorio.\n\n¿Copio la configuración de Docker (mismas claves y mismo administrador)?\nSi dices que no, se crea una nueva desde cero.",
+                "Zona privada", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            File.Copy(Path.Combine(_carpeta, ".env"), destino);
+        if (!Asistente.Completar(r.Config, Log)) return false;
+        _envNativo = Entorno.LeerEnv(File.ReadAllLines(destino));
         return true;
     }
     private string _token = "";
 
     private void GuardarConfig()
     {
-        try { File.WriteAllText(Path.Combine(Datos, "config.json"), JsonSerializer.Serialize(new { carpeta = _carpeta, perfil = _perfil })); } catch (IOException) { }
+        try { File.WriteAllText(Path.Combine(Datos, "config.json"), JsonSerializer.Serialize(new { carpeta = _carpeta, perfil = _perfil, modo = _modo, ensayo = _ensayo, instalacion = _instalacion })); } catch (IOException) { }
     }
 
     // ---------- agente del PC (el mismo bucle que mda-agente.exe) ----------
 
     private Task ArrancarAgente()
     {
-        if (_token.Length == 0) { _estadoAgente = "falta AGENTE_TOKEN en el .env"; return Task.CompletedTask; }
+        // con la versión de escritorio en producción (sin ensayo) el agente habla con ella; si no, con Docker
+        var token = Nativo && !_ensayo ? _envNativo.GetValueOrDefault("AGENTE_TOKEN", "") : _token;
+        var url = ConfigNativa.UrlAgente(Nativo, _ensayo);
+        if (token.Length == 0) { _estadoAgente = "falta AGENTE_TOKEN en el .env"; return Task.CompletedTask; }
+        var ct = _agente.Token;
         return Task.Run(async () =>
         {
-            try { await AgenteServicio.Ejecutar("http://localhost:8080", _token, e => { _estadoAgente = e; Log($"agente: {e}"); }, _agente.Token); }
+            try { await AgenteServicio.Ejecutar(url, token, e => { _estadoAgente = e; Log($"agente: {e}"); }, ct); }
             catch (Exception e) when (e is not OperationCanceledException) { _estadoAgente = "error: " + e.Message; Log("agente cayó: " + e); }
         });
+    }
+
+    private void ReiniciarAgente()
+    {
+        _agente.Cancel();
+        _agente = new CancellationTokenSource();
+        _estadoAgente = "arrancando";
+        _ = ArrancarAgente();
+    }
+
+    // ---------- versión de escritorio (sin Docker) ----------
+
+    private async Task ArrancarNativo(bool primeraVez)
+    {
+        if (_ocupado) return;
+        _ocupado = true; _ultimoArranque = DateTime.UtcNow;
+        try
+        {
+            _nativo ??= new ServidorNativo(Rutas, Log);
+            Estado("Arrancando la versión de escritorio…", Nivel.Ambar);
+            var (ok, mensaje) = await _nativo.Arrancar(_envNativo, _ensayo, CancellationToken.None);
+            Log($"escritorio: {(ok ? "en marcha" : mensaje)}");
+            if (!ok) { Estado(mensaje, Nivel.Rojo); Aviso(mensaje); return; }
+            if (primeraVez) Aviso(_ensayo ? "Versión de escritorio en marcha (ensayo): Docker sigue de producción." : "Zona privada en marcha.");
+        }
+        finally { _ocupado = false; }
+        await Comprobar();
+    }
+
+    private async Task ComprobarNativo()
+    {
+        if (_ocupado) return;
+        var pg = _nativo?.PostgresVivo ?? false;
+        var api = _nativo is not null && await _nativo.ApiResponde();
+        var (nivel, texto) = EstadosNativos.Resumir(new ComprobacionesNativas(pg, api, _estadoAgente, _ensayo));
+        Estado(texto, nivel);
+        // los procesos ya se reinician solos; esto solo vuelve a arrancar el conjunto si no queda nada, con 5 minutos de margen
+        if (nivel == Nivel.Rojo && DateTime.UtcNow - _ultimoArranque > TimeSpan.FromMinutes(5)) _ = ArrancarNativo(false);
+    }
+
+    // Cambiar de modo NUNCA para Docker: solo se enciende o se apaga la versión de escritorio
+    private async Task CambiarModo(bool nativo)
+    {
+        if (_ocupado || nativo == Nativo) return;
+        var anterior = _modo;
+        _modo = nativo ? "nativo" : "docker";
+        if (nativo && !PrepararNativo()) { _modo = anterior; return; }
+        GuardarConfig();
+        _modoNativo.Checked = nativo;
+        if (!nativo && _nativo is not null) { await _nativo.Parar(); _nativo = null; }
+        ReiniciarAgente();
+        Aviso(nativo ? "Modo escritorio: arranco PostgreSQL y la API sin Docker (Docker no se toca)." : "Modo Docker. La versión de escritorio se ha parado; Docker no se ha tocado.");
+        await ArrancarTodo();
+    }
+
+    private async Task CambiarEnsayo()
+    {
+        if (_ocupado) return;
+        if (_ensayo && MessageBox.Show("Salir del ensayo hace que la versión de escritorio mande avisos, hable por Telegram y mande órdenes a tus aparatos, y que el agente del PC la use.\n\nSi Docker sigue encendido, se duplicarán.\n\n¿Seguro?",
+            "Zona privada", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+        _ensayo = !_ensayo; _ensayoItem.Checked = _ensayo; GuardarConfig();
+        ReiniciarAgente();
+        if (Nativo && _nativo is not null) { await _nativo.Parar(); _nativo = null; await ArrancarTodo(); }
     }
 
     // ---------- Docker y contenedores ----------
 
     private async Task ArrancarTodo(bool primeraVez = false)
     {
+        if (Nativo) { await ArrancarNativo(primeraVez); return; }
         if (_ocupado) return;
         _ocupado = true; _ultimoArranque = DateTime.UtcNow;
         try
@@ -153,6 +257,7 @@ sealed class Bandeja : ApplicationContext
     private async Task Actualizar()
     {
         if (_ocupado) return;
+        if (Nativo) { Aviso("Estás en el modo escritorio: este botón es de Docker. Cambia al modo Docker para usarlo."); return; }
         if (Directory.Exists(Path.Combine(_carpeta, ".git")))
         {
             Estado("Trayendo cambios…", Nivel.Ambar);
@@ -166,6 +271,7 @@ sealed class Bandeja : ApplicationContext
     private async Task Accion(string texto, string argumentos, int segundos = 300)
     {
         if (_ocupado) return;
+        if (Nativo) { Aviso("Estás en el modo escritorio: este botón es de Docker. Cambia al modo Docker para usarlo."); return; }
         _ocupado = true;
         try
         {
@@ -182,6 +288,7 @@ sealed class Bandeja : ApplicationContext
 
     private async Task Comprobar()
     {
+        if (Nativo) { await ComprobarNativo(); return; }
         if (_ocupado) return;
         bool docker = await Docker.Responde();
         HashSet<string> esperados = [], corriendo = [];
@@ -230,8 +337,9 @@ sealed class Bandeja : ApplicationContext
         m.Items.Add(new ToolStripMenuItem($"Zona privada · lanzador {Version}") { Enabled = false });
         m.Items.Add(_estado);
         m.Items.Add(new ToolStripSeparator());
-        Item("Abrir la zona privada", () => Abrir(_urlPublica.Length > 0 ? _urlPublica : "http://localhost:8080"));
+        Item("Abrir la zona privada", () => Abrir(!Nativo && _urlPublica.Length > 0 ? _urlPublica : UrlLocal));
         Item("Abrir en este PC (localhost)", () => Abrir("http://localhost:8080"));
+        Item("Abrir la versión de escritorio (localhost:8090)", () => Abrir(ConfigNativa.UrlApi));
         Item("Monitor del PC y registro…", AbrirMonitor);
         Item("Registros (Seq)", () => Abrir("http://localhost:5341"));
         m.Items.Add(new ToolStripSeparator());
@@ -255,6 +363,12 @@ sealed class Bandeja : ApplicationContext
             _ = ArrancarTodo();
         };
         m.Items.Add(_internet);
+        m.Items.Add(new ToolStripSeparator());
+        _modoNativo.Click += async (_, _) => await CambiarModo(!Nativo);
+        m.Items.Add(_modoNativo);
+        _ensayoItem.Click += async (_, _) => await CambiarEnsayo();
+        m.Items.Add(_ensayoItem);
+        m.Items.Add(new ToolStripSeparator());
         Item("Exportar diagnóstico (zip en el escritorio)", () => _ = ExportarDiagnostico());
         Item("Abrir la carpeta", () => Abrir(_carpeta));
         Item("Abrir el registro del lanzador", () => Abrir(Path.Combine(Datos, "lanzador.log")));
@@ -309,6 +423,8 @@ sealed class Bandeja : ApplicationContext
     private void Salir()
     {
         _agente.Cancel();
+        // la versión de escritorio se para con calma; Docker no se toca
+        if (_nativo is { } n) { try { Task.Run(n.Parar).Wait(TimeSpan.FromSeconds(60)); } catch (AggregateException) { } }
         _reloj.Stop();
         _icono.Visible = false;
         _icono.Dispose();
