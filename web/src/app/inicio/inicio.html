@@ -34,7 +34,7 @@
   <div class="pc-vivo__marco">
     <div class="pc-vivo__escena"><app-pc-3d [datos]="datosPc()" /></div>
     <ul class="etiquetas" aria-label="Resumen del equipo">
-      <li class="etq etq--cpu"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4" /></svg><span>Procesador</span><b>{{ a()?.cpu ?? 0 }}%</b></li>
+      <li class="etq etq--cpu"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4" /></svg><span>Procesador</span><b>{{ a()?.cpu ?? 0 }}%{{ temperaturaCpu() != null ? ' · ' + temperaturaCpu() + ' °C' : '' }}</b></li>
       <li class="etq etq--mem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v8H4zM8 8v8M12 8v8M16 8v8M6 16v2M18 16v2" /></svg><span>Memoria</span><b>{{ memoria().pct }}%</b></li>
       <li class="etq etq--disco"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a8 3 0 0 1 16 0v10a8 3 0 0 1-16 0zM4 7a8 3 0 0 0 16 0M4 12a8 3 0 0 0 16 0" /></svg><span>Disco</span><b>{{ disco().pct }}%{{ temperatura() != null ? ' · ' + temperatura() + ' °C' : '' }}</b></li>
       <li class="etq etq--red"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a10 10 0 0 1 14 0M8 15a6 6 0 0 1 8 0M12 19h.01" /></svg><span>Red</span><b>↓ {{ bajada() }} · ↑ {{ subida() }}</b></li>
@@ -50,6 +50,7 @@
       <h4>Ahora mismo</h4>
       <dl>
         <div><dt>Procesador</dt><dd>{{ a()?.cpu ?? 0 }} %</dd></div>
+        @if (temperaturaCpu() != null) { <div><dt>Temperatura del procesador</dt><dd>{{ temperaturaCpu() }} °C</dd></div> }
         <div><dt>Memoria</dt><dd>{{ memoria().pct }} %</dd></div>
         @if (temperatura() != null) { <div><dt>Temperatura del disco</dt><dd>{{ temperatura() }} °C</dd></div> }
         <div><dt>Red</dt><dd>↓ {{ bajada() }} · ↑ {{ subida() }}</dd></div>

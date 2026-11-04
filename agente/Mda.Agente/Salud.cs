@@ -6,13 +6,26 @@ using Microsoft.Win32;
 // Lo que el equipo no sepa dar (casi siempre la temperatura de un disco SATA antiguo) va a null y no es un error.
 record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura);
 record VolumenSalud(string Nombre, long LibreBytes, long TotalBytes);
-record SaludPc(DateTimeOffset Hora, List<DiscoSalud> Discos, List<VolumenSalud> Volumenes, bool ReinicioPendiente);
+record SaludPc(DateTimeOffset Hora, List<DiscoSalud> Discos, List<VolumenSalud> Volumenes, bool ReinicioPendiente, double? CpuTemperaturaC = null);
 
 static class Salud
 {
     static readonly string[] Estados = ["Healthy", "Warning", "Unhealthy"];
 
-    public static SaludPc Leer() => new(DateTimeOffset.UtcNow, Discos(), Volumenes(), ReinicioPendiente());
+    public static SaludPc Leer() => new(DateTimeOffset.UtcNow, Discos(), Volumenes(), ReinicioPendiente(), TemperaturaCpu());
+
+    // las zonas térmicas de ACPI por WMI (hace falta ser administrador, y no todos los equipos las dan): null si no se puede
+    static double? TemperaturaCpu()
+    {
+        try
+        {
+            var ambito = new ManagementScope(@"\\.\root\wmi");
+            ambito.Connect();
+            using var b = new ManagementObjectSearcher(ambito, new ObjectQuery("SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature"));
+            return Termica.Maxima(b.Get().Cast<ManagementBaseObject>().Select(z => Convert.ToInt64(z["CurrentTemperature"])));
+        }
+        catch (Exception e) when (e is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException or InvalidCastException) { return null; }
+    }
 
     static List<VolumenSalud> Volumenes()
     {

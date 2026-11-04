@@ -120,3 +120,11 @@ puso. Cinco fallos seguidos bloquean esa sesión 15 minutos. La app enseña un t
 - Sin PIN guardado no se pide nada.
 - `GET /api/archivos/raices` queda fuera (Inicio solo cuenta carpetas).
 - Las miniaturas van por cookie, no por la app: por eso el PIN es estado de la sesión en el servidor y no una cabecera.
+
+## Temperatura del procesador
+
+El agente lee las zonas térmicas de ACPI por WMI (`MSAcpi_ThermalZoneTemperature`, hace falta ejecutarlo como administrador, como hace el lanzador) y manda la más caliente con la salud del PC
+(`SaludPc.CpuTemperaturaC`). Si lleva **85 °C o más durante 5 minutos seguidos** (se apunta desde cuándo en `ajustes`: `salud-caliente-desde`), `ReglasSalud` avisa por Telegram y notificación una vez al día,
+aconsejando el plan «Ahorro» de energía, y avisa de nuevo cuando baja. La salud se evalúa cada 10 minutos, así que el aviso llega en la segunda lectura caliente seguida.
+Limitaciones: es la zona térmica de la placa, que en muchos portátiles sigue de cerca al procesador pero no es la lectura del chip, y hay equipos que no la exponen (entonces no hay dato ni aviso).
+Para la temperatura exacta del chip haría falta una librería con su propio controlador (LibreHardwareMonitor), que no se ha añadido.

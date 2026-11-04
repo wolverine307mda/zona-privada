@@ -34,6 +34,7 @@
     <Compile Include="..\..\agente\Mda.Agente\Energia.cs" Link="Agente\Energia.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Limpieza.cs" Link="Agente\Limpieza.cs" />
     <Compile Include="..\..\agente\Mda.Agente\InformeBateria.cs" Link="Agente\InformeBateria.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Termica.cs" Link="Agente\Termica.cs" />
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>

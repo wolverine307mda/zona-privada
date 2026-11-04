@@ -59,6 +59,7 @@ export class Inicio implements OnDestroy {
 
   // la temperatura más alta de los discos (la manda el agente con la salud del equipo); sin dato, no se enseña
   protected readonly temperatura = signal<number | null>(null);
+  protected readonly temperaturaCpu = signal<number | null>(null);
   private readonly http = inject(HttpClient);
   protected readonly discosUso = computed(() => {
     const m = this.a();
@@ -68,7 +69,8 @@ export class Inicio implements OnDestroy {
 
   private async leerTemperatura(): Promise<void> {
     try {
-      const r = await firstValueFrom(this.http.get<{ salud: { discos?: { temperaturaC: number | null }[] } | null }>('/api/pc'));
+      const r = await firstValueFrom(this.http.get<{ salud: { discos?: { temperaturaC: number | null }[]; cpuTemperaturaC?: number | null } | null }>('/api/pc'));
+      this.temperaturaCpu.set(typeof r.salud?.cpuTemperaturaC === 'number' ? Math.round(r.salud.cpuTemperaturaC) : null);
       const t = (r.salud?.discos ?? []).map((d) => d.temperaturaC).filter((x): x is number => typeof x === 'number');
       this.temperatura.set(t.length ? Math.round(Math.max(...t)) : null);
     } catch { /* se queda como estaba */ }

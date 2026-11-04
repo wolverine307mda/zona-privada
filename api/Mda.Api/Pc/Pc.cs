@@ -14,7 +14,8 @@ namespace Mda.Api.Pc;
 
 public record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura);
 public record VolumenSalud(string Nombre, long LibreBytes, long TotalBytes);
-public record SaludPc(DateTimeOffset Hora, IReadOnlyList<DiscoSalud> Discos, IReadOnlyList<VolumenSalud> Volumenes, bool ReinicioPendiente);
+// CpuTemperaturaC: la de la zona térmica de Windows (ACPI); null si el equipo no la da
+public record SaludPc(DateTimeOffset Hora, IReadOnlyList<DiscoSalud> Discos, IReadOnlyList<VolumenSalud> Volumenes, bool ReinicioPendiente, double? CpuTemperaturaC = null);
 
 // Una foto de la salud por día (los últimos 90): sirve para ver a dónde va el espacio y el desgaste de los discos
 public class SaludDia
@@ -74,8 +75,11 @@ public class EstadoSalud(TimeProvider reloj)
 public static class ReglasSalud
 {
     public static readonly TimeSpan ReinicioMaximo = TimeSpan.FromDays(7);
+    // el procesador a 85 °C o más durante 5 minutos seguidos es calor de verdad, no un pico
+    public const double CpuMaxima = 85;
+    public static readonly TimeSpan CalienteMinimo = TimeSpan.FromMinutes(5);
 
-    public static Dictionary<string, string> Evaluar(SaludPc s, DateTimeOffset? reinicioDesde, DateTimeOffset ahora, double? encendidoDias)
+    public static Dictionary<string, string> Evaluar(SaludPc s, DateTimeOffset? reinicioDesde, DateTimeOffset ahora, double? encendidoDias, DateTimeOffset? calienteDesde = null)
     {
         var activas = new Dictionary<string, string>();
         foreach (var v in s.Volumenes.Where(v => v.TotalBytes > 0))
@@ -94,6 +98,8 @@ public static class ReglasSalud
         }
         if (s.ReinicioPendiente && reinicioDesde is { } desde && ahora - desde > ReinicioMaximo)
             activas["reinicio"] = $"🟠 Windows lleva {(int)(ahora - desde).TotalDays} días pidiendo reiniciar para terminar actualizaciones";
+        if (s.CpuTemperaturaC is >= CpuMaxima && calienteDesde is { } c && ahora - c >= CalienteMinimo)
+            activas["cpu-temp"] = $"🟠 El procesador lleva más de {(int)CalienteMinimo.TotalMinutes} minutos a {s.CpuTemperaturaC:0} °C. Prueba el plan «Ahorro» de energía desde Mi PC y revisa que el ventilador no esté tapado";
         if (encendidoDias is > 45) activas["encendido"] = $"🟡 El PC lleva {encendidoDias:0} días encendido sin reiniciar";
         return activas;
     }
@@ -104,6 +110,7 @@ public static class ReglasSalud
         "disco-libre" => $"✅ Ya hay espacio en el disco {id[(id.IndexOf(':') + 1)..]}",
         "disco-salud" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} vuelve a estar sano",
         "disco-temp" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ha bajado de temperatura",
+        "cpu-temp" => "✅ El procesador ha bajado de temperatura",
         "disco-desgaste" => $"✅ El desgaste del disco {id[(id.IndexOf(':') + 1)..]} ya no es preocupante",
         "reinicio" => "✅ El PC ya se ha reiniciado",
         "encendido" => "✅ El PC se ha reiniciado",
@@ -116,6 +123,7 @@ public class AvisosSalud(IServiceScopeFactory scopes, EstadoSalud salud, EstadoS
 {
     public const string ClaveAvisadas = "salud-avisadas";
     public const string ClaveReinicio = "salud-reinicio-desde";
+    public const string ClaveCaliente = "salud-caliente-desde";
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -154,8 +162,18 @@ public class AvisosSalud(IServiceScopeFactory scopes, EstadoSalud salud, EstadoS
         }
         else if (!s.ReinicioPendiente && desdeAj is not null) { db.Ajustes.Remove(desdeAj); desde = null; }
 
+        // desde cuándo está el procesador por encima del límite (se apunta en la primera lectura caliente y se borra al bajar)
+        var calienteAj = await db.Ajustes.FindAsync([ClaveCaliente], ct);
+        DateTimeOffset? calienteDesde = DateTimeOffset.TryParse(calienteAj?.Valor, out var dc) ? dc : null;
+        if (s.CpuTemperaturaC is >= ReglasSalud.CpuMaxima && calienteDesde is null)
+        {
+            calienteDesde = ahora;
+            db.Ajustes.Add(new Ajuste { Clave = ClaveCaliente, Valor = ahora.ToString("O") });
+        }
+        else if (s.CpuTemperaturaC is not >= ReglasSalud.CpuMaxima && calienteAj is not null) { db.Ajustes.Remove(calienteAj); calienteDesde = null; }
+
         var encendidoDias = sistema.Historial().LastOrDefault()?.EncendidoSegundos / 86400;
-        var activas = ReglasSalud.Evaluar(s, desde, ahora, encendidoDias);
+        var activas = ReglasSalud.Evaluar(s, desde, ahora, encendidoDias, calienteDesde);
 
         var reg = await db.Ajustes.FindAsync([ClaveAvisadas], ct);
         var avisadas = new Dictionary<string, string>();
