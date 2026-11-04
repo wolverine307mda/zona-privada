@@ -21,9 +21,9 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 2.7a Atajos del iPhone
 - ✅ 2.7b Fotografía · Avísame
 - ✅ 2.7c Señuelos en móvil
-- 🔄 2.7d Música de la barra superior en modal
-- ⏭️ 2.7e Galería privada: miniaturas y loaders
-- ⬜ 2.7f Inicio: «Tu PC por dentro» suspendido, batería y datos
+- ✅ 2.7d Música de la barra superior en modal
+- 🔄 2.7e Galería privada: miniaturas y loaders
+- ⏭️ 2.7f Inicio: «Tu PC por dentro» suspendido, batería y datos
 
 ## Fase 3 · PC, agente y ejecutable
 - ⬜ 3.1 Ejecutable único (asistente, arranque completo, actualización, monitor)

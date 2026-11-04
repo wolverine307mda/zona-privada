@@ -109,3 +109,9 @@ Con «reducir movimiento» se ve el resultado sin animar. Al salir libera geomet
 `shell/bloqueo.ts`: el escáner alrededor de tu foto tiene cuatro estados que se ven a la vez en el anillo, las esquinas, la insignia y el mensaje: **esperando**
 (anillo lento), **comprobando** (línea que barre la foto y anillo rápido), **abierto** (todo en verde, 650 ms antes de recargar) y **fallo** (rojo y sacudida). Lleva reloj grande con la
 fecha, vibración en el móvil al acertar o fallar, y debajo el botón de Face ID, la contraseña con el código de dos pasos y «Cerrar sesión».
+
+## Reproductor de la barra superior
+
+`shell/mini-musica.ts`: al tocar la portada o el título de lo que suena se abre una **ventana** (no se navega): portada grande con un vinilo que sale y gira, título, artistas y álbum,
+progreso con tiempos, anterior / pausa / siguiente, dispositivo y volumen, las tres canciones que vienen después y «Abrir Música» para saltar a la pantalla completa. El color de la
+portada tiñe la ventana. Con la ventana abierta pregunta a Spotify cada 5 s (cada 15 s si no).
