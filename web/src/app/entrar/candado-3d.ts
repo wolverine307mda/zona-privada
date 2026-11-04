@@ -133,6 +133,7 @@ export function crearCandado(canvas: HTMLCanvasElement) {
       removeEventListener('resize', resize);
       removeEventListener('pointermove', onMove);
       renderer.dispose();
+      renderer.forceContextLoss();
     },
   };
 }

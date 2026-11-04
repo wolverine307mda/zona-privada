@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, effect, inject, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, effect, inject, input, signal, viewChild } from '@angular/core';
 import type * as THREE from 'three';
 
 export interface DatosPc { cpu: number; memoria: number; disco: number; real: boolean; }
@@ -11,27 +11,52 @@ type Three = typeof import('three');
 @Component({
   selector: 'app-pc-3d',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<canvas #lienzo role="img" aria-label="Dibujo en 3D de tu PC por dentro: placa base, procesador, memoria, gráfica, discos y fuente de alimentación"></canvas>`,
+  template: `
+    <canvas #lienzo role="img" aria-label="Dibujo en 3D de tu PC por dentro: placa base, procesador, memoria, gráfica, discos y fuente de alimentación"></canvas>
+    @if (fallo()) {
+      <div class="fallo" role="status">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><rect x="22" y="12" width="76" height="96" rx="10"/><circle cx="46" cy="40" r="12"/><rect x="66" y="30" width="22" height="40" rx="3"/><rect x="34" y="80" width="52" height="10" rx="3"/></svg>
+        <p>No se pudo dibujar el PC en 3D.</p>
+        <button type="button" (click)="reintentar()">Reintentar</button>
+      </div>
+    }
+  `,
   styles: `
     :host { display: block; position: relative; }
     canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: grab; }
     canvas:active { cursor: grabbing; }
+    .fallo { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; color: var(--soft); }
+    .fallo svg { width: 84px; fill: none; stroke: var(--brand); stroke-width: 2; opacity: .6; }
+    .fallo p { margin: 0; font-size: .9rem; }
+    .fallo button { border: 1px solid var(--vidrio-borde); border-radius: 999px; background: none; color: var(--acento); font: 600 .84rem/1 var(--font-text); padding: 10px 16px; min-height: 40px; cursor: pointer; }
   `,
 })
 export class Pc3d {
   readonly datos = input.required<DatosPc>();
+  protected readonly fallo = signal(false);
   private readonly lienzo = viewChild.required<ElementRef<HTMLCanvasElement>>('lienzo');
-  private readonly destruido = inject(DestroyRef);
   private actualizar: ((d: DatosPc) => void) | null = null;
+  private cierre: (() => void) | null = null;
+  private vivo = true;
 
   constructor() {
-    afterNextRender(() => {
-      void import('three').then((THREE) => {
-        const parar = this.montar(THREE, this.lienzo().nativeElement);
-        this.destruido.onDestroy(parar);
-      });
-    });
+    // el cierre se registra ya, no cuando llega three: así salir de Inicio antes de que cargue no deja el bucle ni el contexto WebGL vivos
+    inject(DestroyRef).onDestroy(() => { this.vivo = false; this.cierre?.(); this.cierre = null; });
+    afterNextRender(() => this.arrancar());
     effect(() => { const d = this.datos(); this.actualizar?.(d); });
+  }
+
+  protected reintentar(): void { this.arrancar(); }
+
+  private arrancar(): void {
+    this.fallo.set(false);
+    import('three')
+      .then((THREE) => {
+        if (!this.vivo) return;
+        this.cierre?.();
+        this.cierre = this.montar(THREE, this.lienzo().nativeElement);
+      })
+      .catch(() => { if (this.vivo) this.fallo.set(true); }); // sin WebGL, contexto agotado o chunk viejo en la caché
   }
 
   private montar(THREE: Three, canvas: HTMLCanvasElement): () => void {
@@ -171,6 +196,8 @@ export class Pc3d {
     let cpu = 0, mem = 0, disco = 0, real = false;
     let cpuSuave = 0;
     this.actualizar = (d) => { cpu = d.cpu; mem = d.memoria; disco = d.disco; real = d.real; if (reducido) dibujar(0); };
+    // el effect de datos ya corrió antes de que existiera `actualizar`: se parte de los valores de ahora
+    const d0 = this.datos(); cpu = d0.cpu; mem = d0.memoria; disco = d0.disco; real = d0.real;
 
     const repintar = () => {
       brand = color('--brand', '#ff7a1f');
@@ -183,7 +210,7 @@ export class Pc3d {
       });
     };
     const observadorTema = new MutationObserver(() => { repintar(); if (reducido) dibujar(0); });
-    observadorTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color', 'data-mode', 'class', 'style'] });
+    observadorTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color', 'data-mode'] });
     repintar();
 
     // arrastrar para girar; sin tocar, se balancea despacio
@@ -198,9 +225,12 @@ export class Pc3d {
     const arriba = () => { arrastrando = false; };
     canvas.addEventListener('pointerdown', abajo); canvas.addEventListener('pointermove', mueve); canvas.addEventListener('pointerup', arriba); canvas.addEventListener('pointercancel', arriba);
 
+    let cerrado = false, reajustes = 0;
     const ajustar = () => {
+      if (cerrado) return;
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      if (!w || !h) return;
+      // aún sin tamaño (la pantalla entra animada): se reintenta en el siguiente fotograma, hasta ~1 s
+      if (!w || !h) { if (reajustes++ < 60) requestAnimationFrame(ajustar); return; }
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.position.z = w / h < 1.1 ? 33 : 25;
@@ -246,7 +276,7 @@ export class Pc3d {
     if (reducido) dibujar(0); else marcoId = requestAnimationFrame(bucle);
 
     return () => {
-      this.actualizar = null;
+      cerrado = true; this.actualizar = null;
       cancelAnimationFrame(marcoId); observador.disconnect(); observadorTema.disconnect(); io.disconnect();
       canvas.removeEventListener('pointerdown', abajo); canvas.removeEventListener('pointermove', mueve); canvas.removeEventListener('pointerup', arriba); canvas.removeEventListener('pointercancel', arriba);
       scene.traverse((o) => {
@@ -256,6 +286,7 @@ export class Pc3d {
         (Array.isArray(mat) ? mat : mat ? [mat] : []).forEach((x) => x.dispose());
       });
       renderer.dispose();
+      renderer.forceContextLoss(); // en móvil los contextos WebGL son pocos: entrar y salir de Inicio no puede agotarlos
     };
   }
 }
