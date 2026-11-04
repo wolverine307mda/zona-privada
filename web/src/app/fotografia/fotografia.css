@@ -1,4 +1,4 @@
-:host { display: grid; gap: 16px; align-content: start; min-width: 0; }
+:host { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
 .cab__titulo { margin: 0; font: var(--peso-ligero) clamp(1.3rem, 5vw, 2rem)/1.05 var(--font-text); letter-spacing: -0.02em; }
 .cab__sub { margin: 6px 0 0; color: var(--soft); text-transform: capitalize; }
 .aviso { margin: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent); color: var(--soft); font-size: .88rem; }

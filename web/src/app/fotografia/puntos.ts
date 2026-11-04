@@ -77,6 +77,8 @@ const ORIENTACIONES = ['', 'N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
     .nuevo { margin-top: 10px; }
     .nuevo summary { cursor: pointer; min-height: 36px; color: var(--soft); }
     .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 8px; }
+    .rejilla > label { min-width: 0; }
+    .rejilla input { width: 100%; min-width: 0; }
     .ancho { grid-column: 1 / -1; }
     label { display: grid; gap: 4px; font-size: .78rem; color: var(--soft); }
     input, select { min-height: 40px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); padding: 0 12px; font: 500 .95rem/1 var(--font-text); }

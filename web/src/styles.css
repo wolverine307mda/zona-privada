@@ -120,6 +120,8 @@
 [data-color="rosa"]    { --brand: #ff5fa2; --on-brand: #1a0510; }
 [data-color="rojo"]    { --brand: #e62429; --on-brand: #ffffff; }
 /* los morados: cada uno tiñe además las superficies con su matiz (--tinte/--tn), así que cambian el fondo, las tarjetas y el menú, no solo el acento */
+/* la lima sobre blanco no se lee como texto: en día el acento-texto lleva más del color del texto (4,5:1 o más) */
+[data-mode="light"][data-color="lima"] { --acento: color-mix(in srgb, var(--brand) 32%, var(--texto)); }
 [data-color="amatista"]     { --brand: #8a4fd8; --on-brand: #ffffff; --brand-2: #c9a6f5; --tinte: #6a2fb5; --tn: 10; }
 [data-color="ultravioleta"] { --brand: #5b3df5; --on-brand: #ffffff; --brand-2: #a597ff; --tinte: #3a1fd0; --tn: 13; }
 [data-color="lavanda"]      { --brand: #b79cff; --on-brand: #1c1040; --brand-2: #e2d7ff; --tinte: #8a76d6; --tn: 9; }

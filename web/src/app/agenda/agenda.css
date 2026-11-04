@@ -80,8 +80,8 @@ select.campo__input { appearance: auto; }
 
 @media (max-width: 1100px) { .rejilla { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) {
-  .acciones { width: 100%; }
-  .acciones .button { flex: 1; }
+  .acciones { width: 100%; flex-wrap: wrap; }
+  .acciones .button { flex: 1 1 130px; padding: 0 14px; }
   .google { flex-wrap: wrap; }
   .google .button { width: 100%; }
   .calendario { padding: 8px; }
