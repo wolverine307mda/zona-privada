@@ -86,6 +86,10 @@ medio; pagos que crean movimientos; mantenimientos con «hecho» (fecha y km) y 
   horario?), `Texto()` («de lunes a viernes, de 8:30 a 17:30»), `Errores()`, `Leer/Guardar/Poner`.
   Rutas `GET/PUT /api/agenda/horario`.
 - `Recordatorios.cs`: cada 30 s envía los avisos vencidos por los canales marcados y recalcula `ProximoAviso`.
+  El estado de envío va en el evento (`CanalesEnviados`, `CanalesRendidos`, `Intentos`, `ReintentoDesde`): WhatsApp (CallMeBot, que tarda) sale
+  5 minutos antes de la hora y los demás canales a la hora; un canal que falla se reintenta a 1, 5 y 15 minutos sin repetir los que ya llegaron; se anota
+  `ReintentoDesde` antes de enviar para no repetir si el proceso cae; `UltimaOcurrenciaAvisada` evita que editar un evento ya avisado lo avise otra vez.
+  Si no llega por ningún canal, o el aviso tiene más de 12 h de retraso, lo cuenta por Telegram (o push). WhatsApp: texto de 300 letras como máximo, 3 s entre mensajes y el error del cuerpo de CallMeBot cuenta como fallo.
 - `GoogleCalendar.cs`: lee eventos del calendario principal y copia allí los de la agenda marcados (crea/actualiza;
   si se borró en Google, lo recrea).
 

@@ -28,6 +28,14 @@ public class Evento
     public DateTimeOffset? ProximoAviso { get; set; }
     public DateTimeOffset? AvisoDe { get; set; } // la repetición a la que corresponde ese aviso
     public DateTimeOffset? UltimoAviso { get; set; }
+    // estado del envío de la repetición pendiente (AvisoDe): canales ya entregados y canales a los que se renunció tras los reintentos
+    // (bits de Via: 1 correo, 2 WhatsApp, 4 Telegram, 8 push), fallos seguidos y desde cuándo se puede reintentar
+    public int CanalesEnviados { get; set; }
+    public int CanalesRendidos { get; set; }
+    public int Intentos { get; set; }
+    public DateTimeOffset? ReintentoDesde { get; set; }
+    // la última repetición cuyo aviso ya se resolvió: editar el evento no la vuelve a avisar
+    public DateTimeOffset? UltimaOcurrenciaAvisada { get; set; }
 
     public bool Hecho { get; set; }
     public bool EnGoogle { get; set; }

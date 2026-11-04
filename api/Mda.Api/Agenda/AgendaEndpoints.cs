@@ -150,6 +150,10 @@ public static class AgendaEndpoints
     public static void Reprogramar(Evento ev, DateTimeOffset ahora, Zona zona)
     {
         var p = Ocurrencias.ProximoAviso(ev, ahora, ahora, zona.Info);
+        // una repetición ya avisada no se vuelve a avisar al editar el evento (guardar toca cualquier cosa, también el título)
+        while (p is { } x && ev.UltimaOcurrenciaAvisada == x.De) p = Ocurrencias.ProximoAviso(ev, x.De.AddSeconds(1), ahora, zona.Info);
+        // el estado de envío es de una repetición concreta: si cambia la pendiente, se empieza de cero
+        if (p?.De != ev.AvisoDe) { ev.CanalesEnviados = 0; ev.CanalesRendidos = 0; ev.Intentos = 0; ev.ReintentoDesde = null; }
         ev.ProximoAviso = p?.Aviso;
         ev.AvisoDe = p?.De;
     }

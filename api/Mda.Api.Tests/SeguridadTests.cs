@@ -258,10 +258,14 @@ public class AvisosQueFallanTests(ModulosFactory factory) : IClassFixture<Modulo
         Assert.Contains(avisos.Enviados, a => a.Contains("Segundo sano"));
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        foreach (var id in ids) Assert.True((await db.Eventos.FindAsync(id))!.ProximoAviso > DateTimeOffset.UtcNow.AddDays(25));
+        // el sano ya pasó a la siguiente repetición; el roto se queda esperando para reintentar solo el WhatsApp
+        Assert.True((await db.Eventos.FindAsync(ids[1]))!.ProximoAviso > DateTimeOffset.UtcNow.AddDays(25));
+        var roto = (await db.Eventos.FindAsync(ids[0]))!;
+        Assert.True(roto.ProximoAviso <= DateTimeOffset.UtcNow);
+        Assert.Equal(1, roto.Intentos);
 
         var antes = avisos.Enviados.Count;
         await rec.Revisar(CancellationToken.None);
-        Assert.Equal(antes, avisos.Enviados.Count); // ya reprogramados: no se repite nada
+        Assert.Equal(antes, avisos.Enviados.Count); // ni el correo que ya llegó ni lo del sano se repiten
     }
 }

@@ -69,16 +69,28 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
         }
     }
 
+    // CallMeBot limita el ritmo y el texto va en la URL: mensajes cortos (una URL larga da 414) y al menos 3 s entre uno y otro
+    private static readonly SemaphoreSlim TurnoWhatsApp = new(1, 1);
+    private static DateTimeOffset ultimoWhatsApp = DateTimeOffset.MinValue;
+    public const int MaxWhatsApp = 300;
+
     public async Task<bool> PorWhatsApp(string texto, CancellationToken ct = default)
     {
         if (!Disponibles().WhatsApp) return false;
+        if (texto.Length > MaxWhatsApp) texto = texto[..(MaxWhatsApp - 1)].TrimEnd() + "…";
+        await TurnoWhatsApp.WaitAsync(ct);
         try
         {
+            var espera = ultimoWhatsApp + TimeSpan.FromSeconds(3) - DateTimeOffset.UtcNow;
+            if (espera > TimeSpan.Zero) await Task.Delay(espera, ct);
             var url = $"https://api.callmebot.com/whatsapp.php?phone={Uri.EscapeDataString(C("WhatsApp:Telefono")!)}" +
                       $"&text={Uri.EscapeDataString(texto)}&apikey={Uri.EscapeDataString(C("WhatsApp:ApiKey")!)}";
             using var res = await http.CreateClient("avisos").GetAsync(url, ct);
-            if (!res.IsSuccessStatusCode) log.LogWarning("CallMeBot respondió {Codigo}", (int)res.StatusCode);
-            return res.IsSuccessStatusCode;
+            var cuerpo = await res.Content.ReadAsStringAsync(ct);
+            // CallMeBot suele contestar 200 aunque falle: el motivo viene en el texto de la respuesta
+            var fallo = !res.IsSuccessStatusCode || cuerpo.Contains("ERROR", StringComparison.OrdinalIgnoreCase) || cuerpo.Contains("invalid", StringComparison.OrdinalIgnoreCase);
+            if (fallo) log.LogWarning("CallMeBot no entregó el mensaje (HTTP {Codigo}): {Motivo}", (int)res.StatusCode, Resumen(cuerpo));
+            return !fallo;
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
         {
@@ -86,5 +98,13 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
             log.LogWarning("No se pudo mandar el WhatsApp: {Motivo}", e.GetType().Name);
             return false;
         }
+        finally { ultimoWhatsApp = DateTimeOffset.UtcNow; TurnoWhatsApp.Release(); }
+    }
+
+    private static string Resumen(string cuerpo)
+    {
+        var plano = System.Text.RegularExpressions.Regex.Replace(cuerpo, "<[^>]+>", " ");
+        plano = System.Text.RegularExpressions.Regex.Replace(plano, @"\s+", " ").Trim();
+        return plano.Length > 160 ? plano[..160] : plano;
     }
 }

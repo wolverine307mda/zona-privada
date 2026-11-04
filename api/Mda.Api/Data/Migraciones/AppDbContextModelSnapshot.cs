@@ -36,6 +36,12 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<int?>("AvisoMinutos")
                         .HasColumnType("integer");
 
+                    b.Property<int>("CanalesEnviados")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CanalesRendidos")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -60,6 +66,9 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<DateTimeOffset>("Inicio")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Intentos")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Lugar")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -83,6 +92,9 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<DateTimeOffset?>("ProximoAviso")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("ReintentoDesde")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Repetir")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -103,6 +115,9 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<bool>("TodoElDia")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("UltimaOcurrenciaAvisada")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset?>("UltimoAviso")
                         .HasColumnType("timestamp with time zone");

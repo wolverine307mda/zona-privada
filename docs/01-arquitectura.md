@@ -114,7 +114,7 @@ UseForwardedHeaders → UseSerilogRequestLogging → UseCabecerasSeguras → Use
 |---|---|---|
 | `SemillaAdmin` | al arrancar (primero) | migraciones + usuario administrador |
 | `MonitorSistema` | 2 s | métricas → SignalR |
-| `Recordatorios` | 30 s | avisos de eventos/recordatorios que tocan → correo / WhatsApp / push / Telegram. Si el equipo estuvo apagado, salta avisos de hace más de 12 h |
+| `Recordatorios` | 30 s | avisos de eventos/recordatorios que tocan → correo / WhatsApp / push / Telegram. WhatsApp sale 5 min antes y el resto a la hora; cada canal se anota aparte y se reintenta solo el que falla (1, 5 y 15 min). Si no llega por ninguno, o el equipo estuvo apagado más de 12 h, te lo cuenta por Telegram |
 | `Vigilante` | 15 min (de día) | lunes desde las 9: resumen semanal; mantenimiento del coche (máx. 1 aviso/semana); copia de seguridad con más de 30 h (1 aviso/día); desde las 20:00, aviso del tiempo de mañana |
 | `Sondeo` (Telegram) | continuo | `getUpdates` con long polling (50 s) y despacha cada mensaje a `Conversacion` |
 
