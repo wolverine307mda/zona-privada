@@ -107,6 +107,8 @@ body::after {
   mask: linear-gradient(180deg, #000, transparent 60%);
   opacity: 0.6;
 }
+/* con otro fondo (o con «Nada») se quita la capa de aura y de puntos de siempre */
+html[data-fondo]:not([data-fondo='aura']) body::before, html[data-fondo]:not([data-fondo='aura']) body::after { display: none; }
 @keyframes aura { to { transform: translate3d(3vmax, -2vmax, 0) rotate(8deg) scale(1.06); } }
 h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
 ul, ol { list-style: none; }

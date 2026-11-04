@@ -1,3 +1,4 @@
+<app-fondo />
 <div class="marco" [class.menu-abierto]="menuAbierto()" [class.compacto]="compacto()">
   <aside class="lateral" id="menu-lateral" aria-label="Menú de la zona privada"
          (touchstart)="empiezaGesto($event)" (touchmove)="sigueGesto($event)" (touchend)="acabaGesto()">
@@ -184,6 +185,8 @@
         }
       </div>
     </section>
+
+    <app-ajustes-fondo />
 
     @if (instalar.disponible()) {
       <section class="ajustes__seccion instalar" aria-labelledby="ajustes-app">

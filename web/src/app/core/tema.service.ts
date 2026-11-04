@@ -17,8 +17,30 @@ export const MODOS: { id: Modo; nombre: string }[] = [
   { id: 'system', nombre: 'Sistema' },
 ];
 
+export type FondoId = 'aura' | 'liquido' | 'isometrico' | 'comic' | 'pixel' | 'particulas' | 'ninguno';
+/** dónde se ve el fondo: detrás de todo, solo de las páginas o solo del menú lateral (en el móvil siempre es todo) */
+export type Ambito = 'ambos' | 'paginas' | 'menu';
+
+export const FONDOS: { id: FondoId; nombre: string; nota: string }[] = [
+  { id: 'aura', nombre: 'Aura', nota: 'Luz suave que respira' },
+  { id: 'liquido', nombre: 'Líquido', nota: 'Gotas que se funden' },
+  { id: 'isometrico', nombre: 'Isométrico', nota: 'Suelo de cubos en ondas' },
+  { id: 'comic', nombre: 'Cómic', nota: 'Puntos de imprenta' },
+  { id: 'pixel', nombre: 'Píxel art', nota: 'Estrellas y montañas a saltos' },
+  { id: 'particulas', nombre: 'Partículas', nota: 'Red que huye del puntero' },
+  { id: 'ninguno', nombre: 'Nada', nota: 'Solo el color liso' },
+];
+
+export const AMBITOS: { id: Ambito; nombre: string }[] = [
+  { id: 'ambos', nombre: 'Todo' },
+  { id: 'paginas', nombre: 'Páginas' },
+  { id: 'menu', nombre: 'Menú' },
+];
+
 const leer = (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const guardar = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+
+const entre = (n: number, min: number, max: number, defecto: number) => (Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : defecto);
 
 // Tema como en la web pública: modo día / noche / sistema y color de marca, guardados en este navegador.
 // cambio() avisa a quien pinta con los colores (gráficas, escena 3D) de que tiene que repintar.
@@ -29,10 +51,21 @@ export class TemaService {
   readonly color = signal<Color>(leer('color', 'naranja') as Color);
   readonly cambio = signal(0);
 
+  // fondo animado de toda la app: cuál, cuánto se ve (0-100), cuánto se mueve (25-200 %) y dónde
+  readonly fondo = signal<FondoId>(FONDOS.some((f) => f.id === leer('mda-fondo', 'aura')) ? (leer('mda-fondo', 'aura') as FondoId) : 'aura');
+  readonly intensidad = signal(entre(+leer('mda-fondo-int', '60'), 5, 100, 60));
+  readonly velocidad = signal(entre(+leer('mda-fondo-vel', '100'), 25, 200, 100));
+  readonly ambito = signal<Ambito>(AMBITOS.some((a) => a.id === leer('mda-fondo-ambito', 'ambos')) ? (leer('mda-fondo-ambito', 'ambos') as Ambito) : 'ambos');
+
   constructor() {
     this.sistemaOscuro.addEventListener('change', () => { if (this.modo() === 'system') this.aplicar(); });
     this.aplicar();
   }
+
+  ponerFondo(f: FondoId): void { this.fondo.set(f); guardar('mda-fondo', f); this.aplicar(); }
+  ponerIntensidad(n: number): void { this.intensidad.set(entre(n, 5, 100, 60)); guardar('mda-fondo-int', String(this.intensidad())); }
+  ponerVelocidad(n: number): void { this.velocidad.set(entre(n, 25, 200, 100)); guardar('mda-fondo-vel', String(this.velocidad())); }
+  ponerAmbito(a: Ambito): void { this.ambito.set(a); guardar('mda-fondo-ambito', a); this.aplicar(); }
 
   ponerModo(m: Modo, origen?: HTMLElement): void { this.transicion(origen, () => { this.modo.set(m); guardar('mode', m); }); }
   ponerColor(c: Color, origen?: HTMLElement): void { this.transicion(origen, () => { this.color.set(c); guardar('color', c); }); }
@@ -42,6 +75,8 @@ export class TemaService {
     const oscuro = this.modo() === 'dark' || (this.modo() === 'system' && this.sistemaOscuro.matches);
     d.dataset['mode'] = oscuro ? 'dark' : 'light';
     d.dataset['color'] = this.color();
+    d.dataset['fondo'] = this.fondo();
+    d.dataset['ambito'] = this.ambito();
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#070d12' : '#f4f2ee');
     this.cambio.update((n) => n + 1);
   }
