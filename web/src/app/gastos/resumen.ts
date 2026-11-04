@@ -30,6 +30,7 @@ export class Resumen implements OnDestroy {
   protected readonly saldo = signal<Saldo | null>(null);
   protected readonly consejos = signal<Consejos | null>(null);
   protected readonly prevision = signal<PrevisionCierre | null>(null);
+  protected informe(): string { return `/api/gastos/informe?anio=${this.g.anio()}&mes=${this.g.mes()}`; }
   protected readonly presupuestos = signal<Presupuesto[]>([]);
   // diálogos
   protected readonly saldoTexto = signal('');

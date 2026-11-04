@@ -23,6 +23,7 @@
             <button class="chip-boton" type="button" (click)="abrirSaldo()">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" /></svg> Ajustar saldo
             </button>
+            <a class="chip-boton" [href]="informe()" download>📄 Informe del mes (PDF)</a>
             @if (s.enHuchas > 0) { <a class="chip-boton" routerLink="/gastos/huchas">🐷 {{ euros(s.enHuchas) }} en huchas · libre {{ euros(s.libre) }}</a> }
           </div>
         </div>

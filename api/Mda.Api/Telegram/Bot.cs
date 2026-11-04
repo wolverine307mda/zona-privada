@@ -97,6 +97,24 @@ public class Bot(IConfiguration config, IHttpClientFactory http, IServiceScopeFa
         return await Llamar("sendMessage", cuerpo, ct) is not null;
     }
 
+    // un documento (PDF…) al chat vinculado; el PDF va en el cuerpo, así que se usa el cliente de tiempos largos
+    public async Task<bool> EnviarDocumento(byte[] datos, string nombre, string leyenda, CancellationToken ct = default)
+    {
+        if (Chat is not { } chat || Token is not { } t) return false;
+        try
+        {
+            using var form = new MultipartFormDataContent { { new StringContent(chat.ToString()), "chat_id" }, { new StringContent(leyenda), "caption" }, { new ByteArrayContent(datos), "document", nombre } };
+            using var res = await http.CreateClient("telegram-largo").PostAsync($"https://api.telegram.org/bot{t}/sendDocument", form, ct);
+            if (!res.IsSuccessStatusCode) log.LogWarning("Telegram sendDocument: {Estado}", (int)res.StatusCode);
+            return res.IsSuccessStatusCode;
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            log.LogWarning("Telegram sendDocument no responde ({Motivo})", e.GetType().Name);
+            return false;
+        }
+    }
+
     public Task<JsonElement?> Llamar(string metodo, object cuerpo, CancellationToken ct = default, TimeSpan? espera = null)
         => LlamarCon(http.CreateClient(espera is null ? "telegram" : "telegram-largo"), metodo, cuerpo, ct);
 

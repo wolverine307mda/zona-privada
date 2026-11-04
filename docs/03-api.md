@@ -63,6 +63,7 @@
 | GET/DELETE | `/reglas` (`/{comercio}`) | las reglas «comercio → categoría» que aprende la app al corregir la categoría de un gasto (también desde los botones del bot); pisan a la costumbre en Apple Pay, el asistente y la importación (`Gastos/Reglas.cs`) |
 | POST | `/importar/analizar` · `/importar` | importar el extracto del banco en CSV: detecta separador y columnas, sugiere categoría con tus reglas y marca duplicados; solo entra lo que confirmas, hasta 2.000 filas (`Gastos/Extractos.cs`) |
 | GET | `/divisas` · `/divisas/convertir?moneda=&importe=&fecha=` | monedas habituales y conversión a euros con el tipo de referencia del BCE del día (o el último anterior); el movimiento guarda el importe en euros más `moneda` e `importeOriginal` (`Gastos/Divisas.cs`) |
+| GET | `/informe?anio=&mes=` | el informe del mes en PDF (QuestPDF, licencia comunitaria): ingresos, gastos, ahorro frente al mes anterior, categorías, gastos mayores y presupuestos. El día 1 a las 9 se manda solo por Telegram el del mes anterior (`Gastos/Informe.cs`) |
 | GET/POST | `/deudas` | lista con progreso / crea `{ nombre, total, categoria, inicio, notas? }` |
 | PUT/DELETE | `/deudas/{id}` | edita / borra |
 | POST | `/deudas/{id}/pagos` | registra un pago (crea un movimiento enlazado) |
