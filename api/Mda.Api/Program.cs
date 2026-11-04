@@ -35,6 +35,9 @@ builder.Host.UseSerilog((ctx, cfg) =>
     cfg.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext().WriteTo.Console();
     var seq = ctx.Configuration["Seq:Url"];
     if (!string.IsNullOrWhiteSpace(seq)) cfg.WriteTo.Seq(seq);
+    // en la versión de escritorio no hay Seq: se escribe a un fichero por día, y se guardan los de una semana
+    var archivo = ctx.Configuration["Registro:Archivo"];
+    if (!string.IsNullOrWhiteSpace(archivo)) cfg.WriteTo.File(archivo, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7, shared: true);
 });
 
 // ---- Clave maestra que cifra notas, portapapeles y claves de servicios en la base (en producción es obligatoria) ----
@@ -87,7 +90,8 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict;
     // en producción la cookie solo viaja por HTTPS (el proxy, Tailscale Funnel, avisa con X-Forwarded-Proto)
-    o.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    // App:CookieSegura=peticion (versión de escritorio por http://localhost): Secure solo cuando la petición llega por HTTPS
+    o.Cookie.SecurePolicy = builder.Environment.IsProduction() && builder.Configuration["App:CookieSegura"] != "peticion" ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     // la cookie dura lo mismo que el tope de la sesión apuntada (Sesiones.Maxima): antes caducaba a las 8 h y pedía entrar de nuevo.
     // La seguridad la dan «Face ID al volver», el PIN de Documentos y poder cerrar sesiones desde otro equipo
     o.ExpireTimeSpan = TimeSpan.FromDays(30);

@@ -34,11 +34,16 @@ public sealed class Carpetas
 
     public string Base { get; }
     public bool PermitirEjecutables { get; }
+    // rutas propias por carpeta (Archivos:Rutas:documentos…): para la versión de escritorio, donde cada carpeta es la real del PC
+    // y no hay una base común como en Docker. Solo valen rutas absolutas; sin ellas se usa <Archivos:Base>/<id>.
+    private readonly Dictionary<string, string> _rutas = new();
 
     public Carpetas(IConfiguration config)
     {
         Base = Path.GetFullPath(config["Archivos:Base"] ?? "/carpetas");
         PermitirEjecutables = config.GetValue<bool>("Archivos:PermitirEjecutables");
+        foreach (var r in Todas)
+            if (config[$"Archivos:Rutas:{r.Id}"] is { Length: > 0 } ruta && Path.IsPathRooted(ruta)) _rutas[r.Id] = Path.GetFullPath(ruta);
     }
 
     // ¿Se puede crear un archivo con este nombre? (subir, renombrar). Mantener la extensión que ya tenía no cuenta.
@@ -58,7 +63,7 @@ public sealed class Carpetas
 
     public IEnumerable<Raiz> Disponibles() => Todas.Where(r => Directory.Exists(RutaRaiz(r.Id)));
 
-    public string RutaRaiz(string id) => Path.Combine(Base, id);
+    public string RutaRaiz(string id) => _rutas.TryGetValue(id, out var propia) ? propia : Path.Combine(Base, id);
 
     // Convierte (raíz, ruta relativa) en una ruta real, sin salir nunca de la raíz ni entrar en la papelera
     // ni seguir enlaces. Devuelve null si la ruta no es válida.

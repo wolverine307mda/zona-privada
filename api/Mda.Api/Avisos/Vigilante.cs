@@ -64,6 +64,14 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         }
     }
 
+    // dónde mirar si falla una copia: en Docker, el contenedor «copias»; en la versión de escritorio, la bandeja del lanzador
+    public static string AyudaCopias(IConfiguration config, bool minuscula = false)
+    {
+        var nativo = config["Copias:Origen"] == "nativo";
+        if (minuscula) return nativo ? "revisa las copias desde el icono de ZonaPrivada en la bandeja (Comprobar)." : "revisa «docker compose logs copias».";
+        return nativo ? "Revisa las copias desde el icono de ZonaPrivada en la bandeja (Comprobar)." : "Revisa el contenedor «copias» (docker compose logs copias).";
+    }
+
     // ---- copia de seguridad ----
     public Copia UltimaCopia()
     {
@@ -84,8 +92,8 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         a.Valor = hoy;
         await db.SaveChangesAsync(ct);
         var texto = c.Fecha is { } fecha
-            ? $"La última copia de seguridad de la base de datos es del {TimeZoneInfo.ConvertTime(fecha, zona.Info):dd/MM/yyyy HH:mm}. Revisa el contenedor «copias» (docker compose logs copias)."
-            : "No hay ninguna copia de seguridad de la base de datos. Revisa el contenedor «copias» (docker compose logs copias).";
+            ? $"La última copia de seguridad de la base de datos es del {TimeZoneInfo.ConvertTime(fecha, zona.Info):dd/MM/yyyy HH:mm}. {AyudaCopias(config)}"
+            : $"No hay ninguna copia de seguridad de la base de datos. {AyudaCopias(config)}";
         await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
         await avisos.PorTelegram($"💾 Falta la copia de seguridad\n{texto}", ct);
@@ -132,7 +140,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             await avisos.PorTelegram($"✅ Copia verificada: «{s.Copia}» se restauró en una base vacía ({s.Usuarios} usuario(s), {s.Tablas} tablas).", ct);
         else
         {
-            var texto = $"La copia «{s.Copia}» NO se pudo restaurar en la prueba semanal. Haz una copia a mano y revisa «docker compose logs copias».";
+            var texto = $"La copia «{s.Copia}» NO se pudo restaurar en la prueba semanal. Haz una copia a mano y {AyudaCopias(config, minuscula: true)}";
             await avisos.PorPush("⚠️ Copia de seguridad dudosa", texto, "/seguridad", ct);
             await avisos.PorTelegram($"⚠️ {texto}", ct);
         }
