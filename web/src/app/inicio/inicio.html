@@ -1,4 +1,5 @@
-<section class="hola tarjeta">
+<div class="cabecera">
+<section class="hola">
   <img class="hola__foto" [src]="perfil.foto()" width="72" height="72" alt="">
   <div class="hola__texto">
     <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time class="hola__hora">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</time></p>
@@ -23,6 +24,7 @@
 </section>
 
 <app-semaforo />
+</div>
 
 <app-panel />
 

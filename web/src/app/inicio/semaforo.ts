@@ -31,12 +31,12 @@ const TITULAR = { verde: 'Todo en orden', ambar: 'Hay algo que mirar', rojo: 'Ha
     }
   `,
   styles: `
-    :host { display: block; }
-    .semaforo { --c: #3fb96a; padding: 16px 18px; border-left: 4px solid var(--c); }
+    :host { display: block; height: 100%; }
+    .semaforo { --c: #3fb96a; height: 100%; padding: 18px 20px; border-left: 4px solid var(--c); }
     .semaforo[data-estado='ambar'] { --c: #f0b53a; }
     .semaforo[data-estado='rojo'] { --c: #e5484d; }
     header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    header h3 { margin: 0; font: 600 1rem/1.2 var(--font-display); }
+    header h3 { margin: 0; font: 500 var(--step-lead)/1.2 var(--font-text); }
     .luz { width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 25%, transparent); }
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
     li { --p: #3fb96a; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; align-items: start; }
