@@ -5,12 +5,13 @@ import { Lugares } from './lugares';
 import { ReglasCategoria } from './reglas';
 import { echarts, opcionesEvolucion } from './graficas-gastos';
 import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from './modelo';
+import { EstadoError, Esqueleto } from '../ui';
 
 // Estadísticas de los últimos meses: ingresos frente a gastos, ahorro acumulado, medias,
 // el mejor y el peor mes, y las categorías donde más se gasta
 @Component({
   selector: 'app-estadisticas',
-  imports: [Lugares, ReglasCategoria],
+  imports: [Lugares, ReglasCategoria, EstadoError, Esqueleto],
   template: `
     <div class="periodo" role="group" aria-label="Periodo">
       @for (p of periodos; track p) {
@@ -60,7 +61,8 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
       <app-lugares />
       <app-reglas-categoria />
     } @else {
-      <p class="cargando">{{ fallo() ? 'El equipo no responde: comprueba la conexión.' : 'Cargando…' }}</p>
+      @if (fallo()) { <div class="caja"><app-estado-error mensaje="El equipo no responde: comprueba la conexión." (reintentar)="g.recargar()" /></div> }
+      @else { <div class="caja" aria-busy="true"><app-esqueleto forma="bloque" alto="110px" /><app-esqueleto forma="grafica" alto="150px" /></div> }
     }
   `,
   styleUrls: ['./comun.css'],
@@ -77,7 +79,7 @@ import { Estadisticas as Datos, categoria, euros, eurosCorto, mesLargo } from '.
     .grafica { width: 100%; height: 340px; }
     .ranking { display: flex; flex-direction: column; gap: 14px; }
     .ranking li { display: grid; grid-template-columns: 28px 40px minmax(0, 1fr); align-items: center; gap: 12px; }
-    .ranking__pos { font: 700 var(--step-body)/1 var(--font-display); color: var(--soft); text-align: center; }
+    .ranking__pos { font: 500 var(--step-body)/1 var(--font-text); color: var(--soft); text-align: center; }
     .ranking__datos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .ranking__fila { display: flex; justify-content: space-between; gap: 12px; min-width: 0; }
     .ranking__fila strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

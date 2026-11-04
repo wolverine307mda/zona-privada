@@ -3,12 +3,13 @@ import { Errores, GastosService, erroresDe } from './gastos.service';
 import { MantenimientoCoche } from './mantenimiento';
 import { seguirTeclado } from './teclado';
 import { CATEGORIAS, Deuda, Deudas as Datos, MESES, categoria, diaCorto, euros, eurosCorto, hoyIso } from './modelo';
+import { Esqueleto } from '../ui';
 
 // Coche y deudas: lo que se va pagando hasta un total (el coche, un préstamo…), con el anillo de progreso,
 // los pagos por mes, cuándo se acaba al ritmo actual y lo que ha costado el coche en total.
 @Component({
   selector: 'app-deudas',
-  imports: [MantenimientoCoche],
+  imports: [MantenimientoCoche, Esqueleto],
   template: `
     <app-mantenimiento />
     @for (d of datos()?.deudas ?? []; track d.id) {
@@ -99,7 +100,7 @@ import { CATEGORIAS, Deuda, Deudas as Datos, MESES, categoria, diaCorto, euros, 
     } @else if (datos()) {
       <button class="button button--ghost nueva" type="button" (click)="editar()">Otra deuda</button>
     } @else {
-      <p class="cargando">Cargando…</p>
+      <div class="caja" aria-busy="true"><app-esqueleto forma="bloque" alto="170px" /><app-esqueleto forma="linea" [lineas]="2" /></div>
     }
 
     <!-- apuntar un pago -->
@@ -166,16 +167,16 @@ import { CATEGORIAS, Deuda, Deudas as Datos, MESES, categoria, diaCorto, euros, 
     .pista { stroke: var(--tarjeta-2); }
     .valor { stroke: var(--c); stroke-linecap: round; transition: stroke-dasharray 1200ms var(--ease-expo); animation: llena 1400ms var(--ease-expo) backwards 200ms; }
     @keyframes llena { from { stroke-dasharray: 0 400; } }
-    .deuda__pct { position: relative; font: 700 clamp(2rem, 1.4rem + 2vw, 3rem)/1 var(--font-display); letter-spacing: -0.05em; margin-top: -10px; }
+    .deuda__pct { position: relative; font: var(--peso-ligero) clamp(2rem, 1.4rem + 2vw, 3rem)/1 var(--font-text); letter-spacing: -0.05em; margin-top: -10px; }
     .deuda__pct small { font-size: 0.45em; color: var(--soft); }
     .deuda__pct-sub { position: absolute; top: 62%; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); }
     .deuda__datos { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: relative; }
     .deuda__cab { display: flex; align-items: center; gap: 12px; }
-    .deuda__cab h3 { flex: 1; min-width: 0; font: 700 var(--step-head)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.04em; overflow: hidden; text-overflow: ellipsis; }
+    .deuda__cab h3 { flex: 1; min-width: 0; font: var(--peso-ligero) var(--step-head)/1 var(--font-text); letter-spacing: -0.04em; overflow: hidden; text-overflow: ellipsis; }
     .cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
     .cifras div { display: flex; flex-direction: column; gap: 4px; padding: 12px 10px; border-radius: 14px; background: var(--tarjeta-2); min-width: 0; container-type: inline-size; }
     .cifras dt { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); }
-    .cifras dd { margin: 0; font: 700 clamp(0.75rem, 17cqi, 1.5rem)/1.1 var(--font-display); letter-spacing: -0.03em; white-space: nowrap; }
+    .cifras dd { margin: 0; font: var(--peso-ligero) clamp(0.75rem, 17cqi, 1.5rem)/1.1 var(--font-text); letter-spacing: -0.03em; white-space: nowrap; }
     .suave { color: var(--soft); }
     .deuda__ritmo { color: var(--soft); line-height: 1.5; }
     .deuda__ritmo strong { color: var(--texto); }

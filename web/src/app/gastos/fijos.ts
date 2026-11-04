@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { GastosService } from './gastos.service';
 import { FRECUENCIAS, Recurrente, categoria, euros, eurosCorto } from './modelo';
+import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
 
 interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: number; }
 
@@ -8,6 +9,7 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
 // y con lo que suponen al mes y al año. Pulsar uno lo edita; el interruptor lo pausa.
 @Component({
   selector: 'app-fijos',
+  imports: [EstadoError, EstadoVacio, Esqueleto],
   template: `
     <section class="kpis">
       <article data-inclina class="caja kpi"><span class="etq">Gastos que se repiten, al mes</span><strong class="grande">{{ euros(totales().gastos) }}</strong><span class="sub">{{ eurosCorto(totales().gastos * 12) }} al año</span></article>
@@ -51,10 +53,10 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
         </div>
       </section>
     } @empty {
-      <div class="caja vacio">
-        <strong [class.esta-cargando]="!cargado()">{{ fallo() ? 'No se pudo cargar' : cargado() ? 'Aún no hay nada que se repita' : 'Cargando…' }}</strong>
-        @if (fallo()) { El equipo no responde: comprueba la conexión y vuelve a intentarlo. }
-        @else if (cargado()) { Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen. }
+      <div class="caja" [attr.aria-busy]="!cargado()">
+        @if (fallo()) { <app-estado-error mensaje="El equipo no responde: comprueba la conexión." (reintentar)="g.recargar()" /> }
+        @else if (cargado()) { <app-estado-vacio icono="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" titulo="Aún no hay nada que se repita" texto="Añade la nómina, el alquiler o tus suscripciones (o marca «Se repite» al apuntar algo): saldrán en «Por aplicar» cuando toquen." /> }
+        @else { <app-esqueleto forma="linea" [lineas]="4" /> }
       </div>
     }
   `,
@@ -72,7 +74,7 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
     .accion-ingreso { border-color: color-mix(in srgb, var(--ok) 50%, var(--linea)); }
     .grupo { display: flex; flex-direction: column; gap: 12px; }
     .grupo__cab { display: flex; justify-content: space-between; align-items: baseline; }
-    .grupo__cab h3 { font: 700 var(--step-body)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+    .grupo__cab h3 { font: 500 var(--step-body)/1.1 var(--font-text); letter-spacing: -0.02em; }
     .grupo__cab span { font: 600 var(--step-small)/1 var(--font-code); color: var(--soft); }
     .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
     .fijo { position: relative; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); backdrop-filter: var(--desenfoque); box-shadow: var(--sombra); overflow: hidden; transition: transform 500ms var(--ease-out), border-color 240ms ease; }
@@ -80,9 +82,9 @@ interface Grupo { id: string; titulo: string; lista: Recurrente[]; mensual: numb
     @media (hover: hover) { .fijo:hover { border-color: color-mix(in srgb, var(--c) 50%, var(--linea)); } }
     .fijo--pausado { opacity: 0.55; }
     .fijo__cuerpo { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 2px 12px; width: 100%; padding: 18px 16px 16px; border: 0; background: transparent; color: var(--texto); text-align: left; cursor: pointer; font: inherit; }
-    .fijo__logo { grid-row: 1 / span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--c); color: #fff; font: 700 20px/1 var(--font-display); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+    .fijo__logo { grid-row: 1 / span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--c); color: #fff; font: 500 20px/1 var(--font-text); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
     .fijo__nombre { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 44px; }
-    .fijo__importe { font: 700 var(--step-lead)/1.1 var(--font-display); letter-spacing: -0.03em; }
+    .fijo__importe { font: 500 var(--step-lead)/1.1 var(--font-text); letter-spacing: -0.03em; }
     .fijo__importe small { font: 400 11px/1 var(--font-text); color: var(--soft); letter-spacing: 0; }
     .fijo__cuando, .fijo__mes { grid-column: 1 / -1; font-size: 12px; color: var(--soft); margin-top: 6px; }
     .fijo__mes { margin-top: 0; }

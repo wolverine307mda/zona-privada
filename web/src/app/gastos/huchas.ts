@@ -115,7 +115,7 @@ const COLORES = ['#ff7a1a', '#3ddc84', '#6c8cff', '#ff5fa2', '#c77dff', '#2ec4b6
     .barra span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), var(--ok)); transition: width 900ms var(--ease-expo); }
     .nueva { align-items: flex-start; justify-content: center; gap: 4px; border-style: dashed; cursor: pointer; text-align: left; color: var(--texto); font: inherit; }
     .nueva span:last-child { font-size: var(--step-small); color: var(--soft); }
-    .nueva__mas { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: var(--on-brand); font: 700 24px/1 var(--font-display); margin-bottom: 6px; }
+    .nueva__mas { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: var(--on-brand); font: var(--peso-ligero) 24px/1 var(--font-text); margin-bottom: 6px; }
     @media (hover: hover) { .nueva:hover { border-color: var(--brand); } }
     .huchas { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
     .vacio--ancho { grid-column: 1 / -1; }
@@ -134,8 +134,8 @@ const COLORES = ['#ff7a1a', '#3ddc84', '#6c8cff', '#ff5fa2', '#c77dff', '#2ec4b6
     .hucha__agua { --p: 0; position: absolute; left: -50%; width: 200%; height: 200%; top: calc(100% - var(--p) * 1%); border-radius: 42%; background: color-mix(in srgb, var(--c) 70%, transparent); animation: ola 7s linear infinite; transition: top 1.2s var(--ease-expo); }
     @keyframes ola { to { rotate: 360deg; } }
     .hucha__emoji { position: relative; font-size: 40px; line-height: 1; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)); }
-    .hucha h3 { font: 700 var(--step-body)/1.15 var(--font-display); letter-spacing: -0.02em; text-transform: uppercase; margin-top: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .hucha__cifra { font: 700 var(--step-lead)/1.1 var(--font-display); letter-spacing: -0.03em; }
+    .hucha h3 { font: 500 var(--step-body)/1.15 var(--font-text); letter-spacing: -0.02em; margin-top: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hucha__cifra { font: 500 var(--step-lead)/1.1 var(--font-text); letter-spacing: -0.03em; }
     .hucha__cifra em { display: block; margin-top: 4px; font: 400 var(--step-small)/1 var(--font-text); color: var(--soft); letter-spacing: 0; font-style: normal; }
     .hucha__sub { font-size: 12.5px; color: var(--soft); min-height: 2.6em; }
     .hucha__sub b { color: var(--texto); }

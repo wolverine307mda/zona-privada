@@ -1,10 +1,12 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { GastosService } from './gastos.service';
 import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from './modelo';
+import { EstadoError, EstadoVacio } from '../ui';
 
 // Todos los movimientos del mes, agrupados por día, con buscador y filtros por tipo y categoría
 @Component({
   selector: 'app-movimientos',
+  imports: [EstadoError, EstadoVacio],
   template: `
     <section class="caja filtros">
       <label class="buscar">
@@ -51,10 +53,9 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
       @if (!cargado()) {
         <ul class="esqueleto caja" aria-label="Cargando movimientos" aria-busy="true"><li><i></i></li><li><i style="width: 70%"></i></li><li><i></i></li><li><i style="width: 55%"></i></li></ul>
       } @else {
-      <div class="caja vacio">
-        <strong [class.esta-cargando]="!cargado()">{{ fallo() ? 'No se pudo cargar' : cargado() ? 'No hay movimientos' : 'Cargando…' }}</strong>
-        @if (fallo()) { El equipo no responde: comprueba la conexión y vuelve a intentarlo. }
-        @else if (cargado()) { {{ q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».' }} }
+      <div class="caja">
+        @if (fallo()) { <app-estado-error mensaje="El equipo no responde: comprueba la conexión." (reintentar)="g.recargar()" /> }
+        @else { <app-estado-vacio icono="M3 6h18v12H3zM3 10h18M7 15h3" titulo="No hay movimientos" [texto]="q() || cat() || tipo() !== 'todos' ? 'Prueba a quitar algún filtro.' : 'Apunta el primero con «Gasto» o «Ingreso».'" /> }
       </div>
       }
     }
@@ -73,7 +74,7 @@ import { CATEGORIAS, Movimiento, Tipo, categoria, diaLargo, euros, numero } from
     .cat-sel { min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--linea); background: var(--tarjeta-2); color: var(--texto); font: inherit; }
     .totales { flex-direction: row; flex-wrap: wrap; gap: 12px 32px; padding: 16px 20px; }
     .totales div { display: flex; flex-direction: column; gap: 2px; }
-    .totales strong { font: 700 var(--step-lead)/1.1 var(--font-display); letter-spacing: -0.03em; }
+    .totales strong { font: 500 var(--step-lead)/1.1 var(--font-text); letter-spacing: -0.03em; }
     .dia { gap: 4px; padding: 12px; }
     .dia__cab { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 10px 8px; border-bottom: 1px solid var(--linea); margin-bottom: 4px; }
     .dia__cab h3 { font-size: var(--step-small); font-weight: 500; color: var(--soft); }

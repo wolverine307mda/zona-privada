@@ -4,13 +4,14 @@ import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
 import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
+import { EstadoError, Esqueleto } from '../ui';
 
 // Resumen del mes: el dinero que tienes (saldo que se arrastra de mes en mes), lo que puedes gastar al día,
 // consejos para ahorrar, presupuestos, lo que se repite y falta por aplicar, en qué se va el dinero,
 // el calendario de gasto por día y los últimos movimientos.
 @Component({
   selector: 'app-resumen',
-  imports: [RouterLink],
+  imports: [RouterLink, EstadoError, Esqueleto],
   templateUrl: './resumen.html',
   styleUrls: ['./comun.css', './dialogos.css', './resumen.css'],
 })

@@ -1,5 +1,5 @@
 /* Piezas comunes de las pestañas de gastos */
-:host { display: flex; flex-direction: column; gap: 20px; animation: aparece 700ms var(--ease-expo) backwards; transform-origin: 50% 0; }
+:host { display: flex; flex-direction: column; gap: var(--hueco, 14px); animation: aparece 700ms var(--ease-expo) backwards; transform-origin: 50% 0; }
 @keyframes aparece { from { opacity: 0; transform: perspective(1400px) rotateX(7deg) translateY(18px); } }
 /* las tarjetas entran una tras otra, con un leve giro */
 :host > * { animation: entra-caja 640ms var(--ease-expo) backwards; }
@@ -8,36 +8,34 @@
 @keyframes entra-caja { from { opacity: 0; transform: translateY(16px) scale(0.985); } }
 
 .caja {
-  position: relative; background: var(--brillo), var(--vidrio); border: 1px solid var(--vidrio-borde); border-radius: var(--radio); box-shadow: var(--sombra);
-  backdrop-filter: var(--desenfoque); -webkit-backdrop-filter: var(--desenfoque);
-  padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  position: relative; background: var(--brillo), var(--tarjeta); border: 1px solid var(--vidrio-borde); border-radius: var(--radio); box-shadow: var(--sombra);
+  padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
 }
 .caja__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.caja__cab h3 { font: 700 var(--step-body)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+.caja__cab h3 { font: 500 var(--step-body)/1.1 var(--font-text); letter-spacing: -0.02em; }
 .caja__cab .sub { font-size: 12px; color: var(--soft); }
 .enlace { border: 0; background: none; color: var(--acento); font-weight: 500; cursor: pointer; padding: 0; text-decoration: none; font-size: var(--step-small); }
 
 .etq { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); }
-.grande { font: 700 clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem)/1 var(--font-display); letter-spacing: -0.04em; overflow-wrap: anywhere; }
+.grande { font: var(--peso-ligero) clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem)/1 var(--font-text); letter-spacing: -0.04em; overflow-wrap: anywhere; }
 /* en tarjetas estrechas la cifra encoge con la tarjeta en vez de salirse */
 .kpi { container-type: inline-size; }
 @container (max-width: 260px) {
   .grande { font-size: clamp(0.8rem, 12.5cqi, 1.9rem); white-space: nowrap; overflow-wrap: normal; }
   .grande small { display: block; margin: 6px 0 0 !important; font: 500 11px/1 var(--font-text) !important; letter-spacing: 0 !important; }
 }
+/* --ok y --bad ya tienen su variante de día (styles.css) */
 .verde { color: var(--ok); }
 .rojo { color: var(--bad); }
-[data-mode='light'] .verde { color: #138a4c; }
-[data-mode='light'] .rojo { color: #d63a3f; }
 
 /* fila de un movimiento */
 .mov {
   display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
-  padding: 10px 12px; border-radius: 12px; border: 0; width: 100%; background: transparent; color: var(--texto);
+  padding: 10px 12px; border-radius: var(--radio-m); border: 0; width: 100%; background: transparent; color: var(--texto);
   text-align: left; cursor: pointer; font: inherit; transition: background-color 160ms ease;
 }
 @media (hover: hover) { .mov:hover { background: var(--tarjeta-2); } }
-.icono-cat { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); }
+.icono-cat { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); }
 .icono-cat .icon { width: 19px; height: 19px; }
 .mov__texto { display: flex; flex-direction: column; min-width: 0; }
 .mov__texto strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -47,8 +45,7 @@
 /* en los móviles más estrechos las cifras grandes van una por fila */
 @media (max-width: 360px) { .kpis { grid-template-columns: minmax(0, 1fr) !important; } }
 .mov__importe.ingreso { color: var(--ok); }
-[data-mode='light'] .mov__importe.ingreso { color: #138a4c; }
-.chip-fijo { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; background: var(--tarjeta-2); color: var(--soft); vertical-align: 2px; }
+.chip-fijo { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: var(--radio-pildora); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; background: var(--tarjeta-2); color: var(--soft); vertical-align: 2px; }
 
 .vacio { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 16px; text-align: center; color: var(--soft); }
 .vacio strong { color: var(--texto); font-weight: 500; }

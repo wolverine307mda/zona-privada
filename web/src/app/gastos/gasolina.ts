@@ -3,10 +3,12 @@ import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesGasolina } from './graficas-gastos';
 import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, numero } from './modelo';
+import { EstadoError, Esqueleto } from '../ui';
 
 // Gasolina: consumo (L/100 km), precio medio y último del litro, coste por km y cada repostaje
 @Component({
   selector: 'app-gasolina',
+  imports: [EstadoError, Esqueleto],
   template: `
     @if (datos(); as d) {
       <section class="kpis">
@@ -56,7 +58,8 @@ import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, nume
         </div>
       </section>
     } @else {
-      <p class="cargando">{{ fallo() ? 'El equipo no responde: comprueba la conexión.' : 'Cargando…' }}</p>
+      @if (fallo()) { <div class="caja"><app-estado-error mensaje="El equipo no responde: comprueba la conexión." (reintentar)="g.recargar()" /></div> }
+      @else { <div class="caja" aria-busy="true"><app-esqueleto forma="bloque" alto="110px" /><app-esqueleto forma="grafica" alto="150px" /></div> }
     }
   `,
   styleUrls: ['./comun.css'],

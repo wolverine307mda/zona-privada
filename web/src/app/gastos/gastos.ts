@@ -52,7 +52,7 @@ import { mesLargo } from './modelo';
     :host { display: flex; flex-direction: column; gap: 20px; }
     .cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
     .mes { display: flex; align-items: center; gap: 10px; }
-    .mes__nombre { min-width: 0; font: 700 clamp(1.5rem, 1rem + 2vw, 2.6rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.045em; }
+    .mes__nombre { min-width: 0; font: var(--peso-ligero) clamp(1.5rem, 1rem + 2vw, 2.6rem)/1 var(--font-text); letter-spacing: -0.045em; }
     .mes__flecha { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--linea); background: var(--tarjeta); color: var(--texto); cursor: pointer; transition: border-color 160ms ease, transform 140ms var(--ease-out); }
     .mes__flecha:active { transform: scale(0.92); }
     @media (hover: hover) { .mes__flecha:hover { border-color: var(--brand); } }

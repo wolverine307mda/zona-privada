@@ -1,5 +1,5 @@
 @if (error()) {
-  <div class="caja vacio"><strong>No se pudieron cargar los datos.</strong>Comprueba que el servidor está en marcha.</div>
+  <div class="caja"><app-estado-error titulo="No se pudieron cargar los datos" mensaje="Comprueba que el servidor está en marcha." (reintentar)="g.recargar()" /></div>
 }
 @if (datos(); as d) {
   <!-- El dinero de verdad: el saldo (se arrastra entre meses y puede ser negativo) -->
@@ -236,7 +236,7 @@
     </article>
   </section>
 } @else if (!error()) {
-  <p class="cargando">Cargando…</p>
+  <div class="caja" aria-busy="true"><app-esqueleto forma="bloque" alto="130px" /><app-esqueleto forma="linea" [lineas]="3" /></div>
 }
 
 <!-- ¿Cuánto tienes ahora? -->
