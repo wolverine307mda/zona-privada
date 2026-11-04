@@ -13,6 +13,7 @@ import { PerfilService } from '../core/perfil.service';
 import { AsistenteService } from '../core/asistente.service';
 import { RecargaService } from '../core/recarga';
 import { AjustesFondo } from './ajustes-fondo';
+import { AjustesSonido } from './ajustes-sonido';
 import { Asistente } from './asistente';
 import { Bloqueo } from './bloqueo';
 import { Confirmar } from './confirmar';
@@ -32,7 +33,7 @@ const PESO_INICIAL: Record<string, number> = { inicio: 4, gastos: 3, agenda: 2, 
 // Marco de la zona privada: menú lateral (secciones, ajustes y usuario), barra superior y la pantalla activa.
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo, Pin, Confirmar, Fondo, AjustesFondo],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Buscador, MiniMusica, Asistente, Bloqueo, Pin, Confirmar, Fondo, AjustesFondo, AjustesSonido],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   host: {

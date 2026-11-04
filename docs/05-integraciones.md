@@ -99,3 +99,9 @@ los LED del router se ponen verdes o rojos según `/api/red`, el móvil se encie
 - **Importar extracto** (`Gastos/Extractos.cs`, pestaña Importar): CSV con detección de separador y columnas, vista previa, duplicados sin marcar.
 - **Otras monedas** (`Gastos/Divisas.cs`): tipo de referencia del BCE (últimos 90 días, sin clave); el gasto se guarda en euros con la moneda y el importe original.
 - **Informe mensual** (`Gastos/Informe.cs`): PDF con QuestPDF (licencia comunitaria, gratis para uso personal); el día 1 a las 9 se manda por Telegram el del mes anterior. La imagen de Docker instala `libfontconfig1` para poder dibujarlo.
+
+## Inicio y sonido (Fase 6)
+
+- **Semáforo de vida** (`Seguridad/Semaforo.cs`): copias, seguridad, dinero, PC y red en verde, ámbar o rojo con su motivo; el global es el peor.
+- **Línea del tiempo** (`Seguridad/Linea.cs`): lo que pasó cada día (gastos, salidas de fotografía, órdenes al PC y accesos), compuesto al momento sin tabla propia.
+- **Sonificación** (`core/sonido.service.ts`, Ajustes → Sonido): Web Audio con una nota que sube con la carga del PC. Apagada por defecto, con volumen propio. Todavía no reacciona a las sondas (no hay un contador de sondas que la app pueda consultar).
