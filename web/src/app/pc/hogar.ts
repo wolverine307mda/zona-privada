@@ -4,7 +4,9 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 interface Entidad { id: string; dominio: string; nombre: string; estado: string; brillo: number | null; }
-interface Estado { homeAssistant: boolean; }
+interface Estado { homeAssistant: boolean; adguard: boolean; }
+interface Dominio { dominio: string; veces: number; }
+interface ResumenAdGuard { consultas: number; bloqueadas: number; porcentajeBloqueado: number; msMedio: number | null; protegido: boolean; topBloqueados: Dominio[]; topConsultados: Dominio[]; }
 
 const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '🌀', input_boolean: '🎚️', scene: '🎬' };
 
@@ -18,7 +20,7 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
       <section class="caja">
         <header class="caja__cab"><h3>Casa conectada</h3><span class="sub">luces, enchufes y escenas de Home Assistant</span></header>
         @if (!e.homeAssistant) {
-          <p class="nada">Conecta Home Assistant para manejar tus luces y enchufes desde aquí: añade su dirección y un token en <a routerLink="/seguridad">Seguridad → Claves</a>.</p>
+          <p class="nada">Conecta Home Assistant para manejar tus luces y enchufes desde aquí: añade su dirección y un token en <a routerLink="/seguridad">Seguridad → Claves</a>.{{ e.adguard ? '' : ' Lo mismo con AdGuard Home para ver lo que bloquea tu red.' }}</p>
         } @else {
           @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
           <ul class="cosas">
@@ -33,6 +35,30 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
           </ul>
         }
       </section>
+      @if (e.adguard) {
+        <section class="caja">
+          <header class="caja__cab"><h3>AdGuard Home</h3><span class="sub">anuncios y rastreadores bloqueados en tu red</span></header>
+          @if (errorAg()) { <p class="error" role="alert">{{ errorAg() }}</p> }
+          @if (resumen(); as r) {
+            <div class="bloqueo">
+              <div class="bloqueo__cifra" [class.bloqueo__cifra--pausa]="!r.protegido"><b>{{ r.porcentajeBloqueado }}%</b><small>{{ r.protegido ? 'de las consultas bloqueadas' : 'protección en pausa' }}</small></div>
+              <dl>
+                <div><dt>Consultas</dt><dd>{{ r.consultas }}</dd></div>
+                <div><dt>Bloqueadas</dt><dd>{{ r.bloqueadas }}</dd></div>
+                @if (r.msMedio !== null) { <div><dt>Respuesta media</dt><dd>{{ r.msMedio }} ms</dd></div> }
+              </dl>
+            </div>
+            @if (r.topBloqueados.length) {
+              <h4 class="titulillo">Lo que más se bloquea</h4>
+              <ol class="top">@for (d of r.topBloqueados; track d.dominio) { <li><span>{{ d.dominio }}</span><b>{{ d.veces }}</b></li> }</ol>
+            }
+            <div class="acciones">
+              @if (r.protegido) { <button class="boton" type="button" (click)="proteccion(false, 10)" [disabled]="pausando()">Pausar 10 min</button> }
+              @else { <button class="button" type="button" (click)="proteccion(true, null)" [disabled]="pausando()">Reanudar la protección</button> }
+            </div>
+          } @else if (!errorAg()) { <p class="nada">Cargando…</p> }
+        </section>
+      }
     }
   `,
   styles: `
@@ -49,6 +75,21 @@ const ICONOS: Record<string, string> = { light: '💡', switch: '🔌', fan: '�
     .interruptor-pastilla[aria-checked='true'] { background: var(--brand); border-color: var(--brand); }
     .interruptor-pastilla[aria-checked='true'] i { transform: translateX(22px); background: var(--on-brand); }
     .interruptor-pastilla:disabled { opacity: .6; }
+    .bloqueo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+    .bloqueo__cifra { display: grid; justify-items: center; padding: 6px 14px; color: #3fb96a; }
+    .bloqueo__cifra--pausa { color: #f0b53a; }
+    .bloqueo__cifra b { font: 700 2.2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+    .bloqueo__cifra small { color: var(--soft); font-size: .72rem; max-width: 14ch; text-align: center; }
+    .bloqueo dl { display: grid; gap: 8px; margin: 0; }
+    .bloqueo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .88rem; }
+    .bloqueo dt { color: var(--soft); } .bloqueo dd { margin: 0; font: 600 .86rem/1.2 var(--font-code); }
+    .titulillo { margin: 14px 0 6px; font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+    .top { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    .top li { display: flex; justify-content: space-between; gap: 10px; font-size: .84rem; }
+    .top span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--soft); }
+    .top b { font: 600 .82rem/1 var(--font-code); }
+    .acciones { margin-top: 12px; display: flex; justify-content: flex-end; }
+    @media (max-width: 480px) { .bloqueo { grid-template-columns: minmax(0, 1fr); } }
     @media (prefers-reduced-motion: reduce) { .interruptor-pastilla, .interruptor-pastilla i, .cosa, .cosa__icono { transition: none; } }
   `,
 })
@@ -59,9 +100,12 @@ export class Hogar implements OnInit {
   protected readonly cargado = signal(false);
   protected readonly error = signal('');
   protected readonly ocupado = signal<string | null>(null);
+  protected readonly resumen = signal<ResumenAdGuard | null>(null);
+  protected readonly errorAg = signal('');
+  protected readonly pausando = signal(false);
 
   constructor() {
-    const t = setInterval(() => { if (!document.hidden && this.estado()?.homeAssistant) void this.leer(); }, 20_000);
+    const t = setInterval(() => { if (document.hidden) return; if (this.estado()?.homeAssistant) void this.leer(); if (this.estado()?.adguard) void this.leerAdGuard(); }, 20_000);
     inject(DestroyRef).onDestroy(() => clearInterval(t));
   }
 
@@ -72,6 +116,20 @@ export class Hogar implements OnInit {
   private async empezar(): Promise<void> {
     try { this.estado.set(await firstValueFrom(this.http.get<Estado>('/api/hogar/estado'))); } catch { return; }
     if (this.estado()?.homeAssistant) await this.leer();
+    if (this.estado()?.adguard) await this.leerAdGuard();
+  }
+
+  private async leerAdGuard(): Promise<void> {
+    try { this.resumen.set(await firstValueFrom(this.http.get<ResumenAdGuard>('/api/hogar/adguard'))); this.errorAg.set(''); }
+    catch (e) { this.errorAg.set((e as HttpErrorResponse).error?.detalle ?? 'No se pudo leer AdGuard Home.'); }
+  }
+
+  // pausar la protección unos minutos (AdGuard la reactiva solo) o volver a activarla
+  protected async proteccion(activa: boolean, minutos: number | null): Promise<void> {
+    this.pausando.set(true); this.errorAg.set('');
+    try { await firstValueFrom(this.http.post('/api/hogar/adguard/proteccion', { activa, minutos })); await this.leerAdGuard(); }
+    catch (e) { this.errorAg.set((e as HttpErrorResponse).error?.detalle ?? 'No se pudo cambiar la protección.'); }
+    finally { this.pausando.set(false); }
   }
 
   private async leer(): Promise<void> {

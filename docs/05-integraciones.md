@@ -70,3 +70,9 @@ En **Seguridad → Claves → Home Assistant** se guardan (cifradas) su direcci�
 de casa, de Tailscale o de un contenedor: no se acepta una de Internet. En Mi PC aparece «Casa conectada» con un interruptor por cada luz, enchufe, ventilador, interruptor virtual y botón de activar por escena
 (`ClienteHogar` en `api/Mda.Api/Pc/Hogar.cs`). Cerraduras, alarmas y el resto de dominios no se tocan desde aquí.
 Si no lo tienes, `docker compose --profile casa up -d` levanta Home Assistant (panel en `http://localhost:8123`) y AdGuard Home (`http://localhost:3001`) en este mismo equipo.
+
+## AdGuard Home (bloqueo de anuncios en la red)
+
+En **Seguridad → Claves → AdGuard Home** se guardan (cifrados) su dirección (de tu red, de Tailscale o `http://adguard:3000` si usas el perfil `casa`), su usuario y su contraseña. En Mi PC, dentro de «Casa conectada», sale el porcentaje
+de consultas bloqueadas, las consultas y la respuesta media, los dominios que más se bloquean y un botón para **pausar la protección 10 minutos** (por si una web que necesitas no carga; AdGuard la reactiva sola) o reanudarla
+(`ClienteAdGuard` en `api/Mda.Api/Pc/AdGuard.cs`). Para que AdGuard bloquee de verdad, el router (o el PC) tiene que usarlo como servidor DNS. **Pi-hole no está soportado**: tiene otra API y no se ha probado contra uno.

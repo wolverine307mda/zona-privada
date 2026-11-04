@@ -39,8 +39,8 @@ Regla: una sola tarea en proceso y una próxima; un commit por tarea; sin `git p
 - ✅ 21 Home Assistant
 - ✅ 23 Ping al router con gráfica
 - ✅ 24 Test de velocidad
-- 🔄 25 AdGuard / Pi-hole
-- ⏭️ 48 Gemelo digital de la habitación
+- ✅ 25 AdGuard / Pi-hole (solo AdGuard Home; Pi-hole no)
+- 🔄 48 Gemelo digital de la habitación
 
 ## Fase 4 · Fotografía
 - ⬜ 33 Lluvias de meteoros y eclipses

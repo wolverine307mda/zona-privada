@@ -46,6 +46,7 @@ public class Secretos(SecretosFuente fuente, IConfiguration config, ILogger<Secr
         new("spotify", "Spotify", "Música y lo que suena", [new("ClientId", "Client ID", "Spotify:ClientId"), new("ClientSecret", "Client secret", "Spotify:ClientSecret")]),
         new("google", "Google", "Calendario y cuenta", [new("ClientId", "Client ID", "Google:ClientId"), new("ClientSecret", "Client secret", "Google:ClientSecret")]),
         new("homeassistant", "Home Assistant", "Luces, enchufes y escenas de casa", [new("Url", "Dirección (http://homeassistant:8123)", "HomeAssistant:Url"), new("Token", "Token de acceso de larga duración", "HomeAssistant:Token")]),
+        new("adguard", "AdGuard Home", "Bloqueo de anuncios de la red", [new("Url", "Dirección (http://adguard:3000)", "AdGuard:Url"), new("Usuario", "Usuario", "AdGuard:Usuario"), new("Clave", "Contraseña", "AdGuard:Clave")]),
         new("vigilancia", "Latido externo", "Healthchecks.io: te avisa si el PC deja de dar señales", [new("Url", "URL del latido", "Healthcheck:Url")]),
     ];
 
