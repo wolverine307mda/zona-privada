@@ -770,6 +770,11 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<int?>("LatenciaMs")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Mac")
+                        .IsRequired()
+                        .HasMaxLength(17)
+                        .HasColumnType("character varying(17)");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(60)

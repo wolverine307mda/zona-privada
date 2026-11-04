@@ -203,9 +203,9 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
-    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar"];
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
     public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar"];
     public static readonly TimeSpan Validez = TimeSpan.FromSeconds(60);
@@ -238,6 +238,7 @@ public static class OrdenesPc
         "multimedia" => $"música del PC: {o.Parametro}",
         "portapapeles" => "copiar un texto al portapapeles del PC",
         "copiar" => "traer el portapapeles del PC",
+        "wol" => $"despertar un aparato de la red ({o.Parametro})",
         _ => o.Tipo,
     };
 

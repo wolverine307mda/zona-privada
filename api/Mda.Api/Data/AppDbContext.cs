@@ -153,6 +153,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Nombre).HasMaxLength(60);
             e.Property(x => x.Host).HasMaxLength(120);
             e.Property(x => x.Icono).HasMaxLength(20);
+            e.Property(x => x.Mac).HasMaxLength(17);
         });
 
         b.Entity<Mda.Api.Pc.ElementoPortapapeles>(e =>

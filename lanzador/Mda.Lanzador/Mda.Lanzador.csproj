@@ -30,6 +30,7 @@
     <Compile Include="..\..\agente\Mda.Agente\Ordenes.cs" Link="Agente\Ordenes.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Dispositivos.cs" Link="Agente\Dispositivos.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Vigias.cs" Link="Agente\Vigias.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\PaqueteMagico.cs" Link="Agente\PaqueteMagico.cs" />
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>

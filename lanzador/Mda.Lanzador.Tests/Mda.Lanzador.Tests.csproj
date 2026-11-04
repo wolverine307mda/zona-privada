@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <Compile Include="..\Mda.Lanzador\Logica\*.cs" Link="Logica\%(Filename)%(Extension)" />
+    <Compile Include="..\..\agente\Mda.Agente\PaqueteMagico.cs" Link="Agente\PaqueteMagico.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -90,6 +90,7 @@ static partial class Ordenes
                 case "cancelar": Lanzar("shutdown", "/a"); return new(true, "cancelado");
                 case "multimedia":
                     return Dispositivos.TeclaMultimedia(o.Parametro) ? new(true, $"música: {o.Parametro}") : new(false, "acción de música no válida");
+                case "wol": return Despertar(o.Parametro);
                 case "volumen":
                     if (!int.TryParse(o.Parametro, out var vol) || vol is < 0 or > 100) return new(false, "volumen no válido");
                     return Dispositivos.PonerVolumen(vol) ? new(true, $"volumen al {vol} %") : new(false, "Windows no dejó cambiar el volumen");
@@ -100,6 +101,31 @@ static partial class Ordenes
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return new(false, e.Message); }
         return new(false, "sin acción");
+    }
+
+    // lo manda desde cada interfaz IPv4 activa: la de casa, la de Tailscale… (la que no deje difundir se salta)
+    static ResultadoOrden Despertar(string mac)
+    {
+        if (PaqueteMagico.De(mac) is not { } paquete) return new(false, "dirección MAC no válida");
+        var enviados = 0;
+        foreach (var nic in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                     .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback))
+        {
+            foreach (var ua in nic.GetIPProperties().UnicastAddresses.Where(u => u.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && u.IPv4Mask is not null))
+            {
+                try
+                {
+                    var ip = ua.Address.GetAddressBytes(); var masc = ua.IPv4Mask!.GetAddressBytes();
+                    var difusion = new System.Net.IPAddress(PaqueteMagico.Difusion(ip, masc));
+                    using var udp = new System.Net.Sockets.UdpClient(new System.Net.IPEndPoint(ua.Address, 0)) { EnableBroadcast = true };
+                    udp.Send(paquete, paquete.Length, new System.Net.IPEndPoint(difusion, 9));
+                    udp.Send(paquete, paquete.Length, new System.Net.IPEndPoint(System.Net.IPAddress.Broadcast, 9));
+                    enviados++;
+                }
+                catch (System.Net.Sockets.SocketException) { /* esa interfaz no deja difundir: se prueba con las demás */ }
+            }
+        }
+        return enviados > 0 ? new(true, $"paquete de despertar enviado por {enviados} interfaz(es)") : new(false, "no hay ninguna red por la que difundir");
     }
 
     static void Lanzar(string exe, string args) =>

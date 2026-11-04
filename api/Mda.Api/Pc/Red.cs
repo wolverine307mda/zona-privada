@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using Mda.Api.Avisos;
 using Mda.Api.Data;
+using Mda.Api.Sistema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mda.Api.Pc;
@@ -16,13 +17,15 @@ public class DispositivoRed
     public int Puerto { get; set; }
     public string Icono { get; set; } = "otro";
     public bool Avisar { get; set; } = true;
+    // la dirección física (AA:BB:CC:DD:EE:FF): con ella se puede despertar el aparato (Wake-on-LAN) desde el agente del PC
+    public string Mac { get; set; } = "";
     public bool? EnLinea { get; set; }
     public int? LatenciaMs { get; set; }
     public DateTimeOffset? Comprobado { get; set; }
     public DateTimeOffset? Cambio { get; set; }
 }
 
-public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true);
+public record DispositivoEntrada(string Nombre, string Host, int Puerto, string? Icono, bool Avisar = true, string? Mac = null);
 
 public interface IComprobadorRed
 {
@@ -61,6 +64,14 @@ public static class RedCasa
         return b[0] == 10 || (b[0] == 172 && b[1] is >= 16 and <= 31) || (b[0] == 192 && b[1] == 168) || (b[0] == 169 && b[1] == 254) || (b[0] == 100 && b[1] is >= 64 and <= 127);
     }
 
+    // «aa-bb-cc-dd-ee-ff» o «AA:BB:…» → «AA:BB:CC:DD:EE:FF»; vacío si no hay; null si no es una MAC
+    public static string? NormalizarMac(string? mac)
+    {
+        var m = (mac ?? "").Trim().Replace('-', ':').ToUpperInvariant();
+        if (m.Length == 0) return "";
+        return System.Text.RegularExpressions.Regex.IsMatch(m, "^([0-9A-F]{2}:){5}[0-9A-F]{2}$") ? m : null;
+    }
+
     // el nombre o la IP tienen que resolver SOLO a direcciones locales
     public static async Task<string?> ValidarHost(string host, CancellationToken ct = default)
     {
@@ -94,6 +105,7 @@ public static class RedCasa
             var errores = new Dictionary<string, string[]>();
             if (string.IsNullOrWhiteSpace(e.Nombre) || e.Nombre.Trim().Length > 60) errores["nombre"] = ["Ponle un nombre (hasta 60 letras)."];
             if (e.Puerto is < 1 or > 65535) errores["puerto"] = ["El puerto va de 1 a 65535."];
+            if (NormalizarMac(e.Mac) is null) errores["mac"] = ["La dirección MAC son seis pares de letras y números, como AA:BB:CC:DD:EE:FF."];
             if (await ValidarHost(e.Host, ct) is { } motivo) errores["host"] = [motivo];
             return errores.Count > 0 ? Results.ValidationProblem(errores) : null;
         }
@@ -101,6 +113,7 @@ public static class RedCasa
         {
             d.Nombre = e.Nombre.Trim(); d.Host = e.Host.Trim(); d.Puerto = e.Puerto;
             d.Icono = Iconos.Contains((e.Icono ?? "").ToLowerInvariant()) ? e.Icono!.ToLowerInvariant() : "otro"; d.Avisar = e.Avisar;
+            d.Mac = NormalizarMac(e.Mac) ?? "";
         }
 
         g.MapPost("/", async (DispositivoEntrada e, AppDbContext db, IComprobadorRed comprobador, TimeProvider reloj, CancellationToken ct) =>
@@ -131,6 +144,19 @@ public static class RedCasa
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
         });
+
+        // Wake-on-LAN: lo manda el agente desde el PC (el contenedor está detrás de NAT y su difusión no llegaría a la red de casa); pide Face ID
+        g.MapPost("/{id:int}/despertar", async (int id, AppDbContext db, EstadoAgente agente, IAvisos avisos, HttpContext ctx, TimeProvider reloj, CancellationToken ct) =>
+        {
+            if (await db.DispositivosRed.FindAsync([id], ct) is not { } d) return Results.NotFound();
+            if (d.Mac.Length == 0) return Results.ValidationProblem(new Dictionary<string, string[]> { ["mac"] = ["Este aparato no tiene dirección MAC: añádela para poder despertarlo."] });
+            if (!agente.Conectado(OrdenesPc.AgenteConectado)) return Results.Conflict(new { detalle = "El agente de Windows no está en marcha (agente\\arrancar.cmd)." });
+            if (!await Mda.Api.Seguridad.Reautenticar.Vigente(ctx, db, reloj)) return Mda.Api.Seguridad.Reautenticar.Pedir();
+            var desde = Seguridad.Dispositivo.Nombre(ctx.Request.Headers.UserAgent.ToString()) + " · " + Seguridad.IpCliente.De(ctx);
+            var o = await OrdenesPc.Encolar(db, reloj, "wol", d.Mac, desde, ct);
+            _ = avisos.PorTelegram($"💻 Orden al PC: despertar «{d.Nombre}»\nDesde {desde}. Si no has sido tú, cierra sesiones en Seguridad.");
+            return Results.Ok(o);
+        }).RequireRateLimiting(Mda.Api.Seguridad.Limites.Sensible);
 
         g.MapPost("/{id:int}/probar", async (int id, AppDbContext db, IComprobadorRed comprobador, TimeProvider reloj, CancellationToken ct) =>
         {
