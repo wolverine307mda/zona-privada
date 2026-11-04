@@ -61,6 +61,7 @@
 | GET | `/prevision` | con cuánto cerrarás el mes: saldo de hoy menos el ritmo variable de los últimos 60 días, con banda de mejor y peor caso (`Gastos/Prevision.cs`) |
 | GET | `/lugares?anio=&mes=` | dónde gastas: zonas de ~1 km con lo gastado y los comercios con más peso (mes = 0 para el año). Los pagos de `POST /api/atajos/pago` aceptan `lat` y `lon` opcionales, guardados con ~100 m (`Gastos/Lugares.cs`) |
 | GET/DELETE | `/reglas` (`/{comercio}`) | las reglas «comercio → categoría» que aprende la app al corregir la categoría de un gasto (también desde los botones del bot); pisan a la costumbre en Apple Pay, el asistente y la importación (`Gastos/Reglas.cs`) |
+| POST | `/importar/analizar` · `/importar` | importar el extracto del banco en CSV: detecta separador y columnas, sugiere categoría con tus reglas y marca duplicados; solo entra lo que confirmas, hasta 2.000 filas (`Gastos/Extractos.cs`) |
 | GET/POST | `/deudas` | lista con progreso / crea `{ nombre, total, categoria, inicio, notas? }` |
 | PUT/DELETE | `/deudas/{id}` | edita / borra |
 | POST | `/deudas/{id}/pagos` | registra un pago (crea un movimiento enlazado) |

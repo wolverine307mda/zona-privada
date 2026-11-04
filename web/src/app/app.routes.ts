@@ -17,6 +17,7 @@ export const routes: Routes = [
         children: [
           { path: '', loadComponent: () => import('./gastos/resumen').then((m) => m.Resumen) },
           { path: 'movimientos', title: 'Movimientos · MDA', loadComponent: () => import('./gastos/movimientos').then((m) => m.Movimientos) },
+          { path: 'importar', title: 'Importar extracto · MDA', loadComponent: () => import('./gastos/importar').then((m) => m.Importar) },
           { path: 'fijos', title: 'Fijos · MDA', loadComponent: () => import('./gastos/fijos').then((m) => m.Fijos) },
           { path: 'huchas', title: 'Huchas · MDA', loadComponent: () => import('./gastos/huchas').then((m) => m.Huchas) },
           { path: 'gasolina', title: 'Gasolina · MDA', loadComponent: () => import('./gastos/gasolina').then((m) => m.Gasolina) },
