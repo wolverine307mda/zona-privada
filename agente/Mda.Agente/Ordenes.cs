@@ -85,7 +85,10 @@ static partial class Ordenes
                 case "bloquear": return LockWorkStation() ? new(true, "pantalla bloqueada") : new(false, "Windows no la dejó bloquear");
                 case "despierto": Despierto.Poner(o.Parametro != "off"); return new(true, o.Parametro == "off" ? "puede suspenderse" : "se mantiene despierto");
                 case "reiniciar": Lanzar("shutdown", "/r /t 30 /c \"Zona privada: reinicio en 30 s (cancelable)\""); return new(true, "reinicio en 30 s");
-                case "apagar": Lanzar("shutdown", "/s /t 30 /c \"Zona privada: apagado en 30 s (cancelable)\""); return new(true, "apagado en 30 s");
+                case "apagar":
+                    if (Apagado.Segundos(o.Parametro) is not { } seg) return new(false, "tiempo de apagado no válido");
+                    Lanzar("shutdown", $"/s /t {seg} /c \"Zona privada: apagado en {Apagado.Texto(seg)} (cancelable)\"");
+                    return new(true, $"apagado en {Apagado.Texto(seg)}");
                 case "suspender": Lanzar("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0"); return new(true, "suspendiendo");
                 case "cancelar": Lanzar("shutdown", "/a"); return new(true, "cancelado");
                 case "multimedia":

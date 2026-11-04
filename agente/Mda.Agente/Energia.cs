@@ -15,3 +15,16 @@ static class Energia
         _ => null,
     };
 }
+
+// Apagar con un temporizador: sin parámetro, los 30 s de siempre; con minutos (1 a 720), ese tiempo. Cancelable con la orden «cancelar».
+static class Apagado
+{
+    public static int? Segundos(string? parametro)
+    {
+        if (string.IsNullOrWhiteSpace(parametro)) return 30;
+        return int.TryParse(parametro, out var min) && min is >= 1 and <= 720 ? min * 60 : null;
+    }
+
+    public static string Texto(int segundos) =>
+        segundos < 60 ? $"{segundos} s" : segundos < 3600 ? $"{segundos / 60} min" : segundos % 3600 == 0 ? $"{segundos / 3600} h" : $"{segundos / 3600} h {segundos % 3600 / 60} min";
+}

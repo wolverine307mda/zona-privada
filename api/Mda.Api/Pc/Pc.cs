@@ -233,7 +233,7 @@ public static class OrdenesPc
         "despierto" => o.Parametro == "off" ? "dejar que el PC se suspenda" : "mantener el PC despierto",
         "reiniciar" => "reiniciar (en 30 s)",
         "suspender" => "suspender",
-        "apagar" => "apagar (en 30 s)",
+        "apagar" => o.Parametro.Length > 0 ? $"apagar en {o.Parametro} min" : "apagar (en 30 s)",
         "cancelar" => "cancelar el apagado o reinicio",
         "volumen" => $"volumen al {o.Parametro} %",
         "brillo" => $"brillo de la pantalla al {o.Parametro} %",
@@ -283,6 +283,11 @@ public static class OrdenesPc
             {
                 if (!Perfiles.Contains(e.Parametro ?? "")) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"El plan es uno de: {string.Join(", ", Perfiles)}."] });
                 parametro = e.Parametro!;
+            }
+            if (tipo == "apagar" && !string.IsNullOrWhiteSpace(e.Parametro))
+            {
+                if (!int.TryParse(e.Parametro, out var minutos) || minutos is < 1 or > 720) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = ["Pon los minutos: de 1 a 720."] });
+                parametro = minutos.ToString();
             }
             if (tipo is "volumen" or "brillo")
             {
