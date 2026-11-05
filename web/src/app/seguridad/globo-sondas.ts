@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type * as THREE from 'three';
+import { resolverColor } from '../core/color-css';
 
 export interface Punto { lat: number; lon: number; pais: string; ciudad: string; sondas: number; ips: number; ultima: string; rutas: string[]; }
 interface Resumen { dias: number; total: number; ips: number; sinSitio: number; geoIp: boolean; puntos: Punto[]; paises: { pais: string; sondas: number }[]; }
@@ -95,7 +96,7 @@ export class GloboSondas implements OnInit {
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
     camera.position.set(0, 0, 4.6);
     const css = getComputedStyle(document.documentElement);
-    const marca = new THREE.Color(css.getPropertyValue('--brand').trim() || '#ff7a1f');
+    const marca = new THREE.Color(resolverColor(css.getPropertyValue('--brand'), '#ff7a1f'));
 
     const globo = new THREE.Group(); scene.add(globo);
     globo.add(new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.85 })));
@@ -156,7 +157,8 @@ export class GloboSondas implements OnInit {
       globo.rotation.set(rotX, rotY, 0);
       renderer.render(scene, camera);
     }
-    const bucle = (t: number) => { const dt = Math.min(0.05, (t - t0) / 1000); t0 = t; if (visible && !document.hidden) dibujar(dt); marco = requestAnimationFrame(bucle); };
+    // el siguiente fotograma se pide antes de dibujar y un fallo se salta (si no, una excepción paraba la escena); dt nunca es negativo
+    const bucle = (t: number) => { marco = requestAnimationFrame(bucle); const dt = Math.max(0, Math.min(0.05, (t - t0) / 1000)); t0 = t; if (visible && !document.hidden) { try { dibujar(dt); } catch { /* ese fotograma no se pinta */ } } };
     const io = new IntersectionObserver((e) => { visible = e[0]?.isIntersecting ?? true; }); io.observe(canvas);
     ajustar();
     if (reducido) dibujar(0); else marco = requestAnimationFrame(bucle);

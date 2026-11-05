@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { resolverColor } from '../core/color-css';
 
 const VERDE = new THREE.Color('#3ddc84');
 const ROJO = new THREE.Color('#ff4438');
@@ -118,9 +119,9 @@ export function crearCandado(canvas: HTMLCanvasElement) {
   let brand = new THREE.Color('#ff7a1f');
   const paint = () => {
     const cs = getComputedStyle(document.documentElement);
-    brand = new THREE.Color(cs.getPropertyValue('--brand').trim() || '#ff7a1f');
-    const dark = new THREE.Color(cs.getPropertyValue('--dark').trim() || '#03080b');
-    const light = new THREE.Color(cs.getPropertyValue('--on-dark').trim() || '#ffffff');
+    brand = new THREE.Color(resolverColor(cs.getPropertyValue('--brand'), '#ff7a1f'));
+    const dark = new THREE.Color(resolverColor(cs.getPropertyValue('--dark'), '#03080b'));
+    const light = new THREE.Color(resolverColor(cs.getPropertyValue('--on-dark'), '#ffffff'));
     renderer.setClearColor(dark, 1);
     scene.fog = new THREE.Fog(dark, 10, 34);
     lineMat.color.copy(brand); brilloMat.color.copy(brand); contra.color.copy(brand);
@@ -136,8 +137,9 @@ export function crearCandado(canvas: HTMLCanvasElement) {
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(innerWidth, innerHeight, false);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-    lock.scale.setScalar(small() ? 0.6 : 1);
-    lock.position.set(small() ? 0 : -2.2, small() ? 1.45 : 0.6, 0);
+    // composición vertical a cualquier ancho: el candado centrado arriba y la tarjeta (entrar.css) centrada debajo
+    lock.scale.setScalar(small() ? 0.6 : 0.85);
+    lock.position.set(0, small() ? 1.45 : 1.15, 0);
     if (reduced) render(4000); // cambiar el tamaño borra el canvas y sin animación nadie lo vuelve a pintar
   };
 
@@ -195,7 +197,7 @@ export function crearCandado(canvas: HTMLCanvasElement) {
     camera.lookAt(0, 0.6, 0);
     renderer.render(scene, camera);
   };
-  const loop = (time: number) => { render(time); raf = requestAnimationFrame(loop); };
+  const loop = (time: number) => { raf = requestAnimationFrame(loop); try { render(time); } catch { /* ese fotograma no se pinta */ } };
 
   const tema = new MutationObserver(paint);
   tema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color', 'data-mode'] });

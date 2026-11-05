@@ -3,13 +3,14 @@ import { BarChart, PieChart } from 'echarts/charts';
 import { TitleComponent } from 'echarts/components';
 import { echarts } from '../inicio/graficas';
 import { PuntoMes, Repostaje, TotalCategoria, categoria, euros, mesCorto } from './modelo';
+import { resolverColor } from '../core/color-css';
 
 echarts.use([PieChart, BarChart, TitleComponent]); // el título es el total en el centro del rosco
 export { echarts };
 
 const tema = () => {
   const cs = getComputedStyle(document.documentElement);
-  const v = (n: string, d: string) => cs.getPropertyValue(n).trim() || d;
+  const v = (n: string, d: string) => resolverColor(cs.getPropertyValue(n), d);
   return { brand: v('--brand', '#ff7a1f'), texto: v('--texto', '#e8edf0'), suave: v('--soft', '#8d979e'), linea: v('--linea', '#1c2a34'), fondo: v('--tarjeta', '#0f1920'), fondo2: v('--tarjeta-2', '#15222b'), ok: v('--ok', '#3ddc84'), bad: v('--bad', '#ff5a5f') };
 };
 const tooltip = (t: ReturnType<typeof tema>) => ({ backgroundColor: t.fondo2, borderColor: t.linea, textStyle: { color: t.texto, fontFamily: 'Switzer, sans-serif' } });

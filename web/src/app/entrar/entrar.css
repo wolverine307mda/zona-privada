@@ -11,10 +11,11 @@
 
 .main {
   position: relative; z-index: 2; min-height: calc(100svh - 80px);
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); align-items: center; gap: 40px;
-  padding: 24px var(--margin) 64px;
+  /* composición centrada a cualquier ancho: el candado arriba (lo coloca candado-3d.ts) y la tarjeta centrada debajo, con el mismo hueco a los dos lados */
+  display: grid; grid-template-columns: minmax(0, 440px); justify-content: center; align-items: end;
+  padding: 32vh var(--margin) 48px;
 }
-.intro { align-self: end; padding-bottom: 4vh; pointer-events: none; }
+.intro { display: none; }
 .kicker { font-size: var(--step-small); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--acento); margin-bottom: 18px; }
 .grande {
   font: var(--peso-ligero) clamp(3.2rem, 9vw, 8.5rem)/0.92 var(--font-text); letter-spacing: -0.055em;
@@ -51,9 +52,5 @@
 .entrar { justify-content: space-between; margin-top: 6px; }
 .mensaje { min-height: 1.5em; font-weight: 500; color: var(--acento); }
 
-@media (max-width: 860px) {
-  .main { grid-template-columns: minmax(0, 1fr); align-items: end; padding-top: 32vh; }
-  .intro { display: none; }
-}
 
 .entrar--passkey { margin-top: 0; background: transparent; color: inherit; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }

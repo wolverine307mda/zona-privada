@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, effect, inject, input, signal, viewChild } from '@angular/core';
 import type * as THREE from 'three';
+import { resolverColor } from '../core/color-css';
 
 export interface DatosPc { cpu: number; memoria: number; disco: number; real: boolean; }
 
@@ -69,7 +70,7 @@ export class Pc3d {
 
     // colores del tema (se leen al empezar y cuando cambia)
     const cs = () => getComputedStyle(document.documentElement);
-    const color = (v: string, d: string) => new THREE.Color(cs().getPropertyValue(v).trim() || d);
+    const color = (v: string, d: string) => new THREE.Color(resolverColor(cs().getPropertyValue(v), d));
     let brand = color('--brand', '#ff7a1f');
     const marco = new THREE.LineBasicMaterial({ color: brand, transparent: true, opacity: 0.55 });
     const trazas = new THREE.LineBasicMaterial({ color: brand, transparent: true, opacity: 0.32 });
@@ -256,7 +257,7 @@ export class Pc3d {
       });
       lucesDisco.forEach((l, i) => { const f = Math.min(1, Math.max(0.05, disco / 100 + (i ? -0.1 : 0.1))); l.scale.x = f; l.position.x = 1.8 - 1.9 * (1 - f); });
       pulsos.forEach((p) => {
-        p.fase = (p.fase + dt * (0.12 + carga * 0.9 + (real ? 0.08 : 0))) % 1;
+        p.fase = (((p.fase + dt * (0.12 + carga * 0.9 + (real ? 0.08 : 0))) % 1) + 1) % 1; // siempre entre 0 y 1: la curva no admite menos
         p.m.position.copy(p.r.getPoint(p.fase));
         p.m.scale.setScalar(0.7 + Math.sin(p.fase * Math.PI) * 0.8);
       });
@@ -265,10 +266,12 @@ export class Pc3d {
       pc.rotation.x += (guiaX - 0.08 - pc.rotation.x) * Math.min(1, dt * 6 + (reducido ? 1 : 0));
       renderer.render(scene, camera);
     }
+    // el siguiente fotograma se pide ANTES de dibujar y un fallo se salta: si no, una sola excepción paraba la escena para siempre (y quedaba en blanco).
+    // dt nunca es negativo: la marca del primer fotograma puede ser anterior a t0.
     const bucle = (t: number) => {
-      const dt = Math.min(0.05, (t - t0) / 1000); t0 = t;
-      if (visible && !document.hidden) dibujar(dt);
       marcoId = requestAnimationFrame(bucle);
+      const dt = Math.max(0, Math.min(0.05, (t - t0) / 1000)); t0 = t;
+      if (visible && !document.hidden) { try { dibujar(dt); } catch { /* ese fotograma no se pinta */ } }
     };
     const io = new IntersectionObserver((e) => { visible = e[0]?.isIntersecting ?? true; });
     io.observe(canvas);

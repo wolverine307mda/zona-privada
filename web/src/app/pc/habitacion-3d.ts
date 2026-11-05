@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRe
 import { firstValueFrom } from 'rxjs';
 import type * as THREE from 'three';
 import { SistemaService } from '../inicio/sistema.service';
+import { resolverColor } from '../core/color-css';
 
 interface Aparato { id: number; nombre: string; icono: string; presencia: boolean; enLinea: boolean | null; latenciaMs: number | null; }
 export interface DatosHabitacion { cpu: number; real: boolean; router: boolean | null; movil: boolean | null; otros: (boolean | null)[]; }
@@ -91,7 +92,7 @@ export class Habitacion3d {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
     const css = () => getComputedStyle(document.documentElement);
-    let brand = new THREE.Color(css().getPropertyValue('--brand').trim() || '#ff7a1f');
+    let brand = new THREE.Color(resolverColor(css().getPropertyValue('--brand'), '#ff7a1f'));
     const VERDE = new THREE.Color('#3fb96a'), ROJO = new THREE.Color('#e5484d'), GRIS = new THREE.Color('#5a6572');
     const color = (v: boolean | null) => (v === true ? VERDE : v === false ? ROJO : GRIS);
 
@@ -159,7 +160,7 @@ export class Habitacion3d {
     cubos.forEach((c, i) => { c.visible = i < d0.otros.length; if (c.visible) (c.material as THREE.MeshStandardMaterial).emissive.copy(color(d0.otros[i])); });
     actualizarColores();
 
-    const observadorTema = new MutationObserver(() => { brand = new THREE.Color(css().getPropertyValue('--brand').trim() || '#ff7a1f'); actualizarColores(); if (reducido) dibujar(0); });
+    const observadorTema = new MutationObserver(() => { brand = new THREE.Color(resolverColor(css().getPropertyValue('--brand'), '#ff7a1f')); actualizarColores(); if (reducido) dibujar(0); });
     observadorTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color', 'data-mode'] });
 
     // arrastrar para girar; sin tocar, se balancea despacio
@@ -195,7 +196,8 @@ export class Habitacion3d {
       sala.rotation.y += (objetivo - sala.rotation.y) * Math.min(1, dt * 6 + (reducido ? 1 : 0));
       renderer.render(scene, camera);
     }
-    const bucle = (t: number) => { const dt = Math.min(0.05, (t - t0) / 1000); t0 = t; if (visible && !document.hidden) dibujar(dt); marco = requestAnimationFrame(bucle); };
+    // el siguiente fotograma se pide antes de dibujar y un fallo se salta (si no, una excepción paraba la escena); dt nunca es negativo
+    const bucle = (t: number) => { marco = requestAnimationFrame(bucle); const dt = Math.max(0, Math.min(0.05, (t - t0) / 1000)); t0 = t; if (visible && !document.hidden) { try { dibujar(dt); } catch { /* ese fotograma no se pinta */ } } };
     const io = new IntersectionObserver((e) => { visible = e[0]?.isIntersecting ?? true; });
     io.observe(canvas);
     ajustar();

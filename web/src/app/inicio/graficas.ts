@@ -4,6 +4,7 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { Metricas } from './sistema.service';
+import { resolverColor } from '../core/color-css';
 
 echarts.use([GaugeChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
@@ -11,8 +12,8 @@ export { echarts };
 
 const tema = () => {
   const cs = getComputedStyle(document.documentElement);
-  const v = (n: string, d: string) => cs.getPropertyValue(n).trim() || d;
-  return { brand: v('--brand', '#ff7a1f'), texto: v('--texto', '#e8edf0'), suave: v('--soft', '#8d979e'), linea: v('--linea', '#1c2a34'), fondo: v('--tarjeta-2', '#15222b'), ok: v('--ok', '#3ddc84') };
+  const v = (n: string, d: string) => resolverColor(cs.getPropertyValue(n), d);
+  return { brand: v('--brand', '#ff7a1f'), tono2: v('--t2', '#ffb27a'), tono4: v('--t4', '#c24f00'), texto: v('--texto', '#e8edf0'), suave: v('--soft', '#8d979e'), linea: v('--linea', '#1c2a34'), fondo: v('--tarjeta-2', '#15222b'), ok: v('--ok', '#3ddc84') };
 };
 
 // Medidor de CPU: arco con el color de marca y el número en el centro
@@ -25,7 +26,7 @@ export function opcionesCpu(cpu: number): echarts.EChartsCoreOption {
       axisLine: { roundCap: true, lineStyle: { width: 16, color: [[1, t.fondo]] } },
       axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
       pointer: { show: false }, anchor: { show: false }, title: { show: false },
-      detail: { valueAnimation: true, offsetCenter: [0, '6%'], formatter: '{value}%', color: t.texto, fontSize: 30, fontFamily: 'Panchang, Arial Black, sans-serif' },
+      detail: { valueAnimation: true, offsetCenter: [0, '6%'], formatter: '{value}%', color: t.texto, fontSize: 30, fontWeight: 300, fontFamily: 'Switzer, Helvetica Neue, sans-serif' },
       data: [{ value: Math.round(cpu) }],
       animationDurationUpdate: 600,
     }],
@@ -49,7 +50,7 @@ export function opcionesHistorial(h: Metricas[]): echarts.EChartsCoreOption {
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: t.suave, formatter: '{value}' }, splitLine: { lineStyle: { color: t.linea } } },
     series: [
       serie('cpu', t.brand, h.map((m) => m.cpu)),
-      serie('memoria', t.ok, h.map((m) => Math.round((100 * m.memoriaUsada) / Math.max(1, m.memoriaTotal)))),
+      serie('memoria', t.tono2, h.map((m) => Math.round((100 * m.memoriaUsada) / Math.max(1, m.memoriaTotal)))),
     ],
   };
 }
