@@ -99,6 +99,20 @@ public class AtajosTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
     }
 
     [Fact]
+    public async Task El_importe_puede_llegar_como_texto_con_coma_y_un_cuerpo_roto_tiene_mensaje()
+    {
+        var c = Con(await Token("gasto"));
+        var r = await c.PostAsJsonAsync("/api/atajos/movimiento", new { importe = "3,26", tipo = "Gasto", concepto = "Chuches" });
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Contains("3,26", (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("mensaje").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await c.PostAsJsonAsync("/api/atajos/movimiento", new { importe = "1.234,50 €", concepto = "Pago" })).StatusCode);
+
+        var roto = await c.PostAsync("/api/atajos/movimiento", new StringContent("{importe: ", System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.BadRequest, roto.StatusCode);
+        // (el mensaje de un cuerpo roto solo se ve en producción: en desarrollo el framework escribe el detalle de la excepción)
+    }
+
+    [Fact]
     public async Task El_token_se_ve_una_vez_y_se_guarda_solo_su_huella()
     {
         var token = await Token("gasto");

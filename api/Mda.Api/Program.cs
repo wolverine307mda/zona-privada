@@ -298,6 +298,7 @@ app.UseRateLimiter();
 app.UsePanico();
 app.UseRegistroAccesos();
 app.UseRegistroLlamadas();
+app.UseMensajeAtajos();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseBloqueoSesion();

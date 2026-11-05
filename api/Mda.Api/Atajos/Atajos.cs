@@ -34,9 +34,24 @@ public class TokenAtajo
 }
 
 public record TokenEntrada(string Nombre, string[] Alcances);
-public record MovimientoAtajo(decimal Importe, string Concepto, string? Tipo, string? Categoria, DateOnly? Fecha);
+// Atajos manda el importe como lo escribe el teléfono: 3,26 o "3,26" (texto con coma). Se acepta número, texto con coma o con punto.
+public class ImporteFlexible : System.Text.Json.Serialization.JsonConverter<decimal>
+{
+    public override decimal Read(ref System.Text.Json.Utf8JsonReader r, Type tipo, System.Text.Json.JsonSerializerOptions o)
+    {
+        if (r.TokenType == System.Text.Json.JsonTokenType.Number) return r.GetDecimal();
+        var t = (r.GetString() ?? "").Trim().Replace("€", "").Replace(" ", "");
+        // «1.234,56» (miles con punto, decimales con coma) o «3,26» o «3.26»
+        if (t.Contains(',')) t = t.Replace(".", "").Replace(',', '.');
+        if (decimal.TryParse(t, NumberStyles.Number, CultureInfo.InvariantCulture, out var v)) return v;
+        throw new System.Text.Json.JsonException("Importe no válido");
+    }
+    public override void Write(System.Text.Json.Utf8JsonWriter w, decimal v, System.Text.Json.JsonSerializerOptions o) => w.WriteNumberValue(v);
+}
+
+public record MovimientoAtajo([property: System.Text.Json.Serialization.JsonConverter(typeof(ImporteFlexible))] decimal Importe, string Concepto, string? Tipo, string? Categoria, DateOnly? Fecha);
 public record FraseAtajo(string Texto);
-public record PagoAtajo(string Comercio, decimal Importe, string? Tarjeta, double? Lat = null, double? Lon = null);
+public record PagoAtajo(string Comercio, [property: System.Text.Json.Serialization.JsonConverter(typeof(ImporteFlexible))] decimal Importe, string? Tarjeta, double? Lat = null, double? Lon = null);
 public record PingAtajo(string? Texto);
 public record CasaAtajo(string Estado);
 public record NotaAtajo(string? Texto, string? Titulo);
@@ -78,6 +93,18 @@ public static class AtajosApi
             _ = http.RequestServices.GetRequiredService<IAvisos>().PorTelegram($"🔑 El atajo «{t.Nombre}» se ha usado desde una red nueva ({ip}). Si no has sido tú, revócalo en Seguridad › Atajos.");
         http.Items["tokenAtajo"] = t;
         return await next(ctx);
+    });
+
+    // si el cuerpo ni siquiera se pudo leer (JSON mal formado), el framework responde 400 vacío antes de llegar al endpoint: se le pone mensaje
+    public static IApplicationBuilder UseMensajeAtajos(this IApplicationBuilder app) => app.Use(async (ctx, next) =>
+    {
+        await next();
+        if (ctx.Request.Path.StartsWithSegments("/api/atajos") && ctx.Response.StatusCode >= 400 && !ctx.Response.HasStarted && ctx.Response.ContentLength is null && ctx.Response.ContentType is null)
+        {
+            ctx.Response.ContentType = "application/json; charset=utf-8";
+            var mensaje = ctx.Response.StatusCode == 400 ? "No he entendido los datos del atajo: revisa el cuerpo JSON (importe, concepto, tipo…)." : "No se ha podido completar.";
+            await ctx.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new { mensaje }));
+        }
     });
 
     // un error sin cuerpo (401, 400, 502…) o con un ProblemDetails se convierte en {mensaje}; lo que ya trae `mensaje` o datos se deja igual
