@@ -278,6 +278,25 @@ public static class Cartera
         }
     }
 
+    // Lo que queda de presupuesto y a qué ritmo se puede gastar. Solo tiene sentido en el mes en curso: de un mes pasado no se dice nada.
+    public static string Ritmo(decimal gastado, decimal limite, DateOnly fechaGasto, DateOnly hoy)
+    {
+        if (gastado >= limite) return $"Te has pasado en {Euros(gastado - limite)}.";
+        if (fechaGasto.Year != hoy.Year || fechaGasto.Month != hoy.Month) return "";
+        var libre = limite - gastado;
+        var restantes = DateTime.DaysInMonth(hoy.Year, hoy.Month) - hoy.Day;
+        return restantes <= 0 ? $"Te quedan {Euros(libre)} y hoy es el último día del mes."
+            : $"Te quedan {Euros(libre)} para {restantes} {(restantes == 1 ? "día" : "días")}: unos {Euros(libre / restantes)} al día.";
+    }
+
+    // El barrido del vigilante: gastos que no pasaron por la API (fijos que se apuntan solos, importaciones) también avisan.
+    // Es idempotente: cada nivel se avisa una sola vez al mes gracias a AvisadoNivel.
+    public static async Task ComprobarTodos(AppDbContext db, IAvisos avisos, DateOnly hoy, ILogger log, CancellationToken ct)
+    {
+        foreach (var c in await db.Presupuestos.Where(p => p.Limite > 0).Select(p => p.Categoria).ToListAsync(ct))
+            if (Categorias.Todas.ContainsKey(c)) await ComprobarPresupuesto(db, avisos, c, hoy, log, ct);
+    }
+
     public static async Task ComprobarPresupuesto(AppDbContext db, IAvisos avisos, string categoria, DateOnly fecha, ILogger log, CancellationToken ct)
     {
         var p = await db.Presupuestos.FindAsync([categoria], ct);
@@ -293,7 +312,7 @@ public static class Cartera
         await db.SaveChangesAsync(ct);
         var nombre = Categorias.Todas[categoria].Nombre;
         var titulo = nivel == 100 ? $"💸 Te has pasado en {nombre}" : $"⚠️ {nombre}: al {Math.Round(gastado / p.Limite * 100)} %";
-        var texto = $"Llevas {Euros(gastado)} de {Euros(p.Limite)} este mes.";
+        var texto = $"Llevas {Euros(gastado)} de {Euros(p.Limite)} este mes. {Ritmo(gastado, p.Limite, fecha, DateOnly.FromDateTime(DateTime.UtcNow))}";
         // el aviso sale en segundo plano: apuntar el gasto no espera al correo
         _ = Task.Run(async () =>
         {
