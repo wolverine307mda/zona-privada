@@ -7,11 +7,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Seguridad;
 
 public record Latido(bool App);
-public record AjustesSeguridad(bool AvisarInicios, bool? ResumenSemanal = null);
+public record ConfianzaEquipo(bool Confianza);
+public record AjustesSeguridad(bool AvisarInicios, bool? ResumenSemanal = null, bool? SoloNuevos = null);
 
 // Seguridad: sesiones abiertas (con quién está en línea ahora), historial de accesos, avisos y verificación en dos pasos
 public static class SeguridadEndpoints
 {
+    private static string? Lugar(Geo? g) => g is null ? null : g.Ciudad.Length > 0 ? $"{g.Ciudad}, {g.Pais}" : g.Pais;
+
     public static void MapSeguridad(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/api/seguridad").RequireAuthorization();
@@ -62,9 +65,31 @@ public static class SeguridadEndpoints
             return Results.Ok(new { cerradas = otras.Count });
         });
 
-        g.MapGet("/accesos", async (AppDbContext db) =>
+        g.MapGet("/accesos", async (AppDbContext db, GeoIp geo) =>
             Results.Ok((await db.Accesos.AsNoTracking().OrderByDescending(a => a.Id).Take(40).ToListAsync())
-                .Select(a => new { a.Fecha, a.Ip, a.Exito, a.Motivo, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente) })));
+                .Select(a => new { a.Fecha, a.Ip, a.Exito, a.Motivo, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente), Lugar = Lugar(geo.Buscar(a.Ip)) })));
+
+        // los equipos desde los que has entrado: avisa solo de los que no estén aquí
+        g.MapGet("/equipos", async (AppDbContext db) =>
+            Results.Ok(await db.Equipos.AsNoTracking().OrderByDescending(e => e.Ultima)
+                .Select(e => new { e.Id, e.Nombre, e.Pais, e.Ciudad, e.UltimaIp, e.Primera, e.Ultima, e.Entradas, e.Confianza }).ToListAsync()));
+        g.MapPut("/equipos/{id:int}/confianza", async (int id, ConfianzaEquipo c, AppDbContext db) =>
+        {
+            var e = await db.Equipos.FindAsync(id);
+            if (e is null) return Results.NotFound();
+            e.Confianza = c.Confianza;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+        // olvidar un equipo: la próxima vez que entre será «nuevo» y avisará
+        g.MapDelete("/equipos/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var e = await db.Equipos.FindAsync(id);
+            if (e is null) return Results.NotFound();
+            db.Equipos.Remove(e);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
 
         g.MapGet("/estado", async (ClaimsPrincipal user, UserManager<IdentityUser> users, AppDbContext db, IAvisos avisos, Vigilante vigilante, TimeProvider reloj) =>
         {
@@ -75,6 +100,7 @@ public static class SeguridadEndpoints
                 dosPasos = u is not null && await users.GetTwoFactorEnabledAsync(u),
                 canales = avisos.Disponibles(),
                 avisarInicios = await db.Ajustes.AnyAsync(a => a.Clave == Sesiones.AvisarInicios && a.Valor == "si"),
+                soloNuevos = !await db.Ajustes.AnyAsync(a => a.Clave == Sesiones.AvisarSoloNuevos && a.Valor == "no"),
                 fallosMes = await db.Accesos.CountAsync(a => !a.Exito && a.Fecha > desde),
                 resumenSemanal = !await db.Ajustes.AnyAsync(a => a.Clave == Vigilante.ResumenSemanal && a.Valor == "no"),
                 dispositivosPush = await db.Push.CountAsync(),
@@ -86,6 +112,11 @@ public static class SeguridadEndpoints
         {
             var aj = await db.Ajustes.FindAsync(Sesiones.AvisarInicios) ?? db.Ajustes.Add(new Ajuste { Clave = Sesiones.AvisarInicios }).Entity;
             aj.Valor = a.AvisarInicios ? "si" : "no";
+            if (a.SoloNuevos is { } sn)
+            {
+                var n = await db.Ajustes.FindAsync(Sesiones.AvisarSoloNuevos) ?? db.Ajustes.Add(new Ajuste { Clave = Sesiones.AvisarSoloNuevos }).Entity;
+                n.Valor = sn ? "si" : "no";
+            }
             if (a.ResumenSemanal is { } rs)
             {
                 var r = await db.Ajustes.FindAsync(Vigilante.ResumenSemanal) ?? db.Ajustes.Add(new Ajuste { Clave = Vigilante.ResumenSemanal }).Entity;

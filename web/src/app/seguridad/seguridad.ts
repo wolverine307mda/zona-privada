@@ -6,6 +6,7 @@ import { soportaPasskeys } from '../core/passkey';
 import { Reautenticar } from '../core/reautenticar';
 import { Atajos } from './atajos';
 import { Claves } from './claves';
+import { Equipos } from './equipos';
 import { Llaves } from './llaves';
 import { PinAjustes } from './pin-ajustes';
 import { Notificaciones } from '../core/notificaciones';
@@ -15,9 +16,9 @@ import { RecargaService } from '../core/recarga';
 import { Esqueleto } from '../ui';
 
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
-interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; }
+interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; lugar: string | null; }
 interface Estado {
-  dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; avisarInicios: boolean; fallosMes: number;
+  dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; avisarInicios: boolean; soloNuevos: boolean; fallosMes: number;
   resumenSemanal: boolean; dispositivosPush: number; copia: { vigilada: boolean; fecha: string | null; tamano: number; nombre: string | null };
 }
 interface Telegram { configurado: boolean; vinculado: boolean; nombre: string | null; bot: string | null; }
@@ -34,7 +35,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Atajos, Claves, GloboSondas, Llaves, PinAjustes, Esqueleto],
+  imports: [Atajos, Claves, Equipos, GloboSondas, Llaves, PinAjustes, Esqueleto],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })
@@ -229,6 +230,11 @@ export class Seguridad {
   protected async avisarInicios(v: boolean): Promise<void> {
     this.estado.update((e) => (e ? { ...e, avisarInicios: v } : e));
     await firstValueFrom(this.http.put('/api/seguridad/ajustes', { avisarInicios: v }));
+  }
+
+  protected async soloNuevos(v: boolean): Promise<void> {
+    this.estado.update((e) => (e ? { ...e, soloNuevos: v } : e));
+    await firstValueFrom(this.http.put('/api/seguridad/ajustes', { avisarInicios: this.estado()?.avisarInicios ?? false, soloNuevos: v }));
   }
 
   protected async resumenSemanal(v: boolean): Promise<void> {

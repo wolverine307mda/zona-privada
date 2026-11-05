@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Conexion> Conexiones => Set<Conexion>();
     public DbSet<SesionAbierta> Sesiones => Set<SesionAbierta>();
     public DbSet<Acceso> Accesos => Set<Acceso>();
+    public DbSet<EquipoConocido> Equipos => Set<EquipoConocido>();
     public DbSet<Mda.Api.Auth.PasskeyInfo> PasskeysInfo => Set<Mda.Api.Auth.PasskeyInfo>();
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
     public DbSet<Hucha> Huchas => Set<Hucha>();
@@ -397,6 +398,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Categoria).HasMaxLength(40);
             e.Property(x => x.Limite).HasPrecision(12, 2);
             e.Property(x => x.AvisadoMes).HasMaxLength(7);
+        });
+
+        b.Entity<EquipoConocido>(e =>
+        {
+            e.ToTable("equipos_conocidos");
+            e.HasIndex(x => x.Huella).IsUnique();
+            e.Property(x => x.Huella).HasMaxLength(120);
+            e.Property(x => x.Nombre).HasMaxLength(80);
+            e.Property(x => x.Pais).HasMaxLength(8);
+            e.Property(x => x.Ciudad).HasMaxLength(120);
+            e.Property(x => x.UltimaIp).HasMaxLength(64);
         });
 
         b.Entity<Mantenimiento>(e =>

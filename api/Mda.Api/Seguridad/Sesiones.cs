@@ -54,6 +54,8 @@ public static class Sesiones
 {
     public const string Claim = "mda:sid";
     public const string AvisarInicios = "avisar-inicios";
+    // «no» = avisar de todos los inicios; sin valor o «si» = solo de equipos o países nuevos
+    public const string AvisarSoloNuevos = "avisar-solo-nuevos";
     private static readonly TimeSpan Refresco = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan EnLinea = TimeSpan.FromMinutes(2);
 
@@ -68,12 +70,28 @@ public static class Sesiones
 
         var sp = ctx.HttpContext.RequestServices;
         var db = sp.GetRequiredService<AppDbContext>();
+        // se apunta el equipo siempre (así aprende cuáles son los tuyos); un fallo aquí nunca impide entrar
+        EntradaEquipo? entrada = null; Geo? geo = null;
+        try
+        {
+            geo = sp.GetService<GeoIp>()?.Buscar(s.Ip);
+            entrada = await Equipos.Registrar(db, s.Agente, s.Ip, geo, DateTimeOffset.UtcNow);
+        }
+        catch (Exception e) when (e is DbUpdateException or InvalidOperationException)
+        {
+            sp.GetRequiredService<ILoggerFactory>().CreateLogger("Equipos").LogWarning(e, "No se pudo apuntar el equipo");
+        }
         if (await db.Ajustes.AnyAsync(a => a.Clave == AvisarInicios && a.Valor == "si"))
         {
+            var soloNuevos = !await db.Ajustes.AnyAsync(a => a.Clave == AvisarSoloNuevos && a.Valor == "no");
+            if (soloNuevos && entrada is { Nuevo: false }) return;
             var avisos = sp.GetRequiredService<IAvisos>();
             var hora = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, sp.GetRequiredService<Agenda.Zona>().Info);
-            var texto = $"Se ha iniciado sesión en tu zona privada.\n\nEquipo: {Dispositivo.Nombre(s.Agente)}\nIP: {s.Ip}\nHora: {hora:dd/MM/yyyy HH:mm:ss}\n\nSi no has sido tú, ciérrala desde Seguridad y cambia la contraseña.";
-            _ = Task.Run(async () => { await avisos.PorCorreo("🔐 Nuevo inicio de sesión", texto, "/seguridad"); await avisos.PorTelegram($"🔐 Nuevo inicio de sesión\n{texto}"); });
+            var lugar = geo is { } g ? $"\nLugar: {(g.Ciudad.Length > 0 ? g.Ciudad + ", " : "")}{g.Pais}" : "";
+            var novedad = entrada is { PaisNuevo: true } ? $"\n\n⚠️ Es la primera vez que entras desde {geo?.Pais}." : entrada is { Nuevo: true } ? "\n\nEs la primera vez que entras desde este equipo." : "";
+            var texto = $"Se ha iniciado sesión en tu zona privada.\n\nEquipo: {Dispositivo.Nombre(s.Agente)}\nIP: {s.Ip}{lugar}\nHora: {hora:dd/MM/yyyy HH:mm:ss}{novedad}\n\nSi no has sido tú, ciérrala desde Seguridad.";
+            var asunto = entrada is { PaisNuevo: true } ? "🔐 Inicio de sesión desde un país nuevo" : entrada is { Nuevo: true } ? "🔐 Inicio de sesión desde un equipo nuevo" : "🔐 Nuevo inicio de sesión";
+            _ = Task.Run(async () => { await avisos.PorCorreo(asunto, texto, "/seguridad"); await avisos.PorTelegram($"{asunto}\n{texto}"); await avisos.PorPush(asunto, texto, "/seguridad"); });
         }
     }
 

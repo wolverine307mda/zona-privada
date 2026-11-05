@@ -1471,6 +1471,59 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("ajustes", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Seguridad.EquipoConocido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Ciudad")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<bool>("Confianza")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Entradas")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Huella")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Pais")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTimeOffset>("Primera")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("Ultima")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UltimaIp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Huella")
+                        .IsUnique();
+
+                    b.ToTable("equipos_conocidos", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Secreto", b =>
                 {
                     b.Property<string>("Servicio")
