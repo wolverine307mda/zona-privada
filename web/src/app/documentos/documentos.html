@@ -170,6 +170,23 @@
         <button class="mini mas-items" type="button" (click)="limite.set(limite() + 200)">Mostrar más ({{ visibles().length - limite() }} restantes)</button>
       }
     </section>
+    @if (resultados() && (contenido().length || indice()?.pendientes)) {
+      <section class="caja contenido" aria-label="Archivos que lo dicen por dentro">
+        <header class="caja__cab"><h3>En el contenido</h3><span class="sub">archivos que lo mencionan por dentro</span></header>
+        <ul class="contenido__lista">
+          @for (r of contenido(); track r.ruta) {
+            <li>
+              <button type="button" (click)="abrirContenido(r)" [attr.aria-label]="'Abrir ' + r.nombre">
+                <strong>{{ r.nombre }}</strong>
+                <small>{{ carpetaRuta(r.ruta) }}{{ r.origen === 'ocr' ? ' · leído de la imagen' : '' }}</small>
+                <span class="contenido__fragmento">{{ r.fragmento }}</span>
+              </button>
+            </li>
+          } @empty { <p class="nada">Ningún archivo lo menciona por dentro todavía.</p> }
+        </ul>
+        @if (indice()?.pendientes) { <p class="nada">Aún se están leyendo archivos ({{ indice()!.pendientes }} pendientes): puede que falten resultados.</p> }
+      </section>
+    }
   }
 } @else if (raices()) {
   <div class="caja vacio vacio--grande">

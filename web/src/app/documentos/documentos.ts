@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { seguirTeclado } from '../gastos/teclado';
 import {
-  ArchivosService, Elemento, EnPapelera, ICONO_PAPELERA, IMAGEN_WEB, RAICES, Raiz, TIPOS, TipoArchivo,
+  ArchivosService, Elemento, EnPapelera, EstadoIndice, ResultadoTexto, ICONO_PAPELERA, IMAGEN_WEB, RAICES, Raiz, TIPOS, TipoArchivo,
   extension, fecha, seVe, tamano,
 } from './archivos.service';
 
@@ -67,6 +67,9 @@ export class Documentos implements OnDestroy {
   // búsqueda, filtro, orden y vista (estas dos se recuerdan en el navegador)
   protected readonly q = signal('');
   protected readonly resultados = signal<Elemento[] | null>(null);
+  // lo que dicen los archivos (no solo cómo se llaman): fragmento de cada uno, y cuánto lleva leído el índice
+  protected readonly contenido = signal<ResultadoTexto[]>([]);
+  protected readonly indice = signal<EstadoIndice | null>(null);
   protected readonly filtro = signal<Filtro>('todo');
   protected readonly orden = signal<Orden>(this.leer('docs.orden', 'nombre') as Orden);
   protected readonly vista = signal<'rejilla' | 'lista'>(this.leer('docs.vista', 'rejilla') as 'rejilla' | 'lista');
@@ -181,10 +184,27 @@ export class Documentos implements OnDestroy {
   protected buscar(texto: string): void {
     this.q.set(texto);
     clearTimeout(this.buscarT);
-    if (texto.trim().length < 2) { this.resultados.set(null); return; }
+    if (texto.trim().length < 2) { this.resultados.set(null); this.contenido.set([]); return; }
     this.buscarT = setTimeout(async () => {
-      try { this.resultados.set(await this.api.buscar(this.raiz()!, texto.trim())); } catch { this.resultados.set([]); }
+      const raiz = this.raiz()!, t = texto.trim();
+      // por nombre y por contenido a la vez; que falle una no tumba la otra
+      const [nombres, dentro] = await Promise.all([this.api.buscar(raiz, t).catch(() => []), this.api.buscarTexto(raiz, t).catch(() => [])]);
+      if (this.q().trim() !== t) return;   // ya escribiste otra cosa
+      this.resultados.set(nombres);
+      this.contenido.set(dentro);
+      if (!this.indice()) this.api.estadoIndice().then((i) => this.indice.set(i)).catch(() => {});
     }, 280);
+  }
+
+  // abre un archivo encontrado por su contenido, como si se hubiera tocado en la lista
+  protected abrirContenido(r: ResultadoTexto): void {
+    const tipo: TipoArchivo = r.ruta.toLowerCase().endsWith('.pdf') ? 'pdf' : 'otro';
+    this.abrir({ nombre: r.nombre, ruta: r.ruta, carpeta: false, tamano: 0, modificado: '', tipo });
+  }
+
+  protected carpetaRuta(ruta: string): string {
+    const i = ruta.lastIndexOf('/');
+    return i < 0 ? this.nombreRaiz() : ruta.slice(0, i);
   }
 
   protected carpetaDe(e: Elemento): string {

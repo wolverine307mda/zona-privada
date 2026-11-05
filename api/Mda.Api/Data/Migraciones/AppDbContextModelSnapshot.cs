@@ -131,6 +131,52 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("eventos", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Archivos.TextoArchivo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<long>("ModificadoTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Raiz")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
+
+                    b.Property<long>("Tamano")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Raiz", "Ruta")
+                        .IsUnique();
+
+                    b.ToTable("textos_archivo", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Atajos.TokenAtajo", b =>
                 {
                     b.Property<int>("Id")

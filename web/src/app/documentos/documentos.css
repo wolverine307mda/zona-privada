@@ -233,3 +233,12 @@
 .visor__escena { overflow: auto; }
 .visor__escena img { transition: transform var(--dur-2, 240ms) var(--ease-out, ease-out); transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .visor__escena img { transition: none; } }
+
+/* resultados de buscar por lo que dicen los archivos */
+.contenido { margin-top: 14px; }
+.contenido__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.contenido__lista button { display: grid; gap: 2px; width: 100%; padding: 10px 12px; text-align: left; border: 1px solid var(--vidrio-borde); border-radius: var(--radio-m); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); font: inherit; cursor: pointer; }
+.contenido__lista button:hover { border-color: color-mix(in srgb, var(--brand) 45%, transparent); }
+.contenido__lista strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contenido__lista small { color: var(--soft); font-size: .78rem; }
+.contenido__fragmento { color: var(--soft); font-size: .85rem; line-height: 1.4; overflow-wrap: anywhere; }

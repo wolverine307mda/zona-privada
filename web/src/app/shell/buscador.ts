@@ -14,6 +14,7 @@ import { Accion, crearAcciones, esComando, filtrarAcciones, textoComando } from 
 interface Opcion { id: string; titulo: string; detalle: string; icono: string; grupo: string; hacer: () => void | Promise<void>; mantener?: boolean; }
 // lo que el asistente ha entendido de la frase escrita (para enseñarlo antes de guardar)
 interface Vista { clase: string; resumen: string; movimiento: MovimientoEntrada | null; evento: EventoEntrada | null; dudas: string[] | null; respuesta: string | null; }
+interface ResultadoDoc { raiz: string; ruta: string; nombre: string; origen: string; fragmento: string; }
 interface Hecho { texto: string; deshacer?: () => Promise<unknown>; }
 interface ResultadoBuscar { agenda: { id: number; titulo: string; inicio: string; lugar: string | null; todoElDia: boolean; tipo: string }[]; movimientos: { id: number; concepto: string; importe: number; fecha: string; categoria: string; tipo: string }[]; }
 
@@ -214,6 +215,15 @@ export class Buscador {
     firstValueFrom(this.http.get<{ id: number; nombre: string; tocaHoy: boolean; hecho: boolean }[]>('/api/habitos')).then((l) => this.habitos.set(l)).catch(() => {});
   }
 
+  // Documentos va con el PIN: solo se busca dentro si no hace falta o si ya está puesto (si no, el buscador abriría el teclado del PIN a mitad de la escritura)
+  private async buscarDocumentos(texto: string): Promise<ResultadoDoc[]> {
+    try {
+      const pin = await firstValueFrom(this.http.get<{ requerido: boolean; vigente: boolean }>('/api/seguridad/pin'));
+      if (pin.requerido && !pin.vigente) return [];
+      return (await firstValueFrom(this.http.get<ResultadoDoc[]>('/api/archivos/buscar-texto', { params: { q: texto, raiz: 'documentos' } }))).slice(0, 5);
+    } catch { return []; }
+  }
+
   protected escribir(t: string): void {
     this.q.set(t);
     this.activa.set(0);
@@ -226,9 +236,10 @@ export class Buscador {
     if (texto.length < 2 || esComando(t)) { this.notas.set([]); this.contenido.set([]); return; }
 
     this.temporizador = setTimeout(async () => {
-      const [notas, contenido] = await Promise.all([
+      const [notas, contenido, docs] = await Promise.all([
         firstValueFrom(this.http.get<{ id: number; titulo: string; contenido: string }[]>('/api/notas', { params: { q: texto } })).catch(() => []),
         firstValueFrom(this.http.get<ResultadoBuscar>('/api/buscar', { params: { q: texto } })).catch(() => null),
+        this.buscarDocumentos(texto),
       ]);
       if (miPeticion !== this.peticion) return;
       this.notas.set(notas.slice(0, 6).map((n) => ({
@@ -239,6 +250,10 @@ export class Buscador {
         ...(contenido?.agenda ?? []).map((e): Opcion => ({
           id: `evento-${e.id}`, titulo: e.titulo, detalle: `${new Date(e.inicio).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}${e.lugar ? ' · ' + e.lugar : ''}`,
           icono: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4', grupo: 'Agenda', hacer: () => this.ir('/agenda'),
+        })),
+        ...docs.map((d): Opcion => ({
+          id: `doc-${d.ruta}`, titulo: d.nombre, detalle: d.fragmento, icono: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
+          grupo: 'Documentos', hacer: () => this.ir('/documentos', { raiz: d.raiz, ruta: d.ruta.includes('/') ? d.ruta.slice(0, d.ruta.lastIndexOf('/')) : '' }),
         })),
         ...(contenido?.movimientos ?? []).map((m): Opcion => ({
           id: `mov-${m.id}`, titulo: m.concepto, detalle: `${m.tipo === 'Ingreso' ? '+' : '−'}${euros(m.importe)} · ${new Date(m.fecha + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`,

@@ -131,7 +131,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 - ⬜ C11.8 Docs (`02-backend`, `03-api`, `04-frontend`) y entrada en `modulos.ts`.
 - Riesgo: crecer demasiado → mantenerlo pequeño (sin categorías ni sociales). Esfuerzo: 3 sesiones.
 
-### 🔄 16 · Buscador, versión B (hábitos hechos; documentos cuando exista el 12)
+### ✅ 16 · Buscador, versión B (hábitos y documentos)
 - ⬜ C16.1 Acciones «marcar hábito» y «abrir hábito» en el registro de acciones; resultados de hábitos en `/api/buscar`.
 - ⬜ C16.2 Cuando exista el 12: resultados de documentos con el fragmento encontrado.
 
@@ -139,7 +139,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 
 ## Fase D · piezas pesadas
 
-### ⬜ 12 · Buscar dentro de documentos (OCR local)
+### ✅ 12 · Buscar dentro de documentos (OCR local) — OCR sin probar con un escaneo real
 - ⬜ D12.1 Decisión de herramientas, todas gratis: texto plano y código (se lee), Office (`DocumentFormat.OpenXml`, MIT), PDF con texto (`PdfPig`, Apache-2.0), imágenes y PDF escaneados (**Tesseract** con idiomas `spa` y `eng`; los PDF escaneados se pasan a imagen con `pdftoppm` de poppler). Todo se ejecuta **en tu PC**, nada sale a Internet.
 - ⬜ D12.2 `Dockerfile`: instalar `tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng poppler-utils` en la imagen final (unos 100–150 MB más) y comprobar que funciona con el usuario sin privilegios. Ajuste `Indexado:Ocr` = `auto` | `off` (en la versión de escritorio nativa, sin Tesseract, el OCR queda en `off` y el resto sigue funcionando; empaquetar Tesseract en el instalador nativo es una **fase aparte** a decidir con Mario).
 - ⬜ D12.3 Tabla `TextoArchivo` (raíz, ruta, tamaño, fecha, origen `texto|pdf|ocr`, estado, texto). En PostgreSQL con índice GIN sobre `to_tsvector('spanish', texto)`. Interfaz `IBuscadorTexto` con implementación PostgreSQL y otra de respaldo (`LIKE`) para los tests en memoria.

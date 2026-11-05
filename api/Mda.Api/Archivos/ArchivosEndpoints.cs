@@ -129,7 +129,7 @@ public static class ArchivosEndpoints
         });
 
         // ---- Subir uno o varios archivos (multipart, se escriben a disco sin pasar por memoria) ----
-        g.MapPost("/subir", async (string raiz, string? ruta, Carpetas c, HttpRequest req, ILogger<Carpetas> log, CancellationToken ct) =>
+        g.MapPost("/subir", async (string raiz, string? ruta, Carpetas c, HttpRequest req, ILogger<Carpetas> log, IndiceDocumentos indice, CancellationToken ct) =>
         {
             var real = c.Resolver(raiz, ruta);
             if (real is null || !Directory.Exists(real)) return NoValida();
@@ -167,6 +167,7 @@ public static class ArchivosEndpoints
                 subidos.Add(ElementoDe(new FileInfo(destino), raizReal));
                 log.LogInformation("Subido {Archivo} a {Raiz}", subidos[^1].Ruta, raiz);
             }
+            if (subidos.Count > 0) indice.Despertar();   // lo recién subido entra pronto en la búsqueda por contenido
             return Results.Ok(subidos);
         }).WithMetadata(new RequestSizeLimitAttribute(MaxSubida));
 

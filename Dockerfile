@@ -23,7 +23,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=api /app ./
 # QuestPDF (el informe mensual en PDF) necesita fontconfig y una tipografía en el sistema
-RUN apt-get update && apt-get install -y --no-install-recommends libfontconfig1 fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
+# Tesseract (OCR en español e inglés) y poppler (pdftoppm, para pasar a imagen los PDF escaneados): la búsqueda por contenido de Documentos lee imágenes
+# y PDF escaneados en este mismo contenedor, sin enviar nada fuera. Con «Indexado__Ocr=off» no se usan (y la imagen funciona igual).
+RUN apt-get update && apt-get install -y --no-install-recommends libfontconfig1 fonts-dejavu-core tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng poppler-utils && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080

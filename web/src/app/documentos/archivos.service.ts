@@ -6,6 +6,8 @@ export type TipoArchivo = 'carpeta' | 'imagen' | 'audio' | 'video' | 'pdf' | 'te
 
 export interface Raiz { id: string; nombre: string; elementos: number; }
 export interface Elemento { nombre: string; ruta: string; carpeta: boolean; tamano: number; modificado: string; tipo: TipoArchivo; }
+export interface ResultadoTexto { raiz: string; ruta: string; nombre: string; origen: string; fragmento: string; }
+export interface EstadoIndice { indexados: number; sinTexto: number; pendientes: number; trabajando: boolean; ocr: boolean; }
 export interface Lista { raiz: string; ruta: string; elementos: Elemento[]; }
 export interface EnPapelera { raiz: string; id: string; nombre: string; origen: string; carpeta: boolean; tamano: number; borrado: string; }
 
@@ -22,6 +24,8 @@ export class ArchivosService {
 
   raices() { return firstValueFrom(this.http.get<Raiz[]>(`${this.base}/raices`)); }
   lista(raiz: string, ruta: string) { return firstValueFrom(this.http.get<Lista>(`${this.base}/lista`, { params: { raiz, ruta } })); }
+  buscarTexto(raiz: string, q: string) { return firstValueFrom(this.http.get<ResultadoTexto[]>(`${this.base}/buscar-texto`, { params: { raiz, q } })); }
+  estadoIndice() { return firstValueFrom(this.http.get<EstadoIndice>(`${this.base}/indice`)); }
   buscar(raiz: string, q: string) { return firstValueFrom(this.http.get<Elemento[]>(`${this.base}/buscar`, { params: { raiz, q } })); }
   papelera() { return firstValueFrom(this.http.get<EnPapelera[]>(`${this.base}/papelera`)); }
 
