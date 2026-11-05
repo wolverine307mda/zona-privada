@@ -85,6 +85,7 @@
   <button class="velo" type="button" aria-label="Cerrar el menú" tabindex="-1" (click)="menuAbierto.set(false)"></button>
 
   <div class="contenido" [attr.inert]="menuAbierto() ? '' : null">
+    @if (entorno(); as e) { <p class="entorno" role="status">Entorno de {{ e }}: no es la zona privada real</p> }
     <header class="barra">
       <button class="barra__menu" type="button" aria-label="Abrir el menú" aria-controls="menu-lateral" [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(true)">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>

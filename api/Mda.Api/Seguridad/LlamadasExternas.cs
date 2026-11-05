@@ -58,6 +58,8 @@ public class LlamadasEnVivo
 public static partial class LlamadasExternas
 {
     public const int MaxTexto = 2000;
+    // el nombre de la cookie de sesión de la app (lo fija Program.cs; puede cambiarse con App:CookieNombre)
+    public static string CookieSesion { get; set; } = "mda.sesion";
     public const int Conservar = 500;
     public const string OrigenAgente = "Agente del PC";
     public static readonly TimeSpan Retencion = TimeSpan.FromDays(60);
@@ -68,7 +70,7 @@ public static partial class LlamadasExternas
         var ruta = req.Path.Value ?? "";
         if (!ruta.StartsWith("/api/", StringComparison.OrdinalIgnoreCase)) return false;
         if (ruta.Equals("/api/salud", StringComparison.OrdinalIgnoreCase)) return false;
-        if (req.Cookies.ContainsKey("mda.sesion")) return false;
+        if (req.Cookies.ContainsKey(CookieSesion)) return false;
         return req.Headers.ContainsKey("Authorization") || req.Headers.ContainsKey("X-Agente-Token");
     }
 

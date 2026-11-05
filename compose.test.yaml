@@ -1,0 +1,40 @@
+# Entorno de PRUEBAS en Docker, para hacer cambios sin tocar la zona privada real (la versión de escritorio).
+#
+#   docker compose -f compose.yaml -f compose.test.yaml up -d --build api
+#   tailscale funnel --bg --https=8443 http://127.0.0.1:8080        (se ve en https://<tu-nodo>.ts.net:8443)
+#
+# Qué cambia respecto a compose.yaml:
+#  - «ensayo»: no manda Telegram, correo, WhatsApp ni notificaciones, ni toca tus aparatos (no hay dos bots ni órdenes duplicadas).
+#  - tus carpetas compartidas van en SOLO LECTURA: una prueba que falle no puede borrar ni cambiar tus archivos.
+#  - cookie de sesión con otro nombre (las cookies no distinguen puertos: si no, entrar aquí cerraría tu sesión de la real).
+#  - una barra «Entorno de pruebas» en todas las pantallas.
+#  - sin el contenedor de Tailscale (la dirección pública la da el Tailscale de Windows) ni el agente del PC (habla con la real).
+# Su base de datos es la del Docker de siempre: una copia de cuando se importó, no la real.
+services:
+  api:
+    environment:
+      Escritorio__Ensayo: "true"
+      App__CookieNombre: mda.sesion.pruebas
+      App__Entorno: pruebas
+      # nada de servicios externos desde aquí
+      Telegram__Token: ""
+      WhatsApp__Telefono: ""
+      WhatsApp__ApiKey: ""
+      Correo__Servidor: ""
+      Correo__Usuario: ""
+      Correo__Clave: ""
+      Correo__Para: ""
+      Spotify__ClientId: ""
+      Spotify__ClientSecret: ""
+      Google__ClientId: ""
+      Google__ClientSecret: ""
+      Healthcheck__Url: ""
+      Agente__Token: ""
+      Seq__Url: ""
+    volumes:
+      - ${CARPETA_DOCUMENTOS:-./carpetas/documentos}:/carpetas/documentos:ro
+      - ${CARPETA_ESCRITORIO:-./carpetas/escritorio}:/carpetas/escritorio:ro
+      - ${CARPETA_DESCARGAS:-./carpetas/descargas}:/carpetas/descargas:ro
+      - ${CARPETA_IMAGENES:-./carpetas/imagenes}:/carpetas/imagenes:ro
+      - ${CARPETA_MUSICA:-./carpetas/musica}:/carpetas/musica:ro
+      - ${CARPETA_VIDEOS:-./carpetas/videos}:/carpetas/videos:ro
