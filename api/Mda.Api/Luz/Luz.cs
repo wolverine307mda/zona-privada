@@ -251,6 +251,26 @@ public static class LuzEndpoints
             }));
         });
 
+        // Las pasadas de la ISS que se ven desde tu lugar en los próximos días (cielo oscuro, estación iluminada, sobre 10°), con las nubes previstas
+        g.MapGet("/iss", async (int? dias, ServicioTiempo tiempo, ServicioIss iss, ServicioLuz luz, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            if (await tiempo.LugarGuardado(ct) is not { } lugar) return Results.Ok(new { sinLugar = true });
+            if (await iss.Tle(ct) is not { } tle) return Results.Ok(new { sinLugar = false, sinDatos = true });
+            var ahora = reloj.GetUtcNow();
+            var pasadas = await Task.Run(() => Pasadas.Calcular(tle.L1, tle.L2, lugar.Lat, lugar.Lon, ahora, Math.Clamp(dias ?? 10, 1, 14)), ct);
+            var nubes = await luz.Nubes(lugar, ct);
+            return Results.Ok(new
+            {
+                sinLugar = false, sinDatos = false, lugar = lugar.Nombre,
+                tleEdadDias = tle.Epoca is { } e ? Math.Round((ahora - e).TotalDays, 1) : (double?)null,
+                pasadas = pasadas.Select(p =>
+                {
+                    var l = TimeZoneInfo.ConvertTime(p.Maximo, zona.Info).DateTime;
+                    return new { p.Inicio, p.Maximo, p.Fin, p.AlturaMax, p.AzInicio, p.AzMax, p.AzFin, p.DesdeRumbo, p.HastaRumbo, nubes = nubes?.FirstOrDefault(x => x.Hora == new DateTime(l.Year, l.Month, l.Day, l.Hour, 0, 0))?.Total };
+                }),
+            });
+        });
+
         // ¿Habrá aurora? El Kp previsto por el NOAA contra el que hace falta en la latitud de tu lugar
         g.MapGet("/aurora", async (ServicioTiempo tiempo, ServicioAurora aurora, TimeProvider reloj, CancellationToken ct) =>
         {

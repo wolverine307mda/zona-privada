@@ -249,6 +249,7 @@ builder.Services.AddSingleton<ServicioTiempo>();
 // avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
 builder.Services.AddSingleton<ServicioLuz>();
 builder.Services.AddSingleton<ServicioAurora>();
+builder.Services.AddSingleton<ServicioIss>();
 builder.Services.AddSingleton<ServicioNiebla>();
 builder.Services.AddSingleton<Mda.Api.Gastos.ServicioDivisas>();
 builder.Services.AddSingleton<Mda.Api.Gastos.InformeMensual>();

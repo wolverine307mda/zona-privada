@@ -4,6 +4,7 @@ import { Aurora } from './aurora';
 import { CalculadoraEstrellas } from './calculadora-estrellas';
 import { DiarioSalidas } from './diario';
 import { EventosCielo } from './eventos';
+import { Iss } from './iss';
 import { Niebla } from './niebla';
 import { PestanasFoto } from './pestanas-foto';
 import { Puntos } from './puntos';
@@ -12,13 +13,14 @@ import { Puntos } from './puntos';
 @Component({
   selector: 'app-fotografia-previsiones',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PestanasFoto, Niebla, Aurora, EventosCielo],
+  imports: [PestanasFoto, Niebla, Aurora, EventosCielo, Iss],
   styleUrls: ['../gastos/comun.css'],
   template: `
     <header class="cab"><h2 class="cab__titulo">Previsiones especiales</h2><p class="cab__sub">Niebla, aurora, meteoros y eclipses</p></header>
     <app-pestanas-foto />
     <app-niebla />
     <app-aurora />
+    <app-iss />
     <app-eventos-cielo />
   `,
 })

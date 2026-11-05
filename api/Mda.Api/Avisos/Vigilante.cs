@@ -19,7 +19,7 @@ public record Simulacro(bool Ok, int Usuarios, int Tablas, string Copia, DateTim
 //   · el mantenimiento del coche que toca o está a punto (como mucho un aviso por semana);
 //   · que la copia de seguridad de la base de datos se hizo (si la última tiene más de 30 horas, avisa una vez al día);
 //   · desde las 8 de la tarde, si mañana llueve, hay tormenta, mucho calor o helada (una vez al día).
-public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Tiempo.ServicioTiempo tiempo, Zona zona, TimeProvider reloj, IConfiguration config, ILogger<Vigilante> log) : BackgroundService
+public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Tiempo.ServicioTiempo tiempo, Luz.ServicioIss iss, Luz.ServicioLuz luz, Zona zona, TimeProvider reloj, IConfiguration config, ILogger<Vigilante> log) : BackgroundService
 {
     public const string ResumenSemanal = "resumen-semanal";
     private const string ResumenUltimo = "resumen-ultimo";
@@ -54,6 +54,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => ResultadoSimulacro(db, ct), "el simulacro de restauración");
         await Aislada(() => CopiaNueva(db, ct), "la copia nueva");
         if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
+        await Aislada(() => Cielo(db, ct), "el cielo (ISS y meteoros)");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)
@@ -161,6 +162,60 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         if (Mda.Api.Tiempo.ServicioTiempo.AvisoDe(p, hoy.AddDays(1)) is not { } aviso) return;
         await avisos.PorPush(aviso.Titulo, aviso.Texto, "/inicio", ct);
         await avisos.PorTelegram($"{aviso.Titulo}\n{aviso.Texto}", ct);
+    }
+
+    // ---- el cielo: pasadas de la ISS y lluvias de meteoros ----
+    public const string IssAvisada = "iss-avisada", MeteorosAvisado = "meteoros-avisado";
+
+    public async Task Cielo(AppDbContext db, CancellationToken ct)
+    {
+        if (await tiempo.LugarGuardado(ct) is not { } lugar) return;
+        var ahora = reloj.GetUtcNow();
+        var nubes = await luz.Nubes(lugar, ct);
+        int? NubesA(DateTimeOffset t)
+        {
+            var l = TimeZoneInfo.ConvertTime(t, zona.Info).DateTime;
+            return nubes?.FirstOrDefault(x => x.Hora == new DateTime(l.Year, l.Month, l.Day, l.Hour, 0, 0))?.Total;
+        }
+
+        // ISS: una pasada buena, con el cielo despejado
+        var ultima = await db.Ajustes.FindAsync([IssAvisada], ct);
+        DateTimeOffset? ultimaPasada = DateTimeOffset.TryParse(ultima?.Valor, out var up) ? up : null;
+        if (await iss.Tle(ct) is { } tle)
+        {
+            var pasadas = await Task.Run(() => Luz.Pasadas.Calcular(tle.L1, tle.L2, lugar.Lat, lugar.Lon, ahora, 2), ct);
+            if (Luz.Pasadas.ParaAvisar(pasadas, ahora, zona.Info, ultimaPasada) is { } p)
+            {
+                // se marca como avisada aunque haya nubes: con el cielo cubierto no hay que insistir en el siguiente repaso
+                if (ultima is null) db.Ajustes.Add(ultima = new Ajuste { Clave = IssAvisada });
+                ultima.Valor = p.Inicio.ToString("O");
+                await db.SaveChangesAsync(ct);
+                if (NubesA(p.Maximo) is not > 40)
+                {
+                    var hora = TimeZoneInfo.ConvertTime(p.Inicio, zona.Info);
+                    var texto = $"La Estación Espacial Internacional pasa a las {hora:HH:mm}: sale por el {p.DesdeRumbo}, sube hasta {p.AlturaMax:0}° y se esconde por el {p.HastaRumbo}. Se ve como una estrella muy brillante que no parpadea.";
+                    await avisos.PorPush("🛰️ La ISS sobre ti", texto, "/fotografia", ct);
+                    await avisos.PorTelegram($"🛰️ La ISS sobre ti\n{texto}", ct);
+                }
+            }
+        }
+
+        // Meteoros: por la tarde, si esta noche es el máximo de una lluvia con luna discreta y cielo despejado
+        if (Local.Hour >= 18)
+        {
+            foreach (var ev in Luz.Eventos.Proximos(ahora, zona.Info, 2).Where(e => e.Tipo == "lluvia" && e.Pico > ahora && e.Pico < ahora.AddHours(14) && e.LunaPct < 40))
+            {
+                var clave = $"{MeteorosAvisado}:{ev.Nombre}:{ev.Pico:yyyy}";
+                if (await db.Ajustes.FindAsync([clave], ct) is not null) continue;
+                db.Ajustes.Add(new Ajuste { Clave = clave, Valor = "si" });
+                await db.SaveChangesAsync(ct);
+                var cielo = NubesA(ev.Pico);
+                if (cielo is > 50) continue;
+                var texto = $"Esta noche es el máximo de las {ev.Nombre}: hasta {ev.Zhr} por hora, luna al {ev.LunaPct} %{(cielo is { } n ? $" y nubes al {n} %" : "")}. Lo mejor, hacia las 03:00 y lejos de las luces.";
+                await avisos.PorPush($"☄️ {ev.Nombre} esta noche", texto, "/fotografia", ct);
+                await avisos.PorTelegram($"☄️ {ev.Nombre} esta noche\n{texto}", ct);
+            }
+        }
     }
 
     // ---- mantenimiento del coche ----
