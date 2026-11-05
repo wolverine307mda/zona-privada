@@ -1,5 +1,6 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { EstadoError, Esqueleto } from '../ui';
 
@@ -11,6 +12,8 @@ interface Lista { origenes: string[]; coinciden: number; total: number; fallos: 
 interface Detalle { id: number; peticion: string; respuesta: string; error: string; agente: string; }
 interface Viva { seq: number; fecha: string; metodo: string; ruta: string; origen: string; estado: number; duracionMs: number; error: string; guardada: boolean; }
 
+const ORIGEN_AGENTE = 'Agente del PC';
+
 type Periodo = 'hoy' | '7d' | 'todo';
 type Estado = 'todas' | 'fallos' | 'ok';
 
@@ -19,7 +22,7 @@ type Estado = 'todas' | 'fallos' | 'ok';
 // y no se guarda: al salir y volver empieza vacía.
 @Component({
   selector: 'app-llamadas',
-  imports: [Esqueleto, EstadoError],
+  imports: [Esqueleto, EstadoError, NgTemplateOutlet],
   styleUrls: ['../gastos/comun.css'],
   template: `
     <section class="caja">
@@ -56,13 +59,7 @@ type Estado = 'todas' | 'fallos' | 'ok';
             </div>
           </div>
           <input class="llam__buscar" type="search" placeholder="Buscar por ruta, origen o error" [value]="buscar()" (input)="escribir($any($event.target).value)" aria-label="Buscar en las llamadas">
-          @if (l.origenes.length > 1) {
-            <div class="llam__origenes" role="group" aria-label="Origen">
-              <button type="button" [class.activo]="origen() === ''" (click)="ponerOrigen('')">Todos</button>
-              @for (o of l.origenes; track o) { <button type="button" [class.activo]="origen() === o" (click)="ponerOrigen(o)">{{ o }}</button> }
-            </div>
-          }
-
+          <ng-container *ngTemplateOutlet="origenYAgente; context: { $implicit: l.origenes }" />
           <div class="llam__barra">
             <span class="sub">{{ l.coinciden === l.llamadas.length ? l.coinciden : 'Las ' + l.llamadas.length + ' últimas de ' + l.coinciden }} {{ l.coinciden === 1 ? 'llamada' : 'llamadas' }}</span>
             @if (l.total > 0) {
@@ -106,8 +103,9 @@ type Estado = 'todas' | 'fallos' | 'ok';
         }
       } @else {
         <p class="nada llam__nota">Se ve lo que llega mientras tienes esta pantalla abierta. No se guarda: al salir y volver empieza vacía.</p>
+        <ng-container *ngTemplateOutlet="origenYAgente; context: { $implicit: origenesVivos() }" />
         <ul class="llam__lista">
-          @for (v of vivas(); track v.seq) {
+          @for (v of vivasVisibles(); track v.seq) {
             <li>
               <div class="llam__fila">
                 <span class="llam__estado" [class.mal]="v.estado >= 400" [class.aviso]="v.estado >= 300 && v.estado < 400">{{ v.estado }}</span>
@@ -119,10 +117,28 @@ type Estado = 'todas' | 'fallos' | 'ok';
                 <time>{{ hora(v.fecha) }}</time>
               </div>
             </li>
-          } @empty { <p class="nada">Esperando llamadas…</p> }
+          } @empty { <p class="nada">{{ vivas().length ? 'Ninguna de las llamadas que han llegado encaja con ese filtro.' : 'Esperando llamadas…' }}</p> }
         </ul>
       }
     </section>
+
+    <!-- el desplegable con los orígenes que hay (atajos, agente del PC…) y el interruptor para no ver al agente, que pregunta cada pocos segundos -->
+    <ng-template #origenYAgente let-origenes>
+      <div class="llam__selector">
+        <label class="llam__origen">
+          <span>Origen</span>
+          <select [value]="origen()" (change)="ponerOrigen($any($event.target).value)" aria-label="Filtrar por origen">
+            <option value="">Todos los orígenes</option>
+            @for (o of origenes; track o) { <option [value]="o" [selected]="origen() === o">{{ o }}</option> }
+          </select>
+        </label>
+        <label class="interruptor llam__agente">
+          <input type="checkbox" [checked]="sinAgente()" (change)="ponerSinAgente($any($event.target).checked)">
+          <span class="interruptor__pista" aria-hidden="true"></span>
+          <span>Ocultar las del agente del PC</span>
+        </label>
+      </div>
+    </ng-template>
   `,
   styles: `
     .llam__modo { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--linea); border-radius: 999px; margin-bottom: 14px; }
@@ -142,6 +158,10 @@ type Estado = 'todas' | 'fallos' | 'ok';
     .llam__grupo button:last-child { border-right: 0; }
     .llam__grupo button.activo { background: color-mix(in srgb, var(--ok) 16%, transparent); color: inherit; font-weight: 600; }
     .llam__buscar { width: 100%; min-height: 40px; margin-bottom: 8px; box-sizing: border-box; }
+    .llam__selector { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 8px; }
+    .llam__origen { display: inline-flex; align-items: center; gap: 8px; color: var(--soft); font-size: .85rem; }
+    .llam__origen select { min-height: 40px; max-width: 100%; padding: 0 10px; border: 1px solid var(--linea); border-radius: 10px; background: var(--tarjeta-2); color: var(--texto); font: inherit; }
+    .llam__agente { margin: 0; font-size: .85rem; }
     .llam__origenes { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; scrollbar-width: thin; }
     .llam__origenes button { flex: none; min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--linea); background: transparent; color: var(--soft); font: inherit; font-size: .8rem; cursor: pointer; white-space: nowrap; }
     .llam__origenes button.activo { border-color: var(--ok); color: inherit; background: color-mix(in srgb, var(--ok) 14%, transparent); }
@@ -189,6 +209,8 @@ export class Llamadas implements OnInit {
   protected readonly periodo = signal<Periodo>('todo');
   protected readonly estado = signal<Estado>('todas');
   protected readonly origen = signal('');
+  // no ver al agente del PC (pregunta cada pocos segundos): se recuerda en este navegador
+  protected readonly sinAgente = signal(((): boolean => { try { return localStorage.getItem('mda-llamadas-sin-agente') === 'si'; } catch { return false; } })());
   protected readonly buscar = signal('');
   protected readonly limpiando = signal(false);
   protected readonly abierta = signal<number | null>(null);
@@ -196,6 +218,9 @@ export class Llamadas implements OnInit {
 
   // en vivo: solo en esta pantalla, nada se guarda
   protected readonly vivas = signal<Viva[]>([]);
+  protected readonly origenesVivos = computed(() => [...new Set([...(this.lista()?.origenes ?? []), ...this.vivas().map((v) => v.origen)])].sort());
+  // lo que llega en directo se filtra aquí, sin pedir nada: por origen y sin el agente si así se quiere
+  protected readonly vivasVisibles = computed(() => this.vivas().filter((v) => (!this.origen() || v.origen === this.origen()) && !(this.sinAgente() && v.origen === ORIGEN_AGENTE)));
   private ultimo: number | null = null;
   private espera: ReturnType<typeof setTimeout> | undefined;
 
@@ -206,7 +231,7 @@ export class Llamadas implements OnInit {
 
   ngOnInit(): void { void this.cargar(); }
 
-  protected hayFiltro(): boolean { return this.periodo() !== 'todo' || this.estado() !== 'todas' || this.origen() !== '' || this.buscar().trim() !== ''; }
+  protected hayFiltro(): boolean { return this.periodo() !== 'todo' || this.estado() !== 'todas' || this.origen() !== '' || this.sinAgente() || this.buscar().trim() !== ''; }
 
   // medianoche de hoy (hora local) como fecha ISO; 7 días = desde hace una semana
   private desde(): string | null {
@@ -222,6 +247,7 @@ export class Llamadas implements OnInit {
     const q = new URLSearchParams();
     if (this.estado() !== 'todas') q.set('estado', this.estado());
     if (this.origen()) q.set('origen', this.origen());
+    if (this.sinAgente()) q.set('sinAgente', 'true');
     if (this.buscar().trim()) q.set('buscar', this.buscar().trim());
     const d = this.desde();
     if (d) q.set('desde', d);
@@ -236,6 +262,13 @@ export class Llamadas implements OnInit {
   protected ponerPeriodo(v: Periodo): void { this.periodo.set(v); void this.cargar(); }
   protected ponerEstado(v: Estado): void { this.estado.set(v); void this.cargar(); }
   protected ponerOrigen(v: string): void { this.origen.set(v); void this.cargar(); }
+  protected ponerSinAgente(v: boolean): void {
+    this.sinAgente.set(v);
+    try { localStorage.setItem('mda-llamadas-sin-agente', v ? 'si' : 'no'); } catch { /* sin almacenamiento */ }
+    // si estaba elegido el agente como origen, no tiene sentido dejarlo
+    if (v && this.origen() === ORIGEN_AGENTE) this.origen.set('');
+    void this.cargar();
+  }
   protected escribir(v: string): void {
     this.buscar.set(v);
     clearTimeout(this.espera);

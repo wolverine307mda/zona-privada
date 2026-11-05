@@ -59,6 +59,7 @@ public static partial class LlamadasExternas
 {
     public const int MaxTexto = 2000;
     public const int Conservar = 500;
+    public const string OrigenAgente = "Agente del PC";
     public static readonly TimeSpan Retencion = TimeSpan.FromDays(60);
 
     // ¿cuenta como llamada externa? Una ruta de la API, sin la cookie de la app y con una credencial de otra cosa
@@ -174,8 +175,9 @@ public static partial class LlamadasExternas
             var texto = ctx.Response.ContentType is { } t && (t.Contains("json", StringComparison.OrdinalIgnoreCase) || t.StartsWith("text/", StringComparison.OrdinalIgnoreCase))
                 ? cuerpo : cuerpo.Length > 0 ? "[contenido no es texto]" : "";
             var ruta = ctx.Request.Path.Value ?? "";
-            var origen = ctx.Items["tokenAtajo"] is TokenAtajo ta ? $"Atajo · {ta.Nombre}"
-                : ruta.StartsWith("/api/sistema/agente", StringComparison.OrdinalIgnoreCase) ? "Agente del PC"
+            var nombreToken = ctx.Items["tokenAtajo"] is TokenAtajo ta0 ? ta0.Nombre : await NombreDelToken(ctx);
+            var origen = nombreToken is not null ? $"Atajo · {nombreToken}"
+                : ruta.StartsWith("/api/sistema/agente", StringComparison.OrdinalIgnoreCase) ? OrigenAgente
                 : ctx.Request.Headers.Authorization.ToString().StartsWith("Bearer mda_", StringComparison.Ordinal) ? "Token de atajo no válido"
                 : "Credencial desconocida";
             var l = new LlamadaExterna
@@ -207,6 +209,16 @@ public static partial class LlamadasExternas
         }
     }
 
+    // el nombre del token de la cabecera, por si la petición falló antes de que el atajo lo comprobara (p. ej. un JSON mal formado)
+    private static async Task<string?> NombreDelToken(HttpContext ctx)
+    {
+        var cab = ctx.Request.Headers.Authorization.ToString();
+        if (!cab.StartsWith("Bearer mda_", StringComparison.Ordinal)) return null;
+        using var scope = ctx.RequestServices.CreateScope();
+        var hash = AtajosApi.Hashear(cab["Bearer ".Length..].Trim());
+        return await scope.ServiceProvider.GetRequiredService<AppDbContext>().TokensAtajo.AsNoTracking().Where(t => t.Hash == hash && !t.Revocado).Select(t => t.Nombre).FirstOrDefaultAsync();
+    }
+
     // en la consulta (?a=b) se tapa el valor de lo que parezca un secreto
     private static string ConsultaSinSecretos(string q) =>
         Regex.Replace(q, "([?&][^=&]*(?:pass|clave|token|secret|pin|key|code)[^=&]*=)[^&]*", "$1***", RegexOptions.IgnoreCase);
@@ -215,10 +227,10 @@ public static partial class LlamadasExternas
     {
         var g = app.MapGroup("/api/seguridad/llamadas").RequireAuthorization();
 
-        // lista ligera (sin cuerpos). Filtros: estado (todas | fallos | ok), origen, desde (fecha) y buscar (texto en la ruta o el error)
-        g.MapGet("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, AppDbContext db, GeoIp geo) =>
+        // lista ligera (sin cuerpos). Filtros: estado (todas | fallos | ok), origen, desde (fecha), buscar (texto en la ruta o el error) y sinAgente (quita las del agente del PC)
+        g.MapGet("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, bool? sinAgente, AppDbContext db, GeoIp geo) =>
         {
-            var q = Filtrar(db.LlamadasExternas.AsNoTracking(), estado, origen, desde, buscar);
+            var q = Filtrar(db.LlamadasExternas.AsNoTracking(), estado, origen, desde, buscar, sinAgente);
             var lista = await q.OrderByDescending(l => l.Id).Take(100).ToListAsync();
             var origenes = await db.LlamadasExternas.AsNoTracking().Select(l => l.Origen).Distinct().OrderBy(o => o).ToListAsync();
             return Results.Ok(new
@@ -247,9 +259,9 @@ public static partial class LlamadasExternas
 
         // limpiar: sin filtros borra todo; con los mismos filtros de la lista borra solo lo que coincide;
         // `antesDe` borra lo anterior a esa fecha (p. ej. «todo menos lo de hoy»)
-        g.MapDelete("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, DateTimeOffset? antesDe, AppDbContext db) =>
+        g.MapDelete("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, bool? sinAgente, DateTimeOffset? antesDe, AppDbContext db) =>
         {
-            var q = Filtrar(db.LlamadasExternas.AsQueryable(), estado, origen, desde, buscar);
+            var q = Filtrar(db.LlamadasExternas.AsQueryable(), estado, origen, desde, buscar, sinAgente);
             if (antesDe is { } hasta) q = q.Where(l => l.Fecha < hasta);
             var lista = await q.ToListAsync();
             db.LlamadasExternas.RemoveRange(lista);
@@ -258,8 +270,9 @@ public static partial class LlamadasExternas
         });
     }
 
-    private static IQueryable<LlamadaExterna> Filtrar(IQueryable<LlamadaExterna> q, string? estado, string? origen, DateTimeOffset? desde, string? buscar)
+    private static IQueryable<LlamadaExterna> Filtrar(IQueryable<LlamadaExterna> q, string? estado, string? origen, DateTimeOffset? desde, string? buscar, bool? sinAgente = null)
     {
+        if (sinAgente == true) q = q.Where(l => l.Origen != OrigenAgente);
         if (estado == "fallos") q = q.Where(l => l.Estado >= 400);
         else if (estado == "ok") q = q.Where(l => l.Estado < 400);
         if (!string.IsNullOrWhiteSpace(origen)) q = q.Where(l => l.Origen == origen);
