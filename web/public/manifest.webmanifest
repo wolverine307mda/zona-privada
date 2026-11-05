@@ -49,6 +49,39 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Hoy",
+      "short_name": "Hoy",
+      "url": "/hoy",
+      "icons": [
+        {
+          "src": "img/icono-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Hábitos",
+      "short_name": "Hábitos",
+      "url": "/habitos",
+      "icons": [
+        {
+          "src": "img/icono-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Nota nueva",
+      "short_name": "Nota",
+      "url": "/notas?nueva=1",
+      "icons": [
+        {
+          "src": "img/icono-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

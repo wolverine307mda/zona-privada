@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { Nucleo } from './core/nucleo';
+import { limpiarGloboAlAbrir } from './core/globo';
 import { TemaService } from './core/tema.service';
 
 // Raíz: la pantalla activa y la carga entre pantallas. Mientras el router espera (comprobar la sesión,
@@ -30,6 +31,7 @@ export class App {
   protected readonly primera = signal(true);
 
   constructor() {
+    limpiarGloboAlAbrir();
     const sub = inject(Router).events.subscribe((e) => {
       if (e instanceof NavigationStart) this.cargando.set(true);
       else if (e instanceof NavigationEnd || e instanceof NavigationCancel || e instanceof NavigationError) {

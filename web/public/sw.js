@@ -49,9 +49,16 @@ async function recortar(c) {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { texto: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.titulo || 'Zona privada', {
-    body: d.texto || '', icon: '/img/icono-192.png', badge: '/img/icono-192.png', data: { url: d.url || '/inicio' }, tag: d.titulo || undefined,
-  }));
+  e.waitUntil((async () => {
+    await self.registration.showNotification(d.titulo || 'Zona privada', {
+      body: d.texto || '', icon: '/img/icono-192.png', badge: '/img/icono-192.png', data: { url: d.url || '/inicio' }, tag: d.titulo || undefined,
+    });
+    // el número sobre el icono: los avisos que aún no has mirado (se quita al abrir la app)
+    if (self.navigator && 'setAppBadge' in self.navigator) {
+      const n = (await self.registration.getNotifications()).length;
+      await self.navigator.setAppBadge(n).catch(() => {});
+    }
+  })());
 });
 
 // al tocarla, abre (o enfoca) la app en la sección que toca

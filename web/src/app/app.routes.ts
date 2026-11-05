@@ -34,6 +34,7 @@ export const routes: Routes = [
       { path: 'fotografia', title: 'Fotografía · MDA', loadComponent: () => import('./fotografia/fotografia').then((m) => m.Fotografia) },
       { path: 'fotos', title: 'Galería · MDA', loadComponent: () => import('./galeria/galeria').then((m) => m.Galeria) },
       { path: 'documentos', title: 'Documentos · MDA', loadComponent: () => import('./documentos/documentos').then((m) => m.Documentos) },
+      { path: 'hoy', title: 'Hoy · MDA', loadComponent: () => import('./hoy/hoy').then((m) => m.Hoy) },
       { path: 'habitos', title: 'Hábitos · MDA', loadComponent: () => import('./habitos/habitos').then((m) => m.Habitos) },
       { path: 'agenda', title: 'Agenda · MDA', loadComponent: () => import('./agenda/agenda').then((m) => m.Agenda) },
       { path: 'notas', title: 'Notas · MDA', loadComponent: () => import('./notas/notas').then((m) => m.Notas) },

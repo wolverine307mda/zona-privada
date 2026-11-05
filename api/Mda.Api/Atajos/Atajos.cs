@@ -154,6 +154,10 @@ public static class AtajosApi
             return Results.Ok(new { saldo = await Cartera.SaldoActual(db, hoy, ct), saldoTexto = Cartera.Euros(await Cartera.SaldoActual(db, hoy, ct)), agenda = await AsistenteEndpoints.Agenda(db, zona, hoy, hoy, ct) });
         }).Requiere("lectura");
 
+        // todo lo de hoy en una respuesta (gasto, presupuestos, agenda, hábitos, mejor salida) y ya escrito en `lineas`: para un widget de Scriptable
+        a.MapGet("/hoy", async (AppDbContext db, Luz.ServicioLuz luz, Tiempo.ServicioTiempo tiempo, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+            Results.Ok(await Hoy.Componer(db, luz, tiempo, zona, reloj, ct))).Requiere("lectura");
+
         // el iPhone avisa (hora, lugar…) y el bot te pregunta: respondes desde la notificación de Telegram y el asistente lo guarda
         a.MapPost("/ping", async (PingAtajo e, Bot bot, CancellationToken ct) =>
         {

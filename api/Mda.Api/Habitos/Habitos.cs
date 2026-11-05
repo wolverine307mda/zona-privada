@@ -35,6 +35,9 @@ public record HabitoEntrada(string? Nombre, string? Icono, int? Dias, int? Objet
 public record Marca(string? Fecha, int? Cantidad);
 public record Estadisticas(int Actual, int Mejor, int Cumplimiento30, string Mapa);
 
+// Lo que se manda de cada hábito: el hábito, si toca hoy y cuánto lleva, y sus rachas
+public record HabitoDto(int Id, string Nombre, string Icono, int Dias, int Objetivo, string Unidad, string? HoraAviso, bool Archivado, bool TocaHoy, int Hoy, bool Hecho, int Actual, int Mejor, int Cumplimiento30, string Mapa);
+
 // Rachas y cumplimiento. Solo cuentan los días que tocaban: un hábito de lunes a viernes no se rompe el sábado.
 // Hoy sin hacer todavía no rompe la racha (aún queda el día). Un día que no tocaba pero se hizo suma igualmente.
 public static class Rachas
@@ -93,7 +96,7 @@ public static class ServicioHabitos
     public const int Maximo = 20;
     public const int HistoriaDias = 400;
 
-    public static async Task<List<object>> Resumen(AppDbContext db, DateOnly hoy, bool archivados, CancellationToken ct)
+    public static async Task<List<HabitoDto>> Resumen(AppDbContext db, DateOnly hoy, bool archivados, CancellationToken ct)
     {
         var habitos = await db.Habitos.AsNoTracking().Where(h => h.Archivado == archivados).OrderBy(h => h.Orden).ThenBy(h => h.Id).ToListAsync(ct);
         var desde = hoy.AddDays(-HistoriaDias);
@@ -108,16 +111,11 @@ public static class ServicioHabitos
         return inicio < hoy.AddDays(-HistoriaDias) ? hoy.AddDays(-HistoriaDias) : inicio;
     }
 
-    public static object Dto(Habito h, IReadOnlyDictionary<DateOnly, int> registros, DateOnly hoy)
+    public static HabitoDto Dto(Habito h, IReadOnlyDictionary<DateOnly, int> registros, DateOnly hoy)
     {
         var e = Rachas.Calcular(h.Dias, h.Objetivo, registros, Inicio(h, registros, hoy), hoy);
         var cantidad = registros.GetValueOrDefault(hoy);
-        return new
-        {
-            h.Id, h.Nombre, h.Icono, h.Dias, h.Objetivo, h.Unidad, h.HoraAviso, h.Archivado,
-            tocaHoy = Rachas.Toca(h.Dias, hoy), hoy = cantidad, hecho = cantidad >= h.Objetivo,
-            e.Actual, e.Mejor, e.Cumplimiento30, e.Mapa,
-        };
+        return new HabitoDto(h.Id, h.Nombre, h.Icono, h.Dias, h.Objetivo, h.Unidad, h.HoraAviso, h.Archivado, Rachas.Toca(h.Dias, hoy), cantidad, cantidad >= h.Objetivo, e.Actual, e.Mejor, e.Cumplimiento30, e.Mapa);
     }
 
     public static Dictionary<string, string[]> Validar(HabitoEntrada e, bool nuevo)

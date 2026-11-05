@@ -164,7 +164,7 @@ Uso previsto: **tus propios equipos y tu casa**. Va **desactivado por defecto**,
 
 ## Fase E · iPhone
 
-### ⬜ 17 · Hoy en el iPhone (lo que sí se puede)
+### ✅ 17 · Hoy en el iPhone (lo que sí se puede) — Scriptable y globo sin probar en un iPhone real
 Lo que **no** se puede: un widget propio en la pantalla de inicio desde una PWA (iOS no lo permite) ni los accesos directos del manifest en iOS (en Android sí). Lo que sí, gratis:
 - ⬜ E17.1 `GET /api/atajos/hoy` (alcance `lectura`): gasto de hoy, presupuestos cerca del límite, próximo evento, hábitos pendientes, mejor salida de la semana y la pasada de la ISS, en JSON corto.
 - ⬜ E17.2 Vista `/hoy` en la app: una sola pantalla pensada para abrir y mirar (esqueleto, sin scroll en un iPhone, actualiza al volver a la app). Es el `start_url` opcional de la PWA instalada.

@@ -225,16 +225,14 @@ public class Conversacion(
     private async Task<string> HabitosDeHoy(CancellationToken ct)
     {
         var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
-        var lista = (await Habitos.ServicioHabitos.Resumen(db, hoy, false, ct)).Select(o => JsonSerializer.SerializeToElement(o)).Where(j => j.GetProperty("tocaHoy").GetBoolean()).ToList();
+        var lista = (await Habitos.ServicioHabitos.Resumen(db, hoy, false, ct)).Where(h => h.TocaHoy).ToList();
         if (lista.Count == 0) return "No tienes hábitos para hoy. Crea alguno en la app (Hábitos).";
         var sb = new StringBuilder("<b>Hábitos de hoy</b>\n");
-        foreach (var j in lista)
+        foreach (var h in lista)
         {
-            var hecho = j.GetProperty("hecho").GetBoolean();
-            var obj = j.GetProperty("objetivo").GetInt32();
-            sb.Append(hecho ? "✅ " : "⬜ ").Append(H(j.GetProperty("nombre").GetString() ?? ""));
-            if (obj > 1) sb.Append($" {j.GetProperty("hoy").GetInt32()}/{obj}");
-            if (j.GetProperty("actual").GetInt32() > 1) sb.Append($" · racha {j.GetProperty("actual").GetInt32()}");
+            sb.Append(h.Hecho ? "✅ " : "⬜ ").Append(H(h.Nombre));
+            if (h.Objetivo > 1) sb.Append($" {h.Hoy}/{h.Objetivo}");
+            if (h.Actual > 1) sb.Append($" · racha {h.Actual}");
             sb.Append('\n');
         }
         return sb.ToString().TrimEnd();

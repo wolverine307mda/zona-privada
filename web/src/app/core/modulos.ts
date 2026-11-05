@@ -54,6 +54,10 @@ export const MODULOS: Modulo[] = [
     planes: ['Gastos e ingresos por categoría', 'Gráficas por mes', 'Exportar a Excel'],
   },
   {
+    id: 'hoy', titulo: 'Hoy', resumen: 'Gasto, agenda y hábitos de hoy en una pantalla.', listo: true,
+    icono: 'M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+  },
+  {
     id: 'habitos', titulo: 'Hábitos', resumen: 'Rachas y rutinas de cada día.', listo: true,
     icono: 'M9 12l2 2 4-4M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
   },

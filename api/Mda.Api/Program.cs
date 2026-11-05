@@ -341,6 +341,7 @@ app.MapAsistente();
 app.MapBuscar();
 app.MapBuscarTexto();
 app.MapHabitos();
+app.MapHoy();
 app.MapCapturas();
 app.MapTelegram();
 app.MapTiempo();
