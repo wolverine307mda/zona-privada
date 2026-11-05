@@ -59,7 +59,7 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 }
 .menu__ico {
   display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%;
-  background: color-mix(in srgb, var(--texto) 8%, transparent); color: var(--soft);
+  background: var(--tono-icono-fondo); color: var(--tono-icono);
   transition: background-color 200ms ease, color 200ms ease, transform 300ms var(--ease-out);
 }
 .menu__ico .icon { width: 19px; height: 19px; }
@@ -69,7 +69,7 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 .menu__item.is-activo { background: var(--menu-activo); color: var(--menu-activo-txt); }
 .menu__item.is-activo .menu__ico { background: var(--brand); color: var(--on-brand); }
 .grupo--activo > .grupo__cab .menu__ico { background: color-mix(in srgb, var(--brand) 22%, transparent); color: var(--acento); }
-.menu__cuenta { margin-left: auto; padding: 4px 10px; border-radius: var(--radio-pildora); background: color-mix(in srgb, var(--texto) 8%, transparent); color: var(--soft); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.menu__cuenta { margin-left: auto; padding: 4px 10px; border-radius: var(--radio-pildora); background: var(--tono-chip); color: var(--tono-titulo); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 /* grupos con submenú: se despliegan con altura animada (grid de 0fr a 1fr) y los elementos entran escalonados */
 .grupo__flecha { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--soft); transition: transform 320ms var(--ease-expo); }
@@ -235,6 +235,12 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 }
 @keyframes burbuja { from { transform: translate(-50%, 10%) scale(.5); opacity: 0; } 60% { transform: translate(-50%, -62%) scale(1.08); opacity: 1; } }
 @media (max-width: 760px) and (prefers-reduced-motion: reduce) { .centro__burbuja { animation: none; } }
+/* con música sonando la barra del móvil no daba para el título: el buscador (que está también en el menú) se esconde y el título tiene un mínimo */
+@media (max-width: 560px) {
+  .barra__titulo { flex: 1 1 7rem; min-width: 5.5rem; }
+  .barra__lado { flex: none; }
+  .barra:has(app-mini-musica.suena) .barra__buscar { display: none; }
+}
 @media (max-width: 560px) {
   .barra { gap: 10px; }
   .barra__titulo p, .reloj { display: none; }

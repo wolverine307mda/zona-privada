@@ -19,7 +19,6 @@ export class Ajustes {
   protected readonly usuario = inject(SesionService).usuario;
   protected readonly colores = COLORES;
   protected readonly modos = MODOS;
-  protected readonly gruposPaleta = ['Morados', 'Clásicos'] as const;
   readonly salir = output<void>();
   private readonly dialogo = viewChild.required<ElementRef<HTMLDialogElement>>('ajustes');
 

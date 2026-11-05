@@ -21,21 +21,17 @@
     </section>
 
     <section class="ajustes__seccion" aria-labelledby="ajustes-color">
-      <h3 id="ajustes-color">Paleta de colores</h3>
-      @for (g of gruposPaleta; track g) {
-        <p class="paletas__grupo" [id]="'paletas-' + g">{{ g }}</p>
-        <div class="paletas" role="group" [attr.aria-labelledby]="'paletas-' + g">
-          @for (c of colores; track c.id) {
-            @if (c.grupo === g) {
-              <button type="button" class="paleta" [style.--m]="c.muestra" [style.--m2]="c.segundo" [style.--sup]="tema.modo() === 'light' ? c.dia : c.noche" [attr.aria-pressed]="tema.color() === c.id"
-                      (click)="tema.ponerColor(c.id, $any($event.currentTarget))">
-                <span class="paleta__vista" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span class="paleta__nombre">{{ c.nombre }}</span>
-              </button>
-            }
-          }
-        </div>
-      }
+      <h3 id="ajustes-color">Color y paleta</h3>
+      <p class="ajustes__nota">Cada color trae su gama de cinco tonos: la app usa uno distinto para los títulos, los iconos, los avisos y las gráficas.</p>
+      <div class="paletas" role="group" aria-labelledby="ajustes-color">
+        @for (c of colores; track c.id) {
+          <button type="button" class="paleta" [style.--m]="c.tonos[2]" [style.--sup]="tema.modo() === 'light' ? c.dia : c.noche" [attr.aria-pressed]="tema.color() === c.id"
+                  (click)="tema.ponerColor(c.id, $any($event.currentTarget))">
+            <span class="paleta__vista" aria-hidden="true">@for (t of c.tonos; track $index) { <i [style.background]="t"></i> }</span>
+            <span class="paleta__nombre">{{ c.nombre }}</span>
+          </button>
+        }
+      </div>
     </section>
 
     <app-ajustes-fondo />

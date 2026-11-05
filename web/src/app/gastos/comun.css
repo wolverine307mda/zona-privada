@@ -12,7 +12,7 @@
   padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
 }
 .caja__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.caja__cab h3 { font: 500 var(--step-body)/1.1 var(--font-text); letter-spacing: -0.02em; }
+.caja__cab h3 { color: var(--tono-titulo); font: 500 var(--step-body)/1.1 var(--font-text); letter-spacing: -0.02em; }
 .caja__cab .sub { font-size: 12px; color: var(--soft); }
 .enlace { border: 0; background: none; color: var(--acento); font-weight: 500; cursor: pointer; padding: 0; text-decoration: none; font-size: var(--step-small); }
 

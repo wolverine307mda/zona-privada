@@ -18,13 +18,20 @@
 
 /* ---------- Tokens: noche por defecto ---------- */
 :root {
-  --brand: #ff7a1f; --on-brand: #050f16;
+  /* LA PALETA: un solo color con una gama de cinco tonos, de --t1 (el más claro) a --t5 (el más hondo). --brand es el tono central y cada tipo de elemento usa el suyo
+     (títulos, iconos, chips, series de las gráficas…): una paleta roja tiene un rojo distinto para cada cosa. Cada color define sus cinco tonos más abajo. */
+  --t1: #ffe3cc; --t2: #ffb27a; --t3: #ff7a1f; --t4: #c24f00; --t5: #5c2500;
+  --brand: var(--t3); --on-brand: #050f16;
   /* el color de marca como TEXTO: se mezcla con el color del texto para llegar a 4,5:1 en cualquier tema y color (el naranja puro sobre blanco daba 2,6) */
   --acento: color-mix(in srgb, var(--brand) 60%, var(--texto));
 
   /* paleta: la de cada color de acento define --brand y --brand-2 y, si quiere teñir las superficies (los morados), el matiz --tinte y su fuerza --tn (0–100) */
   --tinte: #000; --tn: 0;
-  --brand-2: color-mix(in srgb, var(--brand) 55%, #fff); /* segundo tono de la paleta: degradados, segunda serie de una gráfica */
+  --brand-2: var(--t2); --brand-3: var(--t4); /* el tono claro y el hondo de la paleta */
+  /* por tipo de elemento: en noche los tonos claros (se leen sobre fondo oscuro), de día los hondos */
+  --tono-titulo: var(--t2); --tono-icono: var(--t2);
+  --tono-icono-fondo: color-mix(in srgb, var(--t3) 20%, transparent);
+  --tono-chip: color-mix(in srgb, var(--t5) 55%, var(--tarjeta-2));
 
   --fondo: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #070d12);
   --lateral: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1.1%), #0a1218);
@@ -105,6 +112,9 @@
   /* verde, ámbar y rojo más oscuros para que el texto llegue a 4,5:1 sobre blanco */
   --ok: #0f7a42; --warn: #9a6200; --bad: #c62f34; --on-bad: #ffffff;
   --menu-activo: var(--negra); --menu-activo-txt: var(--on-negra);
+  --tono-titulo: var(--t4); --tono-icono: var(--t4);
+  --tono-icono-fondo: color-mix(in srgb, var(--t3) 16%, transparent);
+  --tono-chip: color-mix(in srgb, var(--t1) 65%, var(--tarjeta));
   --vidrio: var(--tarjeta);
   --vidrio-fuerte: var(--tarjeta);
   --vidrio-borde: rgba(11, 21, 28, 0.08);
@@ -114,20 +124,18 @@
   color-scheme: light;
 }
 
-/* ---------- Colores de marca ---------- */
-[data-color="lima"]    { --brand: #c8f53c; --on-brand: #0b1a07; }
-[data-color="cobalto"] { --brand: #3355ff; --on-brand: #ffffff; }
-[data-color="rosa"]    { --brand: #ff5fa2; --on-brand: #1a0510; }
-[data-color="rojo"]    { --brand: #e62429; --on-brand: #ffffff; }
-/* los morados: cada uno tiñe además las superficies con su matiz (--tinte/--tn), así que cambian el fondo, las tarjetas y el menú, no solo el acento */
-/* la lima sobre blanco no se lee como texto: en día el acento-texto lleva más del color del texto (4,5:1 o más) */
+/* ---------- Paletas: un color, cinco tonos ---------- */
+/* cada una pone sus tonos (--t1…--t5), el color del texto sobre el tono central (--on-brand) y el matiz con el que tiñe las superficies (--tinte, y su fuerza --tn de 0 a 100) */
+[data-color="naranja"]  { --t1: #ffe3cc; --t2: #ffb27a; --t3: #ff7a1f; --t4: #c24f00; --t5: #5c2500; --on-brand: #050f16; --tinte: #c2570c; --tn: 7; }
+[data-color="rojo"]     { --t1: #ffd9d6; --t2: #ff8a80; --t3: #e0242b; --t4: #a1141b; --t5: #4a0a0e; --on-brand: #ffffff; --tinte: #b0141c; --tn: 10; }
+[data-color="rosa"]     { --t1: #ffdcea; --t2: #ff9ec7; --t3: #ff5fa2; --t4: #c2316f; --t5: #5e1536; --on-brand: #1a0510; --tinte: #c2316f; --tn: 9; }
+[data-color="morado"]   { --t1: #e9ddff; --t2: #b794f6; --t3: #8a4fd8; --t4: #5b2fa8; --t5: #2a1458; --on-brand: #ffffff; --tinte: #6a2fb5; --tn: 10; }
+[data-color="cobalto"]  { --t1: #dbe4ff; --t2: #8fa6ff; --t3: #3355ff; --t4: #1f37b8; --t5: #0d1a5c; --on-brand: #ffffff; --tinte: #2744d1; --tn: 10; }
+[data-color="turquesa"] { --t1: #d3fbf4; --t2: #6fe8d3; --t3: #17c3b2; --t4: #0e857a; --t5: #053f3a; --on-brand: #04201c; --tinte: #0e857a; --tn: 9; }
+[data-color="lima"]     { --t1: #f2ffc7; --t2: #d9fb7c; --t3: #c8f53c; --t4: #7ea60f; --t5: #2e4005; --on-brand: #0b1a07; --tinte: #6f9a0a; --tn: 9; }
+[data-color="ambar"]    { --t1: #fff0c2; --t2: #ffd36a; --t3: #ffb300; --t4: #b57800; --t5: #5a3b00; --on-brand: #1f1500; --tinte: #b57800; --tn: 9; }
+/* la lima sobre blanco no se lee como texto: de día el acento-texto lleva más del color del texto (4,5:1 o más) */
 [data-mode="light"][data-color="lima"] { --acento: color-mix(in srgb, var(--brand) 32%, var(--texto)); }
-[data-color="amatista"]     { --brand: #8a4fd8; --on-brand: #ffffff; --brand-2: #c9a6f5; --tinte: #6a2fb5; --tn: 10; }
-[data-color="ultravioleta"] { --brand: #5b3df5; --on-brand: #ffffff; --brand-2: #a597ff; --tinte: #3a1fd0; --tn: 13; }
-[data-color="lavanda"]      { --brand: #b79cff; --on-brand: #1c1040; --brand-2: #e2d7ff; --tinte: #8a76d6; --tn: 9; }
-[data-color="ciruela"]      { --brand: #a23fc4; --on-brand: #ffffff; --brand-2: #e0a4f0; --tinte: #7a1d9c; --tn: 12; }
-[data-color="orquidea"]     { --brand: #e06cf5; --on-brand: #2a0535; --brand-2: #f6bffc; --tinte: #a92fc4; --tn: 10; }
-[data-color="indigo"]       { --brand: #5558e6; --on-brand: #ffffff; --brand-2: #a9b2ff; --tinte: #2b2fa8; --tn: 12; }
 /* la lima sobre blanco no se lee: en día, el texto de acento va más oscuro */
 
 

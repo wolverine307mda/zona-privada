@@ -1,24 +1,25 @@
 import { Injectable, signal } from '@angular/core';
 
 export type Modo = 'light' | 'dark' | 'system';
-export type Color = 'naranja' | 'lima' | 'cobalto' | 'rosa' | 'rojo' | 'amatista' | 'ultravioleta' | 'lavanda' | 'ciruela' | 'orquidea' | 'indigo';
+export type Color = 'morado' | 'rojo' | 'naranja' | 'rosa' | 'cobalto' | 'turquesa' | 'lima' | 'ambar';
 
-/** Una paleta: el acento (`muestra`), su segundo tono y el color de las superficies en noche y en día, para enseñarla en Ajustes. Los valores reales viven en styles.css. */
-export interface Paleta { id: Color; nombre: string; grupo: 'Morados' | 'Clásicos'; muestra: string; segundo: string; noche: string; dia: string; }
+/** Una paleta: un color con su gama de cinco tonos (del más claro al más hondo; el central es el acento) y cómo tiñe las superficies en noche y en día, para enseñarla en Ajustes.
+ *  Los valores reales viven en styles.css (`[data-color=…]`). */
+export interface Paleta { id: Color; nombre: string; tonos: [string, string, string, string, string]; noche: string; dia: string; }
 
 export const COLORES: Paleta[] = [
-  { id: 'amatista', nombre: 'Amatista', grupo: 'Morados', muestra: '#8a4fd8', segundo: '#c9a6f5', noche: '#150d24', dia: '#f1ecf7' },
-  { id: 'ultravioleta', nombre: 'Ultravioleta', grupo: 'Morados', muestra: '#5b3df5', segundo: '#a597ff', noche: '#120b2e', dia: '#eeeafc' },
-  { id: 'lavanda', nombre: 'Lavanda', grupo: 'Morados', muestra: '#b79cff', segundo: '#e2d7ff', noche: '#14101f', dia: '#f3f0fa' },
-  { id: 'ciruela', nombre: 'Ciruela', grupo: 'Morados', muestra: '#a23fc4', segundo: '#e0a4f0', noche: '#190b22', dia: '#f4ecf7' },
-  { id: 'orquidea', nombre: 'Orquídea', grupo: 'Morados', muestra: '#e06cf5', segundo: '#f6bffc', noche: '#170e1d', dia: '#f7edf9' },
-  { id: 'indigo', nombre: 'Índigo', grupo: 'Morados', muestra: '#5558e6', segundo: '#a9b2ff', noche: '#0e0f28', dia: '#ecedfb' },
-  { id: 'naranja', nombre: 'Naranja', grupo: 'Clásicos', muestra: '#ff7a1f', segundo: '#ffbc88', noche: '#070d12', dia: '#f4f2ee' },
-  { id: 'lima', nombre: 'Lima', grupo: 'Clásicos', muestra: '#c8f53c', segundo: '#e4fa9d', noche: '#070d12', dia: '#f4f2ee' },
-  { id: 'cobalto', nombre: 'Cobalto', grupo: 'Clásicos', muestra: '#3355ff', segundo: '#99aaff', noche: '#070d12', dia: '#f4f2ee' },
-  { id: 'rosa', nombre: 'Rosa', grupo: 'Clásicos', muestra: '#ff5fa2', segundo: '#ffafd0', noche: '#070d12', dia: '#f4f2ee' },
-  { id: 'rojo', nombre: 'Rojo', grupo: 'Clásicos', muestra: '#e62429', segundo: '#f39194', noche: '#070d12', dia: '#f4f2ee' },
+  { id: 'morado', nombre: 'Morado', tonos: ['#e9ddff', '#b794f6', '#8a4fd8', '#5b2fa8', '#2a1458'], noche: '#150d24', dia: '#f1ecf7' },
+  { id: 'rojo', nombre: 'Rojo', tonos: ['#ffd9d6', '#ff8a80', '#e0242b', '#a1141b', '#4a0a0e'], noche: '#1a0d10', dia: '#f7efee' },
+  { id: 'naranja', nombre: 'Naranja', tonos: ['#ffe3cc', '#ffb27a', '#ff7a1f', '#c24f00', '#5c2500'], noche: '#17100c', dia: '#f6f1ea' },
+  { id: 'ambar', nombre: 'Ámbar', tonos: ['#fff0c2', '#ffd36a', '#ffb300', '#b57800', '#5a3b00'], noche: '#17120a', dia: '#f7f2e6' },
+  { id: 'lima', nombre: 'Lima', tonos: ['#f2ffc7', '#d9fb7c', '#c8f53c', '#7ea60f', '#2e4005'], noche: '#10150a', dia: '#f3f4e9' },
+  { id: 'turquesa', nombre: 'Turquesa', tonos: ['#d3fbf4', '#6fe8d3', '#17c3b2', '#0e857a', '#053f3a'], noche: '#0a1816', dia: '#ecf4f2' },
+  { id: 'cobalto', nombre: 'Azul', tonos: ['#dbe4ff', '#8fa6ff', '#3355ff', '#1f37b8', '#0d1a5c'], noche: '#0c1020', dia: '#edf0fa' },
+  { id: 'rosa', nombre: 'Rosa', tonos: ['#ffdcea', '#ff9ec7', '#ff5fa2', '#c2316f', '#5e1536'], noche: '#1a0d14', dia: '#f7eef2' },
 ];
+
+/** Los nombres de las primeras paletas (seis morados distintos): ahora hay un solo Morado con su gama. */
+const ALIAS: Record<string, Color> = { amatista: 'morado', ultravioleta: 'morado', lavanda: 'morado', ciruela: 'morado', orquidea: 'morado', indigo: 'morado' };
 
 const COLOR_IDS = COLORES.map((c) => c.id);
 
@@ -28,7 +29,7 @@ export const MODOS: { id: Modo; nombre: string }[] = [
   { id: 'system', nombre: 'Sistema' },
 ];
 
-export type FondoId = 'aura' | 'liquido' | 'isometrico' | 'comic' | 'pixel' | 'particulas' | 'ninguno';
+export type FondoId = 'aura' | 'liquido' | 'isometrico' | 'comic' | 'pixel' | 'particulas' | 'boreal' | 'bokeh' | 'olas' | 'estrellas' | 'rejilla' | 'ninguno';
 /** dónde se ve el fondo: detrás de todo, solo de las páginas o solo del menú lateral (en el móvil siempre es todo) */
 export type Ambito = 'ambos' | 'paginas' | 'menu';
 
@@ -39,6 +40,11 @@ export const FONDOS: { id: FondoId; nombre: string; nota: string }[] = [
   { id: 'comic', nombre: 'Cómic', nota: 'Puntos de imprenta' },
   { id: 'pixel', nombre: 'Píxel art', nota: 'Estrellas y montañas a saltos' },
   { id: 'particulas', nombre: 'Partículas', nota: 'Red que huye del puntero' },
+  { id: 'boreal', nombre: 'Boreal', nota: 'Cintas de luz como una aurora' },
+  { id: 'bokeh', nombre: 'Bokeh', nota: 'Luces desenfocadas que suben' },
+  { id: 'olas', nombre: 'Olas', nota: 'Capas de ondas que se mecen' },
+  { id: 'estrellas', nombre: 'Estrellas', nota: 'Cielo de noche con fugaces' },
+  { id: 'rejilla', nombre: 'Rejilla', nota: 'Suelo en perspectiva' },
   { id: 'ninguno', nombre: 'Nada', nota: 'Solo el color liso' },
 ];
 
@@ -48,6 +54,7 @@ export const AMBITOS: { id: Ambito; nombre: string }[] = [
   { id: 'menu', nombre: 'Menú' },
 ];
 
+const colorGuardado = (v: string): Color => { const c = ALIAS[v] ?? v; return COLOR_IDS.includes(c as Color) ? (c as Color) : 'naranja'; };
 const leer = (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const guardar = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
 
@@ -59,7 +66,7 @@ const entre = (n: number, min: number, max: number, defecto: number) => (Number.
 export class TemaService {
   private readonly sistemaOscuro = matchMedia('(prefers-color-scheme: dark)');
   readonly modo = signal<Modo>(leer('mode', 'dark') as Modo);
-  readonly color = signal<Color>(COLOR_IDS.includes(leer('color', 'naranja') as Color) ? (leer('color', 'naranja') as Color) : 'naranja');
+  readonly color = signal<Color>(colorGuardado(leer('color', 'naranja')));
   readonly cambio = signal(0);
 
   // fondo animado de toda la app: cuál, cuánto se ve (0-100), cuánto se mueve (25-200 %) y dónde

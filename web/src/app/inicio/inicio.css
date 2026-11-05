@@ -41,7 +41,7 @@
 .rapidos :first-child .icon { color: inherit; }
 .rapidos :active { transform: scale(0.95); }
 @media (hover: hover) { .rapidos a:hover, .rapidos button:hover { border-color: var(--brand-2); } }
-.seccion { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; font: var(--peso-ligero) var(--step-head)/1 var(--font-text); letter-spacing: -0.035em; }
+.seccion { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--tono-titulo); font: var(--peso-ligero) var(--step-head)/1 var(--font-text); letter-spacing: -0.035em; }
 .seccion code { font: 500 12px/1 var(--font-code); color: var(--ok); text-transform: none; letter-spacing: 0; }
 .seccion code::before { content: '● '; }
 .origen { margin-left: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font: 500 12px/1.3 var(--font-code); white-space: nowrap; }
@@ -58,7 +58,7 @@
 @media (hover: hover) { .kpi:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--brand) 45%, var(--linea)); } }
 .kpi__cabeza { display: flex; align-items: center; gap: 10px; }
 .kpi__cabeza h3 { font-size: var(--step-small); font-weight: 500; color: var(--soft); }
-.kpi__icono { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--acento); }
+.kpi__icono { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--tono-icono-fondo); color: var(--tono-icono); }
 .kpi__icono .icon { width: 18px; height: 18px; }
 .kpi__pie { margin-top: auto; font-size: var(--step-small); color: var(--soft); }
 .medidor { width: 100%; height: 150px; margin: -8px 0 -14px; }
@@ -79,7 +79,7 @@
 .fila { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--hueco, 14px); }
 .bloque { padding: 22px; display: flex; flex-direction: column; gap: 14px; border-radius: var(--radio); }
 .bloque__cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.bloque__cabeza h3 { font: 500 var(--step-lead)/1.1 var(--font-text); letter-spacing: -0.02em; }
+.bloque__cabeza h3 { color: var(--tono-titulo); font: 500 var(--step-lead)/1.1 var(--font-text); letter-spacing: -0.02em; }
 .bloque__cabeza code { font-size: 12px; color: var(--soft); }
 .linea-tiempo { width: 100%; height: 280px; }
 
