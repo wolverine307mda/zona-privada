@@ -19,7 +19,7 @@ interface Disco { nombre: string; modelo: string; salud: string; estado: string;
 interface Volumen { nombre: string; libreBytes: number; totalBytes: number; }
 interface Orden { id: number; tipo: string; parametro: string; estado: string; creada: string; resultado: string; desde: string; }
 interface DiaSalud { fecha: string; volumenes: Volumen[]; discos: { nombre: string; desgastePct: number | null; temperaturaC: number | null }[]; }
-interface Tendencia { titulo: string; unidad: string; puntos: string; actual: number; cambio: number | null; dias: number; area: string; }
+interface Tendencia { titulo: string; unidad: string; puntos: string; actual: number; cambio: number | null; dias: number; area: string; nota?: string; }
 interface Estado {
   agenteConectado: boolean; saludHace: number | null; reautenticado: boolean; ordenes: Orden[];
   salud: { discos: Disco[]; volumenes: Volumen[]; reinicioPendiente: boolean } | null;
@@ -121,6 +121,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
                 <polygon [attr.points]="t.area" class="area"/><polyline [attr.points]="t.puntos" class="linea"/>
               </svg>
               <small>{{ t.actual }} {{ t.unidad }}{{ t.cambio == null ? '' : ' · ' + (t.cambio > 0 ? '+' : '') + t.cambio + ' ' + t.unidad + ' al mes' }}</small>
+              @if (t.nota) { <small class="llenando">{{ t.nota }}</small> }
             </div>
           }
         </div>
@@ -271,6 +272,8 @@ export class Pc implements OnInit, OnDestroy {
 
   protected readonly historial = signal<DiaSalud[]>([]);
   protected readonly diasHistorial = computed(() => this.historial().length);
+  // días que le quedan a cada disco que se está llenando (lo calcula la API sobre los últimos 30 días)
+  private readonly llenado = signal<Record<string, number>>({});
   // una línea por volumen (porcentaje ocupado) y por disco (desgaste), con lo que sube o baja al mes
   protected readonly tendencias = computed<Tendencia[]>(() => {
     const h = this.historial();
@@ -280,7 +283,8 @@ export class Pc implements OnInit, OnDestroy {
     for (const n of nombres) {
       const serie = h.map((d) => { const v = d.volumenes.find((x) => x.nombre === n); return v && v.totalBytes ? { f: d.fecha, v: Math.round(100 - (100 * v.libreBytes) / v.totalBytes) } : null; }).filter((x) => x !== null);
       const t = this.tendencia(`Disco ${n} ocupado`, '%', serie);
-      if (t) r.push(t);
+      const dias = this.llenado()[n];
+      if (t) r.push(dias != null && dias <= 365 ? { ...t, nota: `Se llenará en ~${dias} ${dias === 1 ? 'día' : 'días'} al ritmo de ahora` } : t);
     }
     const discos = new Set(h.flatMap((d) => d.discos.map((x) => x.nombre)));
     for (const n of discos) {
@@ -317,6 +321,7 @@ export class Pc implements OnInit, OnDestroy {
   private async cargar(): Promise<void> {
     try { this.e.set(await firstValueFrom(this.http.get<Estado>('/api/pc'))); } catch { /* se reintenta en 15 s */ }
     if (!this.historial().length) firstValueFrom(this.http.get<DiaSalud[]>('/api/pc/historial')).then((h) => this.historial.set(h)).catch(() => {});
+    firstValueFrom(this.http.get<{ nombre: string; dias: number }[]>('/api/pc/llenado')).then((l) => this.llenado.set(Object.fromEntries(l.map((x) => [x.nombre, x.dias])))).catch(() => {});
     this.cargado.set(true);
   }
 

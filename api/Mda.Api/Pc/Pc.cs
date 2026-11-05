@@ -77,9 +77,11 @@ public static class ReglasSalud
     public static readonly TimeSpan ReinicioMaximo = TimeSpan.FromDays(7);
     // el procesador a 85 °C o más durante 5 minutos seguidos es calor de verdad, no un pico
     public const double CpuMaxima = 85;
+    // se avisa de que un disco «se está llenando» cuando le quedan 30 días o menos
+    public const int DiasAvisoLlenado = 30;
     public static readonly TimeSpan CalienteMinimo = TimeSpan.FromMinutes(5);
 
-    public static Dictionary<string, string> Evaluar(SaludPc s, DateTimeOffset? reinicioDesde, DateTimeOffset ahora, double? encendidoDias, DateTimeOffset? calienteDesde = null)
+    public static Dictionary<string, string> Evaluar(SaludPc s, DateTimeOffset? reinicioDesde, DateTimeOffset ahora, double? encendidoDias, DateTimeOffset? calienteDesde = null, IReadOnlyDictionary<string, int>? llenado = null)
     {
         var activas = new Dictionary<string, string>();
         foreach (var v in s.Volumenes.Where(v => v.TotalBytes > 0))
@@ -88,6 +90,9 @@ public static class ReglasSalud
             var gb = v.LibreBytes / 1_073_741_824.0;
             if (libre < 8) activas[$"disco-libre:{v.Nombre}"] = $"🔴 Disco {v.Nombre} casi lleno: quedan {gb:0.#} GB ({libre:0} %)";
             else if (libre < 15) activas[$"disco-libre:{v.Nombre}"] = $"🟠 Disco {v.Nombre} al {100 - libre:0} %: quedan {gb:0.#} GB";
+            // aún no está casi lleno, pero al ritmo de las últimas semanas lo estará pronto
+            else if (llenado is not null && llenado.TryGetValue(v.Nombre, out var dias) && dias <= DiasAvisoLlenado)
+                activas[$"disco-llenando:{v.Nombre}"] = $"🟡 Al ritmo de las últimas semanas, el disco {v.Nombre} se llenará en unos {dias} días ({gb:0.#} GB libres)";
         }
         foreach (var d in s.Discos)
         {
@@ -109,6 +114,7 @@ public static class ReglasSalud
     {
         "disco-libre" => $"✅ Ya hay espacio en el disco {id[(id.IndexOf(':') + 1)..]}",
         "disco-salud" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} vuelve a estar sano",
+        "disco-llenando" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ya no se está llenando deprisa",
         "disco-temp" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ha bajado de temperatura",
         "cpu-temp" => "✅ El procesador ha bajado de temperatura",
         "disco-desgaste" => $"✅ El desgaste del disco {id[(id.IndexOf(':') + 1)..]} ya no es preocupante",
@@ -173,7 +179,8 @@ public class AvisosSalud(IServiceScopeFactory scopes, EstadoSalud salud, EstadoS
         else if (s.CpuTemperaturaC is not >= ReglasSalud.CpuMaxima && calienteAj is not null) { db.Ajustes.Remove(calienteAj); calienteDesde = null; }
 
         var encendidoDias = sistema.Historial().LastOrDefault()?.EncendidoSegundos / 86400;
-        var activas = ReglasSalud.Evaluar(s, desde, ahora, encendidoDias, calienteDesde);
+        var llenado = await TendenciaDisco.Calcular(db, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(ahora, zona.Info).DateTime), ct);
+        var activas = ReglasSalud.Evaluar(s, desde, ahora, encendidoDias, calienteDesde, llenado);
 
         var reg = await db.Ajustes.FindAsync([ClaveAvisadas], ct);
         var avisadas = new Dictionary<string, string>();
@@ -307,6 +314,9 @@ public static class OrdenesPc
 
         // la foto diaria de los últimos 90 días (espacio libre y desgaste de cada disco)
         g.MapGet("/historial", async (AppDbContext db, CancellationToken ct) => Results.Ok(await HistorialSalud.Leer(db, ct)));
+        // días que le quedan a cada disco que se está llenando (los demás no salen)
+        g.MapGet("/llenado", async (AppDbContext db, TimeProvider reloj, Mda.Api.Agenda.Zona zona, CancellationToken ct) =>
+            Results.Ok((await TendenciaDisco.Calcular(db, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).DateTime), ct)).Select(x => new { nombre = x.Key, dias = x.Value })));
 
         g.MapPost("/ordenes", async (OrdenEntrada e, AppDbContext db, EstadoAgente agente, IAvisos avisos, HttpContext ctx, TimeProvider reloj, CancellationToken ct) =>
         {
