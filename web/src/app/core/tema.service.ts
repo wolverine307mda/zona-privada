@@ -8,14 +8,14 @@ export type Color = 'morado' | 'rojo' | 'naranja' | 'rosa' | 'cobalto' | 'turque
 export interface Paleta { id: Color; nombre: string; tonos: [string, string, string, string, string]; noche: string; dia: string; }
 
 export const COLORES: Paleta[] = [
-  { id: 'morado', nombre: 'Morado', tonos: ['#e9ddff', '#b794f6', '#8a4fd8', '#5b2fa8', '#2a1458'], noche: '#150d24', dia: '#f1ecf7' },
-  { id: 'rojo', nombre: 'Rojo', tonos: ['#ffd9d6', '#ff8a80', '#e0242b', '#a1141b', '#4a0a0e'], noche: '#1a0d10', dia: '#f7efee' },
-  { id: 'naranja', nombre: 'Naranja', tonos: ['#ffe3cc', '#ffb27a', '#ff7a1f', '#c24f00', '#5c2500'], noche: '#17100c', dia: '#f6f1ea' },
-  { id: 'ambar', nombre: 'Ámbar', tonos: ['#fff0c2', '#ffd36a', '#ffb300', '#b57800', '#5a3b00'], noche: '#17120a', dia: '#f7f2e6' },
-  { id: 'lima', nombre: 'Lima', tonos: ['#f2ffc7', '#d9fb7c', '#c8f53c', '#7ea60f', '#2e4005'], noche: '#10150a', dia: '#f3f4e9' },
-  { id: 'turquesa', nombre: 'Turquesa', tonos: ['#d3fbf4', '#6fe8d3', '#17c3b2', '#0e857a', '#053f3a'], noche: '#0a1816', dia: '#ecf4f2' },
-  { id: 'cobalto', nombre: 'Azul', tonos: ['#dbe4ff', '#8fa6ff', '#3355ff', '#1f37b8', '#0d1a5c'], noche: '#0c1020', dia: '#edf0fa' },
-  { id: 'rosa', nombre: 'Rosa', tonos: ['#ffdcea', '#ff9ec7', '#ff5fa2', '#c2316f', '#5e1536'], noche: '#1a0d14', dia: '#f7eef2' },
+  { id: 'morado', nombre: 'Morado', tonos: ['#e9ddff', '#b794f6', '#8a4fd8', '#5b2fa8', '#2a1458'], noche: '#07050a', dia: '#f1ecf7' },
+  { id: 'rojo', nombre: 'Rojo', tonos: ['#ffd9d6', '#ff8a80', '#e0242b', '#a1141b', '#4a0a0e'], noche: '#0a0505', dia: '#f7efee' },
+  { id: 'naranja', nombre: 'Naranja', tonos: ['#ffe3cc', '#ffb27a', '#ff7a1f', '#c24f00', '#5c2500'], noche: '#090605', dia: '#f6f1ea' },
+  { id: 'ambar', nombre: 'Ámbar', tonos: ['#fff0c2', '#ffd36a', '#ffb300', '#b57800', '#5a3b00'], noche: '#090705', dia: '#f7f2e6' },
+  { id: 'lima', nombre: 'Lima', tonos: ['#f2ffc7', '#d9fb7c', '#c8f53c', '#7ea60f', '#2e4005'], noche: '#070805', dia: '#f3f4e9' },
+  { id: 'turquesa', nombre: 'Turquesa', tonos: ['#d3fbf4', '#6fe8d3', '#17c3b2', '#0e857a', '#053f3a'], noche: '#050808', dia: '#ecf4f2' },
+  { id: 'cobalto', nombre: 'Azul', tonos: ['#dbe4ff', '#8fa6ff', '#3355ff', '#1f37b8', '#0d1a5c'], noche: '#05060a', dia: '#edf0fa' },
+  { id: 'rosa', nombre: 'Rosa', tonos: ['#ffdcea', '#ff9ec7', '#ff5fa2', '#c2316f', '#5e1536'], noche: '#0a0508', dia: '#f7eef2' },
 ];
 
 /** Los nombres de las primeras paletas (seis morados distintos): ahora hay un solo Morado con su gama. */

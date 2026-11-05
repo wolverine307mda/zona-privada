@@ -36,8 +36,8 @@
 .modo__vista span:first-child { grid-row: 1 / -1; }
 .modo[data-modo='light'] .modo__vista { background: #f4f2ee; }
 .modo[data-modo='light'] .modo__vista span { background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
-.modo[data-modo='dark'] .modo__vista { background: #070d12; }
-.modo[data-modo='dark'] .modo__vista span { background: #15222b; }
+.modo[data-modo='dark'] .modo__vista { background: #000; }
+.modo[data-modo='dark'] .modo__vista span { background: #141417; }
 .modo[data-modo='system'] .modo__vista { background: linear-gradient(135deg, #f4f2ee 50%, #070d12 50%); }
 .modo[data-modo='system'] .modo__vista span { background: color-mix(in srgb, #ffffff 50%, #15222b); }
 .modo .modo__vista span:nth-child(2) { background: var(--brand); }

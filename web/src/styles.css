@@ -33,11 +33,11 @@
   --tono-icono-fondo: color-mix(in srgb, var(--t3) 20%, transparent);
   --tono-chip: color-mix(in srgb, var(--t5) 55%, var(--tarjeta-2));
 
-  --fondo: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #070d12);
-  --lateral: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1.1%), #0a1218);
-  --tarjeta: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1.5%), #0f1920);
-  --tarjeta-2: color-mix(in srgb, var(--tinte) calc(var(--tn) * 2%), #15222b);
-  --linea: color-mix(in srgb, var(--tinte) calc(var(--tn) * 2.4%), #1c2a34);
+  --fondo: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.25%), #000000); /* de noche el fondo es negro de verdad: el color de la paleta solo lo insinúa */
+  --lateral: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.4%), #040405);
+  --tarjeta: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.6%), #0b0b0d);
+  --tarjeta-2: color-mix(in srgb, var(--tinte) calc(var(--tn) * 0.9%), #141417);
+  --linea: color-mix(in srgb, var(--tinte) calc(var(--tn) * 1%), #222226);
   --texto: #e8edf0;
   --soft: #8d979e;
   --sombra: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35); /* relieve de las tarjetas */
