@@ -12,6 +12,7 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
 // la ventana abierta); si Spotify no está enlazado, no vuelve a preguntar.
 @Component({
   selector: 'app-mini-musica',
+  host: { '[class.suena]': '!oculto() && !!ahora()?.cancion' }, // el marco lo usa para dejar sitio al título de la barra en el móvil
   template: `
     @if (!oculto() && ahora()?.cancion; as c) {
       <div class="mini" [class.mini--parado]="!ahora()!.sonando">
@@ -84,20 +85,22 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .relleno { fill: currentColor; }
     @media (hover: hover) { .mini button:hover:not(.mini__disco) { background: var(--tarjeta-2); } }
-    @media (max-width: 1180px) { .mini__texto, .mini__sig { display: none; } .mini { padding-right: 4px; } }
+    /* con .mini delante para ganar en especificidad a la regla «.mini button» (display: grid): si no, en el móvil el reproductor seguía ancho y empujaba el título de la barra */
+    @media (max-width: 1180px) { .mini .mini__texto, .mini .mini__sig { display: none; } .mini { padding-right: 4px; } }
 
     /* la ventana del reproductor */
-    .modal { width: min(400px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 30px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow: auto; }
+    .modal { width: min(400px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 30px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow-x: hidden; overflow-y: auto; margin: auto; }
     .modal[open] { animation: modal-entra 460ms var(--ease-expo); }
     .modal::backdrop { background: rgba(3, 8, 11, .6); backdrop-filter: blur(6px); }
     @keyframes modal-entra { from { opacity: 0; transform: translateY(24px) scale(.95); } }
     .caja { --tono: var(--brand); position: relative; display: grid; gap: 6px; justify-items: center; padding: 22px 22px 20px; text-align: center; background: radial-gradient(120% 60% at 50% 0, color-mix(in srgb, var(--tono) 38%, transparent), transparent 70%); }
     .caja .icon { width: 22px; height: 22px; }
-    .cerrar { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--texto) 10%, transparent); color: var(--texto); cursor: pointer; z-index: 2; }
-    .portada { position: relative; width: min(64vw, 250px); aspect-ratio: 1; margin: 18px 0 14px; }
-    .portada img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 22px; object-fit: cover; box-shadow: 0 18px 44px color-mix(in srgb, var(--tono) 55%, rgba(0, 0, 0, .5)); }
-    .vinilo { position: absolute; top: 6%; left: 22%; width: 90%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tono) 70%, #000) 0 18%, #0a0a0a 19% 22%, transparent 23%), repeating-radial-gradient(circle, #151515 0 2px, #0b0b0b 3px 4px); box-shadow: 0 8px 24px rgba(0, 0, 0, .5); transition: transform 700ms var(--ease-expo); animation: gira 4s linear infinite paused; }
-    .portada--suena .vinilo { transform: translateX(14%); animation-play-state: running; }
+    .cerrar { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--texto) 10%, transparent); color: var(--texto); cursor: pointer; z-index: 2; }
+    /* el vinilo asoma por la derecha de la portada (hasta un 36 % del ancho al sonar): se corre la portada a la izquierda para que el conjunto quede centrado y no se corte */
+    .portada { position: relative; width: min(54vw, 230px); aspect-ratio: 1; margin: 22px 0 16px; translate: -18% 0; }
+    .portada img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 22px; object-fit: cover; aspect-ratio: 1; box-shadow: 0 18px 44px color-mix(in srgb, var(--tono) 55%, rgba(0, 0, 0, .5)); }
+    .vinilo { position: absolute; top: 6%; left: 34%; width: 90%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tono) 70%, #000) 0 18%, #0a0a0a 19% 22%, transparent 23%), repeating-radial-gradient(circle, #151515 0 2px, #0b0b0b 3px 4px); box-shadow: 0 8px 24px rgba(0, 0, 0, .5); transition: transform 700ms var(--ease-expo); animation: gira 4s linear infinite paused; }
+    .portada--suena .vinilo { transform: translateX(12%); animation-play-state: running; }
     .datos { display: grid; gap: 2px; max-width: 100%; }
     h2 { margin: 0; font: 500 1.25rem/1.2 var(--font-text); overflow-wrap: anywhere; }
     .artistas { margin: 0; color: var(--texto); font-size: .95rem; opacity: .9; }
