@@ -36,6 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
+    public DbSet<FotoGeo> FotosGeo => Set<FotoGeo>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
@@ -362,6 +363,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Ruta).HasMaxLength(500);
             e.Property(x => x.Plantilla).HasMaxLength(20);
             e.HasIndex(x => new { x.Raiz, x.Ruta }).IsUnique();
+        });
+
+        b.Entity<FotoGeo>(e =>
+        {
+            e.ToTable("fotos_geo");
+            e.HasIndex(x => x.Ruta).IsUnique();
+            e.Property(x => x.Ruta).HasMaxLength(500);
+            e.Property(x => x.Hash).HasMaxLength(16);
         });
 
         b.Entity<FotoPublica>(e =>

@@ -215,6 +215,8 @@ builder.Services.AddHostedService<Mda.Api.Domotica.VigilanteCasa>();
 builder.Services.AddSingleton<Mda.Api.Domotica.MotorReglas>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Mda.Api.Domotica.MotorReglas>());
 builder.Services.AddHostedService<LatidoExterno>();
+builder.Services.AddSingleton<IndicadorFotos>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<IndicadorFotos>());
 builder.Services.AddSingleton<Pregenerar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Pregenerar>());
 // Brotli y gzip para JSON y para el front (JS, CSS, HTML, SVG): antes solo se comprimía el JSON y los bundles salían enteros.
@@ -304,6 +306,7 @@ app.MapSistema();
 app.MapGastos();
 app.MapArchivos();
 app.MapGaleria();
+app.MapMapaFotos();
 app.MapSenuelos();
 app.MapAtajos();
 app.MapPc();

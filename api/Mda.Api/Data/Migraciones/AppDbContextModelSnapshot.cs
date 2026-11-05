@@ -622,6 +622,47 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("casa_reglas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Galeria.FotoGeo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("Captura")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<double?>("Lat")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Lon")
+                        .HasColumnType("double precision");
+
+                    b.Property<long>("ModificadoTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("Tamano")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Ruta")
+                        .IsUnique();
+
+                    b.ToTable("fotos_geo", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Galeria.FotoPublica", b =>
                 {
                     b.Property<string>("Id")
