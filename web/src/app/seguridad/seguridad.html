@@ -279,17 +279,21 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
 @if (pestana() === 'vigilancia') {
 <!-- historial de accesos -->
 <section class="caja">
-  <header class="caja__cab"><h3>Últimos intentos de entrar</h3><span class="sub">bien y mal</span></header>
-  <ul class="accesos">
-    @for (a of accesosVistos(); track a.fecha) {
-      <li [class.fallo]="!a.exito">
-        <span class="acceso__marca" aria-hidden="true">{{ a.exito ? '✓' : '✕' }}</span>
-        <span class="acceso__texto"><strong>{{ a.exito ? 'Entrada correcta' : a.motivo }}</strong><span>{{ a.dispositivo }} · {{ a.lugar ? a.lugar + ' · ' : '' }}{{ a.ip }}</span></span>
+  <header class="caja__cab">
+    <h3>Últimos intentos de entrar</h3>
+    @if (pendientes() > 0) { <button class="enlace" type="button" (click)="revisarTodos()">Marcar {{ pendientes() }} fallo(s) como revisados</button> }
+    @else { <span class="sub">bien y mal</span> }
+  </header>
+  <ul class="accesos accesos--scroll">
+    @for (a of accesos(); track a.id) {
+      <li [class.fallo]="!a.exito && !a.revisado" [class.revisado]="a.revisado">
+        <span class="acceso__marca" aria-hidden="true">{{ a.exito || a.revisado ? '✓' : '✕' }}</span>
+        <span class="acceso__texto"><strong>{{ a.exito ? 'Entrada correcta' : a.motivo }}{{ a.revisado ? ' · revisado' : '' }}</strong><span>{{ a.dispositivo }} · {{ a.lugar ? a.lugar + ' · ' : '' }}{{ a.ip }}</span></span>
         <time>{{ fecha(a.fecha) }}</time>
+        @if (!a.exito) { <button class="enlace acceso__revisar" type="button" (click)="revisar(a)">{{ a.revisado ? 'Quitar marca' : 'Revisado' }}</button> }
       </li>
     } @empty { <p class="nada">Aún no hay intentos registrados.</p> }
   </ul>
-  @if (accesos().length > 8 && !verTodos()) { <button class="enlace" type="button" (click)="verTodos.set(true)">Ver los {{ accesos().length }}</button> }
 </section>
 
 <app-equipos />

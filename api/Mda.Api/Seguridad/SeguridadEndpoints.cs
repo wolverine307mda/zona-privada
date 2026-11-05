@@ -67,7 +67,25 @@ public static class SeguridadEndpoints
 
         g.MapGet("/accesos", async (AppDbContext db, GeoIp geo) =>
             Results.Ok((await db.Accesos.AsNoTracking().OrderByDescending(a => a.Id).Take(40).ToListAsync())
-                .Select(a => new { a.Fecha, a.Ip, a.Exito, a.Motivo, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente), Lugar = Lugar(geo.Buscar(a.Ip)) })));
+                .Select(a => new { a.Id, a.Fecha, a.Ip, a.Exito, a.Motivo, a.Revisado, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente), Lugar = Lugar(geo.Buscar(a.Ip)) })));
+
+        // marcar un fallo como revisado (o quitarle la marca)
+        g.MapPut("/accesos/{id:int}/revisado", async (int id, bool revisado, AppDbContext db) =>
+        {
+            var a = await db.Accesos.FindAsync(id);
+            if (a is null || a.Exito) return Results.NotFound();
+            a.Revisado = revisado;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+        // todos los fallos pendientes de golpe
+        g.MapPost("/accesos/revisar", async (AppDbContext db) =>
+        {
+            var pendientes = await db.Accesos.Where(a => !a.Exito && !a.Revisado).ToListAsync();
+            pendientes.ForEach(a => a.Revisado = true);
+            await db.SaveChangesAsync();
+            return Results.Ok(new { revisados = pendientes.Count });
+        });
 
         // los equipos desde los que has entrado: avisa solo de los que no estén aquí
         g.MapGet("/equipos", async (AppDbContext db) =>
@@ -101,7 +119,7 @@ public static class SeguridadEndpoints
                 canales = avisos.Disponibles(),
                 avisarInicios = await db.Ajustes.AnyAsync(a => a.Clave == Sesiones.AvisarInicios && a.Valor == "si"),
                 soloNuevos = !await db.Ajustes.AnyAsync(a => a.Clave == Sesiones.AvisarSoloNuevos && a.Valor == "no"),
-                fallosMes = await db.Accesos.CountAsync(a => !a.Exito && a.Fecha > desde),
+                fallosMes = await db.Accesos.CountAsync(a => !a.Exito && !a.Revisado && a.Fecha > desde),
                 resumenSemanal = !await db.Ajustes.AnyAsync(a => a.Clave == Vigilante.ResumenSemanal && a.Valor == "no"),
                 dispositivosPush = await db.Push.CountAsync(),
                 copia = vigilante.UltimaCopia(),

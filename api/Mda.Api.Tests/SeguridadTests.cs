@@ -61,6 +61,34 @@ public class SeguridadApiTests(ModulosFactory factory) : IClassFixture<ModulosFa
     }
 
     [Fact]
+    public async Task Un_fallo_revisado_deja_de_contar_como_incidencia()
+    {
+        var c = await factory.Dentro();
+        int id;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var a = new Acceso { Exito = false, Ip = "203.0.113.7", Motivo = "contraseña o código incorrectos" };
+            db.Accesos.Add(a);
+            await db.SaveChangesAsync();
+            id = a.Id;
+        }
+        var antes = (await c.GetFromJsonAsync<JsonElement>("/api/seguridad/estado")).GetProperty("fallosMes").GetInt32();
+        Assert.True(antes >= 1);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await c.PutAsync($"/api/seguridad/accesos/{id}/revisado?revisado=true", null)).StatusCode);
+        var despues = (await c.GetFromJsonAsync<JsonElement>("/api/seguridad/estado")).GetProperty("fallosMes").GetInt32();
+        Assert.Equal(antes - 1, despues);
+
+        var lista = await c.GetFromJsonAsync<JsonElement>("/api/seguridad/accesos");
+        Assert.Contains(lista.EnumerateArray(), x => x.GetProperty("id").GetInt32() == id && x.GetProperty("revisado").GetBoolean());
+
+        var todos = await c.PostAsync("/api/seguridad/accesos/revisar", null);
+        Assert.Equal(HttpStatusCode.OK, todos.StatusCode);
+        Assert.Equal(0, (await c.GetFromJsonAsync<JsonElement>("/api/seguridad/estado")).GetProperty("fallosMes").GetInt32());
+    }
+
+    [Fact]
     public async Task Refresh_y_confirmar_correo_estan_cerrados()
     {
         var c = factory.CreateClient();

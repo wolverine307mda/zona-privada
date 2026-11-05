@@ -41,6 +41,8 @@ public class Acceso
     public string Agente { get; set; } = "";
     public bool Exito { get; set; }
     public string Motivo { get; set; } = "";
+    // un fallo que ya has mirado: deja de contar como incidencia (semáforo de Inicio, contador de Seguridad)
+    public bool Revisado { get; set; }
 }
 
 // Ajustes sueltos de la app (clave -> valor)

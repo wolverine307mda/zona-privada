@@ -80,7 +80,7 @@ public static class SemaforoVida
             var desde = ahora.AddDays(-30);
             var dosPasos = await db.Users.AnyAsync(u => u.TwoFactorEnabled, ct);
             return Results.Ok(Evaluar(new DatosVida(copia.Vigilada, copia.Fecha is { } f ? (ahora - f).TotalHours : null, panicoActivo,
-                await db.Accesos.CountAsync(a => !a.Exito && a.Fecha > desde, ct), dosPasos, libre, pasados, agente.Conectado(TimeSpan.FromMinutes(2)), alertas,
+                await db.Accesos.CountAsync(a => !a.Exito && !a.Revisado && a.Fecha > desde, ct), dosPasos, libre, pasados, agente.Conectado(TimeSpan.FromMinutes(2)), alertas,
                 funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos)));
         }).RequireAuthorization();
     }

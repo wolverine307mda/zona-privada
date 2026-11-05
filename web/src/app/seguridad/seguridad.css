@@ -84,6 +84,11 @@
 /* accesos */
 .accesos li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 4px; border-bottom: 1px solid var(--linea); }
 .accesos li:last-child { border-bottom: 0; }
+.accesos li:has(.acceso__revisar) { grid-template-columns: 30px minmax(0, 1fr) auto auto; }
+.accesos--scroll { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.revisado .acceso__texto { opacity: .6; }
+.acceso__revisar { font-size: 12px; white-space: nowrap; }
+@media (max-width: 600px) { .accesos li:has(.acceso__revisar) { grid-template-columns: 30px minmax(0, 1fr) auto; } .acceso__revisar { grid-column: 2 / -1; justify-self: start; } }
 .acceso__marca { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); font-weight: 700; font-size: 13px; }
 .fallo .acceso__marca { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
 .acceso__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

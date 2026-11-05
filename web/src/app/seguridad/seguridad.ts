@@ -16,7 +16,7 @@ import { RecargaService } from '../core/recarga';
 import { Esqueleto } from '../ui';
 
 interface Sesion { id: string; creada: string; ultimaVez: string; ip: string; app: boolean; dispositivo: string; navegador: string; tipo: string; enLinea: boolean; actual: boolean; }
-interface Acceso { fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; lugar: string | null; }
+interface Acceso { id: number; revisado: boolean; fecha: string; ip: string; exito: boolean; motivo: string; dispositivo: string; tipo: string; lugar: string | null; }
 interface Estado {
   dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; avisarInicios: boolean; soloNuevos: boolean; fallosMes: number;
   resumenSemanal: boolean; dispositivosPush: number; copia: { vigilada: boolean; fecha: string | null; tamano: number; nombre: string | null };
@@ -60,7 +60,6 @@ export class Seguridad {
   protected readonly aviso = signal('');
   protected readonly ocupado = signal<string | null>(null);
   protected readonly copiado = signal<string | null>(null);
-  protected readonly verTodos = signal(false);
   protected readonly iconos = ICONOS;
   protected readonly conPasskey = soportaPasskeys();
   // «pedir Face ID al volver a la app»: ajuste de este dispositivo
@@ -94,7 +93,19 @@ export class Seguridad {
   protected readonly confirmarPanico = signal(false);
 
   protected readonly enLinea = computed(() => this.sesiones().filter((s) => s.enLinea).length);
-  protected readonly accesosVistos = computed(() => (this.verTodos() ? this.accesos() : this.accesos().slice(0, 8)));
+  protected readonly pendientes = computed(() => this.accesos().filter((a) => !a.exito && !a.revisado).length);
+
+  protected async revisar(a: Acceso): Promise<void> {
+    await firstValueFrom(this.http.put(`/api/seguridad/accesos/${a.id}/revisado?revisado=${!a.revisado}`, null));
+    this.accesos.update((l) => l.map((x) => (x.id === a.id ? { ...x, revisado: !a.revisado } : x)));
+    this.estado.update((e) => (e ? { ...e, fallosMes: Math.max(0, e.fallosMes + (a.revisado ? 1 : -1)) } : e));
+  }
+
+  protected async revisarTodos(): Promise<void> {
+    await firstValueFrom(this.http.post('/api/seguridad/accesos/revisar', null));
+    this.accesos.update((l) => l.map((x) => (x.exito ? x : { ...x, revisado: true })));
+    this.estado.update((e) => (e ? { ...e, fallosMes: 0 } : e));
+  }
   protected readonly clave = computed(() => this.dos()?.sharedKey?.match(/.{1,4}/g)?.join(' ') ?? '');
   protected readonly enlaceApp = computed(() => {
     const k = this.dos()?.sharedKey;

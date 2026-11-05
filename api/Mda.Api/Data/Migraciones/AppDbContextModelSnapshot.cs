@@ -1655,6 +1655,9 @@ namespace Mda.Api.Data.Migraciones
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)");
 
+                    b.Property<bool>("Revisado")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.ToTable("accesos", (string)null);
