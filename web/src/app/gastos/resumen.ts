@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
+import { GraficaPrevision } from './grafica-prevision';
 import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
 import { EstadoError, Esqueleto } from '../ui';
 
@@ -11,7 +12,7 @@ import { EstadoError, Esqueleto } from '../ui';
 // el calendario de gasto por día y los últimos movimientos.
 @Component({
   selector: 'app-resumen',
-  imports: [RouterLink, EstadoError, Esqueleto],
+  imports: [RouterLink, EstadoError, Esqueleto, GraficaPrevision],
   templateUrl: './resumen.html',
   styleUrls: ['./comun.css', './dialogos.css', './resumen.css'],
 })

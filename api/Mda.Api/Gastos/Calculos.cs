@@ -42,6 +42,16 @@ public static class Calculos
             .OrderByDescending(t => t.Total)
             .ToList();
 
+    // Los fijos y nóminas del mes que aún no tienen su apunte, por orden de fecha
+    public static List<Pendiente> PendientesDe(int anio, int mes, IReadOnlyList<Recurrente> tocan, IReadOnlySet<int> registrados)
+    {
+        var dias = DateTime.DaysInMonth(anio, mes);
+        return tocan.Where(r => !registrados.Contains(r.Id))
+            .Select(r => new Pendiente(r.Id, r.Nombre, r.Tipo, r.Categoria, r.Importe, r.Variable, new DateOnly(anio, mes, Math.Min(r.Dia, dias))))
+            .OrderBy(p => p.Fecha).ThenBy(p => p.Nombre)
+            .ToList();
+    }
+
     // Resumen de un mes: totales, comparación con el anterior, reparto, gasto por día y fijos pendientes
     public static ResumenMes Mes(int anio, int mes, IReadOnlyList<Movimiento> delMes, IReadOnlyList<Movimiento> delAnterior, IReadOnlyList<Recurrente> recurrentes, IReadOnlySet<int>? cubiertos = null)
     {
@@ -54,10 +64,7 @@ public static class Calculos
         // un fijo está cubierto si hay un apunte de ESTE mes, aunque esté fechado en otro (cobrado antes de su día)
         var clave = Movimiento.ClavePeriodo(anio, mes);
         var registrados = cubiertos ?? delMes.Where(m => m.RecurrenteId is not null && m.PeriodoEfectivo == clave).Select(m => m.RecurrenteId!.Value).ToHashSet();
-        var pendientes = tocan.Where(r => !registrados.Contains(r.Id))
-            .Select(r => new Pendiente(r.Id, r.Nombre, r.Tipo, r.Categoria, r.Importe, r.Variable, new DateOnly(anio, mes, Math.Min(r.Dia, dias))))
-            .OrderBy(p => p.Fecha).ThenBy(p => p.Nombre)
-            .ToList();
+        var pendientes = PendientesDe(anio, mes, tocan, registrados);
         var fijos = tocan.Where(r => r.Tipo == TipoMovimiento.Gasto).Sum(r => r.Importe);
 
         return new ResumenMes(anio, mes, t.Ingresos, t.Gastos, t.Ahorro, Tasa(t.Ingresos, t.Ahorro),

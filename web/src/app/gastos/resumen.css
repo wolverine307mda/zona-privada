@@ -179,3 +179,8 @@
 .cierre { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--vidrio-borde); }
 .cierre__cifra { margin: 0; font: var(--peso-ligero) 1.6rem/1.1 var(--font-text); font-variant-numeric: tabular-nums; }
 .cierre__rango, .cierre__aviso { margin: 4px 0 0; color: var(--soft); font-size: .8rem; }
+.cierre app-grafica-prevision { margin-top: 10px; }
+.cierre__desglose { display: grid; gap: 4px; margin: 10px 0 0; font-size: .82rem; }
+.cierre__desglose div { display: flex; justify-content: space-between; gap: 12px; }
+.cierre__desglose dt { color: var(--soft); }
+.cierre__desglose dd { margin: 0; font-variant-numeric: tabular-nums; }

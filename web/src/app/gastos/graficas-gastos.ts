@@ -2,7 +2,7 @@
 import { BarChart, PieChart } from 'echarts/charts';
 import { TitleComponent } from 'echarts/components';
 import { echarts } from '../inicio/graficas';
-import { PuntoMes, Repostaje, TotalCategoria, categoria, euros, mesCorto } from './modelo';
+import { PuntoMes, PuntoPrevision, Repostaje, TotalCategoria, categoria, euros, mesCorto } from './modelo';
 import { resolverColor } from '../core/color-css';
 
 echarts.use([PieChart, BarChart, TitleComponent]); // el título es el total en el centro del rosco
@@ -79,6 +79,27 @@ export function opcionesGasolina(repostajes: Repostaje[]): echarts.EChartsCoreOp
         lineStyle: { width: 3, color: t.brand }, itemStyle: { color: t.brand }, tooltip: { valueFormatter: (v: unknown) => `${Number(v).toLocaleString('es-ES', { minimumFractionDigits: 3 })} €/L` },
         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: t.brand + '44' }, { offset: 1, color: t.brand + '00' }]) },
       },
+    ],
+  };
+}
+
+// Saldo previsto día a día hasta fin de mes: la línea central y, discretas, la del peor y la del mejor caso
+export function opcionesPrevision(serie: PuntoPrevision[]): echarts.EChartsCoreOption {
+  const t = tema();
+  const linea = (nombre: string, f: (p: PuntoPrevision) => number, color: string, ancho: number, discontinua = false) => ({
+    name: nombre, type: 'line', data: serie.map(f), smooth: true, showSymbol: false,
+    lineStyle: { width: ancho, color, type: discontinua ? 'dashed' : 'solid' }, itemStyle: { color },
+  });
+  return {
+    animationDuration: 500,
+    grid: { left: 8, right: 8, top: 14, bottom: 22, containLabel: true },
+    tooltip: { trigger: 'axis', ...tooltip(t), valueFormatter: (v: unknown) => euros(Number(v)) },
+    xAxis: { type: 'category', data: serie.map((p) => p.dia), boundaryGap: false, axisLabel: { color: t.suave }, axisLine: { lineStyle: { color: t.linea } }, axisTick: { show: false } },
+    yAxis: { type: 'value', scale: true, axisLabel: { color: t.suave, formatter: (v: number) => `${Math.round(v)} €` }, splitLine: { lineStyle: { color: t.linea } } },
+    series: [
+      linea('Mejor caso', (p) => p.alto, t.suave, 1.5, true),
+      linea('Peor caso', (p) => p.bajo, t.suave, 1.5, true),
+      { ...linea('Previsto', (p) => p.central, t.brand, 3), areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: t.brand + '33' }, { offset: 1, color: t.brand + '00' }]) } },
     ],
   };
 }

@@ -152,7 +152,14 @@ public static class Cartera
         {
             var hoy = Hoy(reloj, zona);
             var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha <= hoy).ToListAsync(ct);
-            return Results.Ok(Prevision.Cierre(hoy, movs, await SaldoActual(db, hoy, ct)));
+            // fijos y nóminas de este mes que aún no tienen apunte (los cubiertos, incluso los cobrados antes en otro mes, no cuentan dos veces)
+            var desde = new DateOnly(hoy.Year, hoy.Month, 1);
+            var clave = Movimiento.ClavePeriodo(hoy.Year, hoy.Month);
+            var cubiertos = (await db.Movimientos.AsNoTracking()
+                .Where(m => m.RecurrenteId != null && (m.Periodo == clave || (m.Periodo == null && m.Fecha >= desde && m.Fecha < desde.AddMonths(1))))
+                .Select(m => m.RecurrenteId!.Value).ToListAsync(ct)).ToHashSet();
+            var tocan = (await db.Recurrentes.AsNoTracking().ToListAsync(ct)).Where(r => r.TocaEn(hoy.Year, hoy.Month)).ToList();
+            return Results.Ok(Prevision.Cierre(hoy, movs, await SaldoActual(db, hoy, ct), Calculos.PendientesDe(hoy.Year, hoy.Month, tocan, cubiertos)));
         });
 
         // ---- Consejos para ahorrar ----
