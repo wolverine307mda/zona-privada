@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { EstadoError, Esqueleto } from '../ui';
+import { EstadoError, Esqueleto, Interruptor } from '../ui';
 
 interface Equipo { id: number; nombre: string; pais: string; ciudad: string; ultimaIp: string; primera: string; ultima: string; entradas: number; confianza: boolean; }
 
@@ -9,7 +9,7 @@ interface Equipo { id: number; nombre: string; pais: string; ciudad: string; ult
 // donde nunca habías entrado, el aviso lo dice. Olvidar un equipo hace que su próxima entrada vuelva a avisar.
 @Component({
   selector: 'app-equipos',
-  imports: [Esqueleto, EstadoError],
+  imports: [Esqueleto, EstadoError, Interruptor],
   styleUrls: ['../gastos/comun.css'],
   template: `
     <section class="caja">
@@ -24,10 +24,7 @@ interface Equipo { id: number; nombre: string; pais: string; ciudad: string; ult
                 <strong>{{ e.nombre }}</strong>
                 <span>{{ lugar(e) }} · {{ e.entradas }} {{ e.entradas === 1 ? 'entrada' : 'entradas' }} · visto {{ visto(e.ultima) }}</span>
               </span>
-              <label class="interruptor lista__confianza" [title]="'Equipo de confianza: no avisa si cambia de país'">
-                <input type="checkbox" [checked]="e.confianza" (change)="confianza(e, $any($event.target).checked)" [attr.aria-label]="'De confianza: ' + e.nombre">
-                <span class="interruptor__pista" aria-hidden="true"></span>
-              </label>
+              <app-interruptor class="lista__confianza" [activo]="e.confianza" [etiqueta]="'De confianza: ' + e.nombre" (activoChange)="confianza(e, $event)" title="De confianza: no avisa si cambia de país" />
               <button class="enlace" type="button" (click)="olvidar(e)" [attr.aria-label]="'Olvidar ' + e.nombre">Olvidar</button>
             </li>
           } @empty { <p class="nada">Aún no hay equipos: se van apuntando según entras.</p> }

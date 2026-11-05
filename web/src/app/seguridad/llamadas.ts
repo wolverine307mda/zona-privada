@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { EstadoError, Esqueleto } from '../ui';
+import { EstadoError, Esqueleto, Interruptor } from '../ui';
 
 interface Llamada {
   id: number; fecha: string; metodo: string; ruta: string; consulta: string; origen: string; ip: string;
@@ -22,7 +22,7 @@ type Estado = 'todas' | 'fallos' | 'ok';
 // y no se guarda: al salir y volver empieza vacía.
 @Component({
   selector: 'app-llamadas',
-  imports: [Esqueleto, EstadoError, NgTemplateOutlet],
+  imports: [Esqueleto, EstadoError, Interruptor, NgTemplateOutlet],
   styleUrls: ['../gastos/comun.css'],
   template: `
     <section class="caja">
@@ -58,7 +58,10 @@ type Estado = 'todas' | 'fallos' | 'ok';
               }
             </div>
           </div>
-          <input class="llam__buscar" type="search" placeholder="Buscar por ruta, origen o error" [value]="buscar()" (input)="escribir($any($event.target).value)" aria-label="Buscar en las llamadas">
+          <label class="llam__buscador">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" /></svg>
+            <input type="search" placeholder="Buscar ruta o error" [value]="buscar()" (input)="escribir($any($event.target).value)" aria-label="Buscar en las llamadas" autocomplete="off" enterkeyhint="search">
+          </label>
           <ng-container *ngTemplateOutlet="origenYAgente; context: { $implicit: l.origenes }" />
           <div class="llam__barra">
             <span class="sub">{{ l.coinciden === l.llamadas.length ? l.coinciden : 'Las ' + l.llamadas.length + ' últimas de ' + l.coinciden }} {{ l.coinciden === 1 ? 'llamada' : 'llamadas' }}</span>
@@ -132,11 +135,10 @@ type Estado = 'todas' | 'fallos' | 'ok';
             @for (o of origenes; track o) { <option [value]="o" [selected]="origen() === o">{{ o }}</option> }
           </select>
         </label>
-        <label class="interruptor llam__agente">
-          <input type="checkbox" [checked]="sinAgente()" (change)="ponerSinAgente($any($event.target).checked)">
-          <span class="interruptor__pista" aria-hidden="true"></span>
-          <span>Ocultar las del agente del PC</span>
-        </label>
+        <div class="llam__agente">
+          <app-interruptor [activo]="sinAgente()" etiqueta="Ocultar las llamadas del agente del PC" (activoChange)="ponerSinAgente($event)" />
+          <span>Ocultar al agente del PC</span>
+        </div>
       </div>
     </ng-template>
   `,
@@ -152,16 +154,22 @@ type Estado = 'todas' | 'fallos' | 'ok';
     .llam__cifras b { color: inherit; font-size: 1.05rem; margin-right: 2px; }
     .llam__cifra--mal b { color: var(--bad); }
 
-    .llam__filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .llam__filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .llam__grupo { display: inline-flex; border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; }
-    .llam__grupo button { min-height: 38px; padding: 0 14px; border: 0; border-right: 1px solid var(--linea); background: transparent; color: var(--soft); font: inherit; font-size: .85rem; cursor: pointer; }
+    .llam__grupo button { min-height: 44px; padding: 0 14px; border: 0; border-right: 1px solid var(--linea); background: transparent; color: var(--soft); font: inherit; font-size: .85rem; cursor: pointer; }
     .llam__grupo button:last-child { border-right: 0; }
     .llam__grupo button.activo { background: color-mix(in srgb, var(--ok) 16%, transparent); color: inherit; font-weight: 600; }
-    .llam__buscar { width: 100%; min-height: 40px; margin-bottom: 8px; box-sizing: border-box; }
-    .llam__selector { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 8px; }
+    .llam__buscador { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; margin-bottom: 10px; padding: 0 16px; box-sizing: border-box; border: 1px solid var(--linea); border-radius: 999px; background: var(--tarjeta-2); transition: border-color 160ms ease, box-shadow 160ms ease; }
+    .llam__buscador:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent); }
+    .llam__buscador .icon { flex: none; width: 18px; height: 18px; fill: none; stroke: var(--soft); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .llam__buscador input { flex: 1; min-width: 0; height: 44px; padding: 0; border: 0; background: transparent; color: var(--texto); font: inherit; font-size: 16px; outline: none; -webkit-appearance: none; appearance: none; }
+    .llam__buscador input::placeholder { color: var(--soft); opacity: .8; }
+    .llam__buscador input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; height: 16px; width: 16px; cursor: pointer; opacity: .6; background: currentColor; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'><path d='M6 6l12 12M18 6L6 18'/></svg>") center / contain no-repeat; }
+    .llam__selector { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 10px; }
     .llam__origen { display: inline-flex; align-items: center; gap: 8px; color: var(--soft); font-size: .85rem; }
-    .llam__origen select { min-height: 40px; max-width: 100%; padding: 0 10px; border: 1px solid var(--linea); border-radius: 10px; background: var(--tarjeta-2); color: var(--texto); font: inherit; }
-    .llam__agente { margin: 0; font-size: .85rem; }
+    .llam__origen select { min-height: 44px; max-width: 100%; padding: 0 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--tarjeta-2); color: var(--texto); font: inherit; font-size: 16px; }
+    .llam__origen select:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+    .llam__agente { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; }
     .llam__origenes { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; scrollbar-width: thin; }
     .llam__origenes button { flex: none; min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--linea); background: transparent; color: var(--soft); font: inherit; font-size: .8rem; cursor: pointer; white-space: nowrap; }
     .llam__origenes button.activo { border-color: var(--ok); color: inherit; background: color-mix(in srgb, var(--ok) 14%, transparent); }
@@ -195,6 +203,8 @@ type Estado = 'todas' | 'fallos' | 'ok';
       .llam__fila { grid-template-columns: 42px minmax(0, 1fr); }
       .llam__fila time { grid-column: 2; }
       .llam__grupo { flex: 1 1 100%; } .llam__grupo button { flex: 1; padding: 0 6px; }
+      .llam__origen { flex: 1 1 100%; } .llam__origen select { flex: 1; min-width: 0; }
+      .llam__modo { display: flex; } .llam__modo button { flex: 1; }
     }
   `,
 })

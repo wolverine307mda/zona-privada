@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmarService } from '../core/confirmar.service';
-import { EstadoError, Esqueleto } from '../ui';
+import { EstadoError, Esqueleto, Interruptor } from '../ui';
 
 interface Ajustes { activo: boolean; enPanico: boolean; intruso: boolean; camaraIp: boolean; dias: number; }
 interface Captura { id: number; fecha: string; origen: 'pantalla' | 'camara' | 'camara-ip'; motivo: 'manual' | 'panico' | 'intruso'; ancho: number; alto: number; tamano: number; }
@@ -17,7 +17,7 @@ const MOTIVO: Record<string, string> = { manual: 'a petición tuya', panico: 'po
 @Component({
   selector: 'app-capturas-pc',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EstadoError, Esqueleto],
+  imports: [EstadoError, Esqueleto, Interruptor],
   styleUrls: ['../gastos/comun.css', '../gastos/dialogos.css'],
   template: `
     <section class="caja">
@@ -25,11 +25,7 @@ const MOTIVO: Record<string, string> = { manual: 'a petición tuya', panico: 'po
       @if (fallo()) { <app-estado-error titulo="No pude cargar las fotos" (reintentar)="cargar()" /> }
       @else if (datos() === null) { <app-esqueleto forma="bloque" alto="64px" /> }
       @else {
-        <label class="interruptor">
-          <input type="checkbox" [checked]="datos()!.ajustes.activo" (change)="poner({ activo: $any($event.target).checked })">
-          <span class="interruptor__pista" aria-hidden="true"></span>
-          <span>Permitir hacer fotos desde aquí</span>
-        </label>
+        <div class="fila-int"><app-interruptor [activo]="datos()!.ajustes.activo" etiqueta="Permitir hacer fotos desde aquí" (activoChange)="poner({ activo: $event })" /><span>Permitir hacer fotos desde aquí</span></div>
         @if (!datos()!.ajustes.activo) {
           <p class="nada">Apagado: no se puede hacer ninguna foto, ni a mano ni sola. Al encenderlo se pide confirmar que eres tú.</p>
         } @else {
@@ -55,16 +51,8 @@ const MOTIVO: Record<string, string> = { manual: 'a petición tuya', panico: 'po
 
           <details class="ajustes">
             <summary>Ajustes de las fotos</summary>
-            <label class="interruptor">
-              <input type="checkbox" [checked]="datos()!.ajustes.enPanico" (change)="poner({ enPanico: $any($event.target).checked })">
-              <span class="interruptor__pista" aria-hidden="true"></span>
-              <span>Hacer fotos de la pantalla y la cámara al activar el pánico</span>
-            </label>
-            <label class="interruptor">
-              <input type="checkbox" [checked]="datos()!.ajustes.intruso" (change)="poner({ intruso: $any($event.target).checked })">
-              <span class="interruptor__pista" aria-hidden="true"></span>
-              <span>Foto de la cámara tras 3 intentos fallidos de entrar en 10 minutos</span>
-            </label>
+            <div class="fila-int"><app-interruptor [activo]="datos()!.ajustes.enPanico" etiqueta="Hacer fotos de la pantalla y la cámara al activar el pánico" (activoChange)="poner({ enPanico: $event })" /><span>Hacer fotos de la pantalla y la cámara al activar el pánico</span></div>
+            <div class="fila-int"><app-interruptor [activo]="datos()!.ajustes.intruso" etiqueta="Foto de la cámara tras 3 intentos fallidos de entrar en 10 minutos" (activoChange)="poner({ intruso: $event })" /><span>Foto de la cámara tras 3 intentos fallidos de entrar en 10 minutos</span></div>
             <label class="campo"><span class="campo__etiqueta">Borrar las fotos a los <em>(días)</em></span>
               <input class="campo__input" type="number" min="1" max="365" [value]="datos()!.ajustes.dias" (change)="poner({ dias: +$any($event.target).value })"></label>
             <label class="campo"><span class="campo__etiqueta">Cámara IP <em>({{ datos()!.ajustes.camaraIp ? 'configurada; escribe otra para cambiarla' : 'dirección de la instantánea' }})</em></span>
@@ -96,6 +84,7 @@ const MOTIVO: Record<string, string> = { manual: 'a petición tuya', panico: 'po
     </dialog>
   `,
   styles: `
+    .fila-int { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
     .acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
     .msg { margin: 0 0 10px; font-size: .9rem; }
     .fotos { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
