@@ -14,7 +14,7 @@ export class PerfilService {
   readonly nombreVisible = computed(() => {
     const d = this.datos();
     if (!d) return null;
-    return d.nombre ? `${d.nombre} ${d.apellidos ?? ''}`.trim() : d.usuario;
+    return d.nombre ? `${d.nombre} ${d.apellidos ?? ''}`.trim() : 'Mario'; // sin nombre en el perfil, el de siempre
   });
   readonly foto = computed(() => (this.datos()?.foto ? `/api/perfil/foto?v=${this.version()}` : 'img/avatar.webp?v=3'));
 

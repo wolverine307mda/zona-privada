@@ -47,11 +47,9 @@ export class Inicio implements OnDestroy {
   protected readonly ahora = signal(new Date());
   protected readonly a = computed(() => this.sistema.actual());
   protected readonly nombre = computed(() => {
-    // el nombre de pila del perfil («Mario»); si aún no lo hay, el usuario
+    // el nombre de pila del perfil; si aún no lo has puesto, «Mario» (es tu app: no el nombre de usuario con el que entras)
     const n = this.perfil.datos()?.nombre?.trim().split(' ')[0];
-    if (n) return n;
-    const u = this.sesion.usuario() ?? '';
-    return u ? u[0].toUpperCase() + u.slice(1) : '';
+    return n || 'Mario';
   });
   protected readonly saludo = computed(() => {
     const h = this.ahora().getHours();

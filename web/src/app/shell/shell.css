@@ -6,16 +6,18 @@
 
 /* ---------- Menú lateral (tarjeta flotante: marca, buscador, secciones, ajustes y usuario) ---------- */
 .lateral {
-  position: sticky; top: var(--hueco); height: calc(100dvh - 2 * var(--hueco)); overflow-y: auto; overscroll-behavior: contain;
+  position: sticky; top: var(--hueco); height: calc(100dvh - 2 * var(--hueco)); overflow: hidden;
   display: flex; flex-direction: column; gap: 14px; z-index: 6;
   padding: 18px 14px 14px; border-radius: var(--radio-xl); border: 1px solid var(--vidrio-borde);
   background: var(--lateral); box-shadow: var(--sombra);
-  scrollbar-width: none;
 }
-.lateral::-webkit-scrollbar { display: none; }
+/* el menú no se desplaza entero: arriba quedan fijos la marca y el buscador, abajo ajustes, instalar y el usuario; solo las opciones del medio hacen scroll */
+.lateral__cabeza, .lateral__buscar, .lateral__pie { flex: none; }
 /* con un fondo animado detrás del menú se ve a través de él, como un cristal; si el fondo solo va en las páginas, el menú es sólido */
-html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([data-fondo='aura']) .lateral {
-  background: color-mix(in srgb, var(--lateral) 72%, transparent); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+@media (min-width: 961px) {
+  html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([data-fondo='aura']) .lateral {
+    background: color-mix(in srgb, var(--lateral) 72%, transparent); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  }
 }
 .lateral__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .lateral__compactar { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); color: var(--soft); cursor: pointer; transition: color 160ms ease, border-color 160ms ease; }
@@ -46,7 +48,7 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 .lateral__buscar kbd { margin-left: auto; padding: 6px 10px; border-radius: var(--radio-pildora); background: var(--tarjeta-2); font: 600 10px/1 var(--font-code); color: var(--soft); }
 @media (hover: hover) { .lateral__buscar:hover { border-color: var(--brand); color: var(--texto); } }
 
-.menu { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px solid var(--vidrio-borde); }
+.menu { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 4px 4px 0; border-top: 1px solid var(--vidrio-borde); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--texto) 22%, transparent) transparent; }
 .menu__txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu__item.grupo__cab { width: 100%; border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 500; text-align: left; }
 
@@ -148,6 +150,7 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 /* ---------- Modo compacto (solo escritorio): solo iconos, y el submenú sale al lado al pasar o con el foco ---------- */
 @media (min-width: 961px) {
   .compacto .lateral { overflow: visible; padding-inline: 12px; align-items: center; }
+  .compacto .menu { overflow: visible; padding-right: 0; }
   .compacto .lateral__cabeza { flex-direction: column; gap: 12px; }
   .compacto .marca { padding: 0; }
   .compacto .marca__texto, .compacto .menu__txt, .compacto .grupo__flecha, .compacto .menu__muestra, .compacto .perfil__datos, .compacto .perfil__salir, .compacto .menu__cuenta, .compacto .lateral__buscar kbd { display: none; }
@@ -175,8 +178,11 @@ html:not([data-ambito='paginas'])[data-fondo]:not([data-fondo='ninguno']):not([d
 /* ---------- Tableta y móvil: el menú se desliza desde la izquierda y la pantalla se aparta en 3D ---------- */
 @media (max-width: 960px) {
   .marco { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; }
+  /* a pantalla completa de alto y pegado al borde: el contenido arranca por debajo de la barra de estado del iPhone (si no, la marca y el cierre quedaban bajo ella, borrosos) */
   .lateral {
-    position: fixed; z-index: 20; left: 10px; top: 10px; bottom: 10px; height: auto; width: min(320px, 86vw);
+    position: fixed; z-index: 20; left: 0; top: 0; bottom: 0; height: auto; width: min(330px, 88vw);
+    border-radius: 0 var(--radio-xl) var(--radio-xl) 0; border-left: 0;
+    padding: calc(18px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
     background: var(--lateral);
     transform: translateX(-110%); visibility: hidden;
     transition: transform 460ms var(--ease-expo), visibility 0s linear 460ms; box-shadow: 0 0 80px rgba(0, 0, 0, 0.4);
