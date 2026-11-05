@@ -7,6 +7,7 @@ import { EventosCielo } from './eventos';
 import { Iss } from './iss';
 import { Niebla } from './niebla';
 import { PestanasFoto } from './pestanas-foto';
+import { PlanSalidas } from './plan-salidas';
 import { Puntos } from './puntos';
 
 // Las pantallas de Fotografía que no son el cielo de hoy; cada una junta tarjetas que van juntas.
@@ -29,11 +30,12 @@ export class Previsiones {}
 @Component({
   selector: 'app-fotografia-sitios',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PestanasFoto, Puntos, DiarioSalidas],
+  imports: [PestanasFoto, PlanSalidas, Puntos, DiarioSalidas],
   styleUrls: ['../gastos/comun.css'],
   template: `
-    <header class="cab"><h2 class="cab__titulo">Mis sitios</h2><p class="cab__sub">Tus puntos favoritos y el diario de salidas</p></header>
+    <header class="cab"><h2 class="cab__titulo">Mis sitios</h2><p class="cab__sub">El plan de la semana, tus puntos favoritos y el diario de salidas</p></header>
     <app-pestanas-foto />
+    <app-plan-salidas />
     <app-puntos />
     <app-diario-salidas />
   `,

@@ -101,6 +101,15 @@ public static class Puntos
             return Results.Ok(lista);
         });
 
+        // Las mejores salidas de los próximos 7 días entre todos los puntos, ajustadas por hacia dónde mira cada uno
+        g.MapGet("/plan", async (AppDbContext db, ServicioLuz luz, Mda.Api.Tiempo.ServicioTiempo tiempo, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var ahora = reloj.GetUtcNow();
+            var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(ahora, zona.Info).DateTime);
+            var todas = await PlanSalidas.Calcular(db, luz, tiempo, zona, hoy, 7, ahora, ct);
+            return Results.Ok(PlanSalidas.Mejores(todas, 6).Select(s => new { s.PuntoId, s.Punto, s.Orientacion, s.Nota, s.Orienta, tipo = s.Ventana.Tipo, titulo = s.Ventana.Titulo, s.Ventana.Inicio, s.Ventana.Fin, s.Ventana.Detalle, s.Ventana.Motivo, notaPrevision = s.Ventana.Puntuacion }));
+        });
+
         g.MapPost("/", async (PuntoEntrada e, AppDbContext db, CancellationToken ct) =>
         {
             if (Validar(e) is { Count: > 0 } mal) return Results.ValidationProblem(mal);
