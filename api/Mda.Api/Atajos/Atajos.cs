@@ -106,7 +106,8 @@ public static class AtajosApi
         {
             var t = await db.TokensAtajo.FindAsync([id], ct);
             if (t is null) return Results.NotFound();
-            t.Revocado = true;
+            // revocar = borrar: sin el token guardado la huella ya no existe y deja de valer; no se queda un «deshabilitado» en la lista
+            db.TokensAtajo.Remove(t);
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
         });

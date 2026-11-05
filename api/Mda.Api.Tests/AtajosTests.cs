@@ -112,6 +112,8 @@ public class AtajosTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
         var id = (await c.GetFromJsonAsync<JsonElement>("/api/atajos-tokens")).EnumerateArray().Last().GetProperty("id").GetInt32();
         Assert.Equal(HttpStatusCode.NoContent, (await c.DeleteAsync($"/api/atajos-tokens/{id}")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Con(gasto).GetAsync("/api/atajos/categorias")).StatusCode);
+        // y desaparece de la lista, no se queda deshabilitado
+        Assert.DoesNotContain((await c.GetFromJsonAsync<JsonElement>("/api/atajos-tokens")).EnumerateArray(), t => t.GetProperty("id").GetInt32() == id);
     }
 
     [Fact]

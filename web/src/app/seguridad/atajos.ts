@@ -49,10 +49,10 @@ interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; 
               </div>
               <small>{{ t.revocado ? 'Revocado' : t.ultimoUso ? 'Usado ' + hace(t.ultimoUso) + (t.ultimaIp ? ' · ' + t.ultimaIp : '') : 'Aún sin usar' }}</small>
             </div>
-            @if (!t.revocado) {
-              @if (borrando() === t.id) { <button class="enlace enlace--peligro" type="button" (click)="revocar(t.id)">¿Revocar?</button> }
-              @else { <button class="enlace" type="button" (click)="borrando.set(t.id)" [attr.aria-label]="'Revocar ' + t.nombre">Revocar</button> }
-            }
+            @if (t.revocado) {
+              <button class="enlace" type="button" (click)="revocar(t.id)" [attr.aria-label]="'Quitar ' + t.nombre">Quitar</button>
+            } @else if (borrando() === t.id) { <button class="enlace enlace--peligro" type="button" (click)="revocar(t.id)">¿Revocar?</button> }
+            @else { <button class="enlace" type="button" (click)="borrando.set(t.id)" [attr.aria-label]="'Revocar ' + t.nombre">Revocar</button> }
           </li>
         } @empty { <li class="nada">Aún no tienes ningún token: crea uno y úsalo en tu atajo.</li> }
       </ul>
