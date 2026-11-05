@@ -62,20 +62,19 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
   deja ver el fondo animado cuando se elige uno.
 - **Tipografías** locales (`public/fonts`): *Switzer* 300 (cifras y saludos grandes), 400 y 500 (texto y títulos de tarjeta), *Panchang* 700 (solo marca y rótulos
   que se quieran muy anchos; ya no se usa para cifras) y *JetBrains Mono* (código, cifras que no deben bailar como el reloj). Clase `.cifra` para una cifra grande ligera con su unidad.
-- **Paletas** (Ajustes → Paleta de colores): 11, en dos grupos. Los **morados** (Amatista, Ultravioleta, Lavanda, Ciruela, Orquídea e Índigo) además del acento
-  y un segundo tono (`--brand-2`) tiñen las superficies con su matiz (`--tinte` y su fuerza `--tn`), así que cambian el fondo, las tarjetas y el menú; los clásicos
-  (naranja, lima, cobalto, rosa, rojo) solo cambian el acento. Cada paleta se define en `styles.css` (`[data-color=…]`) y se lista en `core/tema.service.ts` (`COLORES`);
-  modo Día / Noche / Sistema aparte, todo guardado en el navegador. Con la paleta nueva se comprobó el contraste (texto ≥ 12:1, texto atenuado ≥ 5:1, botones ≥ 4,5:1).
+- **Paletas** (Ajustes → Color y paleta): ocho colores (morado, rojo, naranja, ámbar, lima, turquesa, azul y rosa) y **cada uno es una gama de cinco tonos** del mismo color,
+  `--t1` (el más claro) a `--t5` (el más hondo); `--brand` es el central. Cada tipo de elemento usa el suyo: `--tono-titulo` (títulos de tarjeta y de sección), `--tono-icono` y
+  `--tono-icono-fondo` (iconos en círculo), `--tono-chip` (chips y contadores), `--brand-2` (el claro: fechas del cabecero, segunda serie de una gráfica) y `--brand-3` (el hondo);
+  en noche se usan los tonos claros y de día los hondos. Además la paleta tiñe las superficies con su matiz (`--tinte`, fuerza `--tn`). Se definen en `styles.css`
+  (`[data-color=…]`) y se listan en `core/tema.service.ts` (`COLORES`); los nombres de las primeras paletas (seis morados) se guardan como «morado». Modo Día / Noche / Sistema aparte, todo guardado
+  en el navegador. Contraste comprobado en noche y en día (texto ≥ 12:1, texto atenuado ≥ 5:1, botones ≥ 4,5:1).
   El cambio de tema se anima con View Transitions en círculo desde el botón; durante esa transición `.vt-tema * { view-transition-name: none }` evita que barras y pantalla se superpongan.
-- **Fondos** (Ajustes → Fondo): aura, líquido, isométrico, cómic, píxel art, partículas o nada, con intensidad, velocidad y dónde se ven (todo, páginas o menú).
-  Van en una capa `z-index: -1` (`shell/fondo.ts`, y el aura en `body::before`): **el color de fondo va solo en `html`**, porque si el `body` también lo pinta
-  tapa esas capas y ningún fondo se ve (fue el fallo de que Ajustes no hiciera nada).
-- **Mosaico de Inicio** (`panel.css`): `flex-wrap` con ancho mínimo por caja (`flex: 1 1 300px`, dinero y tiempo 420px,
-  pequeñas 200px) → cada fila crece hasta el borde salgan las cajas que salgan. En móvil (≤ 640px) las pequeñas van de dos en dos.
-- **Móvil**: los diálogos son hojas que suben desde abajo; con un diálogo abierto el fondo no se mueve;
-  `input/select/textarea` a 16px mínimo (iOS no hace zoom); campos de fecha/hora con `appearance: none` y
-  `min-width: 0` (iOS les impone un ancho propio y se salían del formulario).
-- Accesibilidad: `aria-*` en botones de icono, `prefers-reduced-motion` desactiva animaciones, foco visible.
+- **Fondos** (Ajustes → Fondo): aura, líquido, isométrico, cómic, píxel art, partículas, boreal, bokeh, olas, estrellas, rejilla o nada, con intensidad, velocidad y dónde se ven
+  (todo, páginas o menú). Van en una capa `z-index: -1` (`shell/fondo.ts`, escenas en `fondos.ts`; el aura en `body::before`): **el color de fondo va solo en `html`**, porque si el `body`
+  también lo pinta tapa esas capas y ningún fondo se ve. En el móvil (`pointer: coarse` o menos de 760 px) cada escena dibuja menos cosas (`ligero`), a 20 fotogramas, sin máscara,
+  con la altura `100lvh` (no cambia al esconderse la barra del navegador) y **se queda quieta mientras haces scroll**.
+- **Colores para Three y ECharts**: leen las variables con `getPropertyValue`, que devuelve el texto sin resolver (`color-mix(...)`); `core/color-css.ts` (`resolverColor`) le pide
+  al navegador el color resuelto y lo pasa a `#rrggbb`. Las escenas 3D piden el siguiente fotograma antes de dibujar y se saltan uno que falle: una excepción ya no las deja en blanco.
 
 ## Sistema de diseño: `web/src/app/ui/`
 
