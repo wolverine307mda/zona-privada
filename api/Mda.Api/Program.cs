@@ -330,6 +330,7 @@ app.MapCoche();
 app.MapPush();
 app.MapPerfil();
 app.MapAsistente();
+app.MapBuscar();
 app.MapTelegram();
 app.MapTiempo();
 app.MapLuz();
