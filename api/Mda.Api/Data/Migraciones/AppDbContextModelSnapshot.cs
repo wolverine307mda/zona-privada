@@ -1056,6 +1056,83 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("reglas_categoria", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Habitos.Habito", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Archivado")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly?>("AvisadoFecha")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("Creado")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Dias")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HoraAviso")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("Icono")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("Objetivo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Unidad")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("habitos", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Habitos.RegistroHabito", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<int>("HabitoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.HasIndex("HabitoId", "Fecha")
+                        .IsUnique();
+
+                    b.ToTable("registros_habito", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Luz.PuntoFoto", b =>
                 {
                     b.Property<int>("Id")

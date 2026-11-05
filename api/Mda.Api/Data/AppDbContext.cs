@@ -37,6 +37,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
     public DbSet<FotoGeo> FotosGeo => Set<FotoGeo>();
+    public DbSet<Mda.Api.Habitos.Habito> Habitos => Set<Mda.Api.Habitos.Habito>();
+    public DbSet<Mda.Api.Habitos.RegistroHabito> RegistrosHabito => Set<Mda.Api.Habitos.RegistroHabito>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
@@ -363,6 +365,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Ruta).HasMaxLength(500);
             e.Property(x => x.Plantilla).HasMaxLength(20);
             e.HasIndex(x => new { x.Raiz, x.Ruta }).IsUnique();
+        });
+
+        b.Entity<Mda.Api.Habitos.Habito>(e =>
+        {
+            e.ToTable("habitos");
+            e.Property(x => x.Nombre).HasMaxLength(40);
+            e.Property(x => x.Icono).HasMaxLength(20);
+            e.Property(x => x.Unidad).HasMaxLength(12);
+            e.Property(x => x.HoraAviso).HasMaxLength(5);
+        });
+        b.Entity<Mda.Api.Habitos.RegistroHabito>(e =>
+        {
+            e.ToTable("registros_habito");
+            e.HasIndex(x => new { x.HabitoId, x.Fecha }).IsUnique();
+            e.HasIndex(x => x.Fecha);
         });
 
         b.Entity<FotoGeo>(e =>

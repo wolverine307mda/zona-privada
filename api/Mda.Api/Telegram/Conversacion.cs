@@ -38,6 +38,7 @@ public class Conversacion(
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
         "🌦️ <i>¿va a llover mañana?</i>\n\n" +
         "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
+        "✅ /habitos (lo de hoy) y /hecho meditar (lo apunta)\n" +
         "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
 
     public async Task Atender(JsonElement u, CancellationToken ct)
@@ -74,6 +75,8 @@ public class Conversacion(
         {
             case "/ayuda" or "/help": await bot.Enviar(Ayuda, html: true, ct: ct); return;
             case "/hoy": await bot.Enviar(await Hoy(ct), html: true, ct: ct); return;
+            case "/habitos" or "/hábitos": await bot.Enviar(await HabitosDeHoy(ct), html: true, ct: ct); return;
+            case "/hecho": await bot.Enviar(await Hecho(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
             case "/panico" or "/pánico":
@@ -218,6 +221,43 @@ public class Conversacion(
     }
 
     // tu día: el tiempo, lo que tienes en la agenda y cómo vas de dinero
+    // ---- hábitos: ver lo de hoy y apuntar uno ----
+    private async Task<string> HabitosDeHoy(CancellationToken ct)
+    {
+        var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
+        var lista = (await Habitos.ServicioHabitos.Resumen(db, hoy, false, ct)).Select(o => JsonSerializer.SerializeToElement(o)).Where(j => j.GetProperty("tocaHoy").GetBoolean()).ToList();
+        if (lista.Count == 0) return "No tienes hábitos para hoy. Crea alguno en la app (Hábitos).";
+        var sb = new StringBuilder("<b>Hábitos de hoy</b>\n");
+        foreach (var j in lista)
+        {
+            var hecho = j.GetProperty("hecho").GetBoolean();
+            var obj = j.GetProperty("objetivo").GetInt32();
+            sb.Append(hecho ? "✅ " : "⬜ ").Append(H(j.GetProperty("nombre").GetString() ?? ""));
+            if (obj > 1) sb.Append($" {j.GetProperty("hoy").GetInt32()}/{obj}");
+            if (j.GetProperty("actual").GetInt32() > 1) sb.Append($" · racha {j.GetProperty("actual").GetInt32()}");
+            sb.Append('\n');
+        }
+        return sb.ToString().TrimEnd();
+    }
+
+    // «/hecho meditar»: suma uno (o lo completa si el objetivo es 1) al hábito cuyo nombre contenga lo escrito
+    private async Task<string> Hecho(string nombre, CancellationToken ct)
+    {
+        if (nombre.Length == 0) return "Dime cuál: <i>/hecho meditar</i>. Mira /habitos.";
+        var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
+        var candidatos = (await db.Habitos.Where(h => !h.Archivado).ToListAsync(ct)).Where(h => h.Nombre.Contains(nombre, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (candidatos.Count == 0) return $"No encuentro ningún hábito con «{H(nombre)}». Mira /habitos.";
+        if (candidatos.Count > 1) return "¿Cuál? " + string.Join(", ", candidatos.Select(h => $"<i>{H(h.Nombre)}</i>"));
+        var h = candidatos[0];
+        var actual = await db.RegistrosHabito.Where(r => r.HabitoId == h.Id && r.Fecha == hoy).Select(r => (int?)r.Cantidad).FirstOrDefaultAsync(ct) ?? 0;
+        var nueva = h.Objetivo == 1 ? 1 : actual + 1;
+        await Habitos.ServicioHabitos.Marcar(db, h.Id, hoy, nueva, ct);
+        var regs = await db.RegistrosHabito.AsNoTracking().Where(r => r.HabitoId == h.Id && r.Fecha >= hoy.AddDays(-400)).ToDictionaryAsync(r => r.Fecha, r => r.Cantidad, ct);
+        var racha = Habitos.Rachas.Calcular(h.Dias, h.Objetivo, regs, h.Creado, hoy).Actual;
+        var progreso = h.Objetivo > 1 ? $" ({nueva}/{h.Objetivo}{(string.IsNullOrEmpty(h.Unidad) ? "" : " " + H(h.Unidad))})" : "";
+        return $"✅ <b>{H(h.Nombre)}</b>{progreso}{(nueva >= h.Objetivo && racha > 1 ? $" · racha de {racha} días" : "")}";
+    }
+
     private async Task<string> Hoy(CancellationToken ct)
     {
         var ahora = reloj.GetUtcNow();

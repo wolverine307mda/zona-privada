@@ -55,6 +55,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => CopiaNueva(db, ct), "la copia nueva");
         if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
         await Aislada(() => Cielo(db, ct), "el cielo (ISS y meteoros)");
+        await Aislada(() => Habitos(db, ct), "los hábitos");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)
@@ -162,6 +163,30 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         if (Mda.Api.Tiempo.ServicioTiempo.AvisoDe(p, hoy.AddDays(1)) is not { } aviso) return;
         await avisos.PorPush(aviso.Titulo, aviso.Texto, "/inicio", ct);
         await avisos.PorTelegram($"{aviso.Titulo}\n{aviso.Texto}", ct);
+    }
+
+    // ---- hábitos: a su hora, si aún no están hechos, un aviso (una vez al día), con la racha en juego si es larga ----
+    public async Task Habitos(AppDbContext db, CancellationToken ct)
+    {
+        var hoy = DateOnly.FromDateTime(Local);
+        var hora = TimeOnly.FromDateTime(Local);
+        var pendientes = await db.Habitos.Where(h => !h.Archivado && h.HoraAviso != null && h.AvisadoFecha != hoy).ToListAsync(ct);
+        pendientes = pendientes.Where(h => Mda.Api.Habitos.Rachas.Toca(h.Dias, hoy) && TimeOnly.TryParseExact(h.HoraAviso, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var a) && hora >= a).ToList();
+        if (pendientes.Count == 0) return;
+        var ids = pendientes.Select(h => h.Id).ToList();
+        var regs = (await db.RegistrosHabito.AsNoTracking().Where(r => ids.Contains(r.HabitoId) && r.Fecha >= hoy.AddDays(-400)).ToListAsync(ct))
+            .GroupBy(r => r.HabitoId).ToDictionary(g => g.Key, g => g.ToDictionary(r => r.Fecha, r => r.Cantidad));
+        foreach (var h in pendientes)
+        {
+            h.AvisadoFecha = hoy;   // se marca aunque ya esté hecho: hoy no hay que volver a mirarlo
+            var r = regs.GetValueOrDefault(h.Id) ?? [];
+            if (r.GetValueOrDefault(hoy) >= h.Objetivo) continue;
+            var racha = Mda.Api.Habitos.Rachas.Calcular(h.Dias, h.Objetivo, r, h.Creado, hoy).Actual;
+            var texto = racha >= 3 ? $"Aún no has hecho «{h.Nombre}» hoy. Llevas {racha} días seguidos: no la pierdas." : $"Aún no has hecho «{h.Nombre}» hoy.";
+            await avisos.PorPush($"✅ {h.Nombre}", texto, "/habitos", ct);
+            await avisos.PorTelegram($"✅ {texto}\nEscribe /hecho {h.Nombre.ToLowerInvariant()} para apuntarlo.", ct);
+        }
+        await db.SaveChangesAsync(ct);
     }
 
     // ---- el cielo: pasadas de la ISS y lluvias de meteoros ----
