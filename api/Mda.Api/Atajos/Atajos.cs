@@ -39,10 +39,12 @@ public record FraseAtajo(string Texto);
 public record PagoAtajo(string Comercio, decimal Importe, string? Tarjeta, double? Lat = null, double? Lon = null);
 public record PingAtajo(string? Texto);
 public record CasaAtajo(string Estado);
+public record NotaAtajo(string? Texto, string? Titulo);
+public record DespertarAtajo(string? Nombre);
 
 public static class AtajosApi
 {
-    public static readonly string[] Alcances = ["gasto", "pago", "lectura", "casa"];
+    public static readonly string[] Alcances = ["gasto", "pago", "lectura", "casa", "nota", "pc", "panico"];
     private static readonly CultureInfo Es = new("es-ES");
 
     public static string Hashear(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
@@ -223,6 +225,48 @@ public static class AtajosApi
             }
             return Results.Ok(new { id = m.Id, mensaje });
         }).Requiere("pago");
+
+        // «Nota rápida»: dictas o escribes y queda en Notas con la etiqueta «atajo»
+        a.MapPost("/nota", async (NotaAtajo e, AppDbContext db, CancellationToken ct) =>
+        {
+            var texto = (e.Texto ?? "").Trim();
+            if (texto.Length == 0 || texto.Length > 5000 || (e.Titulo?.Length ?? 0) > 200) return Results.BadRequest(new { mensaje = "La nota está vacía o es demasiado larga." });
+            var n = new Mda.Api.Notas.Nota { Titulo = e.Titulo?.Trim() ?? "", Contenido = texto, Etiquetas = "atajo" };
+            db.Notas.Add(n);
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(new { id = n.Id, mensaje = "Nota guardada." });
+        }).Requiere("nota");
+
+        // «Encender el PC»: despierta por Wake-on-LAN un aparato de tu red (por su nombre) a través del agente
+        a.MapPost("/despertar", async (DespertarAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
+        {
+            var nombre = (e.Nombre ?? "").Trim();
+            var d = (await db.DispositivosRed.AsNoTracking().ToListAsync(ct)).FirstOrDefault(x => string.Equals(x.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
+            if (d is null) return Results.NotFound(new { mensaje = "No hay ningún aparato con ese nombre en Red." });
+            if (d.Mac.Length == 0) return Results.Conflict(new { mensaje = "Ese aparato no tiene dirección MAC." });
+            if (!agente.Conectado(Mda.Api.Pc.OrdenesPc.AgenteConectado)) return Results.Conflict(new { mensaje = "El agente del PC no está en marcha." });
+            var desde = "Atajo · " + IpCliente.De(ctx);
+            await Mda.Api.Pc.OrdenesPc.Encolar(db, reloj, "wol", d.Mac, desde, ct);
+            _ = avisos.PorTelegram($"💻 Orden al PC: despertar «{d.Nombre}»\nDesde {desde}. Si no has sido tú, revoca el atajo en Seguridad.");
+            return Results.Ok(new { mensaje = $"Despertando «{d.Nombre}»." });
+        }).Requiere("pc");
+
+        // «Estado»: el semáforo de Inicio en una frase y por áreas, para que Siri lo lea o un widget lo pinte
+        a.MapGet("/estado", async (AppDbContext db, Mda.Api.Avisos.Vigilante vigilante, Mda.Api.Sistema.EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        {
+            var s = await SemaforoVida.Calcular(db, vigilante, agente, funnel, reloj, zona, ct);
+            var mal = s.Areas.Where(x => x.Estado != SemaforoVida.Verde).ToList();
+            var mensaje = mal.Count == 0 ? "Todo en orden." : string.Join(" ", mal.Select(x => $"{x.Nombre}: {x.Motivo}"));
+            return Results.Ok(new { estado = s.Estado, mensaje, areas = s.Areas });
+        }).Requiere("lectura");
+
+        // «Pánico»: lo mismo que el botón de la app. Cierra sesiones y revoca los tokens (también este); se levanta con /desbloquear en Telegram
+        a.MapPost("/panico", async (AppDbContext db, TimeProvider reloj, IMemoryCache cache, IAvisos avisos, HttpContext ctx, CancellationToken ct) =>
+        {
+            var r = await Panico.Ejecutar(db, reloj, cache, ct);
+            await avisos.PorTelegram($"🚨 Botón de pánico pulsado desde un atajo del iPhone ({IpCliente.De(ctx)}).\n{Panico.Resumen(r)}\nPara volver a entrar antes, escribe /desbloquear.", ct);
+            return Results.Ok(new { mensaje = Panico.Resumen(r) });
+        }).Requiere("panico");
     }
 
     // «MERCADONA 0123 MADRID» → «Mercadona Madrid»

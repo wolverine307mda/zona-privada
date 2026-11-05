@@ -55,6 +55,34 @@ public class AtajosTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
     }
 
     [Fact]
+    public async Task La_nota_rapida_se_guarda_con_su_etiqueta_y_pide_su_permiso()
+    {
+        var sin = Con(await Token("gasto"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await sin.PostAsJsonAsync("/api/atajos/nota", new { texto = "comprar pan" })).StatusCode);
+
+        var con = Con(await Token("nota"));
+        Assert.Equal(HttpStatusCode.BadRequest, (await con.PostAsJsonAsync("/api/atajos/nota", new { texto = "  " })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await con.PostAsJsonAsync("/api/atajos/nota", new { texto = "comprar pan" })).StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var n = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Notas.AsNoTracking().FirstAsync(x => x.Contenido == "comprar pan");
+        Assert.Equal("atajo", n.Etiquetas);
+    }
+
+    [Fact]
+    public async Task El_estado_se_lee_con_permiso_de_lectura_y_despertar_pide_un_aparato_que_exista()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Con(await Token("gasto")).GetAsync("/api/atajos/estado")).StatusCode);
+        var estado = await Con(await Token("lectura")).GetFromJsonAsync<JsonElement>("/api/atajos/estado");
+        Assert.False(string.IsNullOrEmpty(estado.GetProperty("mensaje").GetString()));
+        Assert.True(estado.GetProperty("areas").GetArrayLength() >= 5);
+
+        var pc = Con(await Token("pc"));
+        Assert.Equal(HttpStatusCode.NotFound, (await pc.PostAsJsonAsync("/api/atajos/despertar", new { nombre = "no existe" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Con(await Token("nota")).PostAsJsonAsync("/api/atajos/despertar", new { nombre = "x" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Con(await Token("nota")).PostAsync("/api/atajos/panico", null)).StatusCode);
+    }
+
+    [Fact]
     public async Task El_token_se_ve_una_vez_y_se_guarda_solo_su_huella()
     {
         var token = await Token("gasto");

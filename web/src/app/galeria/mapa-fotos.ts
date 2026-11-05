@@ -10,6 +10,7 @@ interface RespuestaMapa { total: number; conGps: number; pendientes: number; ind
 
 // El mapa de tus fotos: todas las de la carpeta «Imágenes» que llevan GPS, agrupadas según el zoom. Es solo para ti (lleva el PIN): ni las posiciones ni las
 // fechas salen nunca hacia la web. Las teselas son de OpenStreetMap (con su atribución, y sin descargas en bloque, como pide su política de uso).
+// OpenStreetMap rechaza las teselas sin Referer y la app manda «no-referrer»: solo estas peticiones llevan el origen (`referrerPolicy: 'origin'`).
 // Leaflet pesa unos 150 kB: se baja solo al abrir esta pestaña.
 @Component({
   selector: 'app-mapa-fotos',
@@ -97,7 +98,7 @@ export class MapaFotos implements OnDestroy {
     const L = this.L;
     if (!this.mapa) {
       this.mapa = L.map(el, { worldCopyJump: true, zoomControl: true, attributionControl: true }).setView([40.4, -3.7], 5);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(this.mapa);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, referrerPolicy: 'origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(this.mapa);
       this.observador = new ResizeObserver(() => this.mapa?.invalidateSize());
       this.observador.observe(el);
     }

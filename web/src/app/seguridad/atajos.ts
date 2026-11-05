@@ -9,6 +9,9 @@ const PERMISOS = [
   { id: 'pago', texto: 'Apple Pay', icono: 'M3 6h18v12H3zM3 10h18M7 15h3' },
   { id: 'lectura', texto: 'Leer saldo y agenda', icono: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
   { id: 'casa', texto: 'Llegar y salir de casa', icono: 'M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10' },
+  { id: 'nota', texto: 'Notas rápidas', icono: 'M6 3h9l4 4v14H6zM9 12h7M9 16h7' },
+  { id: 'pc', texto: 'Encender aparatos (Wake-on-LAN)', icono: 'M12 3v9M7 6a8 8 0 1 0 10 0' },
+  { id: 'panico', texto: 'Botón de pánico', icono: 'M12 3l9 16H3zM12 10v4M12 17v.5' },
 ];
 
 interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; permiso?: string; }
@@ -149,6 +152,14 @@ export class Atajos implements OnInit {
       texto: 'Atajos › Automatización › Transacción › «Ejecutar inmediatamente». Acción «Obtener contenido de URL». Si añades «Obtener ubicación actual» y mandas lat y lon, Cartera te enseña dónde gastas. Solo se prueba pagando de verdad.' },
     { titulo: 'Llegué a casa / me voy', permiso: 'casa', ruta: '/api/atajos/casa', cuerpo: 'estado = llegada (o salida)',
       texto: 'Atajos › Automatización › Llegar (o Salir) de un lugar › «Obtener contenido de URL».' },
+    { titulo: 'Nota rápida', permiso: 'nota', ruta: '/api/atajos/nota', cuerpo: 'texto (y titulo, opcional)',
+      texto: '«Dictar texto» y «Obtener contenido de URL» con el texto. La nota aparece en Notas con la etiqueta «atajo».' },
+    { titulo: 'Encender el PC', permiso: 'pc', ruta: '/api/atajos/despertar', cuerpo: 'nombre = el del aparato en Red (necesita su MAC y el agente en marcha)',
+      texto: 'Un atajo con «Obtener contenido de URL»; ponlo en la pantalla de bloqueo o en el botón de acción.' },
+    { titulo: 'Estado de un vistazo', permiso: 'lectura', ruta: '/api/atajos/estado', cuerpo: 'GET, sin cuerpo; devuelve mensaje, estado y áreas',
+      texto: 'GET con «Obtener contenido de URL» y «Obtener valor del diccionario» (mensaje) → «Decir texto» para que Siri lo lea.' },
+    { titulo: 'Pánico', permiso: 'panico', ruta: '/api/atajos/panico',
+      texto: 'Lo mismo que el botón de la app: cierra sesiones y revoca todos los tokens (también este). Añade «Mostrar alerta» con confirmación antes. Se levanta con /desbloquear en Telegram.' },
     { titulo: 'Pregunta del bot', ruta: '/api/atajos/ping',
       texto: 'Una automatización por lugar u hora que haga POST aquí: el bot te pregunta y respondes desde la notificación de Telegram.' },
   ];

@@ -62,6 +62,12 @@ public static class SemaforoVida
     public static void MapInicioResumen(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/inicio/resumen", async (AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+            Results.Ok(await Calcular(db, vigilante, agente, funnel, reloj, zona, ct))).RequireAuthorization();
+    }
+
+    // Lee el estado real (copias, accesos, dinero, PC, red) y lo pasa por `Evaluar`; lo usan Inicio y el atajo «Estado»
+    public static async Task<Semaforo> Calcular(AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct)
+    {
         {
             var ahora = reloj.GetUtcNow();
             var copia = vigilante.UltimaCopia();
@@ -79,10 +85,10 @@ public static class SemaforoVida
             var caidos = await db.DispositivosRed.AsNoTracking().CountAsync(d => d.Avisar && d.EnLinea == false, ct);
             var desde = ahora.AddDays(-30);
             var dosPasos = await db.Users.AnyAsync(u => u.TwoFactorEnabled, ct);
-            return Results.Ok(Evaluar(new DatosVida(copia.Vigilada, copia.Fecha is { } f ? (ahora - f).TotalHours : null, panicoActivo,
+            return Evaluar(new DatosVida(copia.Vigilada, copia.Fecha is { } f ? (ahora - f).TotalHours : null, panicoActivo,
                 await db.Accesos.CountAsync(a => !a.Exito && !a.Revisado && a.Fecha > desde, ct), dosPasos, libre, pasados, agente.Conectado(TimeSpan.FromMinutes(2)), alertas,
-                funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos)));
-        }).RequireAuthorization();
+                funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos));
+        }
     }
 
     private const string SaludPcClave = "salud-avisadas";
