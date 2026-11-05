@@ -165,6 +165,8 @@ public static class Sesiones
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Accesos.Add(new Acceso { Ip = IpCliente.De(ctx), Agente = Agente(ctx), Exito = ctx.Response.StatusCode == 200, Motivo = motivo });
             await db.SaveChangesAsync();
+            // varios intentos fallidos seguidos: si lo tienes activado, una foto de la cámara del PC
+            if (ctx.Response.StatusCode != 200) await Mda.Api.Pc.Capturas.TrasFallo(db, scope.ServiceProvider.GetRequiredService<TimeProvider>());
             // solo se guardan los 300 últimos
             var viejos = await db.Accesos.OrderByDescending(a => a.Id).Skip(300).ToListAsync();
             if (viejos.Count > 0) { db.Accesos.RemoveRange(viejos); await db.SaveChangesAsync(); }

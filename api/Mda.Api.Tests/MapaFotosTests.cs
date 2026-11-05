@@ -15,7 +15,7 @@ public class MapaFotosTests : IDisposable
     public MapaFotosTests() => Directory.CreateDirectory(_raiz);
     public void Dispose() { try { Directory.Delete(_raiz, true); } catch (IOException) { /* se limpia solo */ } }
 
-    private static AppDbContext Db() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static AppDbContext Db() => BaseDeDatos.Nueva();
 
     // Un JPEG mínimo que solo lleva el bloque EXIF con un GPS (hecho a mano: sin imagen, lo justo para que se lea el GPS)
     public static byte[] JpegConGps(double lat, double lon)

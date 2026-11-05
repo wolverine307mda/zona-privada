@@ -228,9 +228,9 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
-    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol"];
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
     public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
@@ -284,6 +284,7 @@ public static class OrdenesPc
         "bateria-informe" => "medir el desgaste de la batería",
         "abrir" => $"abrir en el PC: {o.Parametro}",
         "velocidad" => "medir la velocidad de Internet",
+        "captura" => $"hacer una foto de {Capturas.TextoOrigen(o.Parametro.Split(':')[0])}",
         _ => o.Tipo,
     };
 

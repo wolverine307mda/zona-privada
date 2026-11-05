@@ -11,7 +11,7 @@ public class EquiposTests
     private const string Windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
     private static readonly DateTimeOffset Ahora = new(2026, 11, 5, 10, 0, 0, TimeSpan.Zero);
 
-    private static AppDbContext Db() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static AppDbContext Db() => BaseDeDatos.Nueva();
 
     [Fact]
     public void Una_actualizacion_del_sistema_no_cambia_la_huella_pero_si_el_pais()

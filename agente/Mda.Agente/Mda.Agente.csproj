@@ -16,6 +16,7 @@
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Sistema\LectorSistema.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="10.0.14" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>
 

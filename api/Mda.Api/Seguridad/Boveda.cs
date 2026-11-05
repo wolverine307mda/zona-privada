@@ -43,6 +43,25 @@ public static class Boveda
         }
     }
 
+    // Lo mismo para bytes (fotos): nonce (12) + etiqueta (16) + cifrado, sin prefijo ni base64. Lanza CryptographicException si no cuadra la clave o el dato se tocó.
+    public static byte[] CifrarBytes(byte[] datos, string proposito)
+    {
+        var nonce = RandomNumberGenerator.GetBytes(12);
+        var todo = new byte[12 + 16 + datos.Length];
+        nonce.CopyTo(todo, 0);
+        using (var aes = new AesGcm(Subclave(proposito), 16)) aes.Encrypt(nonce, datos, todo.AsSpan(28, datos.Length), todo.AsSpan(12, 16), Encoding.UTF8.GetBytes(proposito));
+        return todo;
+    }
+
+    public static byte[] DescifrarBytes(byte[] todo, string proposito)
+    {
+        if (todo.Length < 28) throw new CryptographicException("Dato demasiado corto.");
+        var datos = new byte[todo.Length - 28];
+        using var aes = new AesGcm(Subclave(proposito), 16);
+        aes.Decrypt(todo.AsSpan(0, 12), todo.AsSpan(28), todo.AsSpan(12, 16), datos, Encoding.UTF8.GetBytes(proposito));
+        return datos;
+    }
+
     public static bool EstaCifrado(string? v) => v is not null && v.StartsWith(Prefijo, StringComparison.Ordinal);
 
     // el texto vacío se queda vacío: no hay nada que proteger y se evita ruido en la base

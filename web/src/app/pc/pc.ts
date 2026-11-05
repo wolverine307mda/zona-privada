@@ -1,3 +1,4 @@
+import { CapturasPc } from './capturas';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -43,7 +44,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, BateriaSalud, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
+  imports: [Pc3d, BateriaSalud, CapturasPc, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
   template: `
     <nav class="pestanas-pc" role="tablist" aria-label="Secciones de Mi PC">
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'equipo'" (click)="ponerPestana('equipo')">Equipo</button>
@@ -162,6 +163,8 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
     }
 
     <app-portapapeles-pc />
+
+    <app-capturas-pc />
 
     <section class="caja">
       <header class="caja__cab"><h3>Órdenes</h3><span class="sub">Piden Face ID o tu contraseña · avisan a Telegram · caducan a los 60 s</span></header>

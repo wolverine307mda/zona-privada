@@ -37,6 +37,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
     public DbSet<FotoPublica> FotosPublicas => Set<FotoPublica>();
     public DbSet<FotoGeo> FotosGeo => Set<FotoGeo>();
+    public DbSet<Mda.Api.Pc.CapturaPc> CapturasPc => Set<Mda.Api.Pc.CapturaPc>();
     public DbSet<Mda.Api.Archivos.TextoArchivo> TextosArchivo => Set<Mda.Api.Archivos.TextoArchivo>();
     public DbSet<Mda.Api.Habitos.Habito> Habitos => Set<Mda.Api.Habitos.Habito>();
     public DbSet<Mda.Api.Habitos.RegistroHabito> RegistrosHabito => Set<Mda.Api.Habitos.RegistroHabito>();
@@ -391,6 +392,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Ruta).HasMaxLength(600);
             e.Property(x => x.Origen).HasMaxLength(10);
             e.Property(x => x.Estado).HasMaxLength(12);
+        });
+
+        b.Entity<Mda.Api.Pc.CapturaPc>(e =>
+        {
+            e.ToTable("capturas_pc");
+            e.HasIndex(x => x.Fecha);
+            e.Property(x => x.Origen).HasMaxLength(12);
+            e.Property(x => x.Motivo).HasMaxLength(12);
         });
 
         b.Entity<FotoGeo>(e =>

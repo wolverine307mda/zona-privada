@@ -149,7 +149,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 - ⬜ D12.7 Tests: extracción de texto de un `.docx`, un PDF con texto y una imagen de ejemplo (esta última solo si hay `tesseract`, si no se salta), que respeta las carpetas protegidas, que no reindexa lo que no cambió.
 - Riesgos: la **imagen de Docker crece** y la primera indexación consume CPU del PC (prioridad baja y límites); la calidad del OCR depende del escaneo (se dice en la pantalla). Esfuerzo: 3–4 sesiones.
 
-### ⬜ 2 · Cámara bajo demanda
+### ✅ 2 · Cámara bajo demanda — cámara con ffmpeg y sin probar con hardware real; sin acción de reglas de casa ni WinRT
 Uso previsto: **tus propios equipos y tu casa**. Va **desactivado por defecto**, no graba de forma continua ni audio, y cada captura queda en el registro.
 - ⬜ D2.1 Agente: orden `captura:camara` y `captura:pantalla`. Pantalla con `System.Drawing` (sin dependencias). Webcam con `Windows.Media.Capture.MediaCapture` (hay que cambiar el TFM a `net10.0-windows10.0.19041.0`); **el agente debe correr en la sesión del usuario** (así corre dentro del lanzador; un servicio de Windows no puede abrir la cámara) y Windows tiene que permitir la cámara a las apps de escritorio. Respaldo si falla: `ffmpeg -f dshow` (decidir con Mario si merece empaquetarlo).
 - ⬜ D2.2 Segunda fuente: **cámara IP** de casa por su URL de instantánea (HTTP) como un conector más de `Domotica/Drivers.cs`, para la «cámara vieja».

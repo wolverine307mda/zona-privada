@@ -37,6 +37,8 @@
     <Compile Include="..\..\agente\Mda.Agente\Termica.cs" Link="Agente\Termica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Abrir.cs" Link="Agente\Abrir.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Velocidad.cs" Link="Agente\Velocidad.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\CapturaLogica.cs" Link="Agente\CapturaLogica.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Captura.cs" Link="Agente\Captura.cs" />
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>

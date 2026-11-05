@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -65,6 +65,7 @@ static partial class Ordenes
             }
             if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
             if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
+            if (o.Tipo == "captura") return await Captura.Hacer(o.Parametro, http, ct);
             if (o.Tipo == "copiar")
             {
                 var texto = await Dispositivos.LeerPortapapeles();

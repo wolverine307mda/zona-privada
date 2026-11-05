@@ -17,7 +17,7 @@ public class IndiceTests : IDisposable
     public IndiceTests() => Directory.CreateDirectory(_raiz);
     public void Dispose() { try { Directory.Delete(_raiz, true); } catch (IOException) { /* se limpia solo */ } }
 
-    private static AppDbContext Db() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static AppDbContext Db() => BaseDeDatos.Nueva();
     // sin OCR en las pruebas: se comprueba todo lo demás (con él apagado por ajuste no hace falta ningún programa externo)
     private static Ocr SinOcr() => new(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Indexado:Ocr"] = "off" }).Build(), NullLogger<Ocr>.Instance);
 

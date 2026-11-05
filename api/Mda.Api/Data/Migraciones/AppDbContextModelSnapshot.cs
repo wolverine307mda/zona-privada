@@ -1301,6 +1301,47 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("notas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.CapturaPc", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Alto")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Ancho")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Datos")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<int>("Tamano")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.ToTable("capturas_pc", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Pc.DispositivoRed", b =>
                 {
                     b.Property<int>("Id")
