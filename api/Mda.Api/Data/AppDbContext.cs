@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Conexion> Conexiones => Set<Conexion>();
     public DbSet<SesionAbierta> Sesiones => Set<SesionAbierta>();
     public DbSet<Acceso> Accesos => Set<Acceso>();
+    public DbSet<LlamadaExterna> LlamadasExternas => Set<LlamadaExterna>();
     public DbSet<EquipoConocido> Equipos => Set<EquipoConocido>();
     public DbSet<Mda.Api.Auth.PasskeyInfo> PasskeysInfo => Set<Mda.Api.Auth.PasskeyInfo>();
     public DbSet<Ajuste> Ajustes => Set<Ajuste>();
@@ -154,6 +155,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Ip).HasMaxLength(64);
             e.Property(x => x.Agente).HasMaxLength(400);
             e.Property(x => x.Motivo).HasMaxLength(80);
+        });
+
+        b.Entity<LlamadaExterna>(e =>
+        {
+            e.ToTable("llamadas_externas");
+            e.Property(x => x.Metodo).HasMaxLength(10);
+            e.Property(x => x.Ruta).HasMaxLength(300);
+            e.Property(x => x.Consulta).HasMaxLength(2000);
+            e.Property(x => x.Origen).HasMaxLength(120);
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.Agente).HasMaxLength(400);
+            e.Property(x => x.Peticion).HasMaxLength(2100);
+            e.Property(x => x.Respuesta).HasMaxLength(2100);
+            e.Property(x => x.Error).HasMaxLength(2100);
+            e.HasIndex(x => x.Fecha);
         });
 
         b.Entity<Mda.Api.Auth.PasskeyInfo>(e =>

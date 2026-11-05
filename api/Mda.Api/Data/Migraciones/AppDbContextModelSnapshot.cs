@@ -1732,6 +1732,75 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("equipos_conocidos", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Seguridad.LlamadaExterna", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Agente")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Consulta")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("DuracionMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Error")
+                        .IsRequired()
+                        .HasMaxLength(2100)
+                        .HasColumnType("character varying(2100)");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Peticion")
+                        .IsRequired()
+                        .HasMaxLength(2100)
+                        .HasColumnType("character varying(2100)");
+
+                    b.Property<string>("Respuesta")
+                        .IsRequired()
+                        .HasMaxLength(2100)
+                        .HasColumnType("character varying(2100)");
+
+                    b.Property<string>("Ruta")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.ToTable("llamadas_externas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Secreto", b =>
                 {
                     b.Property<string>("Servicio")
