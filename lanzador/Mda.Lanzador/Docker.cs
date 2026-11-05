@@ -49,9 +49,9 @@ static class Docker
             using var cts = new CancellationTokenSource(limite);
             var salida = p.StandardOutput.ReadToEndAsync(cts.Token);
             var error = p.StandardError.ReadToEndAsync(cts.Token);
-            try { await p.WaitForExitAsync(cts.Token); }
+            try { await p.WaitForExitAsync(cts.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) { try { p.Kill(true); } catch (InvalidOperationException) { } return (-1, "tiempo agotado"); }
-            return (p.ExitCode, (await salida) + (await error));
+            return (p.ExitCode, (await salida.ConfigureAwait(false)) + (await error.ConfigureAwait(false)));
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { return (-1, e.Message); }
     }

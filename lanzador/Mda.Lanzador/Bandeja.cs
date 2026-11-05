@@ -50,6 +50,7 @@ sealed class Bandeja : ApplicationContext
 
     public Bandeja()
     {
+        Log($"arranque: lanzador {Version}, modo {_modo}");
         foreach (var n in Enum.GetValues<Nivel>()) _iconos[n] = Dibujar(n);
         _icono.Icon = _iconos[Nivel.Ambar];
         _icono.Text = "Zona privada: arrancando…";
@@ -57,12 +58,22 @@ sealed class Bandeja : ApplicationContext
         _icono.DoubleClick += (_, _) => Abrir(!Nativo && _urlPublica.Length > 0 ? _urlPublica : UrlLocal);
         _reloj.Tick += async (_, _) => await Comprobar();
 
-        if (!Configurar()) { ExitThread(); return; }
+        Log("arranque: configuración");
+        if (!Configurar()) { Log("arranque: configuración cancelada"); ExitThread(); return; }
         _modoNativo.Checked = Nativo; _ensayoItem.Checked = _ensayo; _tsServe.Checked = _urlNativa.Length > 0;
-        _inicio.Checked = Instalador.TareaExiste();
+        // la consulta a schtasks va fuera del hilo de la interfaz: esperarla aquí con .Result podía dejar el menú sin responder
+        _ = ActualizarInicio();
+        Log("arranque: agente y servicios");
         _ = ArrancarAgente();
         _ = ArrancarTodo(primeraVez: true);
         _reloj.Start();
+        Log("arranque: listo");
+    }
+
+    private async Task ActualizarInicio()
+    {
+        var existe = await Task.Run(Instalador.TareaExiste);
+        _ui.Post(_ => _inicio.Checked = existe, null);
     }
 
     // ---------- configuración: carpeta del proyecto, token y dirección pública ----------
