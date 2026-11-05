@@ -8,7 +8,7 @@
 @keyframes entra-caja { from { opacity: 0; transform: translateY(16px) scale(0.985); } }
 
 .caja {
-  position: relative; background: var(--brillo), var(--tarjeta); border: 1px solid var(--vidrio-borde); border-radius: var(--radio); box-shadow: var(--sombra);
+  position: relative; background: var(--brillo), var(--vidrio); border: 1px solid var(--vidrio-borde); border-radius: var(--radio); box-shadow: var(--sombra);
   padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
 }
 .caja__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }

@@ -58,8 +58,9 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
   `--ok/--warn/--bad` (con variante de día), escala de radios (`--radio-s/m/l/xl` = 12/20/28/36 px y `--radio-pildora`; `--radio` es un alias heredado de
   `--radio-l`), espacios (`--esp-1..7`), `--tactil` (44 px), sombras (`--sombra`, `--sombra-flota`, `--sombra-pulsa`), la tarjeta negra (`--negra`, `--on-negra`…),
   escalas fluidas (`--step-*`, `--step-saludo`, `--step-cifra`), curvas y duraciones (`--ease-*`, `--dur-*`, `--stagger`).
-- **Superficies sólidas**: las tarjetas van rellenas y opacas (`--vidrio` y `--vidrio-fuerte` valen `--tarjeta`; `--desenfoque` es `none`). Solo el menú lateral
-  deja ver el fondo animado cuando se elige uno.
+- **Superficies casi sólidas**: las tarjetas van rellenas pero con un 90 % de opacidad (`--vidrio`; `--vidrio-fuerte` 95 %) para que se intuya el fondo, y las negras,
+  que son del color del fondo, un 84 % (`--negra-vidrio`; 93 % de día, porque sobre un fondo claro se verían grises). Sin desenfoque (`--desenfoque: none`: en el móvil pesa).
+  `--tarjeta` sigue siendo opaca y es la que usan los diálogos, las barras fijas y los campos.
 - **Tipografías** locales (`public/fonts`): *Switzer* 300 (cifras y saludos grandes), 400 y 500 (texto y títulos de tarjeta), *Panchang* 700 (solo marca y rótulos
   que se quieran muy anchos; ya no se usa para cifras) y *JetBrains Mono* (código, cifras que no deben bailar como el reloj). Clase `.cifra` para una cifra grande ligera con su unidad.
 - **Paletas** (Ajustes → Color y paleta): ocho colores (morado, rojo, naranja, ámbar, lima, turquesa, azul y rosa) y **cada uno es una gama de cinco tonos** del mismo color,

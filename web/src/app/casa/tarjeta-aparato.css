@@ -1,5 +1,5 @@
 :host { display: block; min-width: 0; }
-.t { display: grid; gap: 14px; align-content: start; height: 100%; padding: 20px; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--tarjeta); box-shadow: var(--sombra); transition: background-color 240ms ease, border-color 240ms ease; }
+.t { display: grid; gap: 14px; align-content: start; height: 100%; padding: 20px; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--vidrio); box-shadow: var(--sombra); transition: background-color 240ms ease, border-color 240ms ease; }
 .t--on { border-color: color-mix(in srgb, var(--brand) 55%, transparent); background: color-mix(in srgb, var(--brand) 11%, var(--tarjeta)); }
 .t--oculto { opacity: .45; }
 .t__cab { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }

@@ -13,7 +13,7 @@
   --texto: var(--on-negra); --soft: var(--negra-soft); --linea: var(--negra-linea);
   position: relative; overflow: hidden; color: var(--on-negra);
   display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: clamp(22px, 3vw, 36px);
-  background: var(--negra); border: 1px solid var(--negra-linea); border-radius: var(--radio-xl);
+  background: var(--negra-vidrio); border: 1px solid var(--negra-linea); border-radius: var(--radio-xl);
 }
 /* trama de puntos del color de acento, que se funde hacia la izquierda */
 .hola::before {

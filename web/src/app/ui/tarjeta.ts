@@ -32,7 +32,7 @@ export type RadioTarjeta = 'm' | 'l' | 'xl';
     :host([data-variante='negra']) {
       --texto: var(--on-negra); --soft: var(--negra-soft); --linea: var(--negra-linea);
       --esq-base: rgba(255, 255, 255, 0.08); --esq-luz: color-mix(in srgb, var(--brand) 30%, rgba(255, 255, 255, 0.08)); /* el esqueleto de dentro, claro sobre negro */
-      background: var(--negra); border-color: var(--negra-linea); box-shadow: var(--sombra-flota);
+      background: var(--negra-vidrio); border-color: var(--negra-linea); box-shadow: var(--sombra-flota);
     }
     :host([data-variante='acento']) {
       background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 18%, transparent), color-mix(in srgb, var(--brand) 8%, transparent)), var(--vidrio-fuerte);

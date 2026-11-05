@@ -51,6 +51,7 @@
 
   /* tarjeta negra de la métrica principal: es negra también de día */
   --negra: #060606; --on-negra: #f5f2ec; --negra-soft: #a29e97; --negra-linea: rgba(255, 255, 255, 0.12);
+  --negra-vidrio: color-mix(in srgb, var(--negra) 84%, transparent);
 
   --ok: #3ddc84; --warn: #ffc93c; --bad: #ff5a5f; --on-bad: #1c0608;
 
@@ -85,9 +86,9 @@
   --dur-1: 160ms; --dur-2: 240ms; --dur-3: 420ms; --dur-4: 700ms; --stagger: 40ms;
 
   /* vidrio: tarjetas y barras translúcidas sobre el fondo con degradado del color elegido */
-  /* superficies SÓLIDAS: las tarjetas van rellenas y opacas (sin transparencias ni desenfoque); solo el menú lateral deja ver el fondo animado */
-  --vidrio: var(--tarjeta);
-  --vidrio-fuerte: var(--tarjeta);
+  /* superficies casi sólidas: las tarjetas van rellenas, con una opacidad del 90 % para que se intuya el fondo (sin desenfoque, que en el móvil pesa); las negras, que son del color del fondo, algo más transparentes */
+  --vidrio: color-mix(in srgb, var(--tarjeta) 90%, transparent);
+  --vidrio-fuerte: color-mix(in srgb, var(--tarjeta) 95%, transparent);
   --vidrio-borde: color-mix(in srgb, var(--texto) 9%, transparent);
   --desenfoque: none;
   --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 38%);
@@ -112,11 +113,12 @@
   /* verde, ámbar y rojo más oscuros para que el texto llegue a 4,5:1 sobre blanco */
   --ok: #0f7a42; --warn: #9a6200; --bad: #c62f34; --on-bad: #ffffff;
   --menu-activo: var(--negra); --menu-activo-txt: var(--on-negra);
+  --negra-vidrio: color-mix(in srgb, var(--negra) 93%, transparent); /* de día el negro translúcido sobre un fondo claro se vería gris */
   --tono-titulo: var(--t4); --tono-icono: var(--t4);
   --tono-icono-fondo: color-mix(in srgb, var(--t3) 16%, transparent);
   --tono-chip: color-mix(in srgb, var(--t1) 65%, var(--tarjeta));
-  --vidrio: var(--tarjeta);
-  --vidrio-fuerte: var(--tarjeta);
+  --vidrio: color-mix(in srgb, var(--tarjeta) 90%, transparent);
+  --vidrio-fuerte: color-mix(in srgb, var(--tarjeta) 95%, transparent);
   --vidrio-borde: rgba(11, 21, 28, 0.08);
   --brillo: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent 40%);
   --aura-1: color-mix(in srgb, var(--brand) 20%, transparent);
