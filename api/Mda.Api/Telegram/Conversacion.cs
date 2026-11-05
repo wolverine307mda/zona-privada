@@ -253,7 +253,7 @@ public class Conversacion(
         var nueva = h.Objetivo == 1 ? 1 : actual + 1;
         await Habitos.ServicioHabitos.Marcar(db, h.Id, hoy, nueva, ct);
         var regs = await db.RegistrosHabito.AsNoTracking().Where(r => r.HabitoId == h.Id && r.Fecha >= hoy.AddDays(-400)).ToDictionaryAsync(r => r.Fecha, r => r.Cantidad, ct);
-        var racha = Habitos.Rachas.Calcular(h.Dias, h.Objetivo, regs, h.Creado, hoy).Actual;
+        var racha = Habitos.Rachas.Calcular(h.Dias, h.Objetivo, regs, Habitos.ServicioHabitos.Inicio(h, regs, hoy), hoy).Actual;
         var progreso = h.Objetivo > 1 ? $" ({nueva}/{h.Objetivo}{(string.IsNullOrEmpty(h.Unidad) ? "" : " " + H(h.Unidad))})" : "";
         return $"✅ <b>{H(h.Nombre)}</b>{progreso}{(nueva >= h.Objetivo && racha > 1 ? $" · racha de {racha} días" : "")}";
     }

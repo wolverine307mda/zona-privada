@@ -120,7 +120,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 
 ## Fase C · módulo nuevo
 
-### ⬜ 11 · Hábitos y rachas
+### ✅ 11 · Hábitos y rachas — API `d656824` + pantalla (sin frases del asistente: Telegram y buscador)
 - ⬜ C11.1 Modelo: `Habito` (nombre, icono, tono, frecuencia: cada día / ciertos días de la semana / N veces por semana, objetivo diario —1 por defecto, 8 para «agua»—, hora de aviso opcional, archivado) y `RegistroHabito` (hábito, fecha, cantidad), único por hábito y día. Migración + índices.
 - ⬜ C11.2 Lógica pura `Rachas`: racha actual y mejor, % de cumplimiento a 30 días y mapa de 90 días, **solo contando los días que tocaban**. Una «excusa» opcional por semana que no rompe la racha. Tests: día sin tocar, racha cruzando el cambio de mes, cambio de hora, hábito creado a medias.
 - ⬜ C11.3 Rutas `/api/habitos` (CRUD, `PUT /{id}/marcar` con fecha y cantidad, `GET /resumen`). Fechas en la zona horaria de casa (`Zona`).
@@ -131,7 +131,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 - ⬜ C11.8 Docs (`02-backend`, `03-api`, `04-frontend`) y entrada en `modulos.ts`.
 - Riesgo: crecer demasiado → mantenerlo pequeño (sin categorías ni sociales). Esfuerzo: 3 sesiones.
 
-### ⬜ 16 · Buscador, versión B (hábitos y documentos)
+### 🔄 16 · Buscador, versión B (hábitos hechos; documentos cuando exista el 12)
 - ⬜ C16.1 Acciones «marcar hábito» y «abrir hábito» en el registro de acciones; resultados de hábitos en `/api/buscar`.
 - ⬜ C16.2 Cuando exista el 12: resultados de documentos con el fragmento encontrado.
 

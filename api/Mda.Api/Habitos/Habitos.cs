@@ -101,9 +101,16 @@ public static class ServicioHabitos
         return habitos.Select(h => Dto(h, registros.GetValueOrDefault(h.Id) ?? [], hoy)).ToList();
     }
 
+    // Desde cuándo cuenta el hábito: el día que se creó o, si se apuntaron días anteriores (para ponerse al día), el primero de ellos
+    public static DateOnly Inicio(Habito h, IReadOnlyDictionary<DateOnly, int> registros, DateOnly hoy)
+    {
+        var inicio = registros.Count > 0 && registros.Keys.Min() < h.Creado ? registros.Keys.Min() : h.Creado;
+        return inicio < hoy.AddDays(-HistoriaDias) ? hoy.AddDays(-HistoriaDias) : inicio;
+    }
+
     public static object Dto(Habito h, IReadOnlyDictionary<DateOnly, int> registros, DateOnly hoy)
     {
-        var e = Rachas.Calcular(h.Dias, h.Objetivo, registros, h.Creado < hoy.AddDays(-HistoriaDias) ? hoy.AddDays(-HistoriaDias) : h.Creado, hoy);
+        var e = Rachas.Calcular(h.Dias, h.Objetivo, registros, Inicio(h, registros, hoy), hoy);
         var cantidad = registros.GetValueOrDefault(hoy);
         return new
         {

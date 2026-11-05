@@ -121,6 +121,29 @@ public class RachasTests
     public void La_hora_del_aviso_va_como_HH_mm(string? h, bool valida) => Assert.Equal(valida, Rachas.HoraValida(h));
 }
 
+public class InicioHabitoTests
+{
+    private static readonly DateOnly Hoy = new(2026, 11, 5);
+
+    [Fact]
+    public void Los_dias_apuntados_antes_de_crearlo_adelantan_el_inicio_y_cuentan_para_la_racha()
+    {
+        var h = new Habito { Creado = Hoy, Dias = 127, Objetivo = 1 };
+        var regs = new Dictionary<DateOnly, int> { [Hoy] = 1, [Hoy.AddDays(-1)] = 1, [Hoy.AddDays(-2)] = 1 };
+        Assert.Equal(Hoy.AddDays(-2), ServicioHabitos.Inicio(h, regs, Hoy));
+        Assert.Equal(3, Rachas.Calcular(h.Dias, h.Objetivo, regs, ServicioHabitos.Inicio(h, regs, Hoy), Hoy).Actual);
+    }
+
+    [Fact]
+    public void Sin_marcas_anteriores_el_inicio_es_la_creacion_y_nunca_pasa_de_un_anio_atras()
+    {
+        var h = new Habito { Creado = Hoy.AddDays(-3) };
+        Assert.Equal(Hoy.AddDays(-3), ServicioHabitos.Inicio(h, new Dictionary<DateOnly, int>(), Hoy));
+        var antiguo = new Habito { Creado = Hoy.AddDays(-1000) };
+        Assert.Equal(Hoy.AddDays(-ServicioHabitos.HistoriaDias), ServicioHabitos.Inicio(antiguo, new Dictionary<DateOnly, int>(), Hoy));
+    }
+}
+
 public class HabitosApiTests
 {
     [Fact]

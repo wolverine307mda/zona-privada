@@ -57,6 +57,12 @@ export class Panel {
   protected readonly pc = signal<EstadoPcInicio | null>(null);
   protected readonly llaves = signal(0);
   protected readonly red = signal<AparatoRed[] | null>(null);
+  protected readonly habitos = signal<{ tocaHoy: boolean; hecho: boolean; actual: number }[] | null>(null);
+  // los hábitos que tocan hoy: cuántos están hechos y la racha más larga en marcha
+  protected readonly habitosHoy = computed(() => {
+    const l = (this.habitos() ?? []).filter((h) => h.tocaHoy);
+    return { total: l.length, hechos: l.filter((h) => h.hecho).length, racha: Math.max(0, ...(this.habitos() ?? []).map((h) => h.actual)) };
+  });
   protected readonly redCaida = computed(() => (this.red() ?? []).filter((a) => a.enLinea === false));
 
   // la mejor ventana de luz de hoy que aún no ha terminado
@@ -120,6 +126,7 @@ export class Panel {
       get<Raiz[]>('/api/archivos/raices').then((r) => this.raices.set(r)),
       get<{ lugar: string | null; hoy: VentanaLuz[] }>('/api/luz').then((l) => this.luz.set(l)).catch(() => this.luz.set({ lugar: null, hoy: [] })),
       get<EstadoPcInicio>('/api/pc').then((p) => this.pc.set(p)).catch(() => {}),
+      get<{ tocaHoy: boolean; hecho: boolean; actual: number }[]>('/api/habitos').then((h) => this.habitos.set(h)).catch(() => this.habitos.set([])),
       get<unknown[]>('/api/passkeys').then((l) => this.llaves.set(l.length)).catch(() => {}),
       get<AparatoRed[]>('/api/red').then((r) => this.red.set(r)).catch(() => {}),
       this.leerMusica(),

@@ -47,4 +47,15 @@ describe('buscador · acciones', () => {
     expect(lista.find((a) => a.id === 'a-escena-7')!.mantener).toBe(true);
     expect(lista.find((a) => a.id === 'a-color-rojo')!.mantener).toBeFalsy();
   });
+
+  it('ofrece marcar como hecho cada hábito pendiente de hoy', async () => {
+    const marcarHabito = vi.fn(async () => 'Meditar: hecho · racha de 4 días');
+    const d = deps({ habitos: () => [{ id: 3, nombre: 'Meditar' }], marcarHabito });
+    const lista = crearAcciones(d);
+    expect(filtrarAcciones(lista, 'hecho medit').map((a) => a.id)).toEqual(['a-habito-3']);
+    await lista.find((a) => a.id === 'a-habito-3')!.hacer();
+    expect(marcarHabito).toHaveBeenCalledWith(3);
+    expect(d.avisar).toHaveBeenCalledWith('Meditar: hecho · racha de 4 días');
+    expect(crearAcciones(deps()).some((a) => a.id.startsWith('a-habito-'))).toBe(false);
+  });
 });

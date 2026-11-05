@@ -181,7 +181,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             h.AvisadoFecha = hoy;   // se marca aunque ya esté hecho: hoy no hay que volver a mirarlo
             var r = regs.GetValueOrDefault(h.Id) ?? [];
             if (r.GetValueOrDefault(hoy) >= h.Objetivo) continue;
-            var racha = Mda.Api.Habitos.Rachas.Calcular(h.Dias, h.Objetivo, r, h.Creado, hoy).Actual;
+            var racha = Mda.Api.Habitos.Rachas.Calcular(h.Dias, h.Objetivo, r, Mda.Api.Habitos.ServicioHabitos.Inicio(h, r, hoy), hoy).Actual;
             var texto = racha >= 3 ? $"Aún no has hecho «{h.Nombre}» hoy. Llevas {racha} días seguidos: no la pierdas." : $"Aún no has hecho «{h.Nombre}» hoy.";
             await avisos.PorPush($"✅ {h.Nombre}", texto, "/habitos", ct);
             await avisos.PorTelegram($"✅ {texto}\nEscribe /hecho {h.Nombre.ToLowerInvariant()} para apuntarlo.", ct);

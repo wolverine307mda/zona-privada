@@ -104,6 +104,7 @@ export class Buscador {
   protected readonly vista = signal<Vista | null>(null);
   protected readonly hecho = signal<Hecho | null>(null);
   private readonly escenas = signal<{ id: number; nombre: string }[]>([]);
+  private readonly habitos = signal<{ id: number; nombre: string; tocaHoy: boolean; hecho: boolean }[]>([]);
   private temporizador?: ReturnType<typeof setTimeout>;
   private temporizadorVista?: ReturnType<typeof setTimeout>;
   private peticion = 0;
@@ -114,6 +115,12 @@ export class Buscador {
     escenas: () => this.escenas(),
     aplicarEscena: async (id) => { const r = await firstValueFrom(this.http.post<{ mensaje: string }>(`/api/escenas/${id}/aplicar`, null)); return r.mensaje || 'Escena aplicada.'; },
     avisar: (t) => this.hecho.set({ texto: t }),
+    habitos: () => this.habitos().filter((h) => h.tocaHoy && !h.hecho),
+    marcarHabito: async (id) => {
+      const h = await firstValueFrom(this.http.put<{ nombre: string; actual: number }>(`/api/habitos/${id}/marcar`, {}));
+      this.habitos.update((l) => l.map((x) => (x.id === id ? { ...x, hecho: true } : x)));
+      return `${h.nombre}: hecho${h.actual > 1 ? ' · racha de ' + h.actual + ' días' : ''}`;
+    },
   }));
 
   private readonly fijas: Opcion[] = [
@@ -204,6 +211,7 @@ export class Buscador {
     setTimeout(() => this.campo().nativeElement.focus(), 30);
     // las escenas del PC, para poder ponerlas con «> escena»
     firstValueFrom(this.http.get<{ id: number; nombre: string }[]>('/api/escenas')).then((l) => this.escenas.set(l)).catch(() => {});
+    firstValueFrom(this.http.get<{ id: number; nombre: string; tocaHoy: boolean; hecho: boolean }[]>('/api/habitos')).then((l) => this.habitos.set(l)).catch(() => {});
   }
 
   protected escribir(t: string): void {

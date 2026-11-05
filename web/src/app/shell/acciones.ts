@@ -25,6 +25,9 @@ export interface Dependencias {
   escenas: () => { id: number; nombre: string }[];
   aplicarEscena: (id: number) => Promise<string>;
   avisar: (texto: string) => void;
+  /** hábitos que tocan hoy y aún no están hechos, para marcarlos desde el buscador */
+  habitos?: () => { id: number; nombre: string }[];
+  marcarHabito?: (id: number) => Promise<string>;
 }
 
 const SOL = 'M12 4V2M12 22v-2M4 12H2M22 12h-2M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z';
@@ -43,6 +46,7 @@ export function crearAcciones(d: Dependencias): Accion[] {
     { id: 'a-suspender-pc', titulo: 'Suspender el PC', detalle: 'Orden al equipo de casa', icono: PC, mantener: true, hacer: async () => d.avisar(await d.orden('suspender')) },
     { id: 'a-despierto-on', titulo: 'Mantener el PC despierto', detalle: 'Orden al equipo de casa', icono: PC, mantener: true, hacer: async () => d.avisar(await d.orden('despierto', 'on')) },
     { id: 'a-despierto-off', titulo: 'Dejar que el PC se suspenda', detalle: 'Orden al equipo de casa', icono: PC, mantener: true, hacer: async () => d.avisar(await d.orden('despierto', 'off')) },
+    ...(d.habitos?.() ?? []).map((h) => ({ id: `a-habito-${h.id}`, titulo: `Hecho: ${h.nombre}`, detalle: 'Apuntar el hábito de hoy', icono: 'M5 12.5l4.2 4.2L19 7', mantener: true, hacer: async () => d.avisar(await d.marcarHabito!(h.id)) })),
     ...d.escenas().map((e) => ({ id: `a-escena-${e.id}`, titulo: `Escena ${e.nombre}`, detalle: 'Escenas del PC', icono: ESCENA, mantener: true, hacer: async () => d.avisar(await d.aplicarEscena(e.id)) })),
   ];
 }
