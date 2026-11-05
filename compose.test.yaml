@@ -1,14 +1,18 @@
 # Entorno de PRUEBAS en Docker, para hacer cambios sin tocar la zona privada real (la versión de escritorio).
 #
 #   docker compose -f compose.yaml -f compose.test.yaml up -d --build api
-#   tailscale funnel --bg --https=8443 http://127.0.0.1:8080        (se ve en https://<tu-nodo>.ts.net:8443)
+#   docker compose -f compose.yaml -f compose.test.yaml --profile pruebas up -d tailscale-pruebas
+#
+# La primera vez el nodo de Tailscale de pruebas pide que lo apruebes: mira el enlace «To authenticate, visit: …» con
+#   docker compose -f compose.yaml -f compose.test.yaml logs tailscale-pruebas
+# y ábrelo con tu cuenta. Queda como https://equipo-de-casa-pruebas.<tu-red>.ts.net (otro nodo, otra dirección, otro certificado).
 #
 # Qué cambia respecto a compose.yaml:
 #  - «ensayo»: no manda Telegram, correo, WhatsApp ni notificaciones, ni toca tus aparatos (no hay dos bots ni órdenes duplicadas).
 #  - tus carpetas compartidas van en SOLO LECTURA: una prueba que falle no puede borrar ni cambiar tus archivos.
 #  - cookie de sesión con otro nombre (las cookies no distinguen puertos: si no, entrar aquí cerraría tu sesión de la real).
 #  - una barra «Entorno de pruebas» en todas las pantallas.
-#  - sin el contenedor de Tailscale (la dirección pública la da el Tailscale de Windows) ni el agente del PC (habla con la real).
+#  - su propio nodo de Tailscale («equipo-de-casa-pruebas»), sin compartir nada con el de la real; y sin agente del PC (habla con la real).
 # Su base de datos es la del Docker de siempre: una copia de cuando se importó, no la real.
 services:
   api:
@@ -38,3 +42,22 @@ services:
       - ${CARPETA_IMAGENES:-./carpetas/imagenes}:/carpetas/imagenes:ro
       - ${CARPETA_MUSICA:-./carpetas/musica}:/carpetas/musica:ro
       - ${CARPETA_VIDEOS:-./carpetas/videos}:/carpetas/videos:ro
+
+  # el nodo de Tailscale de las pruebas: otra dirección pública, con su propio estado. No usa TS_AUTHKEY del .env: se aprueba una vez con el enlace del registro.
+  tailscale-pruebas:
+    image: tailscale/tailscale:v1.104.4
+    hostname: equipo-de-casa-pruebas
+    restart: unless-stopped
+    profiles: ["pruebas"]
+    environment:
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve-pruebas.json
+      TS_USERSPACE: "true"
+    volumes:
+      - tailscale-pruebas:/var/lib/tailscale
+      - ./tailscale/serve-pruebas.json:/config/serve-pruebas.json:ro
+    depends_on:
+      - api
+
+volumes:
+  tailscale-pruebas:
