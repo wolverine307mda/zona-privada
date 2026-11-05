@@ -77,7 +77,7 @@ import { PerfilService } from '../core/perfil.service';
   `,
   styles: `
     /* capa fija a pantalla completa: el relleno respeta la muesca y la barra de inicio del iPhone; si no cabe (teclado, pantalla baja) se desplaza */
-    .velo { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); background: var(--fondo); animation: entra var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
+    .velo { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: max(12px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom)); background: var(--fondo); animation: entra var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
     .fondo { position: fixed; inset: 0; pointer-events: none; }
     .orbe { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .42; animation: flota 14s ease-in-out infinite alternate; }
     .o1 { width: 52vmax; height: 52vmax; left: -14vmax; top: -18vmax; background: color-mix(in srgb, var(--brand) 55%, transparent); }
@@ -85,21 +85,21 @@ import { PerfilService } from '../core/perfil.service';
     .malla { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, var(--texto) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--texto) 5%, transparent) 1px, transparent 1px); background-size: 46px 46px; mask-image: radial-gradient(circle at 50% 45%, #000 0, transparent 70%); }
 
     /* tres bandas: la hora, el escáner (se lleva el hueco que sobra) y las acciones; el ancho nunca pasa de 360 px ni del de la pantalla */
-    .pantalla { position: relative; align-self: stretch; flex: 0 1 360px; min-width: 0; min-height: max-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(min-content, 1fr) auto; justify-items: center; gap: 20px; text-align: center; animation: sube var(--dur-4, 700ms) var(--ease-out, ease-out) both; }
+    .pantalla { position: relative; align-self: stretch; flex: 0 1 360px; min-width: 0; min-height: max-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(min-content, 1fr) auto; justify-items: center; gap: 12px; text-align: center; animation: sube var(--dur-4, 700ms) var(--ease-out, ease-out) both; }
     .tiembla { animation: tiembla .45s ease; }
     .icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-    .cabeza { display: grid; justify-items: center; gap: 6px; }
-    .etiqueta { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 6px 12px; border-radius: 999px; font: 600 .7rem/1 var(--font-code); letter-spacing: .14em; text-transform: uppercase; color: var(--soft); background: color-mix(in srgb, var(--texto) 7%, transparent); }
+    .cabeza { display: grid; justify-items: center; gap: 4px; }
+    .etiqueta { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 4px; padding: 6px 12px; border-radius: 999px; font: 600 .7rem/1 var(--font-code); letter-spacing: .14em; text-transform: uppercase; color: var(--soft); background: color-mix(in srgb, var(--texto) 7%, transparent); }
     .etiqueta .icon { width: 13px; height: 13px; }
-    .reloj { margin: 0; font: var(--peso-ligero) clamp(3.4rem, 17vw, 4.6rem)/1 var(--font-text); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+    .reloj { margin: 0; font: var(--peso-ligero) clamp(3rem, 14vw, 3.8rem)/1 var(--font-text); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
     .fecha { margin: 0; font-size: .95rem; color: var(--soft); }
     .fecha::first-letter { text-transform: uppercase; }
 
     .centro { display: grid; align-content: center; justify-items: center; gap: 6px; }
 
     /* escáner: retícula con esquinas, un anillo que gira y una línea que barre la foto mientras se comprueba */
-    .escaner { --c: var(--brand); --e: 184px; --f: 124px; position: relative; display: grid; place-items: center; width: var(--e); height: var(--e); margin-bottom: 12px; }
+    .escaner { --c: var(--brand); --e: 156px; --f: 106px; position: relative; display: grid; place-items: center; width: var(--e); height: var(--e); margin-bottom: 6px; }
     .escaner[data-fase='ok'] { --c: var(--ok); } .escaner[data-fase='fallo'] { --c: var(--bad); }
     .escaner__retic { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; }
     .anillo { stroke: color-mix(in srgb, var(--texto) 10%, transparent); stroke-width: 2; }
@@ -145,7 +145,8 @@ import { PerfilService } from '../core/perfil.service';
     @keyframes late { 50% { transform: scale(1.05); } }
     @keyframes tiembla { 20%, 60% { transform: translateX(-9px); } 40%, 80% { transform: translateX(9px); } }
     /* pantalla baja (móvil en horizontal, teclado abierto): escáner y reloj más pequeños para no tener que desplazar */
-    @media (max-height: 700px) { .escaner { --e: 148px; --f: 100px; } .reloj { font-size: 3rem; } .pantalla { gap: 12px; } }
+    @media (max-height: 820px) { .escaner { --e: 132px; --f: 90px; } .reloj { font-size: 2.8rem; } .pantalla { gap: 8px; } .aviso { min-height: 0; } .cara { min-height: 52px; } .otra { min-height: 46px; } }
+    @media (max-height: 640px) { .escaner { --e: 108px; --f: 74px; } .reloj { font-size: 2.4rem; } .centro { gap: 2px; } }
     @media (prefers-reduced-motion: reduce) { .velo, .pantalla, form, .orbe, .progreso, .esquinas, .barrido::before, .insignia, .tiembla, .escaner img { animation: none !important; } .cara { transition: none; } }
   `,
 })
