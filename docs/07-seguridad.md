@@ -29,7 +29,7 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 
 ## Navegador
 
-- **CSP** estricta: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
+- **CSP** estricta: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com https://tile.openstreetmap.org; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
 - Sin iframes (`frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, sin scripts de terceros (fuentes locales).
 - `Strict-Transport-Security` (solo por HTTPS), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin` (salvo `/api/salud` y `/api/publico`), `Cache-Control: no-store` en `/api/*`, `Permissions-Policy` con `geolocation=(self)` y sin cabecera `Server`.
 - `AllowedHosts` limita la cabecera `Host` (`ALLOWED_HOSTS` en `.env`).

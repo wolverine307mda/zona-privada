@@ -29,7 +29,9 @@
             ],
             "allowedCommonJsDependencies": [
               "qrcode",
-              "dijkstrajs"
+              "dijkstrajs",
+              "leaflet",
+              "leaflet.markercluster"
             ]
           },
           "configurations": {

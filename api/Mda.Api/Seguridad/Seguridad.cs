@@ -53,7 +53,7 @@ public static class CabecerasSeguras
         // nada de la API se guarda en cachés compartidas ni del navegador (los archivos fijan la suya después)
         if (ruta.StartsWithSegments("/api")) h["Cache-Control"] = "no-store";
         h["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com; " +
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com https://tile.openstreetmap.org; " +
             "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
         await next();
     });

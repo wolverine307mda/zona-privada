@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { EstadoError } from '../ui';
+import { MapaFotos } from './mapa-fotos';
 
 interface Foto { id: string; ruta: string; titulo: string; descripcion: string; alt: string; categoria: string; orden: number; ancho: number; alto: number; tono: string; hash: string; publicada: boolean; enGlobo?: boolean; lat?: number | null; lon?: number | null; lugar?: string; }
 interface Sitio { nombre: string; lat: number; lon: number; region?: string | null; }
@@ -14,10 +15,11 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
 // Nada se publica hasta activar el interruptor general y marcar cada foto; el original nunca sale del equipo.
 @Component({
   selector: 'app-galeria',
-  imports: [EstadoError],
+  imports: [EstadoError, MapaFotos],
   template: `
     <nav class="pestanas" role="tablist" aria-label="Partes de la galería">
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'fotos'" (click)="pestana.set('fotos')">Fotos <small>{{ estado()?.publicadas ?? 0 }}</small></button>
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'mapa'" (click)="pestana.set('mapa')">Mapa</button>
       <button type="button" role="tab" [attr.aria-selected]="pestana() === 'web'" (click)="pestana.set('web')">Qué ve la web</button>
     </nav>
     @if (pestana() === 'fotos') {
@@ -85,6 +87,9 @@ const CATEGORIAS = ['naturaleza', 'ciudad', 'animales', 'motor'];
         } @empty { @if (!fallo()) { <li class="vacio">Esta carpeta no tiene fotos.</li> } }
       </ul>
     </section>
+    }
+    @if (pestana() === 'mapa') {
+      @defer { <app-mapa-fotos /> }
     }
     @if (pestana() === 'web') {
     <section class="caja">
@@ -169,7 +174,7 @@ export class Galeria implements OnInit {
   protected readonly categorias = CATEGORIAS;
   protected readonly estado = signal<Estado | null>(null);
   protected readonly publico = signal({ estado: false, cpu: false });
-  protected readonly pestana = signal<'fotos' | 'web'>('fotos');
+  protected readonly pestana = signal<'fotos' | 'mapa' | 'web'>('fotos');
   protected readonly consulta = signal('');
   protected readonly sitios = signal<Sitio[]>([]);
   protected readonly consultaCasa = signal('');

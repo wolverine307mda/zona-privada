@@ -1,0 +1,28 @@
+@import 'leaflet/dist/leaflet.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
+/* el mapa y su tira de miniaturas (estos estilos son globales: llevan el prefijo del componente) */
+.mapa-fotos__mapa { width: 100%; height: min(62vh, 520px); min-height: 300px; border-radius: var(--radio-m); overflow: hidden; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); z-index: 0; }
+.mapa-fotos__filtro { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--soft); font-size: .85rem; }
+.mapa-fotos__filtro select { min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); color: var(--texto); }
+
+/* de noche las teselas claras de OpenStreetMap se oscurecen un poco para no deslumbrar */
+:root[data-mode='dark'] .mapa-fotos__mapa .leaflet-tile-pane { filter: brightness(0.72) contrast(1.05) saturate(0.85); }
+.mapa-fotos__mapa .leaflet-container { font-family: var(--font-text); background: var(--tarjeta-2); }
+.mapa-fotos__mapa .leaflet-control-attribution { background: color-mix(in srgb, var(--tarjeta) 85%, transparent); color: var(--soft); font-size: 10px; }
+.mapa-fotos__mapa .leaflet-control-attribution a { color: var(--acento); }
+.mapa-fotos__mapa .leaflet-bar a { background: var(--tarjeta); color: var(--texto); border-color: var(--vidrio-borde); }
+
+/* un punto por foto, con el color de la paleta */
+.mapa-fotos__pin i { display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--brand); border: 3px solid var(--on-brand); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }
+/* grupos de fotos: el mismo color, más grandes cuanto más fotos */
+.mapa-fotos__mapa .marker-cluster-small, .mapa-fotos__mapa .marker-cluster-medium, .mapa-fotos__mapa .marker-cluster-large { background-color: color-mix(in srgb, var(--brand) 35%, transparent); }
+.mapa-fotos__mapa .marker-cluster-small div, .mapa-fotos__mapa .marker-cluster-medium div, .mapa-fotos__mapa .marker-cluster-large div {
+  background-color: var(--brand); color: var(--on-brand); font: 600 12px/1 var(--font-text); display: grid; place-items: center;
+}
+
+.mapa-fotos__tira { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
+.mapa-fotos__tira a { flex: none; display: grid; gap: 4px; width: 88px; color: var(--texto); text-decoration: none; }
+.mapa-fotos__tira img { width: 88px; height: 88px; object-fit: cover; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); }
+.mapa-fotos__tira small { color: var(--soft); font-size: .72rem; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

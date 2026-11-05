@@ -88,7 +88,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 
 ## Fase B · fotografía
 
-### ⬜ 9 · ISS y lluvias de meteoros
+### ✅ 9 · ISS y lluvias de meteoros — `0d0a7d2`
 - ⬜ B9.1 Servicio `ServicioIss`: baja el TLE de la ISS de CelesTrak (`celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=tle`, gratis, sin clave), lo guarda en caché 12 h (no se pide más de 1 vez cada 2 h) y, si falla, usa el último guardado (y avisa de su edad).
 - ⬜ B9.2 Propagación SGP4: decidir entre el paquete NuGet `SGPdotNET` (MIT) o escribirla; elegir tras ver que compila con .NET 10 y pasar el test de referencia (un TLE fijo con posición conocida a una hora dada).
 - ⬜ B9.3 Función pura `Pasadas.Calcular(tle, lugar, desde, dias)`: visible solo si el Sol está más de 6° bajo el horizonte, la ISS está al sol (no en la sombra de la Tierra) y sube de 20°. Devuelve inicio, máximo, fin, altura máxima y dirección. Tests con el TLE fijo (que no salga ninguna a mediodía, que el máximo caiga entre inicio y fin).
@@ -97,7 +97,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 - ⬜ B9.6 Pantalla: tarjeta «ISS esta semana» en Fotografía → Eventos, con un mini arco del cielo (SVG) y la hora.
 - Riesgos: la sombra de la Tierra es la parte fina (si sale mal se verían pasadas invisibles) → tests con una pasada conocida; CelesTrak limita peticiones por abuso (por eso la caché). Esfuerzo: 2 sesiones.
 
-### ⬜ 8 · Planificador de salidas
+### ✅ 8 · Planificador de salidas — `1c81032` (nota por punto, avisos de luz y diario ya existían; sin calibración aplicada)
 - ⬜ B8.1 Revisar qué da `Tiempo`: añadir a la petición de Open-Meteo las nubes **bajas, medias y altas**, visibilidad y viento en altura si faltan (gratis, mismos endpoints).
 - ⬜ B8.2 Función pura `Plan.Puntuar(tipo, punto, luz, tiempo, luna, aurora, niebla)` → 0–100 con la razón por criterio. Amanecer/atardecer: nubes altas y medias entre 30–70 %, bajas <30 %, sin lluvia, el sol cae hacia donde mira el punto (`Orientacion`). Noche: nubes <20 %, luna baja, sin niebla, aurora si Kp ≥ umbral para su latitud. Pesos en una tabla, no repartidos por el código.
 - ⬜ B8.3 Tests de tabla con casos de verdad (cielo cubierto = bajo, nubes altas en atardecer = alto, noche con luna llena = bajo, orientación opuesta penaliza).
@@ -107,7 +107,7 @@ Dependencias duras: 9 → 8 · 11 → 17 · 4/8/11 → 17 · 12 → 16 (buscar e
 - ⬜ B8.7 Vigilante: la víspera a las 20:00 (o las 7 h antes si es amanecer) si hay una salida ≥ 80 y la marcaste. Dedupe.
 - Riesgo: es una **heurística**, no una verdad → se dice en la pantalla y se calibra con tu diario. Esfuerzo: 2–3 sesiones.
 
-### ⬜ 10 · Mapa de fotos
+### ✅ 10 · Mapa de fotos — `3e2733c` + front
 - ⬜ B10.1 Tabla `FotoGeo` (raíz, ruta, tamaño y fecha del archivo, fecha de captura EXIF, lat, lon, ancho, alto). Servicio de fondo `IndicadorFotos` que recorre solo lo nuevo o modificado (compara tamaño y fecha, como `Pregenerar`), lee el EXIF con `MetadataExtractor` (ya en el proyecto), con prioridad baja y de 1 en 1.
 - ⬜ B10.2 `GET /api/galeria/mapa?anio=&caja=` devolviendo puntos agrupados por celdas según el zoom (agrupar en el servidor evita mandar miles de puntos). `GET /api/galeria/mapa/celda` con las miniaturas de esa zona (usa `Derivados`).
 - ⬜ B10.3 **CSP**: `Seguridad.cs` solo permite imágenes de `'self'`, `data:`, `blob:` y Spotify. Añadir `https://tile.openstreetmap.org` (y comprobar `connect-src`) y probar que lo demás sigue bloqueado.
