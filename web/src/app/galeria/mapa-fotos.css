@@ -7,8 +7,8 @@
 .mapa-fotos__filtro { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--soft); font-size: .85rem; }
 .mapa-fotos__filtro select { min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); color: var(--texto); }
 
-/* de noche las teselas claras de OpenStreetMap se oscurecen un poco para no deslumbrar */
-:root[data-mode='dark'] .mapa-fotos__mapa .leaflet-tile-pane { filter: brightness(0.72) contrast(1.05) saturate(0.85); }
+/* de noche las teselas de OpenStreetMap se invierten (mapa oscuro de verdad, no solo atenuado) */
+:root[data-mode='dark'] .mapa-fotos__mapa .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
 .mapa-fotos__mapa .leaflet-container { font-family: var(--font-text); background: var(--tarjeta-2); }
 .mapa-fotos__mapa .leaflet-control-attribution { background: color-mix(in srgb, var(--tarjeta) 85%, transparent); color: var(--soft); font-size: 10px; }
 .mapa-fotos__mapa .leaflet-control-attribution a { color: var(--acento); }

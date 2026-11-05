@@ -100,7 +100,12 @@ export class GloboSondas implements OnInit {
     const marca = new THREE.Color(resolverColor(css.getPropertyValue('--brand'), '#ff7a1f'));
 
     const globo = new THREE.Group(); scene.add(globo);
-    const bola = new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.85 }));
+    // día y noche como las maquetas: los colores del globo siguen el modo de la app
+    const paleta = () => document.documentElement.dataset['mode'] === 'light'
+      ? { bola: 0xe4ebf8, rejilla: 0x8d9cc4, tierra: 0x3a4f8c, opBola: 0.95, opRejilla: 0.55 }
+      : { bola: 0x0b1020, rejilla: 0x4a5a82, tierra: 0x9fb3e6, opBola: 0.85, opRejilla: 0.45 };
+    const matBola = new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.85 });
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), matBola);
     bola.renderOrder = -1;   // primero la bola: así tapa los puntos del otro lado
     globo.add(bola);
     // retícula de paralelos y meridianos
@@ -108,11 +113,20 @@ export class GloboSondas implements OnInit {
     for (let lat = -60; lat <= 60; lat += 30) for (let lon = 0; lon < 360; lon += 6) { lineas.push(...sobreEsfera(lat, lon, 1.505), ...sobreEsfera(lat, lon + 6, 1.505)); }
     for (let lon = 0; lon < 360; lon += 30) for (let lat = -90; lat < 90; lat += 6) { lineas.push(...sobreEsfera(lat, lon, 1.505), ...sobreEsfera(lat + 6, lon, 1.505)); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(lineas, 3));
-    globo.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x4a5a82, transparent: true, opacity: 0.45 })));
+    const matRejilla = new THREE.LineBasicMaterial({ color: 0x4a5a82, transparent: true, opacity: 0.45 });
+    globo.add(new THREE.LineSegments(geo, matRejilla));
     // los continentes, como puntitos
     const tierra = puntosDeTierra(3).flatMap(([lat, lon]) => sobreEsfera(lat, lon, 1.51));
     const geoTierra = new THREE.BufferGeometry(); geoTierra.setAttribute('position', new THREE.Float32BufferAttribute(tierra, 3));
-    globo.add(new THREE.Points(geoTierra, new THREE.PointsMaterial({ color: 0x9fb3e6, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
+    const matTierra = new THREE.PointsMaterial({ color: 0x9fb3e6, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.9 });
+    globo.add(new THREE.Points(geoTierra, matTierra));
+    const aplicarModo = () => {
+      const c = paleta();
+      matBola.color.set(c.bola); matBola.opacity = c.opBola; matRejilla.color.set(c.rejilla); matRejilla.opacity = c.opRejilla; matTierra.color.set(c.tierra);
+    };
+    aplicarModo();
+    const observadorModo = new MutationObserver(() => { aplicarModo(); if (reducido) dibujar(0); });
+    observadorModo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-mode'] });
     globo.add(new THREE.Mesh(new THREE.SphereGeometry(1.62, 32, 24), new THREE.MeshBasicMaterial({ color: marca, transparent: true, opacity: 0.06, side: THREE.BackSide })));
 
     const marcas = new THREE.Group(); globo.add(marcas);
@@ -172,7 +186,7 @@ export class GloboSondas implements OnInit {
 
     return () => {
       cerrado = true; this.pintar = null;
-      cancelAnimationFrame(marco); observador.disconnect(); io.disconnect();
+      cancelAnimationFrame(marco); observador.disconnect(); observadorModo.disconnect(); io.disconnect();
       canvas.removeEventListener('pointerdown', abajo); canvas.removeEventListener('pointermove', mueve); canvas.removeEventListener('pointerup', arriba);
       scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => x.dispose()); });
       renderer.dispose(); renderer.forceContextLoss();
