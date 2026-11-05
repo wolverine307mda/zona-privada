@@ -28,40 +28,54 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
       </div>
     }
 
-    <dialog class="modal" #dlg aria-labelledby="mm-titulo" (click)="cerrarFuera($event)" (close)="abierto.set(false)">
+    <dialog class="modal" #dlg tabindex="-1" aria-labelledby="mm-titulo" (click)="cerrarFuera($event)" (close)="abierto.set(false)">
       @if (ahora(); as a) {
         @if (a.cancion; as c) {
-          <div class="caja" [style.--tono]="tono()">
-            <button class="cerrar" type="button" (click)="modal().nativeElement.close()" aria-label="Cerrar el reproductor">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-            </button>
-            <div class="portada" [class.portada--suena]="a.sonando">
-              <span class="vinilo" aria-hidden="true"></span>
-              @if (c.imagen) { <img [src]="c.imagen" [alt]="'Portada de ' + (c.album ?? c.nombre)"> }
+          <div class="caja" [style.--tono]="tono()" [class.caja--suena]="a.sonando">
+            <header class="alto">
+              <span class="estado"><i class="onda" aria-hidden="true"><b></b><b></b><b></b></i>{{ a.sonando ? 'Sonando ahora' : 'En pausa' }}</span>
+              <button class="cerrar" type="button" (click)="modal().nativeElement.close()" aria-label="Cerrar el reproductor">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </header>
+            <div class="portada">
+              @if (c.imagen) {
+                <img class="luz" [src]="c.imagen" alt="" aria-hidden="true">
+                <img class="caratula" [src]="c.imagen" [alt]="'Portada de ' + (c.album ?? c.nombre)">
+              }
             </div>
             <div class="datos">
               <h2 id="mm-titulo">{{ c.nombre }}</h2>
               <p class="artistas">{{ c.artistas }}</p>
-              @if (c.album) { <p class="album">{{ c.album }}</p> }
+              @if (c.album && c.album !== c.nombre) { <p class="album">{{ c.album }}</p> }
             </div>
-            <div class="progreso" role="progressbar" aria-label="Progreso de la canción" [attr.aria-valuenow]="pct()" aria-valuemin="0" aria-valuemax="100"><i [style.width.%]="pct()"></i></div>
-            <div class="tiempos"><span>{{ mmss(progreso()) }}</span><span>{{ mmss(c.duracion) }}</span></div>
+            <div class="barra-t">
+              <div class="progreso" role="progressbar" aria-label="Progreso de la canción" [attr.aria-valuenow]="pct()" aria-valuemin="0" aria-valuemax="100"><i [style.width.%]="pct()"></i></div>
+              <div class="tiempos"><span>{{ mmss(progreso()) }}</span><span>{{ mmss(c.duracion) }}</span></div>
+            </div>
             <div class="controles">
-              <button type="button" (click)="control('previous')" aria-label="Anterior"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12l-9-6zM6 6v12" /></svg></button>
+              <button type="button" (click)="control('previous')" aria-label="Anterior"><svg class="icon relleno" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12l-9-6zM6 6v12" /></svg></button>
               <button class="principal" type="button" (click)="control(a.sonando ? 'pause' : 'play')" [attr.aria-label]="a.sonando ? 'Pausa' : 'Reproducir'">
                 @if (a.sonando) { <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg> }
                 @else { <svg class="icon relleno" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg> }
               </button>
-              <button type="button" (click)="control('next')" aria-label="Siguiente"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12l9-6zM18 6v12" /></svg></button>
+              <button type="button" (click)="control('next')" aria-label="Siguiente"><svg class="icon relleno" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12l9-6zM18 6v12" /></svg></button>
             </div>
-            @if (a.dispositivo) { <p class="dispositivo">Sonando en {{ a.dispositivo }}{{ a.volumen != null ? ' · volumen ' + a.volumen + ' %' : '' }}</p> }
+            @if (a.dispositivo) {
+              <p class="dispositivo">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></svg>
+                {{ a.dispositivo }}{{ a.volumen != null ? ' · ' + a.volumen + ' %' : '' }}
+              </p>
+            }
             @if (cola().length) {
-              <h3>A continuación</h3>
-              <ol class="cola">
-                @for (q of cola(); track q.id) {
-                  <li>@if (q.imagen) { <img [src]="q.imagen" alt="" width="36" height="36"> }<span><strong>{{ q.nombre }}</strong><small>{{ q.artistas }}</small></span></li>
-                }
-              </ol>
+              <section class="siguiente" aria-labelledby="mm-cola">
+                <h3 id="mm-cola">A continuación</h3>
+                <ol class="cola">
+                  @for (q of cola(); track q.id) {
+                    <li>@if (q.imagen) { <img [src]="q.imagen" alt="" width="44" height="44"> }<span><strong>{{ q.nombre }}</strong><small>{{ q.artistas }}</small></span></li>
+                  }
+                </ol>
+              </section>
             }
             <button class="ir" type="button" (click)="irAMusica()">Abrir Música</button>
           </div>
@@ -88,41 +102,67 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     /* con .mini delante para ganar en especificidad a la regla «.mini button» (display: grid): si no, en el móvil el reproductor seguía ancho y empujaba el título de la barra */
     @media (max-width: 1180px) { .mini .mini__texto, .mini .mini__sig { display: none; } .mini { padding-right: 4px; } }
 
-    /* la ventana del reproductor */
-    .modal { width: min(400px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 30px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow-x: hidden; overflow-y: auto; margin: auto; }
+    /* la ventana del reproductor: portada grande y centrada sobre su propia luz, datos, progreso, controles y lo que viene después, todo en una sola columna */
+    .modal { width: min(400px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 32px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow-x: hidden; overflow-y: auto; margin: auto; }
+    .modal:focus { outline: none; }
     .modal[open] { animation: modal-entra 460ms var(--ease-expo); }
     .modal::backdrop { background: rgba(3, 8, 11, .6); backdrop-filter: blur(6px); }
     @keyframes modal-entra { from { opacity: 0; transform: translateY(24px) scale(.95); } }
-    .caja { --tono: var(--brand); position: relative; display: grid; gap: 6px; justify-items: center; padding: 22px 22px 20px; text-align: center; background: radial-gradient(120% 60% at 50% 0, color-mix(in srgb, var(--tono) 38%, transparent), transparent 70%); }
+    .caja { --tono: var(--brand); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: center; padding: 14px 22px 22px; text-align: center; background: radial-gradient(130% 52% at 50% 0, color-mix(in srgb, var(--tono) 42%, transparent), transparent 72%); }
     .caja .icon { width: 22px; height: 22px; }
-    .cerrar { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--texto) 10%, transparent); color: var(--texto); cursor: pointer; z-index: 2; }
-    /* el vinilo asoma por la derecha de la portada (hasta un 36 % del ancho al sonar): se corre la portada a la izquierda para que el conjunto quede centrado y no se corte */
-    .portada { position: relative; width: min(54vw, 230px); aspect-ratio: 1; margin: 22px 0 16px; translate: -18% 0; }
-    .portada img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 22px; object-fit: cover; aspect-ratio: 1; box-shadow: 0 18px 44px color-mix(in srgb, var(--tono) 55%, rgba(0, 0, 0, .5)); }
-    .vinilo { position: absolute; top: 6%; left: 34%; width: 90%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tono) 70%, #000) 0 18%, #0a0a0a 19% 22%, transparent 23%), repeating-radial-gradient(circle, #151515 0 2px, #0b0b0b 3px 4px); box-shadow: 0 8px 24px rgba(0, 0, 0, .5); transition: transform 700ms var(--ease-expo); animation: gira 4s linear infinite paused; }
-    .portada--suena .vinilo { transform: translateX(12%); animation-play-state: running; }
-    .datos { display: grid; gap: 2px; max-width: 100%; }
-    h2 { margin: 0; font: 500 1.25rem/1.2 var(--font-text); overflow-wrap: anywhere; }
-    .artistas { margin: 0; color: var(--texto); font-size: .95rem; opacity: .9; }
-    .album { margin: 0; color: var(--soft); font-size: .82rem; }
-    .progreso { width: 100%; height: 6px; margin-top: 12px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 14%, transparent); overflow: hidden; }
-    .progreso i { display: block; height: 100%; border-radius: inherit; background: var(--tono); transition: width 1s linear; }
-    .tiempos { display: flex; justify-content: space-between; width: 100%; font: 500 .74rem/1 var(--font-code); color: var(--soft); font-variant-numeric: tabular-nums; }
-    .controles { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 8px 0 2px; }
-    .controles button { display: grid; place-items: center; width: 52px; height: 52px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--texto) 9%, transparent); color: var(--texto); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
+
+    /* arriba: qué pasa (con una onda que baila al sonar) y el botón de cerrar, en su propia fila para no tapar la portada */
+    .alto { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-right: -8px; }
+    .estado { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px 7px 11px; border-radius: 999px; background: color-mix(in srgb, var(--texto) 9%, transparent); font: 600 .7rem/1 var(--font-code); letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+    .onda { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .onda b { width: 3px; height: 4px; border-radius: 2px; background: var(--tono); }
+    .caja--suena .onda b { animation: baila 900ms ease-in-out infinite alternate; }
+    .caja--suena .onda b:nth-child(2) { animation-delay: -300ms; } .caja--suena .onda b:nth-child(3) { animation-delay: -600ms; }
+    @keyframes baila { from { height: 3px; } to { height: 12px; } }
+    .cerrar { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--texto); cursor: pointer; }
+    .cerrar:hover { background: color-mix(in srgb, var(--texto) 10%, transparent); }
+    .cerrar:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
+
+    /* la portada se ajusta al alto de la pantalla (así el reproductor cabe sin desplazarse) y respira: algo más pequeña en pausa */
+    .portada { position: relative; width: min(100%, 260px, 27svh); aspect-ratio: 1; margin: 8px 0 12px; }
+    .portada img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .caratula { z-index: 1; border-radius: 26px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); transform: scale(.9); transition: transform 600ms var(--ease-expo); }
+    .caja--suena .caratula { transform: scale(1); }
+    .luz { inset: 8% 6% -6%; width: 88%; height: 92%; border-radius: 30px; filter: blur(26px) saturate(1.4); opacity: .65; }
+
+    .datos { display: grid; gap: 3px; width: 100%; }
+    h2 { margin: 0; font: 600 1.4rem/1.15 var(--font-text); overflow-wrap: anywhere; }
+    .artistas { margin: 0; font-size: 1rem; color: var(--texto); opacity: .92; }
+    .album { margin: 0; color: var(--soft); font-size: .84rem; }
+
+    .barra-t { display: grid; gap: 8px; width: 100%; margin-top: 10px; padding: 0 6px; box-sizing: border-box; }
+    .progreso { position: relative; width: 100%; height: 6px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 16%, transparent); }
+    .progreso i { position: relative; display: block; height: 100%; border-radius: inherit; background: var(--tono); transition: width 1s linear; }
+    .progreso i::after { content: ''; position: absolute; right: -6px; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--texto); translate: 0 -50%; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+    .tiempos { display: flex; justify-content: space-between; font: 500 .74rem/1 var(--font-code); color: var(--soft); font-variant-numeric: tabular-nums; }
+
+    .controles { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 4px; }
+    .controles button { display: grid; place-items: center; width: 56px; height: 56px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--texto) 10%, transparent); color: var(--texto); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
     .controles button:active { transform: scale(.92); }
-    .controles .principal { width: 66px; height: 66px; background: var(--tono); color: #fff; box-shadow: 0 10px 28px color-mix(in srgb, var(--tono) 55%, transparent); }
-    .controles .principal .icon { width: 28px; height: 28px; }
-    .dispositivo { margin: 4px 0 0; color: var(--soft); font-size: .78rem; }
-    h3 { align-self: start; margin: 14px 0 0; font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
-    .cola { width: 100%; margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; text-align: left; }
-    .cola li { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .cola img { flex: none; border-radius: 8px; object-fit: cover; }
-    .cola span { display: grid; min-width: 0; }
-    .cola strong { font-size: .86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .cola small { color: var(--soft); font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ir { width: 100%; min-height: 48px; margin-top: 14px; border: 1px solid var(--vidrio-borde); border-radius: 999px; background: transparent; color: var(--acento); font: 700 .92rem/1 var(--font-text); cursor: pointer; }
-    @media (prefers-reduced-motion: reduce) { .mini__disco, .vinilo, .modal[open], .mini { animation: none; } .progreso i, .vinilo { transition: none; } }
+    .controles .principal { width: 74px; height: 74px; background: var(--texto); color: var(--fondo); box-shadow: 0 12px 30px color-mix(in srgb, var(--tono) 55%, transparent); }
+    .controles .principal .icon { width: 30px; height: 30px; }
+    .dispositivo { display: inline-flex; align-items: center; gap: 7px; margin: 10px 0 0; padding: 7px 13px; border-radius: 999px; background: color-mix(in srgb, var(--texto) 7%, transparent); color: var(--soft); font-size: .78rem; }
+    .caja .dispositivo .icon { width: 15px; height: 15px; }
+
+    .siguiente { width: 100%; margin-top: 10px; text-align: left; }
+    h3 { margin: 0 0 8px 6px; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+    .cola { margin: 0; padding: 6px; list-style: none; display: grid; gap: 2px; border-radius: 22px; background: color-mix(in srgb, var(--texto) 6%, transparent); }
+    .cola li { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 5px 8px; border-radius: 16px; }
+    .cola img { flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+    .cola span { display: grid; gap: 1px; min-width: 0; }
+    .cola strong { font-size: .9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cola small { color: var(--soft); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ir { width: 100%; min-height: 52px; margin-top: 10px; border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--tono) 18%, transparent); color: var(--texto); font: 700 .95rem/1 var(--font-text); cursor: pointer; }
+    /* en pantallas bajas la cola enseña solo dos (y en las muy bajas ninguna) para que todo quepa sin desplazar */
+    @media (max-height: 900px) { .cola li:nth-child(n + 3) { display: none; } }
+    @media (max-height: 700px) { .siguiente { display: none; } }
+    .ir:focus-visible, .controles button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { .mini__disco, .onda b, .modal[open], .mini { animation: none; } .progreso i, .caratula { transition: none; } }
   `,
 })
 export class MiniMusica {
@@ -180,6 +220,7 @@ export class MiniMusica {
     this.abierto.set(true);
     this.ultimaId = ''; this.ultimaPortada = '';
     this.modal().nativeElement.showModal();
+    this.modal().nativeElement.focus({ preventScroll: true }); // el foco al diálogo y no al botón de cerrar (que si no sale con el aro de foco al abrir)
     void this.leer();
   }
 

@@ -148,13 +148,13 @@ Con «reducir movimiento» se ve el resultado sin animar. Al salir libera geomet
 
 `shell/bloqueo.ts`: el escáner alrededor de tu foto tiene cuatro estados que se ven a la vez en el anillo, las esquinas, la insignia y el mensaje: **esperando**
 (anillo lento), **comprobando** (línea que barre la foto y anillo rápido), **abierto** (todo en verde, 650 ms antes de recargar) y **fallo** (rojo y sacudida). Lleva reloj grande con la
-fecha, vibración en el móvil al acertar o fallar, y debajo el botón de Face ID, la contraseña con el código de dos pasos y «Cerrar sesión».
+fecha, vibración en el móvil al acertar o fallar. Es una pantalla de bloqueo sin tarjeta, en tres bandas (hora arriba, escáner en el centro, acciones abajo): el botón de Face ID, «Usar la contraseña» (con el código de dos pasos) y «Cerrar sesión». Respeta la muesca y la barra de inicio del iPhone y su ancho no pasa de 360 px (antes la tarjeta medía más que el hueco y quedaba pegada a la derecha).
 
 ## Reproductor de la barra superior
 
-`shell/mini-musica.ts`: al tocar la portada o el título de lo que suena se abre una **ventana** (no se navega): portada grande con un vinilo que sale y gira, título, artistas y álbum,
-progreso con tiempos, anterior / pausa / siguiente, dispositivo y volumen, las tres canciones que vienen después y «Abrir Música» para saltar a la pantalla completa. El color de la
-portada tiñe la ventana. Con la ventana abierta pregunta a Spotify cada 5 s (cada 15 s si no).
+`shell/mini-musica.ts`: al tocar la portada o el título de lo que suena se abre una **ventana** (no se navega): cabecera con «Sonando ahora» (onda que baila) y cerrar, portada grande y centrada sobre su propia luz (algo más pequeña en pausa), título, artistas y álbum,
+progreso con marcador y tiempos, anterior / pausa / siguiente, dispositivo y volumen, lo que viene después (tres canciones; dos en pantallas de menos de 900 px de alto y ninguna en las de menos de 700, para que quepa sin desplazar) y «Abrir Música» para saltar a la pantalla completa. El color de la
+portada tiñe la ventana. Al abrirla el foco va al diálogo, no al botón de cerrar. Con la ventana abierta pregunta a Spotify cada 5 s (cada 15 s si no).
 
 ## Inicio · «Tu PC por dentro»
 
