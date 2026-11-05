@@ -138,8 +138,8 @@ export function crearCandado(canvas: HTMLCanvasElement) {
     renderer.setSize(innerWidth, innerHeight, false);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
     // composición vertical a cualquier ancho: el candado centrado arriba y la tarjeta (entrar.css) centrada debajo
-    lock.scale.setScalar(small() ? 0.6 : 0.85);
-    lock.position.set(0, small() ? 1.45 : 1.15, 0);
+    lock.scale.setScalar(small() ? 0.46 : 0.85);
+    lock.position.set(0, small() ? 1.95 : 1.15, 0);
     if (reduced) render(4000); // cambiar el tamaño borra el canvas y sin animación nadie lo vuelve a pintar
   };
 

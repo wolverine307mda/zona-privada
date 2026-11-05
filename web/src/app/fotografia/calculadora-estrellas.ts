@@ -38,6 +38,8 @@ const RECORTES = [{ v: 1, n: 'Pleno formato (1×)' }, { v: 1.5, n: 'APS-C Nikon/
   `,
   styles: `
     .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .rejilla > label { min-width: 0; }
+    .rejilla input, .rejilla select { width: 100%; min-width: 0; }
     label { display: grid; gap: 4px; font-size: .78rem; color: var(--soft); }
     input, select { min-height: 40px; border-radius: 12px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 5%, transparent); color: var(--texto); padding: 0 12px; font: 500 .95rem/1 var(--font-text); }
     .ayuda-px { margin-top: 10px; font-size: .84rem; color: var(--soft); }

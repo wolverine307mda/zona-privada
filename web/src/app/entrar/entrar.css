@@ -16,6 +16,13 @@
   padding: 32vh var(--margin) 48px;
 }
 .intro { display: none; }
+/* móvil: la tarjeta sube y se compacta para que quepa entera debajo del candado, sin tapar el candado ni obligar a hacer scroll */
+@media (max-width: 560px) {
+  .main { padding-top: 25vh; padding-bottom: 28px; }
+  .tarjeta { gap: 14px; padding: 20px; }
+  .entrada { min-height: 48px; }
+  .titulo { font-size: 1.9rem; }
+}
 .kicker { font-size: var(--step-small); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--acento); margin-bottom: 18px; }
 .grande {
   font: var(--peso-ligero) clamp(3.2rem, 9vw, 8.5rem)/0.92 var(--font-text); letter-spacing: -0.055em;
