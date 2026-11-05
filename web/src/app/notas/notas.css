@@ -89,7 +89,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .rapida kbd, .vacio kbd { display: none; }
   /* el editor ocupa toda la pantalla, como una app de notas */
   .editor { width: 100vw; max-width: 100vw; height: var(--alto, 100svh); max-height: var(--alto, 100svh); margin: 0; inset: 0 0 auto; border-radius: 0; border: 0; border-top: 5px solid var(--c); }
-  .editor__caja { min-height: 100%; padding: calc(14px + env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); }
+  .editor__caja { min-height: 100%; padding: calc(14px + var(--seguro-arriba)) 16px max(14px, env(safe-area-inset-bottom)); }
   .editor__texto, .editor__previa { flex: 1; max-height: none; }
 }
 @media (max-width: 340px) { .mosaico { columns: 1; } }

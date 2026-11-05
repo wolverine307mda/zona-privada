@@ -182,7 +182,7 @@
 .visor { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(3, 6, 9, 0.94); color: #fff; overflow: hidden; }
 .visor[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: aparece-suave 240ms ease; }
 .visor::backdrop { background: transparent; }
-.visor__cab { display: flex; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
+.visor__cab { display: flex; align-items: center; gap: 8px; padding: calc(10px + var(--seguro-arriba)) 14px 10px; }
 .visor__cab span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .visor__cab strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .visor__cab small { font-size: 12px; opacity: 0.6; }

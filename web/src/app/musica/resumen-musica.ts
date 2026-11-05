@@ -131,7 +131,7 @@ const DURACION = 6500;
     .fondo img { position: absolute; inset: -20%; width: 140%; height: 140%; object-fit: cover; filter: blur(70px) saturate(1.5); opacity: 0.45; animation: deriva 30s ease-in-out infinite alternate; }
     .fondo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.55)); }
     @keyframes deriva { to { transform: scale(1.15) rotate(6deg); } }
-    .arriba { position: absolute; z-index: 3; top: 0; left: 0; right: 0; padding: calc(12px + env(safe-area-inset-top)) 14px 0; display: flex; flex-direction: column; gap: 12px; max-width: 720px; margin: 0 auto; }
+    .arriba { position: absolute; z-index: 3; top: 0; left: 0; right: 0; padding: calc(12px + var(--seguro-arriba)) 14px 0; display: flex; flex-direction: column; gap: 12px; max-width: 720px; margin: 0 auto; }
     .barras { display: flex; gap: 4px; }
     .barras span { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.3); overflow: hidden; }
     .barras i { display: block; height: 100%; background: #fff; }

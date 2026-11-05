@@ -80,6 +80,24 @@ public static class AtajosApi
         return await next(ctx);
     });
 
+    // un error sin cuerpo (401, 400, 502…) o con un ProblemDetails se convierte en {mensaje}; lo que ya trae `mensaje` o datos se deja igual
+    internal static object? ConMensaje(object? r)
+    {
+        if (r is not IStatusCodeHttpResult { StatusCode: >= 400 and var codigo } || r is IValueHttpResult { Value: not null and not Microsoft.AspNetCore.Mvc.ProblemDetails }) return r;
+        var texto = r is IValueHttpResult { Value: Microsoft.AspNetCore.Http.HttpValidationProblemDetails v } && v.Errors.Values.SelectMany(x => x).FirstOrDefault() is { Length: > 0 } primero ? primero
+            : r is IValueHttpResult { Value: Microsoft.AspNetCore.Mvc.ProblemDetails { Detail: { Length: > 0 } detalle } } ? detalle
+            : codigo switch
+            {
+                401 => "Token no válido o sin permiso para este atajo.",
+                400 => "Faltan datos o no son válidos.",
+                404 => "No existe lo que pides.",
+                429 => "Demasiadas peticiones seguidas: espera un momento.",
+                >= 500 => "El servidor no ha podido hacerlo.",
+                _ => $"No se ha podido completar (error {codigo}).",
+            };
+        return Results.Json(new { mensaje = texto }, statusCode: codigo);
+    }
+
     public static void MapAtajos(this IEndpointRouteBuilder app)
     {
         // ---- gestión de tokens (con sesión) ----
@@ -114,6 +132,8 @@ public static class AtajosApi
 
         // ---- lo que usa el iPhone (con token) ----
         var a = app.MapGroup("/api/atajos").AllowAnonymous().RequireRateLimiting(Limites.Atajos);
+        // todos los atajos contestan con un `mensaje` legible, también cuando algo falla: el atajo del iPhone lo enseña tal cual en la notificación
+        a.AddEndpointFilter(async (ctx, next) => ConMensaje(await next(ctx)));
 
         a.MapGet("/categorias", () => Categorias.Todas.Where(c => c.Value.Tipo == TipoMovimiento.Gasto).Select(c => new { id = c.Key, nombre = c.Value.Nombre })).Requiere("gasto");
 
@@ -154,7 +174,9 @@ public static class AtajosApi
         a.MapGet("/resumen", async (AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {
             var hoy = Cartera.Hoy(reloj, zona);
-            return Results.Ok(new { saldo = await Cartera.SaldoActual(db, hoy, ct), saldoTexto = Cartera.Euros(await Cartera.SaldoActual(db, hoy, ct)), agenda = await AsistenteEndpoints.Agenda(db, zona, hoy, hoy, ct) });
+            var saldo = await Cartera.SaldoActual(db, hoy, ct);
+            var agenda = await AsistenteEndpoints.Agenda(db, zona, hoy, hoy, ct);
+            return Results.Ok(new { saldo, saldoTexto = Cartera.Euros(saldo), agenda, mensaje = $"Libre: {Cartera.Euros(saldo)}. {agenda}" });
         }).Requiere("lectura");
 
         // todo lo de hoy en una respuesta (gasto, presupuestos, agenda, hábitos, mejor salida) y ya escrito en `lineas`: para un widget de Scriptable
@@ -167,7 +189,7 @@ public static class AtajosApi
             if (!bot.Vinculado) return Results.Conflict(new { mensaje = "Telegram no está vinculado." });
             var texto = string.IsNullOrWhiteSpace(e.Texto) ? "¿Qué has gastado?" : e.Texto.Trim()[..Math.Min(e.Texto.Trim().Length, 120)];
             var ok = await bot.Enviar($"💬 {System.Net.WebUtility.HtmlEncode(texto)}", new { force_reply = true, input_field_placeholder = "12,50 en el Mercadona" }, html: true, ct: ct);
-            return ok ? Results.NoContent() : Results.StatusCode(502);
+            return ok ? Results.Ok(new { mensaje = "Aviso enviado a Telegram." }) : Results.Json(new { mensaje = "Telegram no ha respondido." }, statusCode: 502);
         }).Requiere("gasto");
 
         // «Llegué a casa» / «Me voy»: una automatización por lugar del iPhone manda {"estado":"llegada"} o {"estado":"salida"}

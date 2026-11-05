@@ -182,7 +182,7 @@
   .lateral {
     position: fixed; z-index: 20; left: 0; top: 0; bottom: 0; height: auto; width: min(330px, 88vw);
     border-radius: 0 var(--radio-xl) var(--radio-xl) 0; border-left: 0;
-    padding: calc(18px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+    padding: calc(18px + var(--seguro-arriba)) 14px calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
     background: var(--lateral);
     transform: translateX(-110%); visibility: hidden;
     transition: transform 460ms var(--ease-expo), visibility 0s linear 460ms; box-shadow: 0 0 80px rgba(0, 0, 0, 0.4);
@@ -197,7 +197,7 @@
   /* la barra se queda arriba y es sólida: nada se transparenta por debajo */
   .barra {
     position: sticky; top: 0; z-index: 4; min-height: 0; gap: 12px;
-    padding: calc(12px + env(safe-area-inset-top)) var(--margin) 12px;
+    padding: calc(12px + var(--seguro-arriba)) var(--margin) 12px;
     background: var(--fondo); border-bottom: 1px solid var(--vidrio-borde);
   }
   .barra__titulo h1 { font-size: var(--step-lead); }

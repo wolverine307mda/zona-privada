@@ -74,6 +74,31 @@ public class LlamadasExternasTests(ModulosFactory factory) : IClassFixture<Modul
     }
 
     [Fact]
+    public async Task Se_puede_filtrar_por_estado_y_limpiar_solo_lo_pedido()
+    {
+        var app = await Dentro();
+        var iphone = await ConToken("pc");
+        await iphone.PostAsJsonAsync("/api/atajos/despertar", new { nombre = "no existe" });   // 404
+        await iphone.GetAsync("/api/atajos/estado");                                            // 401: sin permiso de lectura
+
+        var fallos = await app.GetFromJsonAsync<JsonElement>("/api/seguridad/llamadas?estado=fallos");
+        Assert.All(fallos.GetProperty("llamadas").EnumerateArray(), x => Assert.True(x.GetProperty("estado").GetInt32() >= 400));
+        var buscadas = await app.GetFromJsonAsync<JsonElement>("/api/seguridad/llamadas?buscar=despertar");
+        Assert.All(buscadas.GetProperty("llamadas").EnumerateArray(), x => Assert.Contains("despertar", x.GetProperty("ruta").GetString()));
+        var futuro = await app.GetFromJsonAsync<JsonElement>($"/api/seguridad/llamadas?desde={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(1).ToString("o"))}");
+        Assert.Equal(0, futuro.GetProperty("coinciden").GetInt32());
+
+        // borrar «las buenas» no toca los fallos
+        var antes = (await app.GetFromJsonAsync<JsonElement>("/api/seguridad/llamadas")).GetProperty("fallos").GetInt32();
+        Assert.Equal(HttpStatusCode.OK, (await app.DeleteAsync("/api/seguridad/llamadas?estado=ok")).StatusCode);
+        Assert.Equal(antes, (await app.GetFromJsonAsync<JsonElement>("/api/seguridad/llamadas")).GetProperty("fallos").GetInt32());
+
+        // borrar lo anterior a mañana vacía el historial
+        Assert.Equal(HttpStatusCode.OK, (await app.DeleteAsync($"/api/seguridad/llamadas?antesDe={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(1).ToString("o"))}")).StatusCode);
+        Assert.Equal(0, (await app.GetFromJsonAsync<JsonElement>("/api/seguridad/llamadas")).GetProperty("total").GetInt32());
+    }
+
+    [Fact]
     public async Task Lo_que_hace_la_app_con_su_cookie_no_cuenta_como_llamada_externa()
     {
         var app = await Dentro();

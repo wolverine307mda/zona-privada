@@ -215,17 +215,16 @@ public static partial class LlamadasExternas
     {
         var g = app.MapGroup("/api/seguridad/llamadas").RequireAuthorization();
 
-        // lista ligera (sin cuerpos); `errores` deja solo las que no salieron bien
-        g.MapGet("/", async (bool? errores, string? origen, AppDbContext db, GeoIp geo) =>
+        // lista ligera (sin cuerpos). Filtros: estado (todas | fallos | ok), origen, desde (fecha) y buscar (texto en la ruta o el error)
+        g.MapGet("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, AppDbContext db, GeoIp geo) =>
         {
-            var q = db.LlamadasExternas.AsNoTracking().AsQueryable();
-            if (errores == true) q = q.Where(l => l.Estado >= 400);
-            if (!string.IsNullOrWhiteSpace(origen)) q = q.Where(l => l.Origen == origen);
+            var q = Filtrar(db.LlamadasExternas.AsNoTracking(), estado, origen, desde, buscar);
             var lista = await q.OrderByDescending(l => l.Id).Take(100).ToListAsync();
             var origenes = await db.LlamadasExternas.AsNoTracking().Select(l => l.Origen).Distinct().OrderBy(o => o).ToListAsync();
             return Results.Ok(new
             {
                 origenes,
+                coinciden = await q.CountAsync(),
                 total = await db.LlamadasExternas.CountAsync(),
                 fallos = await db.LlamadasExternas.CountAsync(l => l.Estado >= 400),
                 llamadas = lista.Select(l => new
@@ -246,12 +245,30 @@ public static partial class LlamadasExternas
         g.MapGet("/vivo", (long? desde, LlamadasEnVivo vivo) =>
             Results.Ok(new { ultimo = vivo.Ultimo, llamadas = desde is { } d ? vivo.Desde(d) : [] }));
 
-        g.MapDelete("/", async (AppDbContext db) =>
+        // limpiar: sin filtros borra todo; con los mismos filtros de la lista borra solo lo que coincide;
+        // `antesDe` borra lo anterior a esa fecha (p. ej. «todo menos lo de hoy»)
+        g.MapDelete("/", async (string? estado, string? origen, DateTimeOffset? desde, string? buscar, DateTimeOffset? antesDe, AppDbContext db) =>
         {
-            var todas = await db.LlamadasExternas.ToListAsync();
-            db.LlamadasExternas.RemoveRange(todas);
+            var q = Filtrar(db.LlamadasExternas.AsQueryable(), estado, origen, desde, buscar);
+            if (antesDe is { } hasta) q = q.Where(l => l.Fecha < hasta);
+            var lista = await q.ToListAsync();
+            db.LlamadasExternas.RemoveRange(lista);
             await db.SaveChangesAsync();
-            return Results.Ok(new { borradas = todas.Count });
+            return Results.Ok(new { borradas = lista.Count });
         });
+    }
+
+    private static IQueryable<LlamadaExterna> Filtrar(IQueryable<LlamadaExterna> q, string? estado, string? origen, DateTimeOffset? desde, string? buscar)
+    {
+        if (estado == "fallos") q = q.Where(l => l.Estado >= 400);
+        else if (estado == "ok") q = q.Where(l => l.Estado < 400);
+        if (!string.IsNullOrWhiteSpace(origen)) q = q.Where(l => l.Origen == origen);
+        if (desde is { } d) q = q.Where(l => l.Fecha >= d);
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var t = buscar.Trim();
+            q = q.Where(l => l.Ruta.Contains(t) || l.Error.Contains(t) || l.Origen.Contains(t));
+        }
+        return q;
     }
 }

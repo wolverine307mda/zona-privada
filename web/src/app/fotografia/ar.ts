@@ -44,7 +44,7 @@ interface EventoOrientacion extends DeviceOrientationEvent { webkitCompassHeadin
     .ar__inicio h1 { margin: 0; font: var(--peso-ligero) 1.5rem/1.2 var(--font-text); }
     .ar__inicio p { margin: 0; max-width: 40ch; opacity: .85; }
     .ar__error { color: #ff8a8a; }
-    .ar__barra { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / .55); backdrop-filter: blur(8px); }
+    .ar__barra { position: absolute; top: max(12px, var(--seguro-arriba)); left: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / .55); backdrop-filter: blur(8px); }
     .ar__barra label { display: flex; align-items: center; gap: 8px; font-size: .78rem; }
     .ar__barra input { width: 90px; }
     .ar__aviso { position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); margin: 0; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / .6); font-size: .82rem; white-space: nowrap; }

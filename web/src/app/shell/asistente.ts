@@ -206,7 +206,7 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
   `,
   styles: `
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    .asis { width: min(560px, calc(100vw - 24px)); max-height: calc(100svh - 24px); margin: 9vh auto auto; padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 26px; color: var(--texto); overflow: auto;
+    .asis { width: min(560px, calc(100vw - 24px)); max-height: calc(100svh - var(--seguro-arriba) - 24px); margin: max(9vh, calc(var(--seguro-arriba) + 8px)) auto auto; padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 26px; color: var(--texto); overflow: auto;
       background: var(--brillo), var(--tarjeta); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 40px 110px rgba(0, 0, 0, 0.5); }
     .asis[open] { animation: sube 420ms var(--ease-expo); }
     @keyframes sube { from { opacity: 0; transform: translateY(24px) scale(0.97); } }
@@ -291,7 +291,7 @@ const aLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYe
     .asis__historial li.deshecho::before { content: '↶ '; color: var(--soft); }
 
     @media (max-width: 640px) {
-      .asis { position: fixed; inset: auto 0 var(--teclado, 0px) 0; margin: 0; width: 100%; max-width: 100%; max-height: calc(var(--alto, 100dvh) - env(safe-area-inset-top) - 12px); border-radius: 26px 26px 0 0; border-bottom: 0; }
+      .asis { position: fixed; inset: auto 0 var(--teclado, 0px) 0; margin: 0; width: 100%; max-width: 100%; max-height: calc(var(--alto, 100dvh) - var(--seguro-arriba) - 12px); border-radius: 26px 26px 0 0; border-bottom: 0; }
       .asis[open] { animation: sube-movil 420ms var(--ease-expo); }
       .asis__caja { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
       .campos { grid-template-columns: minmax(0, 1fr); }

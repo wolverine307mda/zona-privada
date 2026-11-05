@@ -27,6 +27,8 @@
 
   /* paleta: la de cada color de acento define --brand y --brand-2 y, si quiere teñir las superficies (los morados), el matiz --tinte y su fuerza --tn (0–100) */
   --tinte: #000; --tn: 0;
+  /* lo que no se debe pisar arriba: la muesca o la isla del iPhone; en la app instalada (donde iOS dibuja encima una franja translúcida) con 14 px de aire de más */
+  --seguro-arriba: env(safe-area-inset-top, 0px);
   --brand-2: var(--t2); --brand-3: var(--t4); /* el tono claro y el hondo de la paleta */
   /* por tipo de elemento: en noche los tonos claros (se leen sobre fondo oscuro), de día los hondos */
   --tono-titulo: var(--t2); --tono-icono: var(--t2);
@@ -329,3 +331,5 @@ html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
 
 /* solo para lectores de pantalla (y para que un campo oculto siga recibiendo el foco del teclado) */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (display-mode: standalone) and (pointer: coarse) { :root { --seguro-arriba: calc(env(safe-area-inset-top, 0px) + 14px); } }

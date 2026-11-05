@@ -83,6 +83,22 @@ public class AtajosTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
     }
 
     [Fact]
+    public async Task Todos_los_errores_de_los_atajos_traen_un_mensaje_legible()
+    {
+        async Task<string> Mensaje(HttpResponseMessage r, HttpStatusCode esperado)
+        {
+            Assert.Equal(esperado, r.StatusCode);
+            return (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("mensaje").GetString()!;
+        }
+        Assert.Contains("Token", await Mensaje(await Con("mda_inventado").PostAsJsonAsync("/api/atajos/movimiento", new { importe = 1, concepto = "x" }), HttpStatusCode.Unauthorized));
+        var gasto = Con(await Token("gasto", "pago"));
+        Assert.False(string.IsNullOrWhiteSpace(await Mensaje(await gasto.PostAsJsonAsync("/api/atajos/movimiento", new { importe = 0, concepto = "x" }), HttpStatusCode.BadRequest)));
+        Assert.False(string.IsNullOrWhiteSpace(await Mensaje(await gasto.PostAsJsonAsync("/api/atajos/pago", new { comercio = "", importe = 0 }), HttpStatusCode.BadRequest)));
+        var lectura = Con(await Token("lectura"));
+        Assert.Contains("Libre", (await lectura.GetFromJsonAsync<JsonElement>("/api/atajos/resumen")).GetProperty("mensaje").GetString());
+    }
+
+    [Fact]
     public async Task El_token_se_ve_una_vez_y_se_guarda_solo_su_huella()
     {
         var token = await Token("gasto");

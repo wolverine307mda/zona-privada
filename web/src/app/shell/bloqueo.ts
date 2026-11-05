@@ -77,7 +77,7 @@ import { PerfilService } from '../core/perfil.service';
   `,
   styles: `
     /* capa fija a pantalla completa: el relleno respeta la muesca y la barra de inicio del iPhone; si no cabe (teclado, pantalla baja) se desplaza */
-    .velo { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: max(12px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom)); background: var(--fondo); animation: entra var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
+    .velo { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: calc(var(--seguro-arriba) + 8px) 24px max(16px, env(safe-area-inset-bottom)); background: var(--fondo); animation: entra var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
     .fondo { position: fixed; inset: 0; pointer-events: none; }
     .orbe { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .42; animation: flota 14s ease-in-out infinite alternate; }
     .o1 { width: 52vmax; height: 52vmax; left: -14vmax; top: -18vmax; background: color-mix(in srgb, var(--brand) 55%, transparent); }

@@ -30,7 +30,7 @@ const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
     }
   `,
   styles: `
-    .velo { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, #000 55%, transparent); backdrop-filter: blur(10px); animation: aparece var(--dur-2, 240ms) ease-out both; }
+    .velo { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: calc(var(--seguro-arriba) + 8px) 20px 20px; background: color-mix(in srgb, #000 55%, transparent); backdrop-filter: blur(10px); animation: aparece var(--dur-2, 240ms) ease-out both; }
     .tarjeta { display: grid; gap: 12px; justify-items: center; width: min(92vw, 340px); padding: 28px 22px 22px; text-align: center; border-radius: 30px; border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio-fuerte); backdrop-filter: blur(26px) saturate(1.5); box-shadow: 0 30px 80px rgba(0, 0, 0, .4); animation: sube var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
     .tiembla { animation: tiembla .45s ease; }
     .candado { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: color-mix(in srgb, var(--brand) 18%, transparent); color: var(--brand); transition: background var(--dur-2, 240ms), color var(--dur-2, 240ms), transform var(--dur-2, 240ms); }

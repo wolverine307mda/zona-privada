@@ -82,7 +82,7 @@ const quitarTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').t
     .buscador__pie { display: flex; gap: 6px; align-items: center; justify-content: flex-end; padding: 10px 16px; border-top: 1px solid var(--linea); font-size: 12px; color: var(--soft); }
     @media (max-width: 640px) {
       .buscador { margin: 0 auto auto; width: 100vw; max-width: 100vw; border-radius: 0 0 22px 22px; border-top: 0; }
-      .buscador__campo { padding-top: max(16px, env(safe-area-inset-top)); }
+      .buscador__campo { padding-top: calc(var(--seguro-arriba) + 8px); }
       .buscador__campo kbd, .buscador__pie { display: none; }
     }
   `,

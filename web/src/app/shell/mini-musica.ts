@@ -103,7 +103,7 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     @media (max-width: 1180px) { .mini .mini__texto, .mini .mini__sig { display: none; } .mini { padding-right: 4px; } }
 
     /* la ventana del reproductor: portada grande y centrada sobre su propia luz, datos, progreso, controles y lo que viene después, todo en una sola columna */
-    .modal { width: min(400px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 32px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow-x: hidden; overflow-y: auto; margin: auto; }
+    .modal { width: min(400px, calc(100vw - 24px)); inset-block: calc(var(--seguro-arriba) + 8px) 16px; max-height: calc(100svh - var(--seguro-arriba) - 24px); padding: 0; border: 1px solid var(--vidrio-borde); border-radius: 32px; background: var(--tarjeta); color: var(--texto); box-shadow: 0 30px 90px rgba(0, 0, 0, .5); overflow-x: hidden; overflow-y: auto; margin: auto; }
     .modal:focus { outline: none; }
     .modal[open] { animation: modal-entra 460ms var(--ease-expo); }
     .modal::backdrop { background: rgba(3, 8, 11, .6); backdrop-filter: blur(6px); }

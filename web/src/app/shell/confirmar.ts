@@ -31,7 +31,7 @@ import { Reautenticar } from '../core/reautenticar';
     }
   `,
   styles: `
-    .velo { position: fixed; inset: 0; z-index: 9100; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, #000 55%, transparent); backdrop-filter: blur(10px); animation: aparece var(--dur-2, 240ms) ease-out both; }
+    .velo { position: fixed; inset: 0; z-index: 9100; display: grid; place-items: center; padding: calc(var(--seguro-arriba) + 8px) 20px 20px; background: color-mix(in srgb, #000 55%, transparent); backdrop-filter: blur(10px); animation: aparece var(--dur-2, 240ms) ease-out both; }
     .tarjeta { display: grid; gap: 12px; justify-items: center; width: min(92vw, 360px); padding: 28px 22px 20px; text-align: center; border-radius: 30px; border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio-fuerte); backdrop-filter: blur(26px) saturate(1.5); box-shadow: 0 30px 80px rgba(0, 0, 0, .4); animation: sube var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
     .candado { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: color-mix(in srgb, var(--brand) 18%, transparent); color: var(--brand); }
     .escaneando { animation: late .9s ease-in-out infinite; }
