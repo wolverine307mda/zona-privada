@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, aft
 import { firstValueFrom } from 'rxjs';
 import type * as THREE from 'three';
 import { resolverColor } from '../core/color-css';
+import { puntosDeTierra } from './tierra';
 
 export interface Punto { lat: number; lon: number; pais: string; ciudad: string; sondas: number; ips: number; ultima: string; rutas: string[]; }
 interface Resumen { dias: number; total: number; ips: number; sinSitio: number; geoIp: boolean; puntos: Punto[]; paises: { pais: string; sondas: number }[]; }
@@ -99,13 +100,19 @@ export class GloboSondas implements OnInit {
     const marca = new THREE.Color(resolverColor(css.getPropertyValue('--brand'), '#ff7a1f'));
 
     const globo = new THREE.Group(); scene.add(globo);
-    globo.add(new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.85 })));
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.85 }));
+    bola.renderOrder = -1;   // primero la bola: así tapa los puntos del otro lado
+    globo.add(bola);
     // retícula de paralelos y meridianos
     const lineas: number[] = [];
     for (let lat = -60; lat <= 60; lat += 30) for (let lon = 0; lon < 360; lon += 6) { lineas.push(...sobreEsfera(lat, lon, 1.505), ...sobreEsfera(lat, lon + 6, 1.505)); }
     for (let lon = 0; lon < 360; lon += 30) for (let lat = -90; lat < 90; lat += 6) { lineas.push(...sobreEsfera(lat, lon, 1.505), ...sobreEsfera(lat + 6, lon, 1.505)); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(lineas, 3));
     globo.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x4a5a82, transparent: true, opacity: 0.45 })));
+    // los continentes, como puntitos
+    const tierra = puntosDeTierra(3).flatMap(([lat, lon]) => sobreEsfera(lat, lon, 1.51));
+    const geoTierra = new THREE.BufferGeometry(); geoTierra.setAttribute('position', new THREE.Float32BufferAttribute(tierra, 3));
+    globo.add(new THREE.Points(geoTierra, new THREE.PointsMaterial({ color: 0x9fb3e6, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
     globo.add(new THREE.Mesh(new THREE.SphereGeometry(1.62, 32, 24), new THREE.MeshBasicMaterial({ color: marca, transparent: true, opacity: 0.06, side: THREE.BackSide })));
 
     const marcas = new THREE.Group(); globo.add(marcas);
