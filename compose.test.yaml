@@ -1,11 +1,12 @@
 # Entorno de PRUEBAS en Docker, para hacer cambios sin tocar la zona privada real (la versión de escritorio).
+# Es un proyecto de Docker aparte, «zona-privada-pruebas», con solo tres contenedores (zp-pruebas-db, zp-pruebas-api y zp-pruebas-tailscale)
+# y sus propios volúmenes: en Docker Desktop salen agrupados con ese nombre, así sabes cuáles son de pruebas.
 #
-#   docker compose -f compose.yaml -f compose.test.yaml up -d --build api
-#   docker compose -f compose.yaml -f compose.test.yaml --profile pruebas up -d tailscale-pruebas
+#   docker compose -f compose.yaml -f compose.test.yaml up -d --build api tailscale-pruebas
 #
-# La primera vez el nodo de Tailscale de pruebas pide que lo apruebes: mira el enlace «To authenticate, visit: …» con
+# El nodo de Tailscale queda como https://equipo-de-casa-pruebas.<tu-red>.ts.net (otro nodo, otra dirección, otro certificado).
+# La primera vez pide que lo apruebes: mira el enlace «To authenticate, visit: …» con
 #   docker compose -f compose.yaml -f compose.test.yaml logs tailscale-pruebas
-# y ábrelo con tu cuenta. Queda como https://equipo-de-casa-pruebas.<tu-red>.ts.net (otro nodo, otra dirección, otro certificado).
 #
 # Qué cambia respecto a compose.yaml:
 #  - «ensayo»: no manda Telegram, correo, WhatsApp ni notificaciones, ni toca tus aparatos (no hay dos bots ni órdenes duplicadas).
@@ -14,8 +15,15 @@
 #  - una barra «Entorno de pruebas» en todas las pantallas.
 #  - su propio nodo de Tailscale («equipo-de-casa-pruebas»), sin compartir nada con el de la real; y sin agente del PC (habla con la real).
 # Su base de datos es la del Docker de siempre: una copia de cuando se importó, no la real.
+name: zona-privada-pruebas
+
 services:
+  db:
+    container_name: zp-pruebas-db
+
   api:
+    container_name: zp-pruebas-api
+    hostname: equipo-de-casa-pruebas
     environment:
       Escritorio__Ensayo: "true"
       App__CookieNombre: mda.sesion.pruebas
@@ -46,9 +54,9 @@ services:
   # el nodo de Tailscale de las pruebas: otra dirección pública, con su propio estado. No usa TS_AUTHKEY del .env: se aprueba una vez con el enlace del registro.
   tailscale-pruebas:
     image: tailscale/tailscale:v1.104.4
+    container_name: zp-pruebas-tailscale
     hostname: equipo-de-casa-pruebas
     restart: unless-stopped
-    profiles: ["pruebas"]
     environment:
       TS_STATE_DIR: /var/lib/tailscale
       TS_SERVE_CONFIG: /config/serve-pruebas.json
@@ -60,4 +68,7 @@ services:
       - api
 
 volumes:
+  # el estado del nodo de Tailscale ya aprobado (así no hay que volver a aprobarlo al mover el proyecto)
   tailscale-pruebas:
+    external: true
+    name: zona-privada_tailscale-pruebas
