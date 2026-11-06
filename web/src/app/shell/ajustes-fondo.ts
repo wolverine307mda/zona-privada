@@ -1,25 +1,35 @@
-import { Component, inject } from '@angular/core';
-import { AMBITOS, FONDOS, TemaService } from '../core/tema.service';
+import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, untracked, viewChildren } from '@angular/core';
+import { resolverColor } from '../core/color-css';
+import { AMBITOS, FONDOS, GRUPOS_FONDO, TemaService, type FondoId } from '../core/tema.service';
 
-// «Fondo» dentro de Ajustes: elegir el fondo animado de toda la app, cuánto se ve, cuánto se mueve y dónde.
+// «Fondo» dentro de Ajustes: elegir el fondo animado de toda la app, cuánto se ve, cuánto se mueve, la fuerza de su color y dónde.
+// Cada miniatura es el fondo de verdad, dibujado una vez en pequeño con tu color y tu fuerza.
 @Component({
   selector: 'app-ajustes-fondo',
   template: `
     <section class="seccion" aria-labelledby="ajustes-fondo">
       <h3 id="ajustes-fondo">Fondo</h3>
-      <div class="fondos" role="group" aria-labelledby="ajustes-fondo">
-        @for (f of fondos; track f.id) {
-          <button type="button" class="fondo" [attr.data-fondo]="f.id" [attr.aria-pressed]="tema.fondo() === f.id" (click)="tema.ponerFondo(f.id)">
-            <span class="fondo__vista" aria-hidden="true"></span>
-            <span class="fondo__nombre">{{ f.nombre }}</span>
-            <span class="fondo__nota">{{ f.nota }}</span>
-          </button>
-        }
-      </div>
-      @if (tema.fondo() !== 'aura' && tema.fondo() !== 'ninguno') {
+      @for (g of grupos; track g.id) {
+        <div class="grupo">
+          <h4>{{ g.nombre }} <small>{{ g.fondos.length }}</small></h4>
+          @if (g.nota) { <p class="nota">{{ g.nota }}</p> }
+          <div class="fondos" role="group" [attr.aria-label]="g.nombre">
+            @for (f of g.fondos; track f.id) {
+              <button type="button" class="fondo" [attr.data-fondo]="f.id" [attr.aria-pressed]="tema.fondo() === f.id" (click)="tema.ponerFondo(f.id)">
+                <span class="fondo__vista" aria-hidden="true">@if (animado(f.id)) { <canvas #vista [attr.data-id]="f.id"></canvas> }</span>
+                <span class="fondo__nombre">{{ f.nombre }}</span>
+                <span class="fondo__nota">{{ f.nota }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+      @if (animado(tema.fondo())) {
         <div class="reglas">
           <label class="regla"><span>Cuánto se ve <output>{{ tema.intensidad() }} %</output></span>
             <input type="range" min="5" max="100" step="5" [value]="tema.intensidad()" (input)="tema.ponerIntensidad(+$any($event.target).value)"></label>
+          <label class="regla"><span>Fuerza del color <output>{{ tema.fuerza() }} %</output></span>
+            <input type="range" min="50" max="200" step="5" [value]="tema.fuerza()" (input)="tema.ponerFuerza(+$any($event.target).value)"></label>
           <label class="regla"><span>Velocidad <output>{{ tema.velocidad() }} %</output></span>
             <input type="range" min="25" max="200" step="5" [value]="tema.velocidad()" (input)="tema.ponerVelocidad(+$any($event.target).value)"></label>
         </div>
@@ -37,27 +47,22 @@ import { AMBITOS, FONDOS, TemaService } from '../core/tema.service';
   `,
   styles: `
     :host { display: block; }
-    .seccion { display: flex; flex-direction: column; gap: 12px; }
+    .seccion { display: flex; flex-direction: column; gap: 14px; }
     h3 { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--soft); }
-    .fondos { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+    h4 { margin: 0 0 6px; font-size: .9rem; font-weight: 600; }
+    h4 small { margin-left: 6px; font-weight: 500; color: var(--soft); }
+    .grupo { display: grid; gap: 6px; }
+    .fondos { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
     .fondo { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px; text-align: left; border-radius: 14px; border: 2px solid var(--linea); background: transparent; color: inherit; font: inherit; cursor: pointer; transition: border-color 200ms ease, transform 200ms var(--ease-out); }
     .fondo[aria-pressed='true'] { border-color: var(--brand); }
     @media (hover: hover) { .fondo:hover { transform: translateY(-2px); } }
-    .fondo__vista { height: 54px; border-radius: 8px; background-color: var(--tarjeta-2); background-size: cover; }
+    .fondo:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+    .fondo__vista { position: relative; display: block; height: 58px; border-radius: 8px; overflow: hidden; background: var(--tarjeta-2); }
+    .fondo__vista canvas { display: block; width: 100%; height: 100%; }
     .fondo__nombre { font-size: .86rem; font-weight: 600; }
     .fondo__nota { font-size: .72rem; line-height: 1.25; color: var(--soft); }
-    /* una miniatura de cada fondo, solo con CSS y el color de acento */
-    [data-fondo='aura'] .fondo__vista { background-image: radial-gradient(60% 80% at 20% 10%, color-mix(in srgb, var(--brand) 55%, transparent), transparent 70%), radial-gradient(60% 70% at 90% 100%, color-mix(in srgb, var(--brand) 25%, #3a5bff), transparent 70%); }
-    [data-fondo='liquido'] .fondo__vista { background-image: radial-gradient(circle at 28% 40%, var(--brand) 0 14px, transparent 15px), radial-gradient(circle at 44% 52%, var(--brand) 0 11px, transparent 12px), radial-gradient(circle at 76% 62%, color-mix(in srgb, var(--brand) 40%, #3a5bff) 0 13px, transparent 14px); filter: blur(.4px); }
-    [data-fondo='isometrico'] .fondo__vista { background-image: linear-gradient(30deg, color-mix(in srgb, var(--brand) 35%, transparent) 12%, transparent 12.5% 87%, color-mix(in srgb, var(--brand) 35%, transparent) 87.5%), linear-gradient(150deg, color-mix(in srgb, var(--brand) 35%, transparent) 12%, transparent 12.5% 87%, color-mix(in srgb, var(--brand) 35%, transparent) 87.5%); background-size: 28px 48px; }
-    [data-fondo='comic'] .fondo__vista { background-image: radial-gradient(circle, var(--brand) 2.4px, transparent 3px); background-size: 12px 12px; }
-    [data-fondo='pixel'] .fondo__vista { background-image: linear-gradient(var(--brand), var(--brand)), linear-gradient(var(--brand), var(--brand)), linear-gradient(var(--brand), var(--brand)); background-size: 18px 12px, 12px 6px, 6px 6px; background-position: 0 100%, 22px 100%, 70% 20%; background-repeat: no-repeat; image-rendering: pixelated; }
-    [data-fondo='particulas'] .fondo__vista { background-image: radial-gradient(circle, var(--brand) 2px, transparent 2.5px), linear-gradient(125deg, transparent 49%, color-mix(in srgb, var(--brand) 50%, transparent) 50%, transparent 51%); background-size: 26px 22px, 36px 36px; }
-    [data-fondo='boreal'] .fondo__vista { background-image: linear-gradient(170deg, transparent 15%, color-mix(in srgb, var(--brand) 55%, transparent) 38%, transparent 62%), linear-gradient(190deg, transparent 30%, color-mix(in srgb, var(--brand-2) 40%, transparent) 52%, transparent 75%); }
-    [data-fondo='bokeh'] .fondo__vista { background-image: radial-gradient(circle at 22% 38%, color-mix(in srgb, var(--brand) 60%, transparent) 0 11px, transparent 12px), radial-gradient(circle at 58% 62%, color-mix(in srgb, var(--brand-2) 55%, transparent) 0 15px, transparent 16px), radial-gradient(circle at 82% 28%, color-mix(in srgb, var(--brand) 45%, transparent) 0 9px, transparent 10px); }
-    [data-fondo='olas'] .fondo__vista { background-image: radial-gradient(120% 80% at 30% 120%, color-mix(in srgb, var(--brand) 50%, transparent) 55%, transparent 56%), radial-gradient(120% 80% at 80% 135%, color-mix(in srgb, var(--brand-2) 40%, transparent) 55%, transparent 56%); }
-    [data-fondo='estrellas'] .fondo__vista { background-image: radial-gradient(circle, var(--texto) 1px, transparent 1.5px), radial-gradient(circle, var(--brand-2) 1.4px, transparent 2px); background-size: 19px 17px, 31px 29px; background-position: 0 0, 9px 11px; }
-    [data-fondo='rejilla'] .fondo__vista { background-image: linear-gradient(color-mix(in srgb, var(--brand) 55%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--brand) 55%, transparent) 1px, transparent 1px); background-size: 100% 11px, 16px 100%; mask: linear-gradient(transparent, #000 70%); -webkit-mask: linear-gradient(transparent, #000 70%); }
+    /* «Aura» y «Nada» no tienen dibujo: su miniatura es solo CSS */
+    [data-fondo='aura'] .fondo__vista { background-image: radial-gradient(60% 80% at 20% 10%, color-mix(in srgb, var(--brand) 55%, transparent), transparent 70%), radial-gradient(60% 70% at 90% 100%, color-mix(in srgb, var(--brand) 28%, #3a5bff), transparent 70%); }
     [data-fondo='ninguno'] .fondo__vista { border: 1px dashed var(--linea); background: transparent; }
     .reglas { display: grid; gap: 10px; }
     .regla { display: grid; gap: 4px; font-size: .84rem; color: var(--soft); }
@@ -68,11 +73,44 @@ import { AMBITOS, FONDOS, TemaService } from '../core/tema.service';
     .ambito > span { margin-right: 4px; }
     .chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: transparent; color: inherit; font: 600 .82rem/1 var(--font-text); cursor: pointer; }
     .chip[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
-    .nota { font-size: var(--step-small); color: var(--soft); }
+    .nota { margin: 0; font-size: var(--step-small); color: var(--soft); }
   `,
 })
 export class AjustesFondo {
   protected readonly tema = inject(TemaService);
-  protected readonly fondos = FONDOS;
   protected readonly ambitos = AMBITOS;
+  protected readonly grupos = GRUPOS_FONDO.map((g) => ({ ...g, fondos: FONDOS.filter((f) => f.grupo === g.id) }));
+  private readonly vistas = viewChildren<ElementRef<HTMLCanvasElement>>('vista');
+  private generacion = 0;
+  private espera?: ReturnType<typeof setTimeout>;
+  private listo = false;
+
+  constructor() {
+    afterNextRender(() => { this.listo = true; this.pintar(); });
+    // otro color, modo claro u oscuro o otra fuerza: se vuelven a dibujar las miniaturas (con un respiro mientras se arrastra el deslizador)
+    effect(() => { this.tema.cambio(); this.tema.fuerza(); untracked(() => { if (this.listo) { clearTimeout(this.espera); this.espera = setTimeout(() => this.pintar(), 180); } }); });
+    inject(DestroyRef).onDestroy(() => { this.generacion++; clearTimeout(this.espera); });
+  }
+
+  protected animado(id: FondoId): boolean { return id !== 'aura' && id !== 'ninguno'; }
+
+  private async pintar(): Promise<void> {
+    const mi = ++this.generacion;
+    try {
+      const { crearEscena, paletaDe } = await import('./fondos');
+      const css = getComputedStyle(document.documentElement);
+      const paleta = paletaDe(resolverColor(css.getPropertyValue('--brand'), '#ff7a1f'), document.documentElement.dataset['mode'] !== 'light');
+      paleta.fuerza = this.tema.fuerza() / 100;
+      for (const ref of this.vistas()) {
+        if (mi !== this.generacion) return;
+        const canvas = ref.nativeElement, id = canvas.dataset['id'] as FondoId, caja = canvas.parentElement?.getBoundingClientRect();
+        const escena = await crearEscena(id, canvas, paleta, { intensidad: 0.9, velocidad: 1, ligero: true });
+        if (!escena || mi !== this.generacion) continue;
+        canvas.style.imageRendering = escena.pixelado ? 'pixelated' : 'auto';
+        escena.cambiar(caja?.width || 112, caja?.height || 58);
+        for (let i = 0; i < 9; i++) escena.dibujar(4 + i * 0.4, 0.05); // varios fotogramas: los que dejan estela o se calculan en capas necesitan «calentar»
+        await new Promise((r) => setTimeout(r, 12)); // una miniatura tras otra, sin bloquear la pantalla
+      }
+    } catch { /* sin canvas: las miniaturas se quedan vacías y el resto de Ajustes sigue igual */ }
+  }
 }

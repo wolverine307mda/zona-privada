@@ -29,23 +29,53 @@ export const MODOS: { id: Modo; nombre: string }[] = [
   { id: 'system', nombre: 'Sistema' },
 ];
 
-export type FondoId = 'aura' | 'liquido' | 'isometrico' | 'comic' | 'pixel' | 'particulas' | 'boreal' | 'bokeh' | 'olas' | 'estrellas' | 'rejilla' | 'ninguno';
+export type FondoId = 'aura' | 'liquido' | 'isometrico' | 'comic' | 'pixel' | 'particulas' | 'boreal' | 'bokeh' | 'olas' | 'estrellas' | 'rejilla' | 'ninguno'
+  | 'nebulosa' | 'plasma' | 'seda' | 'lluvia' | 'luciernagas' | 'hexagonos' | 'circuitos' | 'caleidoscopio' | 'sonar' | 'flujo' | 'cristales' | 'nevada' | 'cometas' | 'haces'
+  | 'multiverso' | 'reactor' | 'gamma' | 'tormenta' | 'mistico' | 'vibranio' | 'cosmico';
 /** dónde se ve el fondo: detrás de todo, solo de las páginas o solo del menú lateral (en el móvil siempre es todo) */
 export type Ambito = 'ambos' | 'paginas' | 'menu';
 
-export const FONDOS: { id: FondoId; nombre: string; nota: string }[] = [
-  { id: 'aura', nombre: 'Aura', nota: 'Luz suave que respira' },
-  { id: 'liquido', nombre: 'Líquido', nota: 'Gotas que se funden' },
-  { id: 'isometrico', nombre: 'Isométrico', nota: 'Suelo de cubos en ondas' },
-  { id: 'comic', nombre: 'Cómic', nota: 'Puntos de imprenta' },
-  { id: 'pixel', nombre: 'Píxel art', nota: 'Estrellas y montañas a saltos' },
-  { id: 'particulas', nombre: 'Partículas', nota: 'Red que huye del puntero' },
-  { id: 'boreal', nombre: 'Boreal', nota: 'Cintas de luz como una aurora' },
-  { id: 'bokeh', nombre: 'Bokeh', nota: 'Luces desenfocadas que suben' },
-  { id: 'olas', nombre: 'Olas', nota: 'Capas de ondas que se mecen' },
-  { id: 'estrellas', nombre: 'Estrellas', nota: 'Cielo de noche con fugaces' },
-  { id: 'rejilla', nombre: 'Rejilla', nota: 'Suelo en perspectiva' },
-  { id: 'ninguno', nombre: 'Nada', nota: 'Solo el color liso' },
+export type GrupoFondo = 'clasicos' | 'nuevos' | 'marvel';
+export const GRUPOS_FONDO: { id: GrupoFondo; nombre: string; nota?: string }[] = [
+  { id: 'clasicos', nombre: 'Clásicos' },
+  { id: 'nuevos', nombre: 'Nuevos' },
+  { id: 'marvel', nombre: 'Universo de superhéroes', nota: 'Inspirados en el universo Marvel, con dibujos originales y colores propios (no siguen el color de acento).' },
+];
+
+export const FONDOS: { id: FondoId; nombre: string; nota: string; grupo: GrupoFondo }[] = [
+  { id: 'aura', nombre: 'Aura', nota: 'Luz suave que respira', grupo: 'clasicos' },
+  { id: 'liquido', nombre: 'Líquido', nota: 'Gotas que se funden', grupo: 'clasicos' },
+  { id: 'isometrico', nombre: 'Isométrico', nota: 'Suelo de cubos en ondas', grupo: 'clasicos' },
+  { id: 'comic', nombre: 'Cómic', nota: 'Puntos de imprenta', grupo: 'clasicos' },
+  { id: 'pixel', nombre: 'Píxel art', nota: 'Estrellas y montañas a saltos', grupo: 'clasicos' },
+  { id: 'particulas', nombre: 'Partículas', nota: 'Red que huye del puntero', grupo: 'clasicos' },
+  { id: 'boreal', nombre: 'Boreal', nota: 'Cintas de luz como una aurora', grupo: 'clasicos' },
+  { id: 'bokeh', nombre: 'Bokeh', nota: 'Luces desenfocadas que suben', grupo: 'clasicos' },
+  { id: 'olas', nombre: 'Olas', nota: 'Capas de ondas que se mecen', grupo: 'clasicos' },
+  { id: 'estrellas', nombre: 'Estrellas', nota: 'Cielo con Vía Láctea y fugaces', grupo: 'clasicos' },
+  { id: 'rejilla', nombre: 'Rejilla', nota: 'Suelo en perspectiva con sol', grupo: 'clasicos' },
+  { id: 'ninguno', nombre: 'Nada', nota: 'Solo el color liso', grupo: 'clasicos' },
+  { id: 'nebulosa', nombre: 'Nebulosa', nota: 'Nubes de luz y polvo de estrellas', grupo: 'nuevos' },
+  { id: 'plasma', nombre: 'Plasma', nota: 'Mármol de luz líquida', grupo: 'nuevos' },
+  { id: 'seda', nombre: 'Seda', nota: 'Hilos de luz que ondulan', grupo: 'nuevos' },
+  { id: 'lluvia', nombre: 'Lluvia digital', nota: 'Columnas de luz que caen', grupo: 'nuevos' },
+  { id: 'luciernagas', nombre: 'Luciérnagas', nota: 'Luces cálidas que parpadean', grupo: 'nuevos' },
+  { id: 'hexagonos', nombre: 'Hexágonos', nota: 'Panal con ondas de luz', grupo: 'nuevos' },
+  { id: 'circuitos', nombre: 'Circuitos', nota: 'Pistas con pulsos de luz', grupo: 'nuevos' },
+  { id: 'caleidoscopio', nombre: 'Caleidoscopio', nota: 'Pétalos de luz que giran', grupo: 'nuevos' },
+  { id: 'sonar', nombre: 'Sonar', nota: 'Ondas que se cruzan', grupo: 'nuevos' },
+  { id: 'flujo', nombre: 'Flujo', nota: 'Estelas en una corriente', grupo: 'nuevos' },
+  { id: 'cristales', nombre: 'Cristales', nota: 'Malla de facetas brillantes', grupo: 'nuevos' },
+  { id: 'nevada', nombre: 'Nevada', nota: 'Copos en tres capas', grupo: 'nuevos' },
+  { id: 'cometas', nombre: 'Cometas', nota: 'Bólidos con larga cola', grupo: 'nuevos' },
+  { id: 'haces', nombre: 'Haces', nota: 'Focos que barren el aire', grupo: 'nuevos' },
+  { id: 'multiverso', nombre: 'Multiverso', nota: 'Telaraña partida en rojo y azul', grupo: 'marvel' },
+  { id: 'reactor', nombre: 'Reactor', nota: 'Anillos de energía y mira de combate', grupo: 'marvel' },
+  { id: 'gamma', nombre: 'Gamma', nota: 'Energía verde con venas violeta', grupo: 'marvel' },
+  { id: 'tormenta', nombre: 'Tormenta', nota: 'Rayos que iluminan el cielo', grupo: 'marvel' },
+  { id: 'mistico', nombre: 'Místico', nota: 'Portal de runas y chispas', grupo: 'marvel' },
+  { id: 'vibranio', nombre: 'Vibranio', nota: 'Panal de metal con energía violeta', grupo: 'marvel' },
+  { id: 'cosmico', nombre: 'Cósmico', nota: 'Seis gemas orbitando una nebulosa', grupo: 'marvel' },
 ];
 
 export const AMBITOS: { id: Ambito; nombre: string }[] = [
@@ -73,6 +103,8 @@ export class TemaService {
   readonly fondo = signal<FondoId>(FONDOS.some((f) => f.id === leer('mda-fondo', 'aura')) ? (leer('mda-fondo', 'aura') as FondoId) : 'aura');
   readonly intensidad = signal(entre(+leer('mda-fondo-int', '60'), 5, 100, 60));
   readonly velocidad = signal(entre(+leer('mda-fondo-vel', '100'), 25, 200, 100));
+  // cuánta fuerza tiene el color del fondo (50-200 %): más saturado y más opaco
+  readonly fuerza = signal(entre(+leer('mda-fondo-col', '100'), 50, 200, 100));
   readonly ambito = signal<Ambito>(AMBITOS.some((a) => a.id === leer('mda-fondo-ambito', 'ambos')) ? (leer('mda-fondo-ambito', 'ambos') as Ambito) : 'ambos');
 
   constructor() {
@@ -83,6 +115,7 @@ export class TemaService {
   ponerFondo(f: FondoId): void { this.fondo.set(f); guardar('mda-fondo', f); this.aplicar(); }
   ponerIntensidad(n: number): void { this.intensidad.set(entre(n, 5, 100, 60)); guardar('mda-fondo-int', String(this.intensidad())); }
   ponerVelocidad(n: number): void { this.velocidad.set(entre(n, 25, 200, 100)); guardar('mda-fondo-vel', String(this.velocidad())); }
+  ponerFuerza(n: number): void { this.fuerza.set(entre(n, 50, 200, 100)); guardar('mda-fondo-col', String(this.fuerza())); }
   ponerAmbito(a: Ambito): void { this.ambito.set(a); guardar('mda-fondo-ambito', a); this.aplicar(); }
 
   ponerModo(m: Modo, origen?: HTMLElement): void { this.transicion(origen, () => { this.modo.set(m); guardar('mode', m); }); }

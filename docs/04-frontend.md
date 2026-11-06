@@ -70,10 +70,13 @@ Query params útiles: `/notas?nueva=1`, `/agenda?nuevo=evento|recordatorio` (abr
   (`[data-color=…]`) y se listan en `core/tema.service.ts` (`COLORES`); los nombres de las primeras paletas (seis morados) se guardan como «morado». Modo Día / Noche / Sistema aparte, todo guardado
   en el navegador. Contraste comprobado en noche y en día (texto ≥ 12:1, texto atenuado ≥ 5:1, botones ≥ 4,5:1).
   El cambio de tema se anima con View Transitions en círculo desde el botón; durante esa transición `.vt-tema * { view-transition-name: none }` evita que barras y pantalla se superpongan.
-- **Fondos** (Ajustes → Fondo): aura, líquido, isométrico, cómic, píxel art, partículas, boreal, bokeh, olas, estrellas, rejilla o nada, con intensidad, velocidad y dónde se ven
-  (todo, páginas o menú). Van en una capa `z-index: -1` (`shell/fondo.ts`, escenas en `fondos.ts`; el aura en `body::before`): **el color de fondo va solo en `html`**, porque si el `body`
-  también lo pinta tapa esas capas y ningún fondo se ve. En el móvil (`pointer: coarse` o menos de 760 px) cada escena dibuja menos cosas (`ligero`), a 20 fotogramas, sin máscara,
-  con la altura `100lvh` (no cambia al esconderse la barra del navegador) y **se queda quieta mientras haces scroll**.
+- **Fondos** (Ajustes → Fondo): 33 en tres grupos —**clásicos** (aura, líquido, isométrico, cómic, píxel art, partículas, boreal, bokeh, olas, estrellas, rejilla, nada), **nuevos** (nebulosa,
+  plasma, seda, lluvia digital, luciérnagas, hexágonos, circuitos, caleidoscopio, sonar, flujo, cristales, nevada, cometas, haces) y **superhéroes** (multiverso, reactor, gamma, tormenta, místico,
+  vibranio, cósmico: dibujos originales inspirados en el universo Marvel, sin personajes, logos ni imágenes con derechos, y con colores propios)—, con intensidad, **fuerza del color** (50-200 %:
+  más saturado y más opaco), velocidad y dónde se ven (todo, páginas o menú). Van en una capa `z-index: -1` (`shell/fondo.ts`; las escenas, en `fondos.ts` —clásicos—, `fondos-nuevos.ts`,
+  `fondos-marvel.ts` y lo común en `fondos-base.ts`, que se descargan solo si se eligen; el aura en `body::before`). Se dibujan **a la resolución de la pantalla** (hasta 2× en ordenador, 1,5× en el móvil)
+  y cada miniatura de Ajustes es el fondo de verdad dibujado en pequeño. **El color de fondo va solo en `html`**, porque si el `body` también lo pinta tapa esas capas y ningún fondo se ve. En el móvil
+  (`pointer: coarse` o menos de 760 px) cada escena dibuja menos cosas (`ligero`), a 20 fotogramas, sin máscara, con la altura `100lvh` (no cambia al esconderse la barra del navegador) y **se queda quieta mientras haces scroll**.
 - **Colores para Three y ECharts**: leen las variables con `getPropertyValue`, que devuelve el texto sin resolver (`color-mix(...)`); `core/color-css.ts` (`resolverColor`) le pide
   al navegador el color resuelto y lo pasa a `#rrggbb`. Las escenas 3D piden el siguiente fotograma antes de dibujar y se saltan uno que falle: una excepción ya no las deja en blanco.
 

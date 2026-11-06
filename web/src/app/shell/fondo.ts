@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, untracked, viewChild } from '@angular/core';
 import { TemaService } from '../core/tema.service';
-import type { Escena, Opciones } from './fondos';
+import type { Escena, Opciones, Paleta } from './fondos';
 import { resolverColor } from '../core/color-css';
 
 // Capa fija detrás de toda la app con el fondo animado elegido en Ajustes. «Aura» y «Nada» no usan el canvas (los pinta styles.css).
@@ -30,6 +30,7 @@ export class Fondo {
   protected oculto = true;
   private listo = false;
   private escena: Escena | null = null;
+  private paleta: Paleta | null = null;
   private readonly tactil = matchMedia('(pointer: coarse)').matches || innerWidth < 760;
   private opciones: Opciones = { intensidad: 0.6, velocidad: 1, ligero: this.tactil };
   private tamano = { w: 0, h: 0 };
@@ -45,10 +46,10 @@ export class Fondo {
     afterNextRender(() => { this.listo = true; this.montar(); });
     // otro fondo, otro color o modo claro/oscuro: se vuelve a montar
     effect(() => { this.tema.fondo(); this.tema.cambio(); this.tema.ambito(); untracked(() => { if (this.listo) this.montar(); }); });
-    // intensidad y velocidad se aplican sobre la marcha, sin volver a montar
+    // intensidad, velocidad y fuerza del color se aplican sobre la marcha, sin volver a montar
     effect(() => {
-      const i = this.tema.intensidad(), v = this.tema.velocidad();
-      untracked(() => { this.opciones.intensidad = i / 100; this.opciones.velocidad = v / 100; if (this.reducido && this.escena) this.escena.dibujar(this.t, 0); });
+      const i = this.tema.intensidad(), v = this.tema.velocidad(), f = this.tema.fuerza();
+      untracked(() => { this.opciones.intensidad = i / 100; this.opciones.velocidad = v / 100; if (this.paleta) this.paleta.fuerza = f / 100; if (this.reducido && this.escena) this.escena.dibujar(this.t, 0); });
     });
     // en el móvil, al esconderse o aparecer la barra del navegador el alto cambia unos píxeles: no se vuelve a crear el dibujo por eso
     const ajustar = () => {
@@ -83,8 +84,10 @@ export class Fondo {
       const css = getComputedStyle(document.documentElement);
       const paleta = paletaDe(resolverColor(css.getPropertyValue('--brand'), '#ff7a1f'), document.documentElement.dataset['mode'] !== 'light');
       const canvas = this.lienzo().nativeElement;
-      const escena = crearEscena(id, canvas, paleta, this.opciones);
-      if (!escena) return;
+      paleta.fuerza = this.tema.fuerza() / 100;
+      const escena = await crearEscena(id, canvas, paleta, this.opciones);
+      if (!escena || mi !== this.generacion) return; // (o mientras tanto se eligió otro)
+      this.paleta = paleta;
       canvas.style.imageRendering = escena.pixelado ? 'pixelated' : 'auto';
       this.escena = escena;
       this.tamano = { w: this.host.nativeElement.clientWidth || innerWidth, h: this.host.nativeElement.clientHeight || innerHeight };
