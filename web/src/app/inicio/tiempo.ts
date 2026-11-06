@@ -20,6 +20,12 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
       @if (datos()?.lugar && !buscando()) {
         <button type="button" class="lugar" (click)="empezarBusqueda()" [title]="datos()!.lugar!.region ?? ''">📍 {{ datos()!.lugar!.nombre }}</button>
       }
+      @if (datos()?.ahora && !buscando()) {
+        <button type="button" class="avisos" [class.avisos--on]="datos()!.avisos" role="switch" [attr.aria-checked]="datos()!.avisos"
+                (click)="avisos(!datos()!.avisos)" title="Avisarme la víspera si llueve, hay tormenta, mucho calor o helada" aria-label="Avisarme la víspera si llueve, hay tormenta, mucho calor o helada">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4" /></svg><span>Avisos</span>
+        </button>
+      }
     </header>
 
     @if (buscando() || (datos() && !datos()!.lugar)) {
@@ -58,8 +64,12 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
           </div>
         }
       </div>
-      <p class="detalles">Sensación {{ a.sensacion | number: '1.0-0' }}° · Humedad {{ a.humedad }} % · Viento {{ a.viento | number: '1.0-0' }} km/h
-        @if (hoy()?.sale) { · ☀️ {{ hoy()!.sale }}–{{ hoy()!.pone }} }</p>
+      <ul class="datos" aria-label="Detalles de ahora">
+        <li><span aria-hidden="true">🌡️</span>Sensación {{ a.sensacion | number: '1.0-0' }}°</li>
+        <li><span aria-hidden="true">💧</span>Humedad {{ a.humedad }} %</li>
+        <li><span aria-hidden="true">💨</span>{{ a.viento | number: '1.0-0' }} km/h</li>
+        @if (hoy()?.sale) { <li><span aria-hidden="true">☀️</span>{{ hoy()!.sale }}–{{ hoy()!.pone }}</li> }
+      </ul>
 
       <ol class="horas" aria-label="Próximas horas">
         @for (h of horas(); track h.hora; let i = $index) {
@@ -72,23 +82,17 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
         }
       </ol>
 
-      <ul class="dias">
+      <ul class="semana" aria-label="Los próximos días">
         @for (d of dias(); track d.fecha; let i = $index) {
-          <li [title]="d.texto">
-            <span class="dias__n">{{ i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : nombreDia(d.fecha) }}</span>
-            <span aria-hidden="true">{{ d.icono }}</span>
-            <small class="dias__ll" [class.oculto]="d.lluvia < 20">💧{{ d.lluvia }}%</small>
-            <span class="dias__min">{{ d.minima | number: '1.0-0' }}°</span>
-            <span class="barra" aria-hidden="true"><i [style.left.%]="posicion(d.minima)" [style.right.%]="100 - posicion(d.maxima)"></i></span>
-            <span class="dias__max">{{ d.maxima | number: '1.0-0' }}°</span>
+          <li [title]="d.texto" [class.semana__hoy]="i === 0">
+            <span class="semana__n">{{ i === 0 ? 'Hoy' : nombreDia(d.fecha) }}</span>
+            <span class="semana__i" aria-hidden="true">{{ d.icono }}</span>
+            <b>{{ d.maxima | number: '1.0-0' }}°</b>
+            <span class="semana__min">{{ d.minima | number: '1.0-0' }}°</span>
+            <small [class.oculto]="d.lluvia < 20">💧{{ d.lluvia }}%</small>
           </li>
         }
       </ul>
-
-      <label class="avisar">
-        <input type="checkbox" [checked]="datos()!.avisos" (change)="avisos($any($event.target).checked)">
-        <span>Avisarme la víspera si llueve, hay tormenta, mucho calor o helada</span>
-      </label>
     } @else if (error()) {
       <p class="sub">{{ error() }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
     } @else {
@@ -111,7 +115,7 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
     .buscar input:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
     .boton-ubicacion { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--linea); border-radius: 12px; background: var(--tarjeta); color: var(--texto); cursor: pointer; }
     .boton-ubicacion svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-    .resultados { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 240px; overflow: auto; }
+    .resultados { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 180px; overflow: auto; }
     .resultados button { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 12px; border: 0; border-radius: 10px; background: var(--tarjeta-2); color: var(--texto); text-align: left; cursor: pointer; font: 14px var(--font-text); }
     .resultados button:hover { background: color-mix(in srgb, var(--brand) 14%, var(--tarjeta-2)); }
     .resultados span { font-size: 12px; color: var(--soft); }
@@ -123,7 +127,9 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
     .ahora__temp span { font-size: 14px; color: var(--soft); }
     .ahora__dia { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 14px; color: var(--soft); white-space: nowrap; }
     .ahora__dia b { color: var(--texto); }
-    .detalles { margin: -4px 0 0; font-size: 12.5px; color: var(--soft); }
+    .datos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .datos li { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: var(--tarjeta-2); font-size: 12px; color: var(--soft); white-space: nowrap; }
+    .datos li span { font-size: 12px; }
 
     .horas { list-style: none; margin: 0; padding: 2px 0 6px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; scroll-snap-type: x proximity; }
     .horas li { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 50px; padding: 8px 4px; border-radius: 12px; background: var(--tarjeta-2); }
@@ -133,22 +139,24 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
     .horas b { font-size: 14px; font-variant-numeric: tabular-nums; }
     .horas small { font-size: 10.5px; color: #4aa3ff; font-weight: 600; }
 
-    .dias { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-    .dias li { display: grid; grid-template-columns: 62px 24px 46px 30px minmax(40px, 1fr) 30px; align-items: center; gap: 8px; padding: 5px 2px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-    .dias li + li { border-top: 1px solid var(--linea); }
-    .dias__n { text-transform: capitalize; }
-    .dias__ll { font-size: 11px; color: #4aa3ff; font-weight: 600; }
-    .dias__min { color: var(--soft); text-align: right; }
-    .dias__max { font-weight: 600; }
-    .barra { position: relative; height: 5px; border-radius: 999px; background: var(--tarjeta-2); }
-    .barra i { position: absolute; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, #4aa3ff, var(--brand)); }
+    /* la semana en una sola fila de siete columnas: antes eran siete filas y la tarjeta se estiraba mucho más que las de al lado */
+    .semana { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+    .semana li { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 8px 2px 6px; border-radius: 12px; background: var(--tarjeta-2); font-variant-numeric: tabular-nums; }
+    .semana__hoy { background: color-mix(in srgb, var(--brand) 18%, var(--tarjeta-2)) !important; }
+    .semana__n { font-size: 11.5px; color: var(--soft); text-transform: capitalize; }
+    .semana__i { font-size: 20px; line-height: 1.2; }
+    .semana b { font-size: 14px; }
+    .semana__min { font-size: 12px; color: var(--soft); }
+    .semana small { font-size: 10.5px; color: #4aa3ff; font-weight: 600; }
     .oculto { visibility: hidden; }
 
-    .avisar { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--soft); cursor: pointer; }
-    .avisar input { margin-top: 2px; accent-color: var(--brand); }
+    .avisos { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 5px 11px; background: var(--tarjeta-2); color: var(--soft); font: 500 12px/1.2 var(--font-text); cursor: pointer; }
+    .avisos svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .avisos--on { background: color-mix(in srgb, var(--brand) 22%, var(--tarjeta-2)); color: var(--texto); }
+    .avisos:focus-visible, .lugar:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
     .esqueleto { height: 180px; border-radius: 14px; background: linear-gradient(90deg, var(--tarjeta-2), var(--tarjeta), var(--tarjeta-2)); background-size: 200% 100%; animation: brillo 1.4s linear infinite; }
     @keyframes brillo { to { background-position: -200% 0; } }
-    @media (max-width: 520px) { .dias li { grid-template-columns: 58px 22px 44px 28px minmax(24px, 1fr) 28px; gap: 6px; } }
+    @media (max-width: 420px) { .avisos span { display: none; } .avisos { padding: 6px 8px; } .lugar { max-width: 42%; } .semana { gap: 4px; } }
   `,
   imports: [DatePipe, DecimalPipe],
 })
@@ -165,11 +173,6 @@ export class Tiempo {
   protected readonly hoy = computed(() => this.datos()?.dias?.[0] ?? null);
   protected readonly horas = computed(() => (this.datos()?.horas ?? []).slice(0, 13));
   protected readonly dias = computed(() => this.datos()?.dias ?? []);
-  // la escala común de las barras de la semana
-  private readonly rango = computed(() => {
-    const d = this.dias();
-    return d.length ? { min: Math.min(...d.map((x) => x.minima)), max: Math.max(...d.map((x) => x.maxima)) } : { min: 0, max: 1 };
-  });
 
   constructor() {
     this.cargar();
@@ -182,11 +185,6 @@ export class Tiempo {
     this.error.set('');
     try { this.datos.set(await firstValueFrom(this.http.get<Respuesta>('/api/tiempo'))); }
     catch { this.error.set('No he podido consultar el tiempo.'); }
-  }
-
-  protected posicion(t: number): number {
-    const { min, max } = this.rango();
-    return max > min ? ((t - min) / (max - min)) * 100 : 50;
   }
 
   protected nombreDia(fecha: string): string {

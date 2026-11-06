@@ -28,10 +28,11 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
       </div>
     }
 
-    <dialog class="modal" #dlg tabindex="-1" aria-labelledby="mm-titulo" (click)="cerrarFuera($event)" (close)="abierto.set(false)">
+    <dialog class="modal" #dlg tabindex="-1" aria-labelledby="mm-titulo" (click)="cerrarFuera($event)" (keydown)="teclas($event)" (close)="abierto.set(false)">
       @if (ahora(); as a) {
         @if (a.cancion; as c) {
           <div class="caja" [style.--tono]="tono()" [class.caja--suena]="a.sonando">
+            @if (c.imagen) { <img class="ambiente" [src]="c.imagen" alt="" aria-hidden="true"> }
             <header class="alto">
               <span class="estado"><i class="onda" aria-hidden="true"><b></b><b></b><b></b></i>{{ a.sonando ? 'Sonando ahora' : 'En pausa' }}</span>
               <button class="cerrar" type="button" (click)="modal().nativeElement.close()" aria-label="Cerrar el reproductor">
@@ -39,11 +40,13 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
               </button>
             </header>
             <div class="portada">
+              <span class="vinilo" aria-hidden="true"></span>
               @if (c.imagen) {
                 <img class="luz" [src]="c.imagen" alt="" aria-hidden="true">
                 <img class="caratula" [src]="c.imagen" [alt]="'Portada de ' + (c.album ?? c.nombre)">
               }
             </div>
+            <div class="derecha">
             <div class="datos">
               <h2 id="mm-titulo">{{ c.nombre }}</h2>
               <p class="artistas">{{ c.artistas }}</p>
@@ -78,6 +81,8 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
               </section>
             }
             <button class="ir" type="button" (click)="irAMusica()">Abrir Música</button>
+            <p class="teclas" aria-hidden="true"><kbd>Espacio</kbd> pausa · <kbd>←</kbd> <kbd>→</kbd> anterior y siguiente · <kbd>Esc</kbd> cierra</p>
+            </div>
           </div>
         }
       }
@@ -108,8 +113,13 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     .modal[open] { animation: modal-entra 460ms var(--ease-expo); }
     .modal::backdrop { background: rgba(3, 8, 11, .6); backdrop-filter: blur(6px); }
     @keyframes modal-entra { from { opacity: 0; transform: translateY(24px) scale(.95); } }
-    .caja { --tono: var(--brand); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: center; padding: 14px 22px 22px; text-align: center; background: radial-gradient(130% 52% at 50% 0, color-mix(in srgb, var(--tono) 42%, transparent), transparent 72%); }
+    .caja { --tono: var(--brand); position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: center; padding: 14px 22px 22px; text-align: center; background: radial-gradient(130% 52% at 50% 0, color-mix(in srgb, var(--tono) 42%, transparent), transparent 72%); }
     .caja .icon { width: 22px; height: 22px; }
+    /* en el móvil esto no cambia: la columna de la derecha se deshace y sus piezas quedan una debajo de otra como siempre */
+    .derecha { display: contents; }
+    .vinilo, .teclas { display: none; }
+    /* la portada, enorme y desenfocada, tiñe el fondo de la ventana */
+    .ambiente { position: absolute; z-index: -1; inset: -25%; width: 150%; height: 150%; object-fit: cover; filter: blur(70px) saturate(1.7); opacity: .3; pointer-events: none; }
 
     /* arriba: qué pasa (con una onda que baila al sonar) y el botón de cerrar, en su propia fila para no tapar la portada */
     .alto { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-right: -8px; }
@@ -157,11 +167,50 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
     .cola span { display: grid; gap: 1px; min-width: 0; }
     .cola strong { font-size: .9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cola small { color: var(--soft); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ir { width: 100%; min-height: 52px; margin-top: 10px; border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--tono) 18%, transparent); color: var(--texto); font: 700 .95rem/1 var(--font-text); cursor: pointer; }
+    .ir { width: 100%; min-height: 52px; margin-top: 10px; border: 1px solid color-mix(in srgb, var(--texto) 28%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--texto) 12%, transparent); color: var(--texto); font: 700 .95rem/1 var(--font-text); cursor: pointer; }
     /* en pantallas bajas la cola enseña solo dos (y en las muy bajas ninguna) para que todo quepa sin desplazar */
     @media (max-height: 900px) { .cola li:nth-child(n + 3) { display: none; } }
     @media (max-height: 700px) { .siguiente { display: none; } }
     .ir:focus-visible, .controles button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+    /* ORDENADOR: una sala de cine para lo que suena. Portada grande a la izquierda con un vinilo que asoma y gira, y a la derecha el título grande,
+       el progreso, los controles y lo que viene después. Solo con pantalla ancha y no muy baja: el móvil y las ventanas pequeñas siguen con la columna de siempre. */
+    @media (min-width: 820px) and (min-height: 540px) {
+      .modal { width: min(980px, calc(100vw - 96px)); border-radius: 40px; box-shadow: 0 40px 120px rgba(0, 0, 0, .55); }
+      .caja { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); column-gap: 72px; align-items: center; justify-items: stretch; text-align: left; padding: 18px 48px 40px; }
+      .alto { grid-column: 1 / -1; margin-right: -18px; }
+      .portada { grid-column: 1; grid-row: 2; width: min(100%, 380px, calc(100svh - 280px)); margin: 8px 0 0; justify-self: start; }
+      .caratula { border-radius: 30px; box-shadow: 0 24px 60px rgba(0, 0, 0, .5); }
+      /* el vinilo queda detrás de la portada y se asoma por la derecha */
+      .vinilo { display: block; position: absolute; z-index: 0; top: 4%; left: 14%; width: 92%; aspect-ratio: 1; border-radius: 50%; translate: 0 0;
+        background-color: #111;
+        background-image: radial-gradient(circle at 50% 50%, var(--tono) 0 15%, #050505 15.5% 17%, transparent 17.5%),
+          conic-gradient(from 20deg, transparent 0%, rgba(255, 255, 255, .10) 24%, transparent 30%, transparent 68%, rgba(255, 255, 255, .10) 74%, transparent 80%),
+          repeating-radial-gradient(circle at 50% 50%, #111 0, #111 2px, #242424 2px, #242424 3px);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, .5), inset 0 0 0 2px rgba(255, 255, 255, .09); transition: translate 700ms var(--ease-expo); }
+      .caja--suena .vinilo { translate: 5% 0; animation: gira 9s linear infinite; }
+      .derecha { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+      .datos { gap: 6px; }
+      h2 { font-size: clamp(1.9rem, 1.1rem + 2.2vw, 2.9rem); line-height: 1.08; letter-spacing: -.02em; }
+      .artistas { font-size: 1.2rem; }
+      .album { font-size: .95rem; }
+      .barra-t { margin-top: 18px; padding: 0; }
+      .progreso { height: 7px; }
+      .controles { justify-content: flex-start; margin: 14px 0 6px; gap: 18px; }
+      .controles button { width: 58px; height: 58px; }
+      .controles .principal { width: 80px; height: 80px; }
+      .controles button:hover { background: color-mix(in srgb, var(--texto) 18%, transparent); }
+      .controles .principal:hover { transform: scale(1.05); background: var(--texto); }
+      .dispositivo { margin: 6px 0 0; }
+      .siguiente { margin-top: 16px; }
+      .cola li:nth-child(n + 3) { display: flex; }
+      .ir { width: auto; min-height: 46px; margin-top: 16px; padding: 0 30px; }
+      .ir:hover { background: color-mix(in srgb, var(--texto) 20%, transparent); }
+      .teclas { display: block; margin: 14px 0 0; font-size: .74rem; color: var(--soft); }
+      .teclas kbd { padding: 2px 7px; border-radius: 6px; border: 1px solid var(--linea); background: color-mix(in srgb, var(--texto) 7%, transparent); font: 600 .7rem/1 var(--font-code); color: var(--texto); }
+    }
+    @media (min-width: 820px) and (min-height: 540px) and (max-height: 680px) { .siguiente { display: none; } .portada { width: min(100%, 300px, calc(100svh - 240px)); } }
+    @media (prefers-reduced-motion: reduce) { .vinilo { animation: none !important; } }
     @media (prefers-reduced-motion: reduce) { .mini__disco, .onda b, .modal[open], .mini { animation: none; } .progreso i, .caratula { transition: none; } }
   `,
 })
@@ -222,6 +271,16 @@ export class MiniMusica {
     this.modal().nativeElement.showModal();
     this.modal().nativeElement.focus({ preventScroll: true }); // el foco al diálogo y no al botón de cerrar (que si no sale con el aro de foco al abrir)
     void this.leer();
+  }
+
+  // con el foco en la ventana (no en un botón): espacio pausa o reproduce, ← anterior y → siguiente (Esc ya cierra por sí solo)
+  protected teclas(e: KeyboardEvent): void {
+    if (e.target !== this.modal().nativeElement || e.ctrlKey || e.metaKey || e.altKey) return;
+    const a = this.ahora();
+    if (!a?.cancion) return;
+    if (e.key === ' ') { e.preventDefault(); void this.control(a.sonando ? 'pause' : 'play'); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); void this.control('next'); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); void this.control('previous'); }
   }
 
   protected cerrarFuera(e: MouseEvent): void { if (e.target === this.modal().nativeElement) this.modal().nativeElement.close(); }
