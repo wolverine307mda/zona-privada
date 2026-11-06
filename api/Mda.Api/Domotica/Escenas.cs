@@ -36,6 +36,20 @@ public static class EscenasCasa
         return l;
     }
 
+    // Vuelve a poner cada aparato como estaba; los que fallan se cuentan y el resto sigue (lo usan la pantalla y las escenas por contexto)
+    public static async Task<(int Hechas, List<string> Fallos)> Aplicar(EscenaCasa x, AppDbContext db, ServicioCasa casa, CancellationToken ct)
+    {
+        var aparatos = await db.Aparatos.AsNoTracking().ToDictionaryAsync(a => a.Id, ct);
+        int hechas = 0; var fallos = new List<string>();
+        foreach (var a in Leer(x.Acciones))
+        {
+            if (!aparatos.TryGetValue(a.AparatoId, out var ap)) { fallos.Add("un aparato ya no existe"); continue; }
+            var (ok, mensaje, _) = await casa.Ejecutar(db, ap, a.Clave, a.Valor, ct);
+            if (ok) hechas++; else fallos.Add($"{ap.Nombre}: {mensaje}");
+        }
+        return (hechas, fallos);
+    }
+
     public static void MapEscenasCasa(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/api/domotica/escenas").RequireAuthorization();
@@ -72,14 +86,7 @@ public static class EscenasCasa
         g.MapPost("/{id:int}/aplicar", async (int id, AppDbContext db, ServicioCasa casa, CancellationToken ct) =>
         {
             if (await db.EscenasCasa.FindAsync([id], ct) is not { } x) return Results.NotFound();
-            var aparatos = await db.Aparatos.AsNoTracking().ToDictionaryAsync(a => a.Id, ct);
-            int hechas = 0; var fallos = new List<string>();
-            foreach (var a in Leer(x.Acciones))
-            {
-                if (!aparatos.TryGetValue(a.AparatoId, out var ap)) { fallos.Add("un aparato ya no existe"); continue; }
-                var (ok, mensaje, _) = await casa.Ejecutar(db, ap, a.Clave, a.Valor, ct);
-                if (ok) hechas++; else fallos.Add($"{ap.Nombre}: {mensaje}");
-            }
+            var (hechas, fallos) = await Aplicar(x, db, casa, ct);
             return Results.Ok(new { hechas, fallos });
         });
     }

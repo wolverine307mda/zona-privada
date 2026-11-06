@@ -82,6 +82,10 @@ export const MODULOS: Modulo[] = [
     icono: 'M3 12h4l3-8 4 16 3-8h4',
   },
   {
+    id: 'contexto', titulo: 'Escenas solas', resumen: 'Al llegar a casa, de noche o si llueve, la casa y el PC se ponen como quieras.', listo: true,
+    icono: 'M12 3 4 7v6c0 4 3.5 7 8 8 4.5-1 8-4 8-8V7zM9 12l2 2 4-4',
+  },
+  {
     id: 'agenda', titulo: 'Agenda', resumen: 'Eventos, recordatorios y Google Calendar.', listo: true, pestana: true,
     icono: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2',
   },
@@ -108,7 +112,7 @@ export const MODULOS: Modulo[] = [
 const GRUPOS_DEF = [
   { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'compra', 'agenda', 'tareas', 'papeles', 'habitos', 'notas'] },
   { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
-  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'servicios', 'automatizaciones', 'documentos', 'seguridad'] },
+  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'contexto', 'servicios', 'automatizaciones', 'documentos', 'seguridad'] },
 ];
 
 export const GRUPOS: Grupo[] = GRUPOS_DEF.map((g) => ({

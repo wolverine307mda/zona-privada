@@ -43,7 +43,7 @@ interface Respuesta { disparadores: Disparador[]; reglas: Regla[]; }
               <small>Si {{ r.etiqueta.toLowerCase() }} {{ r.mayor ? 'llega a' : 'baja de' }} {{ r.umbral }} {{ r.unidad }} → {{ r.accion === 'tarea' ? 'apunta una tarea' : 'avisa' }}</small>
               <small>Ahora: {{ r.ahora === null ? 'sin datos' : (redondo(r.ahora) + ' ' + r.unidad) }}@if (r.ultima) { · última vez {{ hora(r.ultima) }} }</small>
             </button>
-            <button type="button" class="button button--suave" [disabled]="probando() === r.id" (click)="probar(r)">Probar</button>
+            <button type="button" class="button button--ghost button--sm" [disabled]="probando() === r.id" (click)="probar(r)">Probar</button>
           </li>
         }
       </ul>

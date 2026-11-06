@@ -17,6 +17,7 @@ using Mda.Api.Papeles;
 using Mda.Api.Automatizaciones;
 using Mda.Api.Servicios;
 using Mda.Api.Compra;
+using Mda.Api.Contexto;
 using Mda.Api.Luz;
 using Mda.Api.Pc;
 using Mda.Api.Notas;
@@ -287,6 +288,9 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorAutomatizacio
 builder.Services.AddSingleton<IComprobadorServicios, ComprobadorReal>();
 builder.Services.AddSingleton<MotorServicios>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorServicios>());
+// escenas que se ponen solas según el contexto (llegar o salir de casa, la hora, el tiempo)
+builder.Services.AddSingleton<MotorContexto>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorContexto>());
 
 
 var app = builder.Build();
@@ -373,6 +377,7 @@ app.MapPapeles();
 app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();
+app.MapContexto();
 app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();

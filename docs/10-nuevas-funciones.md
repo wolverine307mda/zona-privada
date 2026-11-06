@@ -160,3 +160,29 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 - Al marcar algo como comprado se actualiza su intervalo (media móvil: pesa más lo reciente; dos compras el mismo día cuentan una). Con 3 compras o más y pasado el 90 % de su intervalo sale en «Ya toca». La × de una sugerencia olvida ese producto.
 - Escribe varias cosas separadas por comas. Se guardan los 15 últimos comprados; máx. 200 pendientes.
 - Telegram: `/compra leche, pan` (añade y enseña la lista, con lo que ya toca), `/compra` y `/comprado leche`.
+
+## Cielo en vivo (pantalla de entrar y de bloqueo)
+
+- `core/astro.ts` calcula dónde están el Sol y la Luna y la fase de la Luna (fórmulas aproximadas tipo SunCalc, sin red ni dependencias; con pruebas contra lunas nuevas y llenas reales).
+  `entrar/cielo-vivo.ts` lo dibuja en un lienzo 2D: color del cielo según la altura del Sol, estrellas al oscurecer, Sol y Luna con su fase real, nubes, montes y estrellas fugaces.
+  Con «reducir movimiento» se pinta quieto y se repinta cada minuto; a 30 cuadros por segundo y en pausa si no se ve.
+- **Configurable** en Ajustes › «Pantalla de entrar y de bloqueo»: candado 3D (por defecto) o cielo en vivo, con vista previa y un deslizador para ver otra hora. Es un ajuste **de cada dispositivo** (`localStorage`: `mda-entrada-fondo`),
+  porque la pantalla de entrar se ve antes de tener sesión y no puede preguntar nada al servidor.
+- El **lugar** sale del sitio del tiempo (se copia al navegador cada vez que entras: `CieloConfig.sincronizar`), de tu ubicación o, si no hay nada, Madrid. Si lo pones a mano no se pisa.
+- Se ve en `/entrar` y en la pantalla de bloqueo de Face ID. Al entrar el cielo da un pulso verde y al fallar uno rojo (el candado hace lo suyo).
+
+## Radar en vivo
+
+- En Seguridad › Vigilancia, el globo de las sondas tiene «Radar en vivo»: cada 12 s mira los accesos y las sondas nuevas y lanza un **rayo** desde su origen hasta tu casa (rojo: acceso fallido; naranja: sonda; verde: entrada correcta),
+  con un anillo en cada extremo, y el globo gira para enseñarlo. «Probar un rayo» lanza uno falso (no guarda nada).
+- `GET /api/seguridad/accesos` devuelve ahora también `lat` y `lon` de cada acceso (con la base GeoIP). Tu casa sale del mismo lugar que el cielo. No hay nada nuevo en el servidor: el radar solo consulta lo que ya había.
+
+## Escenas por contexto
+
+- `Contexto/Contexto.cs`: tabla `reglas_contexto`. Una regla = **cuándo** (llego a casa · salgo · todos los días a una hora) + **condiciones** (franja horaria, días, tiempo: lluvia / seco / frío ≤ 10° / calor ≥ 28°, solo en casa) +
+  **qué hace** (una escena de casa, una del PC y/o un mensaje por Telegram) + una espera mínima entre una vez y la siguiente.
+- Llegar y salir los avisa el iPhone: una automatización de Atajos (Llegar / Salir de tu casa) que hace `POST /api/atajos/casa` con un token de permiso **casa** y `{"estado":"llegada"}` o `{"estado":"salida"}`. Ese mismo atajo ya ponía el PC a punto;
+  ahora además apunta dónde estás (`contexto-presencia` en Ajustes) y dispara tus reglas, aunque el agente del PC no esté en marcha. Las de «a una hora» las mira `MotorContexto` cada minuto (una vez al día, dentro de la hora siguiente).
+- **Seguridad**: las escenas del PC que apagan el equipo nunca se aplican solas. Sin datos del tiempo, una regla que lo pide espera. «Probar» la aplica ya sin mirar condiciones.
+- Pantalla `/contexto` («Escenas solas», grupo «Mi equipo»): dónde estás, el tiempo, las reglas con su última vez, «Llegué a casa» / «Me voy» para probar sin salir y la guía paso a paso del Atajo.
+- Rutas: `GET /api/contexto`, `POST`, `PUT/DELETE /{id}`, `POST /{id}/probar`, `POST /evento`, `PUT /presencia`.

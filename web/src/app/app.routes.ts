@@ -41,6 +41,7 @@ export const routes: Routes = [
       { path: 'automatizaciones', title: 'Automatizaciones · MDA', loadComponent: () => import('./automatizaciones/automatizaciones').then((m) => m.Automatizaciones) },
       { path: 'servicios', title: 'Servicios · MDA', loadComponent: () => import('./servicios/servicios').then((m) => m.Servicios) },
       { path: 'compra', title: 'Compra · MDA', loadComponent: () => import('./compra/compra').then((m) => m.Compra) },
+      { path: 'contexto', title: 'Escenas · MDA', loadComponent: () => import('./contexto/contexto').then((m) => m.Contexto) },
       { path: 'agenda', title: 'Agenda · MDA', loadComponent: () => import('./agenda/agenda').then((m) => m.Agenda) },
       { path: 'notas', title: 'Notas · MDA', loadComponent: () => import('./notas/notas').then((m) => m.Notas) },
       { path: 'musica', title: 'Música · MDA', loadComponent: () => import('./musica/musica').then((m) => m.Musica) },

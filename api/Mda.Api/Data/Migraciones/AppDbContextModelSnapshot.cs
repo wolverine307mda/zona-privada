@@ -1311,6 +1311,73 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("productos_habituales", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Contexto.ReglaContexto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Aviso")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Dias")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Desde")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<int?>("EscenaCasaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("EscenaPcId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EsperaMinutos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Evento")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("Hasta")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Resultado")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("SoloEnCasa")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Tiempo")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<DateTimeOffset?>("Ultima")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("reglas_contexto", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Habitos.Habito", b =>
                 {
                     b.Property<int>("Id")

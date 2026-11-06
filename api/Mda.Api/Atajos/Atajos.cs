@@ -220,9 +220,12 @@ public static class AtajosApi
         }).Requiere("gasto");
 
         // «Llegué a casa» / «Me voy»: una automatización por lugar del iPhone manda {"estado":"llegada"} o {"estado":"salida"}
-        a.MapPost("/casa", async (CasaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
+        a.MapPost("/casa", async (CasaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, Mda.Api.Contexto.MotorContexto contexto, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
         {
-            var (ok, mensaje) = await Mda.Api.Pc.Casa.Aplicar((e.Estado ?? "").ToLowerInvariant(), db, agente, avisos, reloj, "Atajo · " + IpCliente.De(ctx), ct);
+            var estado = (e.Estado ?? "").ToLowerInvariant();
+            // además de lo de siempre, se apunta dónde estás y se aplican tus escenas por contexto (aunque el agente del PC no esté en marcha)
+            if (estado is "llegada" or "salida") await contexto.Evento(db, estado == "llegada" ? "llego" : "salgo", ct);
+            var (ok, mensaje) = await Mda.Api.Pc.Casa.Aplicar(estado, db, agente, avisos, reloj, "Atajo · " + IpCliente.De(ctx), ct);
             return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
         }).Requiere("casa");
 

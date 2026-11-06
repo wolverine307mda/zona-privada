@@ -48,6 +48,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Servicios.ServicioVigilado> ServiciosVigilados => Set<Mda.Api.Servicios.ServicioVigilado>();
     public DbSet<Mda.Api.Compra.ArticuloCompra> ArticulosCompra => Set<Mda.Api.Compra.ArticuloCompra>();
     public DbSet<Mda.Api.Compra.ProductoHabitual> ProductosHabituales => Set<Mda.Api.Compra.ProductoHabitual>();
+    public DbSet<Mda.Api.Contexto.ReglaContexto> ReglasContexto => Set<Mda.Api.Contexto.ReglaContexto>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
@@ -457,6 +458,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasKey(x => x.Clave);
             e.Property(x => x.Clave).HasMaxLength(80);
             e.Property(x => x.Nombre).HasMaxLength(60);
+        });
+
+        b.Entity<Mda.Api.Contexto.ReglaContexto>(e =>
+        {
+            e.ToTable("reglas_contexto");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Evento).HasMaxLength(5);
+            e.Property(x => x.Desde).HasMaxLength(5);
+            e.Property(x => x.Hasta).HasMaxLength(5);
+            e.Property(x => x.Tiempo).HasMaxLength(6);
+            e.Property(x => x.Aviso).HasMaxLength(120);
+            e.Property(x => x.Resultado).HasMaxLength(200);
         });
 
         b.Entity<Mda.Api.Archivos.TextoArchivo>(e =>

@@ -37,7 +37,7 @@ interface Servicio {
               <small>{{ s.direccion }}</small>
               <small>{{ detalle(s) }}</small>
             </button>
-            <button type="button" class="button button--suave" [disabled]="probando() === s.id" (click)="comprobar(s)">{{ probando() === s.id ? '…' : 'Comprobar' }}</button>
+            <button type="button" class="button button--ghost button--sm" [disabled]="probando() === s.id" (click)="comprobar(s)">{{ probando() === s.id ? '…' : 'Comprobar' }}</button>
           </li>
         }
       </ul>

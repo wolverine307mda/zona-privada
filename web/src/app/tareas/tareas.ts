@@ -55,7 +55,7 @@ const REPETICIONES = ['Diaria', 'Semanal', 'Mensual', 'Anual'];
           </li>
         }
       </ul>
-      @if (verHechas()) { <button type="button" class="button button--suave vaciar" (click)="vaciar()">{{ confirmarVaciar() ? 'Seguro: vaciar la lista' : 'Vaciar hechas' }}</button> }
+      @if (verHechas()) { <button type="button" class="button button--ghost button--sm vaciar" (click)="vaciar()">{{ confirmarVaciar() ? 'Seguro: vaciar la lista' : 'Vaciar hechas' }}</button> }
     }
 
     <dialog class="dlg" #dialogo (click)="fuera($event)" (close)="cerrado()" aria-labelledby="dlg-tarea">
