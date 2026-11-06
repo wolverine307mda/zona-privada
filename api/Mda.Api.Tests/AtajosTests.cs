@@ -29,6 +29,27 @@ public class AtajosUnitTests
     }
 
     [Theory]
+    [InlineData("3,26", 3.26)]
+    [InlineData("11,75 €", 11.75)]
+    [InlineData("11,75 €", 11.75)]       // espacio de no separación, como lo manda Atajos
+    [InlineData("11,75 €", 11.75)]       // espacio fino
+    [InlineData("EUR 3.26", 3.26)]
+    [InlineData("1.234,56 €", 1234.56)]
+    [InlineData("1,234.56", 1234.56)]
+    [InlineData("-4,50", -4.50)]
+    [InlineData("7", 7)]
+    public void El_importe_se_entiende_escrito_como_lo_escriba_el_telefono(string texto, double esperado)
+    {
+        Assert.True(ImporteFlexible.TryParsear(texto, out var v));
+        Assert.Equal((decimal)esperado, v);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("sin importe")]
+    public void Un_importe_sin_cifras_no_vale(string texto) => Assert.False(ImporteFlexible.TryParsear(texto, out _));
+
+    [Theory]
     [InlineData("81.43.200.225", "81.43.200")]
     [InlineData("2a09:bac2:3131:245a::39f:8f", "2A09BAC23131")]
     public void La_red_es_el_prefijo_no_la_ip_entera(string ip, string red) => Assert.Equal(red, AtajosApi.Red(ip));

@@ -40,11 +40,19 @@ public class ImporteFlexible : System.Text.Json.Serialization.JsonConverter<deci
     public override decimal Read(ref System.Text.Json.Utf8JsonReader r, Type tipo, System.Text.Json.JsonSerializerOptions o)
     {
         if (r.TokenType == System.Text.Json.JsonTokenType.Number) return r.GetDecimal();
-        var t = (r.GetString() ?? "").Trim().Replace("€", "").Replace(" ", "");
-        // «1.234,56» (miles con punto, decimales con coma) o «3,26» o «3.26»
-        if (t.Contains(',')) t = t.Replace(".", "").Replace(',', '.');
-        if (decimal.TryParse(t, NumberStyles.Number, CultureInfo.InvariantCulture, out var v)) return v;
+        if (TryParsear(r.GetString(), out var v)) return v;
         throw new System.Text.Json.JsonException("Importe no válido");
+    }
+
+    // «3,26», «11,75 €» (con el espacio de no separación que pone Atajos), «EUR 3.26», «1.234,56 €», «1,234.56», «-4,50»:
+    // se quita todo menos cifras, signo y separadores, y el último separador es el decimal
+    public static bool TryParsear(string? texto, out decimal valor)
+    {
+        var t = System.Text.RegularExpressions.Regex.Replace(texto ?? "", "[^0-9.,-]", "");
+        var coma = t.LastIndexOf(','); var punto = t.LastIndexOf('.');
+        if (coma >= 0 && punto >= 0) t = coma > punto ? t.Replace(".", "").Replace(',', '.') : t.Replace(",", "");
+        else if (coma >= 0) t = t.Replace(',', '.');
+        return decimal.TryParse(t, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out valor);
     }
     public override void Write(System.Text.Json.Utf8JsonWriter w, decimal v, System.Text.Json.JsonSerializerOptions o) => w.WriteNumberValue(v);
 }
