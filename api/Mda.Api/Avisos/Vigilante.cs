@@ -57,6 +57,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Cielo(db, ct), "el cielo (ISS y meteoros)");
         await Aislada(() => Habitos(db, ct), "los hábitos");
         await Aislada(() => TareasDeHoy(db, ct), "las tareas");
+        await Aislada(() => PapelesPorCaducar(db, ct), "los papeles que caducan");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)
@@ -208,6 +209,31 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             await avisos.PorTelegram($"📝 {cabecera}\n{string.Join("\n", lineas)}\nEscribe /tareas para verlas.", ct);
         }
         await Mda.Api.Tareas.ServicioTareas.Podar(db, reloj, ct);
+    }
+
+    // ---- papeles que caducan: un aviso al entrar en su plazo, otro a la semana y otro al caducar ----
+    public async Task PapelesPorCaducar(AppDbContext db, CancellationToken ct)
+    {
+        var hoy = DateOnly.FromDateTime(Local);
+        var limite = hoy.AddDays(365 + 8);
+        var todos = await db.Papeles.Where(p => p.Vence <= limite).ToListAsync(ct);
+        var avisar = new List<(Mda.Api.Papeles.Papel P, int Dias, int Nivel)>();
+        foreach (var p in todos)
+        {
+            var dias = p.Vence.DayNumber - hoy.DayNumber;
+            var nivel = Mda.Api.Papeles.ServicioPapeles.Nivel(dias, p.AvisarDias);
+            if (nivel > p.AvisadoNivel) avisar.Add((p, dias, nivel));
+            p.AvisadoNivel = Math.Max(p.AvisadoNivel, nivel);
+        }
+        if (avisar.Count == 0) return;
+        await db.SaveChangesAsync(ct);
+        foreach (var (p, dias, _) in avisar)
+        {
+            var cuando = dias < 0 ? $"caducó hace {-dias} día(s)" : dias == 0 ? "caduca HOY" : $"caduca en {dias} día(s) ({p.Vence:dd/MM/yyyy})";
+            var texto = $"«{p.Nombre}» {cuando}.";
+            await avisos.PorPush("📄 Papel que caduca", texto, "/papeles", ct);
+            await avisos.PorTelegram($"📄 {texto}", ct);
+        }
     }
 
     // ---- el cielo: pasadas de la ISS y lluvias de meteoros ----

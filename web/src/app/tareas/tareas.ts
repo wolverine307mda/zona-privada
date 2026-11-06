@@ -5,10 +5,11 @@ import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
 
 interface Tarea {
   id: number; titulo: string; notas: string; prioridad: number; vence: string | null; hecha: boolean;
-  vencida: boolean; hoy: boolean; dias: number | null; hechaEn: string | null;
+  vencida: boolean; hoy: boolean; dias: number | null; hechaEn: string | null; repite: string;
 }
 
 const PRIORIDADES = ['Baja', 'Normal', 'Alta'];
+const REPETICIONES = ['Diaria', 'Semanal', 'Mensual', 'Anual'];
 
 // Tareas por hacer: cosas sueltas con o sin fecha límite. Las vencidas y las de hoy van arriba y avisan una vez al día (app y Telegram).
 // Rápido: escribe y pulsa Intro. Por Telegram: «/tarea llamar al seguro», «/tareas» y «/listo 12».
@@ -48,6 +49,7 @@ const PRIORIDADES = ['Baja', 'Normal', 'Alta'];
               <strong>{{ t.titulo }}</strong>
               @if (t.notas) { <small>{{ t.notas }}</small> }
             </button>
+            @if (t.repite && !t.hecha) { <span class="chip" [title]="'Se repite: ' + t.repite.toLowerCase()">↻ {{ t.repite }}</span> }
             @if (t.prioridad === 2 && !t.hecha) { <span class="chip chip--alta" title="Prioridad alta">Alta</span> }
             @if (t.vence && !t.hecha) { <span class="chip" [class.chip--mal]="t.vencida" [class.chip--hoy]="t.hoy">{{ cuando(t) }}</span> }
           </li>
@@ -74,6 +76,11 @@ const PRIORIDADES = ['Baja', 'Normal', 'Alta'];
               @for (p of prioridades; track $index) { <option [value]="$index">{{ p }}</option> }
             </select></label>
         </div>
+        <label class="campo"><span class="campo__etiqueta">Se repite <em>(necesita fecha límite; al completarla nace la siguiente)</em></span>
+          <select class="campo__input" [value]="repite()" (change)="repite.set(valor($event))">
+            <option value="">No se repite</option>
+            @for (r of repeticiones; track r) { <option [value]="r">{{ r }}</option> }
+          </select></label>
         @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
         <footer class="dlg__pie">
           <button type="button" class="boton-borrar" (click)="borrar()">{{ confirmarBorrado() ? 'Seguro: borrar' : 'Borrar' }}</button>
@@ -114,6 +121,8 @@ export class Tareas {
   private readonly dialogo = viewChild.required<ElementRef<HTMLDialogElement>>('dialogo');
 
   protected readonly prioridades = PRIORIDADES;
+  protected readonly repeticiones = REPETICIONES;
+  protected readonly repite = signal('');
   protected readonly lista = signal<Tarea[] | null>(null);
   protected readonly fallo = signal(false);
   protected readonly verHechas = signal(false);
@@ -192,7 +201,7 @@ export class Tareas {
   // ---- diálogo ----
   protected editar(t: Tarea): void {
     this.editando.set(t);
-    this.titulo.set(t.titulo); this.notas.set(t.notas); this.vence.set(t.vence ?? ''); this.prioridad.set(String(t.prioridad));
+    this.titulo.set(t.titulo); this.notas.set(t.notas); this.vence.set(t.vence ?? ''); this.prioridad.set(String(t.prioridad)); this.repite.set(t.repite ?? '');
     this.error.set(''); this.confirmarBorrado.set(false);
     this.dialogo().nativeElement.showModal();
   }
@@ -208,7 +217,7 @@ export class Tareas {
     if (!e || this.guardando()) return;
     if (!this.titulo().trim()) { this.error.set('Ponle un título.'); return; }
     this.guardando.set(true); this.error.set('');
-    const cuerpo = { titulo: this.titulo().trim(), notas: this.notas().trim(), vence: this.vence(), prioridad: Number(this.prioridad()) };
+    const cuerpo = { titulo: this.titulo().trim(), notas: this.notas().trim(), vence: this.vence(), prioridad: Number(this.prioridad()), repite: this.repite() };
     try { await firstValueFrom(this.http.put(`/api/tareas/${e.id}`, cuerpo)); this.cerrar(); await this.cargar(); } catch (x) { this.error.set(this.mensaje(x)); } finally { this.guardando.set(false); }
   }
 

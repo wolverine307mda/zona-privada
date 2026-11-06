@@ -13,6 +13,8 @@ using Mda.Api.Galeria;
 using Mda.Api.Gastos;
 using Mda.Api.Habitos;
 using Mda.Api.Tareas;
+using Mda.Api.Papeles;
+using Mda.Api.Automatizaciones;
 using Mda.Api.Luz;
 using Mda.Api.Pc;
 using Mda.Api.Notas;
@@ -276,6 +278,9 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<Vigilante>());
 // qué hizo cada vigilancia por última vez y aviso si la API da muchos errores 5xx
 builder.Services.AddSingleton<RegistroVigilancia>();
 builder.Services.AddHostedService<AlertaErrores>();
+// «si pasa X, haz Y»: reglas generales (disco, gasto del mes, tareas vencidas…) que avisan o crean una tarea
+builder.Services.AddSingleton<MotorAutomatizaciones>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorAutomatizaciones>());
 
 
 var app = builder.Build();
@@ -358,6 +363,8 @@ app.MapBuscar();
 app.MapBuscarTexto();
 app.MapHabitos();
 app.MapTareas();
+app.MapPapeles();
+app.MapAutomatizaciones();
 app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();

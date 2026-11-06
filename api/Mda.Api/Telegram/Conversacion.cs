@@ -37,7 +37,8 @@ public class Conversacion(
         "🐷 <i>50 € a la hucha del viaje</i>\n" +
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
         "🌦️ <i>¿va a llover mañana?</i>\n" +
-        "📝 <i>/tarea llamar al seguro</i> · /tareas · <i>/listo 12</i>\n\n" +
+        "📝 <i>/tarea llamar al seguro</i> · /tareas · <i>/listo 12</i>\n" +
+        "📄 /caducidades (DNI, ITV, seguros…)\n\n" +
         "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
         "✅ /habitos (lo de hoy) y /hecho meditar (lo apunta)\n" +
         "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
@@ -80,6 +81,7 @@ public class Conversacion(
             case "/tareas": await bot.Enviar(await ListaTareas(ct), html: true, ct: ct); return;
             case "/tarea": await bot.Enviar(await NuevaTarea(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/listo": await bot.Enviar(await TareaHecha(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
+            case "/caducidades" or "/papeles": await bot.Enviar(await Caducidades(ct), html: true, ct: ct); return;
             case "/hecho": await bot.Enviar(await Hecho(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
@@ -300,8 +302,23 @@ public class Conversacion(
             t = c.FirstOrDefault();
         }
         if (t is null) return $"No encuentro esa tarea pendiente. Mira /tareas.";
-        await Tareas.ServicioTareas.Completar(db, t.Id, true, reloj, ct);
-        return $"✅ Hecha: <b>{H(t.Titulo)}</b>";
+        await Tareas.ServicioTareas.Completar(db, t.Id, true, reloj, zona, ct);
+        return $"✅ Hecha: <b>{H(t.Titulo)}</b>{(t.Repite.Length > 0 ? " (la próxima ya está apuntada)" : "")}";
+    }
+
+    // ---- papeles que caducan: lo próximo a vencer ----
+    private async Task<string> Caducidades(CancellationToken ct)
+    {
+        var hoy = Tareas.ServicioTareas.Hoy(reloj, zona);
+        var lista = (await Papeles.ServicioPapeles.Lista(db, hoy, ct)).Take(10).ToList();
+        if (lista.Count == 0) return "No tienes papeles apuntados. Añade el DNI, la ITV, el seguro… en la app (Papeles).";
+        var sb = new StringBuilder("<b>Papeles y caducidades</b>\n");
+        foreach (var p in lista)
+        {
+            sb.Append(p.Estado == "caducado" ? "🔴 " : p.Estado == "pronto" ? "🟠 " : "🟢 ").Append(H(p.Nombre)).Append(" · ");
+            sb.Append(p.Dias < 0 ? $"caducó hace {-p.Dias} d" : p.Dias == 0 ? "caduca hoy" : $"en {p.Dias} d").Append('\n');
+        }
+        return sb.ToString().TrimEnd();
     }
 
     private async Task<string> Hoy(CancellationToken ct)

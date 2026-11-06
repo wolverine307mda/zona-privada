@@ -1102,6 +1102,93 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("reglas_categoria", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Papeles.Papel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvisadoNivel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AvisarDias")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Notas")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly>("Vence")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Vence");
+
+                    b.ToTable("papeles", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Automatizaciones.Automatizacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Disparador")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("EsperaHoras")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("Ultima")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("UltimoValor")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Umbral")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("automatizaciones", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Habitos.Habito", b =>
                 {
                     b.Property<int>("Id")
@@ -1206,6 +1293,11 @@ namespace Mda.Api.Data.Migraciones
 
                     b.Property<int>("Prioridad")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Repite")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("Titulo")
                         .IsRequired()

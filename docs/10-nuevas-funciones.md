@@ -108,6 +108,8 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 - Pantalla `/tareas` (grupo «Vida»): añadir con Intro, tocar el círculo para completar, tocar el título para editar; pestaña de hechas.
 - El `Vigilante` avisa una vez al día (push + Telegram) de las que vencen hoy o ya vencieron (`Vigilante.TareasDeHoy`) y poda las hechas de hace más de 90 días.
 - Telegram: `/tarea llamar al seguro`, `/tareas` y `/listo 12` (por número o por un trozo del título).
+- **Repetidas**: `repite` = Diaria, Semanal, Mensual o Anual (exige fecha límite). Al completarla nace otra igual con la fecha corrida hasta quedar por delante de hoy
+  (`ServicioTareas.Siguiente`), así una diaria hecha con retraso no se queda atrasada. Reabrirla no borra la siguiente.
 
 ## Vigilancia visible y alerta de errores
 
@@ -119,3 +121,21 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 
 - `COPIAS_DRIVE` (carpeta de «Drive para escritorio») recibe lo mismo que OneDrive: dump, claves y ahora también el `.env`, todo cifrado con `age`. Ver [11-recuperacion.md](11-recuperacion.md).
 - `herramientas/desplegar.ps1` / `.sh`: despliegue que espera a que la API esté sana y vuelve a la versión anterior si no arranca.
+
+## Papeles que caducan
+
+- `Papeles/Papeles.cs`: tabla `papeles` (nombre, categoría, fecha de caducidad, plazo de aviso en días, notas). Máximo 100.
+- Rutas: `GET /api/papeles` (con las categorías), `POST`, `PUT /{id}` (cambiar la fecha o el plazo vuelve a armar los avisos), `DELETE /{id}`.
+- `Vigilante.PapelesPorCaducar`: un aviso (push + Telegram) al entrar en el plazo, otro cuando quedan 7 días o menos y otro al caducar (`AvisadoNivel` evita repetir).
+- Pantalla `/papeles` (grupo «Vida») y `/caducidades` por Telegram.
+
+## Automatizaciones («si pasa X, haz Y»)
+
+- `Automatizaciones/Automatizaciones.cs`: tabla `automatizaciones`. Cada 5 minutos `MotorAutomatizaciones` mira el dato de cada regla activa; si se cumple y ha pasado la espera
+  (por defecto 24 h) desde la última vez, actúa. Máximo 20 reglas.
+- Datos que se pueden vigilar (`Disparadores.Todos`): disco más lleno (%), CPU y memoria (media de los últimos 2 min), gasto del mes (€), tareas vencidas y papeles que caducan en 30 días.
+  Para añadir otro: una entrada en `Todos` y un `case` en `Disparadores.Valor`.
+- Acciones: **avisar** (push + Telegram) o **apuntar una tarea** para hoy (si ya hay una pendiente con el mismo título no se duplica).
+- Rutas: `GET/POST /api/automatizaciones`, `PUT/DELETE /{id}`, `POST /{id}/probar` (hace la acción ya, marcada como prueba). Pantalla `/automatizaciones` (grupo «Mi equipo»).
+- El motor anota su última vuelta en «Vigilancia en segundo plano» (Seguridad).
+- Distinto de las reglas de casa (`Domotica/Reglas.cs`), que actúan sobre aparatos con sensores.

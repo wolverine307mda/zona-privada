@@ -66,6 +66,14 @@ export const MODULOS: Modulo[] = [
     icono: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
   },
   {
+    id: 'papeles', titulo: 'Papeles', resumen: 'DNI, ITV, seguros y garantías: avisa antes de que caduquen.', listo: true,
+    icono: 'M7 3h8l4 4v14H7zM14 3v5h5M10 13h6M10 17h6',
+  },
+  {
+    id: 'automatizaciones', titulo: 'Automatizaciones', resumen: 'Si pasa esto (disco lleno, gasto alto…), haz aquello.', listo: true,
+    icono: 'M13 2 4 14h7l-1 8 9-12h-7z',
+  },
+  {
     id: 'agenda', titulo: 'Agenda', resumen: 'Eventos, recordatorios y Google Calendar.', listo: true, pestana: true,
     icono: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2',
   },
@@ -90,9 +98,9 @@ export const MODULOS: Modulo[] = [
 ];
 
 const GRUPOS_DEF = [
-  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'agenda', 'tareas', 'habitos', 'notas'] },
+  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'agenda', 'tareas', 'papeles', 'habitos', 'notas'] },
   { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
-  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'documentos', 'seguridad'] },
+  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'automatizaciones', 'documentos', 'seguridad'] },
 ];
 
 export const GRUPOS: Grupo[] = GRUPOS_DEF.map((g) => ({

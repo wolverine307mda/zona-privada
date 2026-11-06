@@ -22,6 +22,7 @@ namespace Mda.Api.Data.Migraciones
                     Notas = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     Prioridad = table.Column<int>(type: "integer", nullable: false),
                     Vence = table.Column<DateOnly>(type: "date", nullable: true),
+                    Repite = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Hecha = table.Column<bool>(type: "boolean", nullable: false),
                     Creada = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     HechaEn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
