@@ -165,8 +165,10 @@ public static class Sesiones
         {
             using var scope = ctx.RequestServices.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Accesos.Add(new Acceso { Ip = IpCliente.De(ctx), Agente = Agente(ctx), Exito = ctx.Response.StatusCode == 200, Motivo = motivo });
+            var acceso = new Acceso { Ip = IpCliente.De(ctx), Agente = Agente(ctx), Exito = ctx.Response.StatusCode == 200, Motivo = motivo };
+            db.Accesos.Add(acceso);
             await db.SaveChangesAsync();
+            await AccesoVivo.Emitir(scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<Mda.Api.Sistema.SistemaHub>>(), scope.ServiceProvider.GetRequiredService<GeoIp>(), acceso);
             // varios intentos fallidos seguidos: si lo tienes activado, una foto de la cámara del PC
             if (ctx.Response.StatusCode != 200) await Mda.Api.Pc.Capturas.TrasFallo(db, scope.ServiceProvider.GetRequiredService<TimeProvider>());
             // solo se guardan los 300 últimos

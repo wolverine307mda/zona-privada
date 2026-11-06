@@ -5,6 +5,8 @@ import { conSesion, sinSesion } from './core/guards';
 // Cada pantalla se carga aparte: Three.js solo en «entrar» y ECharts solo en «inicio».
 export const routes: Routes = [
   { path: 'entrar', title: 'Entrar · MDA', canActivate: [sinSesion], loadComponent: () => import('./entrar/entrar').then((m) => m.Entrar) },
+  // el modo pared va suelto (sin menú ni barras): es una pantalla para dejar en la pared
+  { path: 'pared', title: 'Modo pared · MDA', canActivate: [conSesion], loadComponent: () => import('./pared/pared').then((m) => m.Pared) },
   {
     path: '',
     canActivate: [conSesion],

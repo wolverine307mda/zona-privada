@@ -47,12 +47,14 @@ public static class PasskeysEndpoints
         e.MapPost("/entrada/opciones", async (SignInManager<IdentityUser> signIn) =>
             Results.Content(ConPistas(await signIn.MakePasskeyRequestOptionsAsync(null), registro: false), "application/json"));
 
-        e.MapPost("/entrada", async (CredencialEntrada c, SignInManager<IdentityUser> signIn, AppDbContext db, HttpContext ctx, TimeProvider reloj) =>
+        e.MapPost("/entrada", async (CredencialEntrada c, SignInManager<IdentityUser> signIn, AppDbContext db, HttpContext ctx, TimeProvider reloj, Microsoft.AspNetCore.SignalR.IHubContext<Mda.Api.Sistema.SistemaHub> hub, GeoIp geo) =>
         {
             var r = await signIn.PasskeySignInAsync(c.Credencial.GetRawText());
             // se apunta como un intento más (con IP y dispositivo), bien o mal
-            db.Accesos.Add(new Acceso { Ip = IpCliente.De(ctx), Agente = ctx.Request.Headers.UserAgent.ToString() is { Length: > 0 } a ? a[..Math.Min(a.Length, 400)] : "desconocido", Exito = r.Succeeded, Motivo = r.Succeeded ? "ok (passkey)" : "passkey no válido" });
+            var acceso = new Acceso { Ip = IpCliente.De(ctx), Agente = ctx.Request.Headers.UserAgent.ToString() is { Length: > 0 } a ? a[..Math.Min(a.Length, 400)] : "desconocido", Exito = r.Succeeded, Motivo = r.Succeeded ? "ok (passkey)" : "passkey no válido" };
+            db.Accesos.Add(acceso);
             await db.SaveChangesAsync();
+            await AccesoVivo.Emitir(hub, geo, acceso);
             if (r.Succeeded && PasskeyInfos.IdDe(c.Credencial) is { } cid) await PasskeyInfos.Uso(db, ctx, cid, "entrada", reloj);
             return r.Succeeded ? Results.NoContent() : Results.Problem("Ese passkey no sirve para esta cuenta.", statusCode: StatusCodes.Status401Unauthorized);
         });

@@ -15,5 +15,6 @@ Lee en este orden si llegas de nuevas:
 | 9 | [Versión de escritorio](09-escritorio.md) | la app sin Docker: instalación, ensayo, blindaje, corte y vuelta atrás |
 | 10 | [Nuevas funciones](10-nuevas-funciones.md) | plan 6: previsión y presupuestos, accesos nuevos, salud del PC, buscador, ISS, planificador, mapa de fotos, hábitos, búsqueda en documentos y OCR, fotos bajo demanda, «Hoy» en el iPhone |
 | 11 | [Recuperación](11-recuperacion.md) | qué hacer si muere el equipo: copias cifradas en OneDrive y Google Drive, restauración paso a paso, simulacro y despliegue con vuelta atrás |
+| 12 | [Siri y Atajos](12-siri-y-atajos.md) | todas las recetas del iPhone: gastos por voz, llegar a casa, escenas, pánico… y qué se puede (y qué no) con «enciende el PC» |
 
 Cómo levantarlo todo: al principio del [README principal](../README.md).

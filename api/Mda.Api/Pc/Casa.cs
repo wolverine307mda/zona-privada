@@ -165,7 +165,7 @@ public class AvisosBateria(IServiceScopeFactory scopes, EstadoAgente agente, IAv
 public static class CasaEndpoints
 {
     private static readonly string[] AccionesMultimedia = ["playpause", "siguiente", "anterior", "silencio"];
-    private static readonly string[] TiposEvento = ["descarga", "reinicio-pendiente"];
+    private static readonly string[] TiposEvento = ["descarga", "reinicio-pendiente", "bandeja"];
 
     private static string Desde(HttpContext ctx) => Dispositivo.Nombre(ctx.Request.Headers.UserAgent.ToString()) + " · " + IpCliente.De(ctx);
 
@@ -199,7 +199,7 @@ public static class CasaEndpoints
         g.MapPut("/avisos", async (AvisosPc a, AppDbContext db, CancellationToken ct) => { await AvisosPcAjustes.Guardar(db, a, ct); return Results.NoContent(); });
 
         // el agente cuenta cosas que pasan en el PC (una descarga terminada, Windows pidiendo reiniciar) y la API las avisa si lo tienes activado
-        app.MapPost("/api/sistema/agente/eventos", async (HttpRequest req, EventoAgente e, IConfiguration config, EstadoAgente agente, IServiceScopeFactory scopes, IAvisos avisos, IMemoryCache cache) =>
+        app.MapPost("/api/sistema/agente/eventos", async (HttpRequest req, EventoAgente e, IConfiguration config, EstadoAgente agente, IServiceScopeFactory scopes, IAvisos avisos, IMemoryCache cache, BandejaPc bandeja) =>
         {
             if (OrdenesPc.ComprobarAgente(req, config) is { } no) return no;
             agente.Visto();
@@ -207,6 +207,8 @@ public static class CasaEndpoints
             if (!TiposEvento.Contains(tipo)) return Results.BadRequest();
             var texto = (e.Texto ?? "").Trim();
             if (texto.Length > 200) texto = texto[..200];
+            // lo que cae en la bandeja se apunta siempre (aunque lleguen cincuenta de golpe); el límite de abajo es solo para los avisos
+            if (tipo == "bandeja") bandeja.Añadir(texto);
             // como mucho un aviso de cada tipo cada 20 s (una carpeta con 50 descargas no manda 50 notificaciones)
             if (cache.TryGetValue($"evento:{tipo}", out _)) return Results.NoContent();
             cache.Set($"evento:{tipo}", true, TimeSpan.FromSeconds(20));
@@ -216,6 +218,11 @@ public static class CasaEndpoints
             {
                 await avisos.PorPush("⬇️ Descarga terminada", texto, "/pc");
                 await avisos.PorTelegram($"⬇️ Descarga terminada en el PC: {texto}");
+            }
+            else if (tipo == "bandeja" && a.Descargas)
+            {
+                await avisos.PorPush("📥 Nuevo en la bandeja del PC", texto, "/pc");
+                await avisos.PorTelegram($"📥 Nuevo en la bandeja de entrada del PC: {texto}");
             }
             else if (tipo == "reinicio-pendiente" && a.Windows)
             {

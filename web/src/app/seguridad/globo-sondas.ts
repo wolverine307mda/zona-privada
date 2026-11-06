@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type * as THREE from 'three';
 import { resolverColor } from '../core/color-css';
 import { CieloConfig } from '../core/cielo-config';
+import { SistemaService } from '../inicio/sistema.service';
 import { puntosDeTierra } from './tierra';
 
 export interface Punto { lat: number; lon: number; pais: string; ciudad: string; sondas: number; ips: number; ultima: string; rutas: string[]; }
@@ -103,6 +104,7 @@ export class GloboSondas implements OnInit {
   private cierre: (() => void) | null = null;
   private vivo = true;
   private readonly casa = inject(CieloConfig);
+  private readonly sistema = inject(SistemaService);
   protected readonly enVivo = signal(true);
   protected readonly ultimoEvento = signal('Aquí verás un rayo cada vez que alguien llame a la puerta.');
   private lanzar: ((lat: number, lon: number, tipo: TipoRayo) => void) | null = null;
@@ -114,6 +116,13 @@ export class GloboSondas implements OnInit {
     inject(DestroyRef).onDestroy(() => { this.vivo = false; clearInterval(this.temporizador); this.cierre?.(); this.cierre = null; });
     afterNextRender(() => this.arrancar());
     effect(() => { const p = this.puntos(); this.pintar?.(p); });
+    // el directo: en cuanto la API cuenta un acceso, su rayo sale sin esperar al repaso (el repaso lo reconoce por su número y no lo repite)
+    effect(() => {
+      const a = this.sistema.accesoNuevo();
+      if (!a || !this.enVivo() || this.accesosVistos.has(a.id)) return;
+      this.accesosVistos.add(a.id);
+      this.mostrarAcceso(a);
+    });
   }
 
   ngOnInit(): void { void this.leer(); void this.vigilar(); this.temporizador = setInterval(() => void this.vigilar(), 12_000); }
@@ -128,6 +137,12 @@ export class GloboSondas implements OnInit {
     this.ultimoEvento.set(`Prueba: un intento falso desde ${nombre} (no se ha guardado nada).`);
   }
 
+  private mostrarAcceso(a: { exito: boolean; lugar: string | null; lat: number | null; lon: number | null; motivo: string }): void {
+    const donde = a.lugar ?? 'un sitio sin ubicar';
+    this.ultimoEvento.set(a.exito ? `Entrada correcta desde ${donde}.` : `Intento de acceso fallido desde ${donde}${a.motivo ? ' (' + a.motivo + ')' : ''}.`);
+    if (a.lat !== null && a.lon !== null) this.lanzar?.(a.lat, a.lon, a.exito ? 'ok' : 'fallo');
+  }
+
   // Cada 12 s mira si hay accesos o sondas nuevos desde la última vez y lanza un rayo por cada uno. La primera vuelta solo apunta lo que ya había.
   private async vigilar(): Promise<void> {
     if (!this.vivo || !this.enVivo() || document.hidden) return;
@@ -140,9 +155,7 @@ export class GloboSondas implements OnInit {
         if (this.accesosVistos.has(a.id)) continue;
         this.accesosVistos.add(a.id);
         if (this.primerosAccesos) continue;
-        const donde = a.lugar ?? 'un sitio sin ubicar';
-        this.ultimoEvento.set(a.exito ? `Entrada correcta desde ${donde}.` : `Intento de acceso fallido desde ${donde}${a.motivo ? ' (' + a.motivo + ')' : ''}.`);
-        if (a.lat !== null && a.lon !== null) this.lanzar?.(a.lat, a.lon, a.exito ? 'ok' : 'fallo');
+        this.mostrarAcceso(a);
       }
       this.primerosAccesos = false;
     }

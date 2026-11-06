@@ -16,6 +16,7 @@ static class AgenteServicio
         esperaLarga.DefaultRequestHeaders.Add("X-Agente-Token", token);
 
         Vigias.Descargas(http, ct);
+        Vigias.Bandeja(http, ct);
         _ = Task.Run(async () =>
         {
             try

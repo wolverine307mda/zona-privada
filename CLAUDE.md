@@ -7,6 +7,7 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 
 - Cómo levantarlo: [README.md](README.md) (sección «Cómo levantarlo todo»).
 - Documentación completa: [docs/](docs/README.md). Arquitectura → backend → API → frontend.
+- Lo último que se ha añadido (y qué está sin verificar): [CAMBIOS-RECIENTES.md](CAMBIOS-RECIENTES.md).
 
 ## Reglas
 
@@ -45,6 +46,7 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | descargar un archivo en el PC desde la app | `agente/Mda.Agente/Descargas.cs` + `DescargaLogica.cs` (orden `descargar` en `Pc/Pc.cs`) |
 | el cielo de la pantalla de entrar (y su ajuste) · el radar del globo | `web/src/app/core/astro.ts`, `cielo-config.ts`, `entrar/cielo-vivo.ts`, `shell/ajustes-entrada.ts`; radar en `seguridad/globo-sondas.ts` |
 | escenas que se ponen solas (llegar a casa, hora, tiempo) | `api/Mda.Api/Contexto/Contexto.cs`, front `web/src/app/contexto/`, y el hook en `Atajos/Atajos.cs` (`/casa`) |
+| modo pared · bandeja de entrada del PC · recetas de Siri | `web/src/app/pared/`; `agente/Mda.Agente/Vigias.cs` + `api/Mda.Api/Pc/Bandeja.cs`; [docs/12-siri-y-atajos.md](docs/12-siri-y-atajos.md) |
 | última vez de cada vigilancia y alerta de errores 5xx | `api/Mda.Api/Avisos/Vigilancia.cs` |
 | recuperar tras perder el equipo / desplegar con vuelta atrás | [docs/11-recuperacion.md](docs/11-recuperacion.md), `herramientas/desplegar.ps1` |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |

@@ -175,6 +175,7 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 
 - En Seguridad › Vigilancia, el globo de las sondas tiene «Radar en vivo»: cada 12 s mira los accesos y las sondas nuevas y lanza un **rayo** desde su origen hasta tu casa (rojo: acceso fallido; naranja: sonda; verde: entrada correcta),
   con un anillo en cada extremo, y el globo gira para enseñarlo. «Probar un rayo» lanza uno falso (no guarda nada).
+- **En directo**: cada acceso (contraseña o passkey) se cuenta al instante por el canal en tiempo real (evento `acceso` de `/hubs/sistema`, `Seguridad/AccesoVivo.cs`) y el radar lanza su rayo sin esperar al repaso; el repaso de 12 s lo reconoce por su número y no lo repite. Solo lo reciben las pestañas con sesión.
 - `GET /api/seguridad/accesos` devuelve ahora también `lat` y `lon` de cada acceso (con la base GeoIP). Tu casa sale del mismo lugar que el cielo. No hay nada nuevo en el servidor: el radar solo consulta lo que ya había.
 
 ## Escenas por contexto
@@ -186,3 +187,18 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 - **Seguridad**: las escenas del PC que apagan el equipo nunca se aplican solas. Sin datos del tiempo, una regla que lo pide espera. «Probar» la aplica ya sin mirar condiciones.
 - Pantalla `/contexto` («Escenas solas», grupo «Mi equipo»): dónde estás, el tiempo, las reglas con su última vez, «Llegué a casa» / «Me voy» para probar sin salir y la guía paso a paso del Atajo.
 - Rutas: `GET /api/contexto`, `POST`, `PUT/DELETE /{id}`, `POST /{id}/probar`, `POST /evento`, `PUT /presencia`.
+
+## Modo pared (sala de control)
+
+- `/pared` (grupo «Mi equipo»): pantalla suelta, sin menú, pensada para una tablet o un móvil viejo en la pared. Reloj enorme sobre el cielo en vivo, el tiempo, el PC (CPU, RAM, disco en directo), las tareas pendientes, los papeles que caducan y los servicios caídos.
+- Mantiene la pantalla encendida con la Wake Lock API (iOS 16.4+ y escritorio; si no se puede, no pasa nada), refresca los datos cada minuto, se atenúa de noche (Sol 6° bajo el horizonte) y se sale con Esc o la X. Cada panel carga por su cuenta: si uno falla, los demás siguen.
+
+## Bandeja de entrada del PC
+
+- El agente de Windows vigila la carpeta `Zona privada\Bandeja` de tu usuario (la crea si no existe; otra ruta con `AGENTE_BANDEJA`, absoluta). Cada archivo terminado (no temporal y que ya no cambia de tamaño) se cuenta a la API como evento `bandeja`.
+- `Pc/Bandeja.cs`: `BandejaPc` guarda los 50 últimos **en memoria** (empieza de cero al reiniciar la API); el evento se apunta siempre y solo el aviso (push + Telegram) tiene el límite de uno cada 20 s. Comparte el interruptor de avisos de «descargas» de Mi PC.
+- Rutas: `GET /api/pc/bandeja`, `DELETE /api/pc/bandeja/{id}` y `DELETE /api/pc/bandeja`. Tarjeta «Bandeja de entrada» en Mi PC. Los archivos están en el PC, no en la app.
+
+## Siri y Atajos
+
+- [12-siri-y-atajos.md](12-siri-y-atajos.md): todas las recetas del iPhone y por qué «enciende el PC» no se puede hacer desde el propio PC (sí despertar otros aparatos de la red).

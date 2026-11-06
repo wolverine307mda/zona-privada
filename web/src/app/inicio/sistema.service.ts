@@ -28,6 +28,9 @@ export interface Metricas {
   brillo?: number | null;
 }
 
+// Un acceso que acaba de pasar (la API lo cuenta al instante por el canal en tiempo real): el radar del globo lanza su rayo con él
+export interface AccesoVivo { id: number; fecha: string; exito: boolean; motivo: string; lugar: string | null; lat: number | null; lon: number | null; }
+
 export type EstadoConexion = 'conectando' | 'en-vivo' | 'reconectando' | 'sin-conexion';
 
 const MAXIMO = 60;
@@ -41,6 +44,7 @@ export class SistemaService {
   readonly actual = signal<Metricas | null>(null);
   readonly historial = signal<Metricas[]>([]);
   readonly estado = signal<EstadoConexion>('conectando');
+  readonly accesoNuevo = signal<AccesoVivo | null>(null);
 
   async empezar(): Promise<void> {
     if (this.hub) return; // ya conectado (el marco lo arranca una vez)
@@ -56,6 +60,7 @@ export class SistemaService {
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();
+    this.hub.on('acceso', (a: AccesoVivo) => this.accesoNuevo.set(a));
     this.hub.on('metricas', (m: Metricas) => {
       this.actual.set(m);
       this.historial.update((h) => [...h, m].slice(-MAXIMO));

@@ -290,6 +290,8 @@ builder.Services.AddSingleton<MotorServicios>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorServicios>());
 // escenas que se ponen solas según el contexto (llegar o salir de casa, la hora, el tiempo)
 builder.Services.AddSingleton<MotorContexto>();
+// lo que va cayendo en la carpeta «Bandeja» del PC (la vigila el agente)
+builder.Services.AddSingleton<Mda.Api.Pc.BandejaPc>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorContexto>());
 
 
@@ -378,6 +380,7 @@ app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();
 app.MapContexto();
+app.MapBandeja();
 app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();
