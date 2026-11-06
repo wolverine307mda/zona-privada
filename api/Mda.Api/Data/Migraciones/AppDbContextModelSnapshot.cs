@@ -1189,6 +1189,128 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("automatizaciones", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Servicios.ServicioVigilado", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Caidas")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("Desde")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<int>("FallosSeguidos")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Ms")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<DateTimeOffset?>("Ultima")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UltimaCaida")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UltimoError")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("servicios_vigilados", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Compra.ArticuloCompra", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Cantidad")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Clave")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<bool>("Comprado")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("CompradoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("Creado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Comprado", "Clave");
+
+                    b.ToTable("compra", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Compra.ProductoHabitual", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<double>("IntervaloDias")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateOnly>("Ultima")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Veces")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Clave");
+
+                    b.ToTable("productos_habituales", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Habitos.Habito", b =>
                 {
                     b.Property<int>("Id")

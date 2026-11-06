@@ -45,6 +45,7 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - **Bloqueo al volver a la app**: ajuste de cada dispositivo (Seguridad › Face ID). Al salir de la app, la sesión se bloquea EN EL SERVIDOR pasado el tiempo elegido (o tras 3 min de silencio si iOS la cerró sin avisar) y contesta 423 a todo salvo a `/api/sesion/*`, incluido el tiempo real, hasta desbloquearla con Face ID o con la contraseña. Quitarlo o aflojarlo pide la contraseña otra vez.
 - **Reautenticación**: las órdenes al PC piden la contraseña (y el código si hay dos pasos) otra vez; vale 2 min y solo para esa sesión.
 - **Órdenes al PC**: lista cerrada, firmadas con HMAC-SHA256 con el secreto del agente, caducan a los 60 s, avisan a Telegram y las ejecuta el agente, que pregunta él (sin abrir puertos). Suspender o apagar dejan el PC inalcanzable hasta que lo enciendas tú.
+- **Descargar en el PC**: solo con Face ID, solo http(s), nunca a la red local ni al propio PC (comprobado al conectar), sin programas, 4 GB y carpeta fija; ver [10-nuevas-funciones.md](10-nuevas-funciones.md).
 - **Señuelos**: archivos falsos en Documentos; abrirlos o descargarlos avisa y cierra la sesión.
 - **Estado en vivo**: apagado por defecto; solo números redondeados (nunca equipo, discos, red ni IP); el directo se corta a los 10 min y con ≤ 20 visitantes a la vez.
 - Markdown de notas: renderizador propio que escapa HTML.

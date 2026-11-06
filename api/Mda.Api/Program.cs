@@ -15,6 +15,8 @@ using Mda.Api.Habitos;
 using Mda.Api.Tareas;
 using Mda.Api.Papeles;
 using Mda.Api.Automatizaciones;
+using Mda.Api.Servicios;
+using Mda.Api.Compra;
 using Mda.Api.Luz;
 using Mda.Api.Pc;
 using Mda.Api.Notas;
@@ -281,6 +283,10 @@ builder.Services.AddHostedService<AlertaErrores>();
 // «si pasa X, haz Y»: reglas generales (disco, gasto del mes, tareas vencidas…) que avisan o crean una tarea
 builder.Services.AddSingleton<MotorAutomatizaciones>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorAutomatizaciones>());
+// páginas y servicios que vigilas (tu web, el router, el NAS): avisa si caen y cuando vuelven
+builder.Services.AddSingleton<IComprobadorServicios, ComprobadorReal>();
+builder.Services.AddSingleton<MotorServicios>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorServicios>());
 
 
 var app = builder.Build();
@@ -365,6 +371,8 @@ app.MapHabitos();
 app.MapTareas();
 app.MapPapeles();
 app.MapAutomatizaciones();
+app.MapServicios();
+app.MapCompra();
 app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();

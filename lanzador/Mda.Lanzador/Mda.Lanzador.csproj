@@ -39,6 +39,8 @@
     <Compile Include="..\..\agente\Mda.Agente\Velocidad.cs" Link="Agente\Velocidad.cs" />
     <Compile Include="..\..\agente\Mda.Agente\CapturaLogica.cs" Link="Agente\CapturaLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Captura.cs" Link="Agente\Captura.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\DescargaLogica.cs" Link="Agente\DescargaLogica.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Descargas.cs" Link="Agente\Descargas.cs" />
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>

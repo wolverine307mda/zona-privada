@@ -41,6 +41,8 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | la versión de escritorio sin Docker (procesos, seguridad, copias, instalación) | `lanzador/Mda.Lanzador/{ServidorNativo,ProcesoHijo,SeguridadNativa,CopiasNativas,TailscaleNativa}.cs`, lógica en `Logica/`, `herramientas/empaquetar-nativo.ps1`, [docs/09-escritorio.md](docs/09-escritorio.md) |
 | tareas «por hacer» | `api/Mda.Api/Tareas/Tareas.cs`, `web/src/app/tareas/`, `/tarea` y `/listo` en `Telegram/Conversacion.cs` |
 | papeles que caducan · «si pasa X, haz Y» | `api/Mda.Api/Papeles/`, `api/Mda.Api/Automatizaciones/` (nuevo dato a vigilar: `Disparadores`), front `web/src/app/papeles/`, `automatizaciones/` |
+| la compra con memoria · webs/servicios vigilados | `api/Mda.Api/Compra/`, `api/Mda.Api/Servicios/`, front `web/src/app/compra/`, `servicios/` |
+| descargar un archivo en el PC desde la app | `agente/Mda.Agente/Descargas.cs` + `DescargaLogica.cs` (orden `descargar` en `Pc/Pc.cs`) |
 | última vez de cada vigilancia y alerta de errores 5xx | `api/Mda.Api/Avisos/Vigilancia.cs` |
 | recuperar tras perder el equipo / desplegar con vuelta atrás | [docs/11-recuperacion.md](docs/11-recuperacion.md), `herramientas/desplegar.ps1` |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |

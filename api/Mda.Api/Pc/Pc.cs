@@ -228,7 +228,7 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
     public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
@@ -244,6 +244,15 @@ public static class OrdenesPc
         p = (p ?? "").Trim();
         if (p.Length is 0 or > MaxAbrir) return false;
         if (AplicacionesAbrir.Contains(p, StringComparer.OrdinalIgnoreCase)) return true;
+        if (p.Any(c => char.IsWhiteSpace(c) || char.IsControl(c) || c is '"' or '<' or '>' or '^' or '`' or '\\')) return false;
+        return Uri.TryCreate(p, UriKind.Absolute, out var u) && u.Scheme is "http" or "https" && !string.IsNullOrEmpty(u.Host) && u.UserInfo.Length == 0;
+    }
+
+    // lo que se puede descargar al PC: una dirección http(s) sin usuario, clave ni espacios (el agente lo vuelve a comprobar y además rechaza la red local y los programas)
+    public static bool UrlDescargaValida(string? p)
+    {
+        p = (p ?? "").Trim();
+        if (p.Length is 0 or > MaxAbrir) return false;
         if (p.Any(c => char.IsWhiteSpace(c) || char.IsControl(c) || c is '"' or '<' or '>' or '^' or '`' or '\\')) return false;
         return Uri.TryCreate(p, UriKind.Absolute, out var u) && u.Scheme is "http" or "https" && !string.IsNullOrEmpty(u.Host) && u.UserInfo.Length == 0;
     }
@@ -283,6 +292,7 @@ public static class OrdenesPc
         "limpiar" => "limpiar los temporales y vaciar la papelera",
         "bateria-informe" => "medir el desgaste de la batería",
         "abrir" => $"abrir en el PC: {o.Parametro}",
+        "descargar" => $"descargar en el PC: {o.Parametro}",
         "velocidad" => "medir la velocidad de Internet",
         "captura" => $"hacer una foto de {Capturas.TextoOrigen(o.Parametro.Split(':')[0])}",
         _ => o.Tipo,
@@ -332,6 +342,11 @@ public static class OrdenesPc
             if (tipo == "abrir")
             {
                 if (!DestinoAbrirValido(e.Parametro)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"Una dirección web (http o https, hasta {MaxAbrir} letras) o una aplicación: {string.Join(", ", AplicacionesAbrir)}."] });
+                parametro = e.Parametro!.Trim();
+            }
+            if (tipo == "descargar")
+            {
+                if (!UrlDescargaValida(e.Parametro)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["parametro"] = [$"Una dirección web (http o https, hasta {MaxAbrir} letras)."] });
                 parametro = e.Parametro!.Trim();
             }
             if (tipo == "apagar" && !string.IsNullOrWhiteSpace(e.Parametro))
@@ -402,7 +417,7 @@ public static class OrdenesPc
             return Results.Ok(Array.Empty<object>());
         });
 
-        a.MapPost("/ordenes/{id:int}", async (int id, ResultadoOrden r, HttpRequest req, AppDbContext db, IConfiguration config, CancellationToken ct) =>
+        a.MapPost("/ordenes/{id:int}", async (int id, ResultadoOrden r, HttpRequest req, AppDbContext db, IConfiguration config, IAvisos avisos, CancellationToken ct) =>
         {
             if (ComprobarAgente(req, config) is { } no) return no;
             var o = await db.OrdenesPc.FindAsync([id], ct);
@@ -410,6 +425,9 @@ public static class OrdenesPc
             o.Estado = r.Ok ? "hecha" : "error";
             o.Resultado = (r.Resultado ?? "").Length > 200 ? r.Resultado![..200] : r.Resultado ?? "";
             await db.SaveChangesAsync(ct);
+            // una descarga acaba mucho después de pedirla: el resultado final llega por aquí y te avisa (el «descargando…» inicial no)
+            if (o.Tipo == "descargar" && !o.Resultado.StartsWith("descargando", StringComparison.Ordinal))
+                _ = avisos.PorTelegram(r.Ok ? $"⬇️ {o.Resultado}" : $"⚠️ La descarga no se hizo: {o.Resultado}");
             return Results.NoContent();
         });
     }

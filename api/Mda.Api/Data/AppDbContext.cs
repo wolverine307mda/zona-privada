@@ -45,6 +45,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Tareas.Tarea> Tareas => Set<Mda.Api.Tareas.Tarea>();
     public DbSet<Mda.Api.Papeles.Papel> Papeles => Set<Mda.Api.Papeles.Papel>();
     public DbSet<Mda.Api.Automatizaciones.Automatizacion> Automatizaciones => Set<Mda.Api.Automatizaciones.Automatizacion>();
+    public DbSet<Mda.Api.Servicios.ServicioVigilado> ServiciosVigilados => Set<Mda.Api.Servicios.ServicioVigilado>();
+    public DbSet<Mda.Api.Compra.ArticuloCompra> ArticulosCompra => Set<Mda.Api.Compra.ArticuloCompra>();
+    public DbSet<Mda.Api.Compra.ProductoHabitual> ProductosHabituales => Set<Mda.Api.Compra.ProductoHabitual>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
@@ -428,6 +431,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Disparador).HasMaxLength(20);
             e.Property(x => x.Accion).HasMaxLength(10);
             e.Property(x => x.Texto).HasMaxLength(200);
+        });
+
+        b.Entity<Mda.Api.Servicios.ServicioVigilado>(e =>
+        {
+            e.ToTable("servicios_vigilados");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Tipo).HasMaxLength(5);
+            e.Property(x => x.Direccion).HasMaxLength(300);
+            e.Property(x => x.Estado).HasMaxLength(5);
+            e.Property(x => x.UltimoError).HasMaxLength(100);
+        });
+
+        b.Entity<Mda.Api.Compra.ArticuloCompra>(e =>
+        {
+            e.ToTable("compra");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Cantidad).HasMaxLength(20);
+            e.Property(x => x.Clave).HasMaxLength(80);
+            e.HasIndex(x => new { x.Comprado, x.Clave });
+        });
+        b.Entity<Mda.Api.Compra.ProductoHabitual>(e =>
+        {
+            e.ToTable("productos_habituales");
+            e.HasKey(x => x.Clave);
+            e.Property(x => x.Clave).HasMaxLength(80);
+            e.Property(x => x.Nombre).HasMaxLength(60);
         });
 
         b.Entity<Mda.Api.Archivos.TextoArchivo>(e =>

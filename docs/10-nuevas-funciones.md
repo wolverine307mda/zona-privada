@@ -139,3 +139,24 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 - Rutas: `GET/POST /api/automatizaciones`, `PUT/DELETE /{id}`, `POST /{id}/probar` (hace la acción ya, marcada como prueba). Pantalla `/automatizaciones` (grupo «Mi equipo»).
 - El motor anota su última vuelta en «Vigilancia en segundo plano» (Seguridad).
 - Distinto de las reglas de casa (`Domotica/Reglas.cs`), que actúan sobre aparatos con sensores.
+
+## Descargar en el PC
+
+- Orden `descargar` (Mi PC › «Descargar en el PC»): le pasas un enlace directo y el agente lo baja a `Descargas\Zona privada`. Pide Face ID o la contraseña como las demás órdenes peligrosas, va firmada y avisa a Telegram al pedirla.
+- Corre en segundo plano (no frena las demás órdenes) y cuando acaba manda el resultado a la misma orden (`POST /api/sistema/agente/ordenes/{id}`); la API lo reenvía a Telegram («⬇️ descargado: …» o «⚠️ no se hizo»).
+- Límites (`agente/Mda.Agente/DescargaLogica.cs`): solo http(s) sin usuario ni clave, **nunca a la red local ni al propio PC** (se comprueba al conectar, no antes, y en cada redirección; máx. 5), **no se bajan programas** (`.exe`, `.bat`, `.ps1`, `.lnk`…),
+  4 GB por archivo, 2 GB de reserva libre en el disco, 2 horas de tope, nombre limpio (sin rutas ni nombres reservados de Windows) y sin pisar archivos existentes (`a (1).pdf`).
+
+## Servicios vigilados
+
+- `Servicios/Servicios.cs`: tabla `servicios_vigilados`. `MotorServicios` comprueba cada 2 minutos (de 5 en 5) las webs (responde si contesta algo por debajo de 500) y los puertos `host:puerto` (acepta conexión). Máx. 20.
+- Un fallo no avisa; **dos seguidos** dan el servicio por caído (push + Telegram) y al volver dice cuánto estuvo caído (`ServicioServicios.Aplicar`). Muestra tiempo de respuesta, desde cuándo está así y cuántas caídas lleva.
+- Rutas: `GET/POST /api/servicios`, `PUT/DELETE /{id}`, `POST /{id}/comprobar` (mira ya, sin avisos). Pantalla `/servicios` (grupo «Mi equipo»).
+- No lee ni guarda lo que contesta el servicio, solo el código y lo que tardó. La comprobación sale desde el contenedor de la API, así que las direcciones de casa (192.168…) sí se ven.
+
+## Compra con memoria
+
+- `Compra/Compra.cs`: tablas `compra` (la lista) y `productos_habituales` (lo que ha aprendido: cuántas veces y cada cuántos días). Pantalla `/compra` (grupo «Vida»).
+- Al marcar algo como comprado se actualiza su intervalo (media móvil: pesa más lo reciente; dos compras el mismo día cuentan una). Con 3 compras o más y pasado el 90 % de su intervalo sale en «Ya toca». La × de una sugerencia olvida ese producto.
+- Escribe varias cosas separadas por comas. Se guardan los 15 últimos comprados; máx. 200 pendientes.
+- Telegram: `/compra leche, pan` (añade y enseña la lista, con lo que ya toca), `/compra` y `/comprado leche`.

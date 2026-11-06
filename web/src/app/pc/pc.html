@@ -112,6 +112,17 @@
     </div>
     @if (avisoAbrir()) { <p class="msg" role="status">{{ avisoAbrir() }}</p> }
   </section>
+
+  <section class="caja">
+    <header class="caja__cab"><h3>Descargar en el PC</h3><span class="sub">el PC baja el archivo a Descargas\Zona privada · te aviso por Telegram al acabar</span></header>
+    <form class="abrir" (submit)="descargarEnPc($event)" novalidate>
+      <input class="campo__input" type="url" inputmode="url" placeholder="https://… enlace directo al archivo" aria-label="Dirección del archivo para descargar en el PC" autocapitalize="off" spellcheck="false" maxlength="300"
+             [value]="urlDescarga()" (input)="urlDescarga.set($any($event.target).value)">
+      <button class="button" type="submit" [disabled]="!urlDescarga().trim() || descargando()">{{ descargando() ? 'Enviando…' : 'Descargar' }}</button>
+    </form>
+    <p class="nota">No se descargan programas (.exe, .bat…), ni nada de la red local, ni archivos de más de 4 GB.</p>
+    @if (avisoDescarga()) { <p class="msg" role="status">{{ avisoDescarga() }}</p> }
+  </section>
 }
 
 <app-portapapeles-pc />

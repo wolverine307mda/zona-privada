@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -66,6 +66,8 @@ static partial class Ordenes
             if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
             if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
             if (o.Tipo == "captura") return await Captura.Hacer(o.Parametro, http, ct);
+            // la descarga sigue en segundo plano y manda su resultado final a la misma orden cuando acaba
+            if (o.Tipo == "descargar") return Descargas.Iniciar(o.Parametro, r => PublicarResultado(http, o.Id, r), ct);
             if (o.Tipo == "copiar")
             {
                 var texto = await Dispositivos.LeerPortapapeles();
@@ -76,6 +78,11 @@ static partial class Ordenes
         }
         catch (Exception e) when (e is HttpRequestException or FormatException or System.Text.Json.JsonException) { return new(false, e.Message); }
         return Ejecutar(o, secreto);
+    }
+
+    static async Task PublicarResultado(HttpClient http, int id, ResultadoOrden r)
+    {
+        try { await http.PostAsJsonAsync($"/api/sistema/agente/ordenes/{id}", r); } catch (HttpRequestException) { /* la API no se entera */ }
     }
 
     internal static ResultadoOrden Ejecutar(OrdenRecibida o, string secreto)

@@ -82,6 +82,10 @@ export class Pc implements OnInit, OnDestroy {
   protected readonly destino = signal('');
   protected readonly abriendo = signal(false);
   protected readonly avisoAbrir = signal('');
+  // «descargar en el PC»: un enlace directo a un archivo; también pide Face ID (o la contraseña)
+  protected readonly urlDescarga = signal('');
+  protected readonly descargando = signal(false);
+  protected readonly avisoDescarga = signal('');
   private readonly confirmador = inject(ConfirmarService);
   protected readonly brillo = signal<number | null>(null);
   protected readonly aviso = signal('');
@@ -192,6 +196,29 @@ export class Pc implements OnInit, OnDestroy {
     } finally { this.abriendo.set(false); }
   }
 
+  protected async descargarEnPc(ev: Event): Promise<void> {
+    ev.preventDefault();
+    const d = this.urlDescarga().trim();
+    if (!d) return;
+    const parametro = /^[a-z][a-z0-9+.-]*:/i.test(d) ? d : 'https://' + d;
+    this.avisoDescarga.set(''); this.descargando.set(true);
+    try {
+      for (let intento = 0; intento < 2; intento++) {
+        try {
+          await firstValueFrom(this.http.post('/api/pc/ordenes', { tipo: 'descargar', parametro }));
+          this.avisoDescarga.set('Enviado al PC: empieza a descargar. Te aviso por Telegram cuando acabe.');
+          this.urlDescarga.set('');
+          return;
+        } catch (err) {
+          const x = err as HttpErrorResponse;
+          if (x.status === 403 && x.error?.reautenticar && intento === 0) { if (!(await this.confirmador.pedir('Confirma que eres tú para descargar algo en el PC.'))) return; continue; }
+          this.avisoDescarga.set(x.status === 409 ? 'El agente de Windows no está en marcha.' : (x.error?.errors?.parametro?.[0] ?? 'No se pudo enviar.'));
+          return;
+        }
+      }
+    } finally { this.descargando.set(false); }
+  }
+
   // plan de energía: orden inocua, no pide confirmar con Face ID
   protected async plan(id: string): Promise<void> {
     this.avisoEnergia.set('');
@@ -207,7 +234,7 @@ export class Pc implements OnInit, OnDestroy {
 
   protected usado(v: Volumen): number { return v.totalBytes ? Math.round(100 - (100 * v.libreBytes) / v.totalBytes) : 0; }
   protected gb(b: number): string { return `${(b / 1_073_741_824).toFixed(b < 10_737_418_240 ? 1 : 0)} GB`; }
-  protected nombre(o: Orden): string { return o.tipo === 'energia' ? `Energía: ${o.parametro}` : o.tipo === 'abrir' ? `Abrir en el PC: ${o.parametro}` : ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
+  protected nombre(o: Orden): string { return o.tipo === 'energia' ? `Energía: ${o.parametro}` : o.tipo === 'abrir' ? `Abrir en el PC: ${o.parametro}` : o.tipo === 'descargar' ? `Descargar en el PC: ${o.parametro}` : ORDENES.find((x) => x.tipo === o.tipo && (x.parametro ?? '') === o.parametro)?.texto ?? o.tipo; }
 
   protected elegir(o: (typeof ORDENES)[number]): void {
     this.pendiente.set(o); this.error.set(''); this.mensaje.set('');

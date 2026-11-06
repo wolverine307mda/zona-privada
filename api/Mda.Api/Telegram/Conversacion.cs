@@ -38,7 +38,8 @@ public class Conversacion(
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
         "🌦️ <i>¿va a llover mañana?</i>\n" +
         "📝 <i>/tarea llamar al seguro</i> · /tareas · <i>/listo 12</i>\n" +
-        "📄 /caducidades (DNI, ITV, seguros…)\n\n" +
+        "📄 /caducidades (DNI, ITV, seguros…)\n" +
+        "🛒 <i>/compra leche, pan</i> · /compra (la lista) · <i>/comprado leche</i>\n\n" +
         "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
         "✅ /habitos (lo de hoy) y /hecho meditar (lo apunta)\n" +
         "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
@@ -82,6 +83,8 @@ public class Conversacion(
             case "/tarea": await bot.Enviar(await NuevaTarea(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/listo": await bot.Enviar(await TareaHecha(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/caducidades" or "/papeles": await bot.Enviar(await Caducidades(ct), html: true, ct: ct); return;
+            case "/compra": await bot.Enviar(await Compras(texto.Length > 7 ? texto[7..].Trim() : "", ct), html: true, ct: ct); return;
+            case "/comprado": await bot.Enviar(await Comprado(texto.Length > 10 ? texto[10..].Trim() : "", ct), html: true, ct: ct); return;
             case "/hecho": await bot.Enviar(await Hecho(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
@@ -304,6 +307,46 @@ public class Conversacion(
         if (t is null) return $"No encuentro esa tarea pendiente. Mira /tareas.";
         await Tareas.ServicioTareas.Completar(db, t.Id, true, reloj, zona, ct);
         return $"✅ Hecha: <b>{H(t.Titulo)}</b>{(t.Repite.Length > 0 ? " (la próxima ya está apuntada)" : "")}";
+    }
+
+    // ---- la compra: ver la lista (con lo que ya toca) o añadir varias cosas separadas por comas ----
+    private async Task<string> Compras(string anadir, CancellationToken ct)
+    {
+        var hoy = Tareas.ServicioTareas.Hoy(reloj, zona);
+        if (anadir.Length > 0)
+        {
+            foreach (var n in anadir.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(20))
+                if (await Compra.ServicioCompra.Añadir(db, n, null, reloj, ct) is null) return "No pude añadirlo (nombre vacío o de más de 60 letras, o la lista está llena).";
+        }
+        var pendientes = await db.ArticulosCompra.AsNoTracking().Where(a => !a.Comprado).OrderBy(a => a.Id).ToListAsync(ct);
+        var enLista = pendientes.Select(a => a.Clave).ToHashSet();
+        var toca = (await db.ProductosHabituales.AsNoTracking().ToListAsync(ct)).Where(p => !enLista.Contains(p.Clave) && Compra.ServicioCompra.Toca(p, hoy)).Take(6).ToList();
+        if (pendientes.Count == 0 && toca.Count == 0) return "La lista de la compra está vacía. Añade con <i>/compra leche, pan</i>.";
+        var sb = new StringBuilder("<b>Compra</b>\n");
+        foreach (var a in pendientes) sb.Append("⬜ ").Append(H(a.Nombre)).Append(a.Cantidad.Length > 0 ? $" ({H(a.Cantidad)})" : "").Append('\n');
+        if (toca.Count > 0) sb.Append("\n💡 Ya toca: ").Append(string.Join(", ", toca.Select(p => H(p.Nombre)))).Append(" (añádelo con /compra)");
+        sb.Append("\n\nCuando lo tengas: <i>/comprado leche</i>");
+        return sb.ToString().TrimEnd();
+    }
+
+    private async Task<string> Comprado(string que, CancellationToken ct)
+    {
+        if (que.Length == 0) return "Dime qué: <i>/comprado leche</i> (o varios: <i>/comprado leche, pan</i>). Mira /compra.";
+        var hoy = Tareas.ServicioTareas.Hoy(reloj, zona);
+        var hechos = new List<string>(); var noEstan = new List<string>();
+        foreach (var n in que.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(20))
+        {
+            var clave = Compra.ServicioCompra.Clave(n);
+            var a = await db.ArticulosCompra.FirstOrDefaultAsync(x => !x.Comprado && x.Clave == clave, ct)
+                ?? (await db.ArticulosCompra.Where(x => !x.Comprado).ToListAsync(ct)).FirstOrDefault(x => x.Clave.Contains(clave));
+            if (a is null) { noEstan.Add(n); continue; }
+            await Compra.ServicioCompra.Marcar(db, a.Id, true, hoy, reloj, ct);
+            hechos.Add(a.Nombre);
+        }
+        var partes = new List<string>();
+        if (hechos.Count > 0) partes.Add("✅ Comprado: " + string.Join(", ", hechos.Select(H)));
+        if (noEstan.Count > 0) partes.Add("No está en la lista: " + string.Join(", ", noEstan.Select(H)));
+        return string.Join("\n", partes);
     }
 
     // ---- papeles que caducan: lo próximo a vencer ----
