@@ -14,5 +14,6 @@ Lee en este orden si llegas de nuevas:
 | 8 | [Desarrollo](08-desarrollo.md) | convenciones, tests, migraciones, cómo añadir cosas, trucos y trampas conocidas |
 | 9 | [Versión de escritorio](09-escritorio.md) | la app sin Docker: instalación, ensayo, blindaje, corte y vuelta atrás |
 | 10 | [Nuevas funciones](10-nuevas-funciones.md) | plan 6: previsión y presupuestos, accesos nuevos, salud del PC, buscador, ISS, planificador, mapa de fotos, hábitos, búsqueda en documentos y OCR, fotos bajo demanda, «Hoy» en el iPhone |
+| 11 | [Recuperación](11-recuperacion.md) | qué hacer si muere el equipo: copias cifradas en OneDrive y Google Drive, restauración paso a paso, simulacro y despliegue con vuelta atrás |
 
 Cómo levantarlo todo: al principio del [README principal](../README.md).

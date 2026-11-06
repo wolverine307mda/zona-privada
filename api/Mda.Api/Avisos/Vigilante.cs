@@ -19,7 +19,7 @@ public record Simulacro(bool Ok, int Usuarios, int Tablas, string Copia, DateTim
 //   · el mantenimiento del coche que toca o está a punto (como mucho un aviso por semana);
 //   · que la copia de seguridad de la base de datos se hizo (si la última tiene más de 30 horas, avisa una vez al día);
 //   · desde las 8 de la tarde, si mañana llueve, hay tormenta, mucho calor o helada (una vez al día).
-public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Tiempo.ServicioTiempo tiempo, Luz.ServicioIss iss, Luz.ServicioLuz luz, Zona zona, TimeProvider reloj, IConfiguration config, ILogger<Vigilante> log) : BackgroundService
+public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioConexiones conexiones, Tiempo.ServicioTiempo tiempo, Luz.ServicioIss iss, Luz.ServicioLuz luz, Zona zona, TimeProvider reloj, IConfiguration config, RegistroVigilancia registro, ILogger<Vigilante> log) : BackgroundService
 {
     public const string ResumenSemanal = "resumen-semanal";
     private const string ResumenUltimo = "resumen-ultimo";
@@ -56,13 +56,15 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         if (Local.Hour >= 20) await Aislada(() => Tiempo(db, ct), "el tiempo");
         await Aislada(() => Cielo(db, ct), "el cielo (ISS y meteoros)");
         await Aislada(() => Habitos(db, ct), "los hábitos");
+        await Aislada(() => TareasDeHoy(db, ct), "las tareas");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)
     {
-        try { await paso(); }
+        try { await paso(); registro.Anotar(nombre); }
         catch (Exception e) when (e is not OperationCanceledException)
         {
+            registro.Anotar(nombre, e);
             log.LogError(e, "Fallo en la vigilancia de {Paso}", nombre);
         }
     }
@@ -187,6 +189,25 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             await avisos.PorTelegram($"✅ {texto}\nEscribe /hecho {h.Nombre.ToLowerInvariant()} para apuntarlo.", ct);
         }
         await db.SaveChangesAsync(ct);
+    }
+
+    // ---- tareas por hacer: un aviso al día con las que vencen hoy o ya vencieron (una sola vez por tarea y día) ----
+    public async Task TareasDeHoy(AppDbContext db, CancellationToken ct)
+    {
+        var hoy = DateOnly.FromDateTime(Local);
+        var pendientes = await db.Tareas.Where(t => !t.Hecha && t.Vence != null && t.Vence <= hoy && t.AvisadoFecha != hoy).ToListAsync(ct);
+        if (pendientes.Count > 0)
+        {
+            var vencidas = pendientes.Where(t => t.Vence < hoy).ToList();
+            var deHoy = pendientes.Where(t => t.Vence == hoy).ToList();
+            foreach (var t in pendientes) t.AvisadoFecha = hoy;
+            await db.SaveChangesAsync(ct);
+            var lineas = deHoy.Select(t => $"• Hoy: {t.Titulo}").Concat(vencidas.Select(t => $"• Vencida: {t.Titulo}")).Take(8).ToList();
+            var cabecera = vencidas.Count == 0 ? $"{deHoy.Count} tarea(s) para hoy" : $"{deHoy.Count} para hoy y {vencidas.Count} vencida(s)";
+            await avisos.PorPush($"📝 {cabecera}", string.Join("\n", lineas), "/tareas", ct);
+            await avisos.PorTelegram($"📝 {cabecera}\n{string.Join("\n", lineas)}\nEscribe /tareas para verlas.", ct);
+        }
+        await Mda.Api.Tareas.ServicioTareas.Podar(db, reloj, ct);
     }
 
     // ---- el cielo: pasadas de la ISS y lluvias de meteoros ----

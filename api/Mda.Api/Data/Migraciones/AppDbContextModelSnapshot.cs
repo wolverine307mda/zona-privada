@@ -1179,6 +1179,49 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("registros_habito", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Tareas.Tarea", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("AvisadoFecha")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("Creada")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Hecha")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("HechaEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notas")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Prioridad")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateOnly?>("Vence")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Hecha", "Vence");
+
+                    b.ToTable("tareas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Luz.PuntoFoto", b =>
                 {
                     b.Property<int>("Id")

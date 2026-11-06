@@ -36,6 +36,7 @@ export const routes: Routes = [
       { path: 'documentos', title: 'Documentos · MDA', loadComponent: () => import('./documentos/documentos').then((m) => m.Documentos) },
       { path: 'hoy', title: 'Hoy · MDA', loadComponent: () => import('./hoy/hoy').then((m) => m.Hoy) },
       { path: 'habitos', title: 'Hábitos · MDA', loadComponent: () => import('./habitos/habitos').then((m) => m.Habitos) },
+      { path: 'tareas', title: 'Tareas · MDA', loadComponent: () => import('./tareas/tareas').then((m) => m.Tareas) },
       { path: 'agenda', title: 'Agenda · MDA', loadComponent: () => import('./agenda/agenda').then((m) => m.Agenda) },
       { path: 'notas', title: 'Notas · MDA', loadComponent: () => import('./notas/notas').then((m) => m.Notas) },
       { path: 'musica', title: 'Música · MDA', loadComponent: () => import('./musica/musica').then((m) => m.Musica) },

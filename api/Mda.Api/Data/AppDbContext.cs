@@ -42,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Archivos.TextoArchivo> TextosArchivo => Set<Mda.Api.Archivos.TextoArchivo>();
     public DbSet<Mda.Api.Habitos.Habito> Habitos => Set<Mda.Api.Habitos.Habito>();
     public DbSet<Mda.Api.Habitos.RegistroHabito> RegistrosHabito => Set<Mda.Api.Habitos.RegistroHabito>();
+    public DbSet<Mda.Api.Tareas.Tarea> Tareas => Set<Mda.Api.Tareas.Tarea>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
@@ -398,6 +399,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("registros_habito");
             e.HasIndex(x => new { x.HabitoId, x.Fecha }).IsUnique();
             e.HasIndex(x => x.Fecha);
+        });
+
+        b.Entity<Mda.Api.Tareas.Tarea>(e =>
+        {
+            e.ToTable("tareas");
+            e.Property(x => x.Titulo).HasMaxLength(120);
+            e.Property(x => x.Notas).HasMaxLength(1000);
+            e.HasIndex(x => new { x.Hecha, x.Vence });
         });
 
         b.Entity<Mda.Api.Archivos.TextoArchivo>(e =>

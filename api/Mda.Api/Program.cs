@@ -12,6 +12,7 @@ using Mda.Api.Data;
 using Mda.Api.Galeria;
 using Mda.Api.Gastos;
 using Mda.Api.Habitos;
+using Mda.Api.Tareas;
 using Mda.Api.Luz;
 using Mda.Api.Pc;
 using Mda.Api.Notas;
@@ -272,12 +273,23 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<Recordatorios>());
 // resumen semanal, mantenimiento del coche y copias de seguridad
 builder.Services.AddSingleton<Vigilante>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Vigilante>());
+// qué hizo cada vigilancia por última vez y aviso si la API da muchos errores 5xx
+builder.Services.AddSingleton<RegistroVigilancia>();
+builder.Services.AddHostedService<AlertaErrores>();
 
 
 var app = builder.Build();
 
 app.UseForwardedHeaders();
 app.UseSerilogRequestLogging();
+// cuenta los errores del servidor (5xx, también las excepciones sin atrapar) para avisar si se acumulan
+app.Use(async (ctx, next) =>
+{
+    var registro = ctx.RequestServices.GetRequiredService<RegistroVigilancia>();
+    try { await next(); }
+    catch { registro.Error5xx(); throw; }
+    if (ctx.Response.StatusCode >= 500) registro.Error5xx();
+});
 app.UseCabecerasSeguras();
 app.UseSondas();
 app.UseResponseCompression();
@@ -345,6 +357,8 @@ app.MapAsistente();
 app.MapBuscar();
 app.MapBuscarTexto();
 app.MapHabitos();
+app.MapTareas();
+app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();
 app.MapTelegram();

@@ -36,7 +36,8 @@ public class Conversacion(
         "🗓️ <i>¿qué tengo mañana?</i>\n" +
         "🐷 <i>50 € a la hucha del viaje</i>\n" +
         "❓ <i>¿cuánto llevo en restaurantes?</i>\n" +
-        "🌦️ <i>¿va a llover mañana?</i>\n\n" +
+        "🌦️ <i>¿va a llover mañana?</i>\n" +
+        "📝 <i>/tarea llamar al seguro</i> · /tareas · <i>/listo 12</i>\n\n" +
         "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
         "✅ /habitos (lo de hoy) y /hecho meditar (lo apunta)\n" +
         "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
@@ -76,6 +77,9 @@ public class Conversacion(
             case "/ayuda" or "/help": await bot.Enviar(Ayuda, html: true, ct: ct); return;
             case "/hoy": await bot.Enviar(await Hoy(ct), html: true, ct: ct); return;
             case "/habitos" or "/hábitos": await bot.Enviar(await HabitosDeHoy(ct), html: true, ct: ct); return;
+            case "/tareas": await bot.Enviar(await ListaTareas(ct), html: true, ct: ct); return;
+            case "/tarea": await bot.Enviar(await NuevaTarea(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
+            case "/listo": await bot.Enviar(await TareaHecha(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/hecho": await bot.Enviar(await Hecho(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
@@ -254,6 +258,50 @@ public class Conversacion(
         var racha = Habitos.Rachas.Calcular(h.Dias, h.Objetivo, regs, Habitos.ServicioHabitos.Inicio(h, regs, hoy), hoy).Actual;
         var progreso = h.Objetivo > 1 ? $" ({nueva}/{h.Objetivo}{(string.IsNullOrEmpty(h.Unidad) ? "" : " " + H(h.Unidad))})" : "";
         return $"✅ <b>{H(h.Nombre)}</b>{progreso}{(nueva >= h.Objetivo && racha > 1 ? $" · racha de {racha} días" : "")}";
+    }
+
+    // ---- tareas por hacer: verlas, añadir una y cerrarla ----
+    private async Task<string> ListaTareas(CancellationToken ct)
+    {
+        var lista = await Tareas.ServicioTareas.Lista(db, Tareas.ServicioTareas.Hoy(reloj, zona), false, ct);
+        if (lista.Count == 0) return "No tienes tareas pendientes. 🎉 Añade una con <i>/tarea comprar pan</i>.";
+        var sb = new StringBuilder("<b>Tareas por hacer</b>\n");
+        foreach (var t in lista.Take(15))
+        {
+            sb.Append(t.Vencida ? "🔴 " : t.Hoy ? "🟠 " : t.Prioridad == 2 ? "⭐ " : "⬜ ").Append(H(t.Titulo));
+            if (t.Vence is not null) sb.Append(t.Vencida ? $" (venció hace {-t.Dias} d)" : t.Hoy ? " (hoy)" : $" ({t.Vence[8..]}/{t.Vence[5..7]})");
+            sb.Append($" · /listo {t.Id}\n");
+        }
+        if (lista.Count > 15) sb.Append($"…y {lista.Count - 15} más en la app.");
+        return sb.ToString().TrimEnd();
+    }
+
+    private async Task<string> NuevaTarea(string titulo, CancellationToken ct)
+    {
+        if (titulo.Length == 0) return "Dime qué: <i>/tarea llamar al seguro</i>.";
+        var e = new Tareas.TareaEntrada(titulo, null, null, null, null);
+        if (Tareas.ServicioTareas.Validar(e, true) is { Count: > 0 } mal) return H(mal.Values.First()[0]);
+        var t = new Tareas.Tarea { Titulo = titulo.Trim(), Creada = reloj.GetUtcNow() };
+        db.Tareas.Add(t);
+        await db.SaveChangesAsync(ct);
+        return $"📝 Apuntada: <b>{H(t.Titulo)}</b> (/listo {t.Id} cuando la hagas).";
+    }
+
+    // «/listo 12» o «/listo pan»: por número o por un trozo del título
+    private async Task<string> TareaHecha(string que, CancellationToken ct)
+    {
+        if (que.Length == 0) return "Dime cuál: <i>/listo 12</i> o <i>/listo pan</i>. Mira /tareas.";
+        Tareas.Tarea? t;
+        if (int.TryParse(que, out var id)) t = await db.Tareas.FirstOrDefaultAsync(x => x.Id == id && !x.Hecha, ct);
+        else
+        {
+            var c = (await db.Tareas.Where(x => !x.Hecha).ToListAsync(ct)).Where(x => x.Titulo.Contains(que, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (c.Count > 1) return "¿Cuál? " + string.Join(", ", c.Take(6).Select(x => $"<i>{H(x.Titulo)}</i> (/listo {x.Id})"));
+            t = c.FirstOrDefault();
+        }
+        if (t is null) return $"No encuentro esa tarea pendiente. Mira /tareas.";
+        await Tareas.ServicioTareas.Completar(db, t.Id, true, reloj, ct);
+        return $"✅ Hecha: <b>{H(t.Titulo)}</b>";
     }
 
     private async Task<string> Hoy(CancellationToken ct)

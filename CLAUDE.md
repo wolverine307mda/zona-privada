@@ -39,5 +39,8 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | llaves de acceso | `api/Mda.Api/Auth/Passkeys.cs`, `PasskeyInfo.cs`, `Seguridad/Reautenticar.cs`; front `seguridad/llaves.ts` |
 | lo que hace el PC desde la app (casa, concentración, música, red, portapapeles, avisos) | `api/Mda.Api/Pc/Casa.cs`, `Red.cs`, `Portapapeles.cs`; agente: `agente/Mda.Agente/Dispositivos.cs`, `Vigias.cs`, `Ordenes.cs`; front `web/src/app/pc/` |
 | la versión de escritorio sin Docker (procesos, seguridad, copias, instalación) | `lanzador/Mda.Lanzador/{ServidorNativo,ProcesoHijo,SeguridadNativa,CopiasNativas,TailscaleNativa}.cs`, lógica en `Logica/`, `herramientas/empaquetar-nativo.ps1`, [docs/09-escritorio.md](docs/09-escritorio.md) |
+| tareas «por hacer» | `api/Mda.Api/Tareas/Tareas.cs`, `web/src/app/tareas/`, `/tarea` y `/listo` en `Telegram/Conversacion.cs` |
+| última vez de cada vigilancia y alerta de errores 5xx | `api/Mda.Api/Avisos/Vigilancia.cs` |
+| recuperar tras perder el equipo / desplegar con vuelta atrás | [docs/11-recuperacion.md](docs/11-recuperacion.md), `herramientas/desplegar.ps1` |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |
 | medir la velocidad de la galería | `python herramientas/medir-galeria.py` |

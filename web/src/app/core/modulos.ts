@@ -62,6 +62,10 @@ export const MODULOS: Modulo[] = [
     icono: 'M9 12l2 2 4-4M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
   },
   {
+    id: 'tareas', titulo: 'Tareas', resumen: 'Lo que tienes por hacer, con fecha límite y avisos.', listo: true,
+    icono: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+  },
+  {
     id: 'agenda', titulo: 'Agenda', resumen: 'Eventos, recordatorios y Google Calendar.', listo: true, pestana: true,
     icono: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2',
   },
@@ -86,7 +90,7 @@ export const MODULOS: Modulo[] = [
 ];
 
 const GRUPOS_DEF = [
-  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'agenda', 'habitos', 'notas'] },
+  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'agenda', 'tareas', 'habitos', 'notas'] },
   { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
   { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'documentos', 'seguridad'] },
 ];

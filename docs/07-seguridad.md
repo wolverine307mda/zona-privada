@@ -9,6 +9,10 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 
 - Ningún puerto abierto en el router. La API escucha en `127.0.0.1:8080` y Seq en `127.0.0.1:5341`.
 - Internet llega solo por **Tailscale Funnel** (HTTPS con certificado de Tailscale) o, como alternativa, Cloudflare Tunnel (+ Access).
+- **Más cerrado aún (opcional): sin Funnel.** `tailscale/serve-privado.json` publica la app solo dentro de tu tailnet (HTTPS, sin `AllowFunnel`): únicamente entran los
+  dispositivos con Tailscale (PC e iPhone con su app). Se pierden la galería pública, el estado en vivo y el aviso «encendido» de la web pública, y lo que dependa de
+  que un servicio externo llame a tu dirección (comprueba las vueltas OAuth de Spotify/Google y los webhooks antes de cambiar). Para activarlo, en `compose.yaml` pon
+  `TS_SERVE_CONFIG: /config/serve-privado.json` en el servicio `tailscale` y `docker compose --profile publico up -d tailscale`. Para volver, `serve.json`.
 - `ForwardedHeaders` confía en el proxy (solo accesible desde la red interna de Docker) para conocer IP y esquema reales.
 
 ## Autenticación
@@ -38,7 +42,6 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - **Globo 3D**: cada foto decide si sale; al público solo llegan el nombre y la posición **redondeada a ~10 km**, y nunca nada dentro del radio excluido alrededor de tu casa. El GPS exacto del archivo solo lo ve el dueño en la privada.
 - **Atajos de iOS**: tokens con alcance (gasto, pago, lectura), guardados como hash SHA-256, revocables, sin cookie y sin acceso al resto de la app; aviso por Telegram desde una red nueva.
 - **Passkeys (Face ID / Windows Hello)**: entrar sin contraseña ni código (un passkey ya es «algo que tienes + tu cara»); atados al dominio de `App:UrlPublica`, máx. 5, revocables. La contraseña y los dos pasos siguen como respaldo.
-- **Bloqueo al volver a la app**: ajuste de cada dispositivo (Seguridad › Face ID). Al salir de la app, la sesión se bloquea EN EL SERVIDOR pasado el tiempo elegido (o tras 3 min de silencio si iOS la cerró sin avisar) y contesta 423 a todo salvo a `/api/sesion/*`, incluido el tiempo real, hasta desbloquearla con Face ID o con la contraseña. Quitarlo o aflojarlo pide la contraseña otra vez.
 - **Bloqueo al volver a la app**: ajuste de cada dispositivo (Seguridad › Face ID). Al salir de la app, la sesión se bloquea EN EL SERVIDOR pasado el tiempo elegido (o tras 3 min de silencio si iOS la cerró sin avisar) y contesta 423 a todo salvo a `/api/sesion/*`, incluido el tiempo real, hasta desbloquearla con Face ID o con la contraseña. Quitarlo o aflojarlo pide la contraseña otra vez.
 - **Reautenticación**: las órdenes al PC piden la contraseña (y el código si hay dos pasos) otra vez; vale 2 min y solo para esa sesión.
 - **Órdenes al PC**: lista cerrada, firmadas con HMAC-SHA256 con el secreto del agente, caducan a los 60 s, avisan a Telegram y las ejecuta el agente, que pregunta él (sin abrir puertos). Suspender o apagar dejan el PC inalcanzable hasta que lo enciendas tú.

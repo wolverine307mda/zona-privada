@@ -152,7 +152,7 @@ services:
       - api
 
   # copias de seguridad (ver herramientas/copias.sh): una diaria de la base de datos en ./copias (las 14 últimas), la misma cifrada con age
-  # junto con el volumen de claves en la carpeta de la nube (OneDrive) si hay COPIAS_AGE_PUBLICA, y cada semana un simulacro:
+  # junto con el volumen de claves y el .env en la carpeta de la nube (OneDrive) y en la de Google Drive si hay COPIAS_AGE_PUBLICA, y cada semana un simulacro:
   # la última copia se restaura en una base vacía y la API te avisa por Telegram si no sirve.
   copias:
     image: postgres:17-alpine
@@ -169,6 +169,10 @@ services:
       - ./herramientas/copias.sh:/copias.sh:ro
       - claves:/claves:ro
       - ${COPIAS_NUBE:-./copias/nube}:/nube
+      # segunda copia cifrada: la carpeta que sincroniza Google Drive para escritorio (si no hay, queda en ./copias/drive)
+      - ${COPIAS_DRIVE:-./copias/drive}:/drive
+      # el .env, para guardarlo cifrado con el resto (solo lectura)
+      - ./.env:/entorno.env:ro
     entrypoint: ["sh", "/copias.sh"]
 
   # OPCIONAL (perfil «casa»): Home Assistant y AdGuard Home en este mismo equipo. «docker compose --profile casa up -d» los arranca.

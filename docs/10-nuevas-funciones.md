@@ -99,3 +99,23 @@ Para **tus propios equipos y tu casa**. Viene **apagado**; no graba vídeo ni au
 - **Globo en el icono** (Badging API): `sw.js` pone el número de avisos sin leer al llegar un push y `core/globo.ts` lo quita al abrir la app. Requiere app instalada y notificaciones permitidas (iOS 16.4+); **sin probar en un iPhone real**.
 - Manifest: accesos directos nuevos (Hoy, Hábitos, Nota nueva).
 - Al probar `/habitos` y `/hecho` de Telegram con su armazón de pruebas salió un fallo real (releer el JSON anónimo de los hábitos sin camelCase): ahora `ServicioHabitos` devuelve un registro tipado (`HabitoDto`) y hay prueba de Telegram (`HabitosTelegramTests`).
+
+## Tareas por hacer
+
+- `Tareas/Tareas.cs`: tabla `tareas` (título, notas, prioridad 0-2, fecha límite opcional, hecha). Máximo 300 pendientes; las hechas se conservan 90 días.
+- Rutas (con sesión): `GET /api/tareas?hechas=` (pendientes: vencidas y de fecha más cercana primero, luego las sin fecha), `GET /api/tareas/resumen`, `POST`, `PUT /{id}`
+  (`hecha: true/false`, `vence: ""` quita la fecha), `DELETE /{id}`, `DELETE /hechas`.
+- Pantalla `/tareas` (grupo «Vida»): añadir con Intro, tocar el círculo para completar, tocar el título para editar; pestaña de hechas.
+- El `Vigilante` avisa una vez al día (push + Telegram) de las que vencen hoy o ya vencieron (`Vigilante.TareasDeHoy`) y poda las hechas de hace más de 90 días.
+- Telegram: `/tarea llamar al seguro`, `/tareas` y `/listo 12` (por número o por un trozo del título).
+
+## Vigilancia visible y alerta de errores
+
+- `Avisos/Vigilancia.cs`: `RegistroVigilancia` apunta, por cada comprobación del `Vigilante`, la última vez que corrió, si falló y cuántas veces desde el arranque (solo en memoria).
+  `GET /api/vigilancia` lo devuelve y Seguridad lo enseña en «Vigilancia en segundo plano».
+- Un middleware cuenta las respuestas 5xx (y las excepciones sin atrapar). `AlertaErrores` mira cada minuto: **5 o más en 10 minutos** avisan por push y Telegram, como mucho una vez por hora.
+
+## Segunda copia en Google Drive y recuperación
+
+- `COPIAS_DRIVE` (carpeta de «Drive para escritorio») recibe lo mismo que OneDrive: dump, claves y ahora también el `.env`, todo cifrado con `age`. Ver [11-recuperacion.md](11-recuperacion.md).
+- `herramientas/desplegar.ps1` / `.sh`: despliegue que espera a que la API esté sana y vuelve a la versión anterior si no arranca.

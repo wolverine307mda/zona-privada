@@ -11,6 +11,7 @@
 ```bash
 docker compose --profile publico up -d --build   # levantar todo (primera vez o tras cambios grandes)
 docker compose up -d --build api                 # desplegar cambios de código (front + API)
+.\herramientas\desplegar.ps1                      # lo mismo con red de seguridad: espera a que esté sana y, si no, vuelve a la versión anterior
 docker compose ps                                # estado
 docker compose logs -f api                       # registros de la API (también en Seq: http://localhost:5341)
 docker compose restart api                       # reiniciar sin recompilar (relee .env)
@@ -60,8 +61,9 @@ El contenedor `copias` ejecuta [`herramientas/copias.sh`](../herramientas/copias
 
 1. **Copia diaria** (a partir de las 3:00, o en cuanto se encienda el equipo): `pg_dump -Fc` en `./copias/zonaprivada-AAAAMMDD-HHMM.dump`;
    se guardan las 14 últimas. La API avisa (correo/push/Telegram) si la última tiene más de 30 horas.
-2. **Copia cifrada fuera del PC** (si hay `COPIAS_AGE_PUBLICA` en el `.env`): el dump y el volumen `claves` (las claves de las cookies)
-   se cifran con [age](https://github.com/FiloSottile/age) y se copian a `COPIAS_NUBE`, una carpeta que sincronice OneDrive.
+2. **Copia cifrada fuera del PC** (si hay `COPIAS_AGE_PUBLICA` en el `.env`): el dump, el volumen `claves` (las claves de las cookies) y el propio `.env`
+   se cifran con [age](https://github.com/FiloSottile/age) y se copian a `COPIAS_NUBE` (una carpeta que sincronice OneDrive) **y** a `COPIAS_DRIVE`
+   (una carpeta dentro de «Mi unidad» de Google Drive para escritorio). Cómo recuperar todo: [11-recuperacion.md](11-recuperacion.md).
    Se guardan 14 diarias y 8 semanales (`semanal/`, las de domingo). Sin la clave privada nadie puede leerlas.
    - Una vez: `age-keygen -o clave-privada.txt`, **guarda ese archivo fuera del PC** (gestor de contraseñas, USB), y pon la línea
      `Public key: age1…` en `COPIAS_AGE_PUBLICA`. Después `docker compose up -d copias`.

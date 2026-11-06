@@ -1,0 +1,163 @@
+<dialog class="asis" #dlg (click)="fuera($event)" (close)="alCerrar()" aria-labelledby="asis-titulo">
+  <div class="asis__caja">
+    <header class="asis__cabeza">
+      <span class="orbe" [class.vivo]="pensando() || escuchando()" aria-hidden="true"></span>
+      <div>
+        <h2 id="asis-titulo">{{ escuchando() ? 'Te escucho…' : '¿Qué apunto?' }}</h2>
+        <p>Gastos, ingresos, recordatorios, huchas o preguntas, como lo dirías.</p>
+      </div>
+      <button class="asis__cerrar" type="button" (click)="cerrar()" aria-label="Cerrar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </header>
+
+    <form class="asis__campo" [class.escuchando]="escuchando()" (submit)="$event.preventDefault(); hacer()">
+      <label class="sr" for="asis-texto">Frase</label>
+      <input #campo id="asis-texto" type="text" autocomplete="off" enterkeyhint="done" maxlength="300"
+             placeholder="ayer 12 € en el Mercadona…" [value]="texto()" (input)="escribir($any($event.target).value)">
+      @if (puedeHablar) {
+        <button class="asis__mic" type="button" (click)="hablar()" [attr.aria-pressed]="escuchando()" [attr.aria-label]="escuchando() ? 'Dejar de escuchar' : 'Hablar'">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+        </button>
+      }
+    </form>
+
+    @if (hecho(); as h) {
+      <div class="asis__hecho" [class.deshecho]="h.deshecho" role="status">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="h.deshecho ? 'M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3' : 'M5 12.5l4.5 4.5L19 7.5'" /></svg>
+        <span>{{ h.deshecho ? 'Deshecho.' : h.texto }}</span>
+        @if (!h.deshecho) {
+          @if (h.ver) { <button type="button" class="mini" (click)="h.ver()">Ver</button> }
+          <button type="button" class="mini" (click)="deshacer(h)">Deshacer</button>
+        }
+      </div>
+    }
+
+    @if (propuesta(); as p) {
+      <section class="tarjeta-asis" [attr.data-clase]="p.clase" aria-live="polite">
+        @switch (p.clase) {
+          @case ('movimiento') {
+            @if (mov(); as m) {
+              <div class="fila-tipo">
+                <div class="segmento" role="group" aria-label="Tipo">
+                  <button type="button" [class.activo]="m.tipo === 'Gasto'" (click)="ponerTipo('Gasto')">Gasto</button>
+                  <button type="button" [class.activo]="m.tipo === 'Ingreso'" (click)="ponerTipo('Ingreso')">Ingreso</button>
+                </div>
+                @if (m.repite) {
+                  <button type="button" class="chip" (click)="cambiar({ repite: null, variable: false })" title="Quitar la repetición">
+                    ↻ {{ cada(m.repite) }}{{ m.variable ? ' · puede variar' : '' }} <span aria-hidden="true">×</span>
+                  </button>
+                }
+              </div>
+              <div class="importe" [class.ingreso]="m.tipo === 'Ingreso'">
+                <span>{{ m.tipo === 'Ingreso' ? '+' : '−' }}</span>
+                <input type="number" inputmode="decimal" step="0.01" min="0.01" [value]="importeTexto()" [style.width.ch]="ancho()" (input)="teclearImporte($any($event.target).value)" aria-label="Importe">
+                <span>€</span>
+              </div>
+              <div class="campos">
+                <label class="campo campo--ancho"><span>Concepto</span>
+                  <input type="text" [value]="m.concepto" maxlength="120" (input)="cambiar({ concepto: $any($event.target).value })"></label>
+                <label class="campo"><span>Categoría</span>
+                  <span class="selector" [style.--c]="categoria(m.categoria).color">
+                    <select [value]="m.categoria" (change)="cambiar({ categoria: $any($event.target).value })">
+                      @for (c of categorias(); track c.id) { <option [value]="c.id" [selected]="c.id === m.categoria">{{ c.nombre }}</option> }
+                    </select>
+                  </span></label>
+                <label class="campo"><span>Fecha</span>
+                  <input type="date" [value]="m.fecha" (input)="cambiar({ fecha: $any($event.target).value })"></label>
+              </div>
+              @if (m.litros || m.kilometros) {
+                <p class="extra">⛽ {{ m.litros ? m.litros + ' l' : '' }}{{ m.litros && m.kilometros ? ' · ' : '' }}{{ m.kilometros ? m.kilometros.toLocaleString('es-ES') + ' km' : '' }}{{ m.precioLitro ? ' · ' + m.precioLitro + ' €/l' : '' }}</p>
+              }
+            }
+          }
+          @case ('agenda') {
+            @if (ev(); as e) {
+              <div class="fila-tipo">
+                <span class="pastilla">{{ e.tipo === 'Recordatorio' ? '⏰ Recordatorio' : '📅 Evento' }}</span>
+                @if (e.repetir !== 'No') { <span class="chip">↻ {{ repeticion(e.repetir) }}</span> }
+              </div>
+              <div class="campos">
+                <label class="campo campo--ancho"><span>Qué</span>
+                  <input type="text" [value]="e.titulo" maxlength="200" (input)="cambiarEv({ titulo: $any($event.target).value })"></label>
+                @if (e.todoElDia) {
+                  <label class="campo"><span>Día (todo el día)</span>
+                    <input type="date" [value]="aLocal(e.inicio).slice(0, 10)" (input)="ponerDia($any($event.target).value)"></label>
+                } @else {
+                  <label class="campo"><span>Cuándo</span>
+                    <input type="datetime-local" [value]="aLocal(e.inicio)" (input)="ponerMomento($any($event.target).value)"></label>
+                  @if (e.fin) {
+                    <label class="campo"><span>Hasta</span>
+                      <input type="time" [value]="aLocal(e.fin).slice(11, 16)" (input)="ponerFin($any($event.target).value)"></label>
+                  }
+                }
+                @if (e.tipo === 'Evento') {
+                  <label class="campo campo--ancho"><span>Dónde <em>(opcional)</em></span>
+                    <input type="text" [value]="e.lugar ?? ''" maxlength="200" placeholder="Centro de salud, clínica…" (input)="cambiarEv({ lugar: $any($event.target).value || null })"></label>
+                }
+              </div>
+              <p class="extra">🔔 Te aviso {{ e.todoElDia ? 'ese día a las 9' : e.avisoMinutos ? e.avisoMinutos + ' min antes' : 'a esa hora' }} por:</p>
+              <div class="canales" role="group" aria-label="Por dónde avisar">
+                <button type="button" class="chip" [class.on]="e.porPush" [attr.aria-pressed]="e.porPush" (click)="cambiarEv({ porPush: !e.porPush })">📱 App</button>
+                <button type="button" class="chip" [class.on]="e.porCorreo" [attr.aria-pressed]="e.porCorreo" (click)="cambiarEv({ porCorreo: !e.porCorreo })">✉️ Correo</button>
+                <button type="button" class="chip" [class.on]="e.porWhatsApp" [attr.aria-pressed]="e.porWhatsApp" (click)="cambiarEv({ porWhatsApp: !e.porWhatsApp })">💬 WhatsApp</button>
+                <button type="button" class="chip" [class.on]="!!e.porTelegram" [attr.aria-pressed]="!!e.porTelegram" (click)="cambiarEv({ porTelegram: !e.porTelegram })">✈️ Telegram</button>
+              </div>
+            }
+          }
+          @case ('hucha') {
+            @if (hu(); as h) {
+              <div class="hucha">
+                <span class="hucha__emoji" aria-hidden="true">{{ h.emoji }}</span>
+                <div><small>{{ h.importe < 0 ? 'Sacar de' : 'Meter en' }}</small><strong>{{ h.nombre }}</strong></div>
+              </div>
+              <div class="importe">
+                <span>{{ h.importe < 0 ? '−' : '+' }}</span>
+                <input type="number" inputmode="decimal" step="0.01" min="0.01" [value]="importeTexto()" [style.width.ch]="ancho()" (input)="teclearImporte($any($event.target).value)" aria-label="Importe">
+                <span>€</span>
+              </div>
+            }
+          }
+          @case ('horario') {
+            @if (hz(); as h) {
+              <div class="fila-tipo"><span class="pastilla">💼 Horario de trabajo</span><span class="chip">{{ textoHorario(h) }}</span></div>
+              <div class="dias-hz" role="group" aria-label="Días que trabajas">
+                @for (d of diasSemana; track d.n) {
+                  <button type="button" [class.on]="h.dias.includes(d.n)" [attr.aria-pressed]="h.dias.includes(d.n)" [attr.aria-label]="d.l" (click)="alternarDia(d.n)">{{ d.c }}</button>
+                }
+              </div>
+              <div class="campos">
+                <label class="campo"><span>Entras</span><input type="time" [value]="h.entrada" (input)="hz.set({ ...h, entrada: $any($event.target).value })"></label>
+                <label class="campo"><span>Sales</span><input type="time" [value]="h.salida" (input)="hz.set({ ...h, salida: $any($event.target).value })"></label>
+              </div>
+              <p class="extra">Se pinta en el calendario y te aviso si una cita cae dentro.</p>
+            }
+          }
+          @case ('pregunta') { <p class="respuesta">{{ p.respuesta }}</p> }
+          @default { <p class="pista">{{ p.resumen }}</p> }
+        }
+        @for (d of p.dudas ?? []; track d) { <p class="duda">{{ d }}</p> }
+        @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+        @if (accion(); as a) {
+          <div class="acciones">
+            <button class="button" type="button" (click)="hacer()" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : a }}</button>
+          </div>
+        }
+      </section>
+    } @else if (!texto()) {
+      <div class="ejemplos">
+        <p>Prueba con:</p>
+        <ul>
+          @for (e of ejemplos; track e) { <li><button type="button" (click)="usar(e)">{{ e }}</button></li> }
+        </ul>
+      </div>
+    }
+
+    @if (historial().length) {
+      <footer class="asis__historial">
+        <p>Hace un momento</p>
+        <ul>@for (h of historial(); track $index) { <li [class.deshecho]="h.deshecho">{{ h.texto }}</li> }</ul>
+      </footer>
+    }
+  </div>
+</dialog>
