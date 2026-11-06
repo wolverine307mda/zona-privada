@@ -2,6 +2,7 @@ import { Component, ElementRef, inject, output, viewChild } from '@angular/core'
 import { Instalar } from '../core/instalar';
 import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
+import { AjustesEntrada } from './ajustes-entrada';
 import { AjustesFondo } from './ajustes-fondo';
 import { AjustesSonido } from './ajustes-sonido';
 
@@ -9,7 +10,7 @@ import { AjustesSonido } from './ajustes-sonido';
 // Se cierra con Esc, con la X o pulsando fuera de la caja. `salir` avisa al marco de que se ha pedido cerrar la sesión.
 @Component({
   selector: 'app-ajustes',
-  imports: [AjustesFondo, AjustesSonido],
+  imports: [AjustesEntrada, AjustesFondo, AjustesSonido],
   templateUrl: './ajustes.html',
   styleUrl: './ajustes.css',
 })

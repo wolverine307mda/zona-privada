@@ -1,4 +1,8 @@
-<canvas class="escena" #escena aria-hidden="true"></canvas>
+@if (config.fondo() === 'cielo') {
+  <app-cielo-vivo #cielo />
+} @else {
+  <canvas class="escena" #escena aria-hidden="true"></canvas>
+}
 
 <header class="top">
   <span class="marca">MDA</span>

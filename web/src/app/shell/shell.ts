@@ -10,6 +10,7 @@ import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
 import { SistemaService } from '../inicio/sistema.service';
 import { PerfilService } from '../core/perfil.service';
+import { CieloConfig } from '../core/cielo-config';
 import { AsistenteService } from '../core/asistente.service';
 import { RecargaService } from '../core/recarga';
 import { Ajustes } from './ajustes';
@@ -109,6 +110,8 @@ export class Shell {
   constructor() {
     this.sistema.empezar();
     this.perfil.cargar();
+    // la pantalla de entrar no puede preguntar nada antes de que haya sesión: se lleva ya el sitio del tiempo para dibujar el cielo
+    void inject(CieloConfig).sincronizar();
     const reloj = setInterval(() => this.ahora.set(new Date()), 1000);
     const sinInclinar = activarInclinacion();
     // latido: la pestaña abierta avisa cada minuto de que sigue ahí (Seguridad lo enseña como «en línea»)

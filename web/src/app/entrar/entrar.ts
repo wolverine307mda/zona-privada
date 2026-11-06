@@ -2,9 +2,11 @@ import { Component, ElementRef, OnDestroy, afterNextRender, inject, signal, view
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { CieloConfig } from '../core/cielo-config';
 import { pedirCredencial, soportaCondicional, soportaPasskeys } from '../core/passkey';
 import { ResultadoEntrar, SesionService } from '../core/sesion.service';
 import { crearCandado } from './candado-3d';
+import { CieloVivo } from './cielo-vivo';
 
 const MENSAJES: Record<Exclude<ResultadoEntrar, 'ok' | 'segundo-factor'>, string> = {
   credenciales: 'Usuario o contraseña incorrectos.',
@@ -15,6 +17,7 @@ const MENSAJES: Record<Exclude<ResultadoEntrar, 'ok' | 'segundo-factor'>, string
 
 @Component({
   selector: 'app-entrar',
+  imports: [CieloVivo],
   templateUrl: './entrar.html',
   styleUrl: './entrar.css',
 })
@@ -23,8 +26,16 @@ export class Entrar implements OnDestroy {
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   protected readonly conPasskey = soportaPasskeys();
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('escena');
-  private escena?: ReturnType<typeof crearCandado>;
+  protected readonly config = inject(CieloConfig);
+  private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('escena');
+  private readonly cielo = viewChild<CieloVivo>('cielo');
+  private escenaBase?: ReturnType<typeof crearCandado>;
+  // lo que pasa en la pantalla se cuenta a la escena de fondo, sea el candado o el cielo
+  private readonly escena = {
+    intento: () => this.escenaBase?.intento(),
+    abrir: () => { this.escenaBase?.abrir(); this.cielo()?.destello('ok'); },
+    rechazar: () => { this.escenaBase?.rechazar(); this.cielo()?.destello('mal'); },
+  };
   private aborto?: AbortController;
 
   protected readonly usuario = signal('');
@@ -42,7 +53,8 @@ export class Entrar implements OnDestroy {
     afterNextRender(() => {
       void this.comprobarServidor();
       if (this.conPasskey) void this.entrarConPasskey(true);
-      try { this.escena = crearCandado(this.canvas().nativeElement); } catch { /* sin WebGL: solo la tarjeta */ }
+      const lienzo = this.canvas()?.nativeElement;
+      if (lienzo) { try { this.escenaBase = crearCandado(lienzo); } catch { /* sin WebGL: solo la tarjeta */ } }
     });
   }
 
@@ -66,12 +78,12 @@ export class Entrar implements OnDestroy {
 
     this.ocupado.set(true);
     this.error.set('');
-    this.escena?.intento();
+    this.escena.intento();
     const r = await this.sesion.entrar(this.usuario().trim(), this.password(), this.pideCodigo() ? this.codigo().trim() : undefined);
     this.ocupado.set(false);
 
     if (r === 'ok') {
-      this.escena?.abrir();
+      this.escena.abrir();
       setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
     } else if (r === 'segundo-factor') {
       this.pideCodigo.set(true);
@@ -88,7 +100,7 @@ export class Entrar implements OnDestroy {
     this.aborto?.abort(); // el autocompletado pendiente cede ante la ventana de Face ID
     this.ocupado.set(true);
     this.error.set('');
-    if (!auto) this.escena?.intento();
+    if (!auto) this.escena.intento();
     try {
       const opciones = await firstValueFrom(this.http.post<unknown>('/api/auth/passkey/entrada/opciones', null));
       await this.terminar(await pedirCredencial(opciones));
@@ -105,7 +117,7 @@ export class Entrar implements OnDestroy {
   private async terminar(credencial: unknown): Promise<void> {
     await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
     if (await this.sesion.trasPasskey()) {
-      this.escena?.abrir();
+      this.escena.abrir();
       setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
     }
   }
@@ -122,13 +134,13 @@ export class Entrar implements OnDestroy {
 
   private fallo(texto: string): void {
     this.error.set(texto);
-    this.escena?.rechazar(); // el candado se pone en rojo y se sacude
+    this.escena.rechazar(); // el candado se pone en rojo y se sacude
     this.sacude.set(false);
     requestAnimationFrame(() => this.sacude.set(true));
   }
 
   ngOnDestroy(): void {
     this.aborto?.abort();
-    this.escena?.destruir();
+    this.escenaBase?.destruir();
   }
 }

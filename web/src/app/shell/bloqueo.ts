@@ -5,6 +5,8 @@ import { pedirCredencial, soportaPasskeys } from '../core/passkey';
 import { SesionService } from '../core/sesion.service';
 import { SistemaService } from '../inicio/sistema.service';
 import { PerfilService } from '../core/perfil.service';
+import { CieloConfig } from '../core/cielo-config';
+import { CieloVivo } from '../entrar/cielo-vivo';
 
 // Pantalla de bloqueo: con «pedir Face ID al volver» activado, al salir de la app el servidor bloquea la sesión y no contesta a nada
 // hasta que se desbloquea con el passkey (o, de respaldo, con la contraseña). Esta capa tapa la app mientras tanto.
@@ -12,10 +14,15 @@ import { PerfilService } from '../core/perfil.service';
 // El escáner cuenta el estado: esperando, comprobando (línea que barre y anillo rápido), abierto (verde) y fallo (rojo).
 @Component({
   selector: 'app-bloqueo',
+  imports: [CieloVivo],
   template: `
     @if (sesion.bloqueada()) {
       <div class="velo" role="alertdialog" aria-modal="true" aria-labelledby="bloqueo-titulo" aria-describedby="bloqueo-desc">
-        <div class="fondo" aria-hidden="true"><i class="orbe o1"></i><i class="orbe o2"></i><i class="malla"></i></div>
+        @if (config.fondo() === 'cielo') {
+          <div class="fondo fondo--cielo" aria-hidden="true"><app-cielo-vivo /></div>
+        } @else {
+          <div class="fondo" aria-hidden="true"><i class="orbe o1"></i><i class="orbe o2"></i><i class="malla"></i></div>
+        }
         <main class="pantalla" [class.tiembla]="temblor()" [attr.data-fase]="fase()">
           <header class="cabeza">
             <p class="etiqueta">
@@ -79,6 +86,8 @@ import { PerfilService } from '../core/perfil.service';
     /* capa fija a pantalla completa: el relleno respeta la muesca y la barra de inicio del iPhone; si no cabe (teclado, pantalla baja) se desplaza */
     .velo { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: calc(var(--seguro-arriba) + 8px) 24px max(16px, env(safe-area-inset-bottom)); background: var(--fondo); animation: entra var(--dur-3, 420ms) var(--ease-out, ease-out) both; }
     .fondo { position: fixed; inset: 0; pointer-events: none; }
+    /* sobre el cielo, un velo oscuro arriba y abajo para que el reloj y los botones se lean */
+    .fondo--cielo::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to bottom, rgb(0 0 0 / .42), rgb(0 0 0 / .08) 35%, rgb(0 0 0 / .08) 60%, rgb(0 0 0 / .5)); }
     .orbe { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .42; animation: flota 14s ease-in-out infinite alternate; }
     .o1 { width: 52vmax; height: 52vmax; left: -14vmax; top: -18vmax; background: color-mix(in srgb, var(--brand) 55%, transparent); }
     .o2 { width: 44vmax; height: 44vmax; right: -12vmax; bottom: -16vmax; background: color-mix(in srgb, var(--acento) 35%, #3355ff); animation-duration: 19s; animation-direction: alternate-reverse; }
@@ -153,6 +162,7 @@ import { PerfilService } from '../core/perfil.service';
 export class Bloqueo {
   protected readonly sesion = inject(SesionService);
   protected readonly perfil = inject(PerfilService);
+  protected readonly config = inject(CieloConfig);
   protected readonly hora = signal(Bloqueo.formato());
   protected readonly fecha = signal(Bloqueo.dia());
   protected readonly temblor = signal(false);

@@ -67,7 +67,11 @@ public static class SeguridadEndpoints
 
         g.MapGet("/accesos", async (AppDbContext db, GeoIp geo) =>
             Results.Ok((await db.Accesos.AsNoTracking().OrderByDescending(a => a.Id).Take(40).ToListAsync())
-                .Select(a => new { a.Id, a.Fecha, a.Ip, a.Exito, a.Motivo, a.Revisado, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente), Lugar = Lugar(geo.Buscar(a.Ip)) })));
+                .Select(a =>
+                {
+                    var sitio = geo.Buscar(a.Ip);   // también las coordenadas: el radar del globo dibuja de dónde llega cada intento
+                    return new { a.Id, a.Fecha, a.Ip, a.Exito, a.Motivo, a.Revisado, Dispositivo = Dispositivo.Nombre(a.Agente), Tipo = Dispositivo.Tipo(a.Agente), Lugar = Lugar(sitio), Lat = sitio?.Lat, Lon = sitio?.Lon };
+                })));
 
         // marcar un fallo como revisado (o quitarle la marca)
         g.MapPut("/accesos/{id:int}/revisado", async (int id, bool revisado, AppDbContext db) =>
