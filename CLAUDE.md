@@ -8,6 +8,7 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 - Cómo levantarlo: [README.md](README.md) (sección «Cómo levantarlo todo»).
 - Documentación completa: [docs/](docs/README.md). Arquitectura → backend → API → frontend.
 - Lo último que se ha añadido (y qué está sin verificar): [CAMBIOS-RECIENTES.md](CAMBIOS-RECIENTES.md).
+- Plan por hacer (30 ideas elegidas, con lo que ya existe y lo que falta de cada una): [docs/checklist-plan7.md](docs/checklist-plan7.md).
 
 ## Reglas
 
