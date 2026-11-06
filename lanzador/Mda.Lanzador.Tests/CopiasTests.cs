@@ -54,4 +54,24 @@ public class CopiasTests
         Assert.False(SimulacroCopia.Vale(0, 47));
         Assert.False(SimulacroCopia.Vale(1, 9));
     }
+
+    [Fact]
+    public void La_copia_previa_a_actualizar_no_se_confunde_con_las_diarias_y_se_guardan_cinco()
+    {
+        Assert.Equal("antes-de-actualizar-20261106-2105.dump", Copia.NombreAntes(new DateTime(2026, 11, 6, 21, 5, 0)));
+        Assert.False(Copia.NombreAntes(DateTime.Now).StartsWith(Copia.Prefijo, StringComparison.Ordinal));   // la rotación de las diarias y la vigilancia de la API no la ven
+        var nombres = Enumerable.Range(1, 7).Select(d => $"antes-de-actualizar-2026110{d}-1200.dump").Append("zonaprivada-20261101-0300.dump").ToList();
+        var sobran = Copia.SobrantesAntes(nombres);
+        Assert.Equal(["antes-de-actualizar-20261102-1200.dump", "antes-de-actualizar-20261101-1200.dump"], sobran);   // las dos más viejas; las diarias ni se miran
+    }
+
+    [Fact]
+    public void Solo_se_copia_antes_de_arrancar_si_la_api_instalada_es_otra()
+    {
+        var h = Copia.HuellaApi(1234, new DateTime(2026, 11, 6, 20, 0, 0, DateTimeKind.Utc));
+        Assert.True(Copia.ApiCambio(null, h));                  // nunca se había anotado
+        Assert.True(Copia.ApiCambio("1-1", h));
+        Assert.False(Copia.ApiCambio(h + Environment.NewLine, h));            // misma versión (el texto guardado puede traer salto de línea)
+        Assert.True(Copia.ApiCambio(Copia.HuellaApi(1235, new DateTime(2026, 11, 6, 20, 0, 0, DateTimeKind.Utc)), h));
+    }
 }

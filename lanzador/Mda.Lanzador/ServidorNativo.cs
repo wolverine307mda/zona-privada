@@ -65,6 +65,8 @@ sealed class ServidorNativo
 
         if (_api is not { } api0 || !api0.EnMarcha)
         {
+            // versión nueva de la API: antes de que aplique sus migraciones, una copia de la base
+            await new CopiasNativas(_r, clave, "", "", _log).CopiaAntesDeActualizar(DateTime.Now, ct);
             _api?.Dispose();
             var entorno = ConfigNativa.EntornoApi(env, _r, clave, ensayo);
             _api = new ProcesoHijo("api", () =>

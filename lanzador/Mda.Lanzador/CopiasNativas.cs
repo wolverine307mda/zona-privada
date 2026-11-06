@@ -38,6 +38,36 @@ sealed class CopiasNativas
         catch (OperationCanceledException) { }
     }
 
+    // Antes de arrancar una API distinta de la última (sus migraciones cambian la base y no se deshacen): una copia aparte de la base. Si falla, no impide
+    // arrancar (se avisa en el registro y se reintenta en el próximo arranque); en una base vacía no hace falta.
+    public async Task CopiaAntesDeActualizar(DateTime ahora, CancellationToken ct)
+    {
+        try
+        {
+            var dll = Path.Combine(_r.ApiDir, "Mda.Api.dll");
+            if (!File.Exists(dll)) return;
+            var f = new FileInfo(dll);
+            var huella = Copia.HuellaApi(f.Length, f.LastWriteTimeUtc);
+            var marca = Path.Combine(_r.Datos, "api-instalada.txt");
+            if (!Copia.ApiCambio(File.Exists(marca) ? await File.ReadAllTextAsync(marca, ct) : null, huella)) return;
+
+            Directory.CreateDirectory(_r.Copias);
+            var (cn, tablas) = await Proc.Ejecutar(Pg("psql.exe"), $"{Conexion} -d zonaprivada -tAc \"select count(*) from information_schema.tables where table_schema='public'\"", _r.PgBin, TimeSpan.FromMinutes(1), null, Entorno);
+            if (cn == 0 && int.TryParse(tablas.Trim(), out var n) && n > 0)
+            {
+                var tmp = Path.Combine(_r.Copias, ".tmp-antes.dump");
+                var (c, salida) = await Proc.Ejecutar(Pg("pg_dump.exe"), $"{Conexion} -d zonaprivada -Fc -f \"{tmp}\"", _r.PgBin, TimeSpan.FromMinutes(10), null, Entorno);
+                if (c != 0) { _log($"copias: la copia previa a la actualización falló ({c}): {Recortar(salida)}"); return; }
+                var destino = Path.Combine(_r.Copias, Copia.NombreAntes(ahora));
+                File.Move(tmp, destino, true);
+                _log($"copias: copia previa a la actualización hecha ({Path.GetFileName(destino)})");
+                foreach (var viejo in Copia.SobrantesAntes(Directory.GetFiles(_r.Copias, $"{Copia.PrefijoAntes}*.dump").Select(Path.GetFileName).OfType<string>())) File.Delete(Path.Combine(_r.Copias, viejo));
+            }
+            await File.WriteAllTextAsync(marca, huella, ct);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException) { _log("copias: copia previa a la actualización: " + e.Message); }
+    }
+
     public async Task Vuelta(DateTime ahora, CancellationToken ct)
     {
         Directory.CreateDirectory(_r.Copias);

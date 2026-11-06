@@ -11,6 +11,18 @@ public static class Copia
 
     public static string Nombre(DateTime local) => $"{Prefijo}{local:yyyyMMdd}-{local:HHmm}.dump";
 
+    // La copia que se hace justo antes de arrancar una API distinta de la anterior (sus migraciones cambian la base). No empieza por «zonaprivada-»:
+    // así ni la rotación de las 14 diarias ni la vigilancia de la API (que busca ese prefijo) la tocan, y se guardan las últimas 5 aparte.
+    public const string PrefijoAntes = "antes-de-actualizar-";
+    public const int GuardarAntes = 5;
+    public static string NombreAntes(DateTime local) => $"{PrefijoAntes}{local:yyyyMMdd}-{local:HHmm}.dump";
+    public static List<string> SobrantesAntes(IEnumerable<string> nombres, int guardar = GuardarAntes) =>
+        nombres.Where(n => n.StartsWith(PrefijoAntes, StringComparison.Ordinal) && n.EndsWith(".dump", StringComparison.Ordinal))
+               .OrderByDescending(n => n, StringComparer.Ordinal).Skip(guardar).ToList();
+    // la «huella» de la API instalada: si cambia entre un arranque y otro, hay versión nueva
+    public static string HuellaApi(long tamano, DateTime modificadoUtc) => $"{tamano}-{modificadoUtc.Ticks}";
+    public static bool ApiCambio(string? anterior, string actual) => !string.Equals(anterior?.Trim(), actual, StringComparison.Ordinal);
+
     // Toca el dump del día si ya pasaron las 3 de la madrugada y todavía no hay uno de hoy (si el equipo estaba apagado, se hace al encenderse)
     public static bool TocaDump(DateTime local, IEnumerable<string> existentes) =>
         local.Hour >= 3 && !existentes.Any(n => n.StartsWith($"{Prefijo}{local:yyyyMMdd}-", StringComparison.Ordinal) && n.EndsWith(".dump", StringComparison.Ordinal));
