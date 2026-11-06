@@ -3,6 +3,7 @@ using Mda.Api.Agenda;
 using Mda.Api.Avisos;
 using Mda.Api.Data;
 using Mda.Api.Domotica;
+using Mda.Api.Seguridad;
 using Mda.Api.Sistema;
 using Mda.Api.Tiempo;
 using Microsoft.EntityFrameworkCore;

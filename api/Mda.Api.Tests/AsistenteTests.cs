@@ -14,10 +14,10 @@ public class AsistenteTests(ModulosFactory factory) : IClassFixture<ModulosFacto
     private static readonly DateOnly Hoy = DateOnly.FromDateTime(Ahora);
     private static readonly TimeZoneInfo Madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
 
-    private static Contexto Ctx(Dictionary<string, string>? aprendido = null, params HuchaConocida[] huchas) =>
+    private static Mda.Api.Asistente.Contexto Ctx(Dictionary<string, string>? aprendido = null, params HuchaConocida[] huchas) =>
         new(Ahora, Madrid, aprendido ?? [], huchas);
 
-    private static Propuesta E(string t, Contexto? c = null) => Interprete.Entender(t, c ?? Ctx());
+    private static Propuesta E(string t, Mda.Api.Asistente.Contexto? c = null) => Interprete.Entender(t, c ?? Ctx());
 
     [Theory]
     [InlineData("ayer 12 € en el Mercadona", 12, "supermercado", "Mercadona", -1)]
