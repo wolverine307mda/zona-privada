@@ -93,7 +93,8 @@ builder.Services.AddScoped<ClaimsPrincipalAccessor>();
 
 builder.Services.ConfigureApplicationCookie(o =>
 {
-    o.Cookie.Name = "mda.sesion";
+    // App:CookieNombre distingue una copia de pruebas que comparte dirección con la real (las cookies no distinguen puertos)
+    o.Cookie.Name = LlamadasExternas.CookieSesion = builder.Configuration["App:CookieNombre"] is { Length: > 0 } nombreCookie ? nombreCookie : "mda.sesion";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict;
     // en producción la cookie solo viaja por HTTPS (el proxy, Tailscale Funnel, avisa con X-Forwarded-Proto)

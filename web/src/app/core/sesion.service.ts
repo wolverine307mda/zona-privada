@@ -12,6 +12,8 @@ export class SesionService {
   private readonly nombre = signal<string | null>(null);
   private comprobada = false;
 
+  // «pruebas» si esta API es una copia de pruebas (App:Entorno); null en la real
+  readonly entorno = signal<string | null>(null);
   readonly usuario = this.nombre.asReadonly();
   readonly dentro = computed(() => this.nombre() !== null);
   // true si la API no ha contestado (equipo apagado o sin red): no es lo mismo que «no hay sesión»
@@ -28,7 +30,8 @@ export class SesionService {
   // ¿sigue abierta la sesión? se pregunta al volver a la app (y al empezar); de paso se deja el bloqueo como lo pide este dispositivo
   async refrescar(): Promise<void> {
     try {
-      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null }>('/api/sesion'));
+      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null; entorno?: string | null }>('/api/sesion'));
+      this.entorno.set(yo.entorno ?? null);
       this.bloqueada.set(!!yo.bloqueada);
       this.bloqueoActual.set(yo.bloqueo ?? null);
       const local = this.bloqueoSegundos();
@@ -47,8 +50,9 @@ export class SesionService {
   async comprobar(): Promise<boolean> {
     if (this.comprobada) return this.dentro();
     try {
-      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null }>('/api/sesion'));
+      const yo = await firstValueFrom(this.http.get<{ usuario: string; bloqueada?: boolean; bloqueo?: number | null; entorno?: string | null }>('/api/sesion'));
       this.nombre.set(yo.usuario);
+      this.entorno.set(yo.entorno ?? null);
       this.bloqueada.set(!!yo.bloqueada);
       this.bloqueoActual.set(yo.bloqueo ?? null);
       const local = this.bloqueoSegundos();

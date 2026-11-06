@@ -44,6 +44,7 @@ const PESO_INICIAL: Record<string, number> = { inicio: 4, gastos: 3, agenda: 2, 
 })
 export class Shell {
   private readonly sesion = inject(SesionService);
+  protected readonly entorno = this.sesion.entorno;
   private readonly router = inject(Router);
   protected readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);

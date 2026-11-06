@@ -31,10 +31,12 @@ public static class AuthEndpoints
         var sesion = app.MapGroup("/api/sesion").RequireAuthorization();
 
         // quién soy (el front lo usa para saber si hay sesión)
-        sesion.MapGet("/", async (ClaimsPrincipal user, Data.AppDbContext db) =>
+        sesion.MapGet("/", async (ClaimsPrincipal user, Data.AppDbContext db, IConfiguration config) =>
         {
             var s = Sesiones.Actual(user) is { } sid ? await db.Sesiones.FindAsync(sid) : null;
-            return Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email), bloqueada = s?.Bloqueada ?? false, bloqueo = s?.BloquearTrasSegundos });
+            return Results.Ok(new { usuario = user.Identity?.Name, email = user.FindFirstValue(ClaimTypes.Email), bloqueada = s?.Bloqueada ?? false, bloqueo = s?.BloquearTrasSegundos,
+                // «pruebas», «desarrollo»…: la app lo enseña en una barra para no confundir una copia con la real
+                entorno = config["App:Entorno"] is { Length: > 0 } e ? e : null });
         });
 
         // cerrar sesión: borra la cookie
