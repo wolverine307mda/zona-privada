@@ -4,7 +4,7 @@ using Microsoft.Win32;
 // La salud del PC que ve la zona privada: espacio de cada unidad, estado de cada disco (Windows lo sabe por WMI: «Healthy»,
 // «Warning»…), temperatura y desgaste cuando el disco los da, y si Windows está esperando un reinicio.
 // Lo que el equipo no sepa dar (casi siempre la temperatura de un disco SATA antiguo) va a null y no es un error.
-record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura);
+record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura, long? ErroresEscritura = null, long? HorasEncendido = null);
 record VolumenSalud(string Nombre, long LibreBytes, long TotalBytes);
 record SaludPc(DateTimeOffset Hora, List<DiscoSalud> Discos, List<VolumenSalud> Volumenes, bool ReinicioPendiente, double? CpuTemperaturaC = null);
 
@@ -46,12 +46,12 @@ static class Salud
             var ambito = new ManagementScope(@"\\.\root\Microsoft\Windows\Storage");
             ambito.Connect();
             // temperatura y desgaste, por disco (si el disco los da)
-            var fiabilidad = new Dictionary<string, (double? Temp, int? Desgaste, long? Errores)>();
+            var fiabilidad = new Dictionary<string, (double? Temp, int? Desgaste, long? Errores, long? Escritura, long? Horas)>();
             try
             {
-                using var f = new ManagementObjectSearcher(ambito, new ObjectQuery("SELECT DeviceId, Temperature, Wear, ReadErrorsTotal FROM MSFT_StorageReliabilityCounter"));
+                using var f = new ManagementObjectSearcher(ambito, new ObjectQuery("SELECT DeviceId, Temperature, Wear, ReadErrorsTotal, WriteErrorsTotal, PowerOnHours FROM MSFT_StorageReliabilityCounter"));
                 foreach (ManagementObject o in f.Get())
-                    fiabilidad[Convert.ToString(o["DeviceId"]) ?? ""] = (Numero(o["Temperature"]), (int?)Numero(o["Wear"]), (long?)Numero(o["ReadErrorsTotal"]));
+                    fiabilidad[Convert.ToString(o["DeviceId"]) ?? ""] = (Numero(o["Temperature"]), (int?)Numero(o["Wear"]), (long?)Numero(o["ReadErrorsTotal"]), (long?)Numero(o["WriteErrorsTotal"]), (long?)Numero(o["PowerOnHours"]));
             }
             catch (ManagementException) { /* sin contadores de fiabilidad */ }
 
@@ -61,8 +61,8 @@ static class Salud
                 var id = Convert.ToString(o["DeviceId"]) ?? "";
                 var salud = o["HealthStatus"] is ushort h && h < Estados.Length ? Estados[h] : "Unknown";
                 var estado = o["OperationalStatus"] is ushort[] { Length: > 0 } ops ? ops[0] switch { 2 => "OK", 3 => "Degraded", 5 => "Error", var x => x.ToString() } : "OK";
-                var (temp, desgaste, errores) = fiabilidad.GetValueOrDefault(id);
-                l.Add(new DiscoSalud(id, Convert.ToString(o["FriendlyName"]) ?? "Disco", salud, estado, temp is > 0 and < 150 ? temp : null, desgaste is >= 0 and <= 100 ? desgaste : null, errores));
+                var (temp, desgaste, errores, escritura, horas) = fiabilidad.GetValueOrDefault(id);
+                l.Add(new DiscoSalud(id, Convert.ToString(o["FriendlyName"]) ?? "Disco", salud, estado, temp is > 0 and < 150 ? temp : null, desgaste is >= 0 and <= 100 ? desgaste : null, errores, escritura, horas is > 0 ? horas : null));
             }
         }
         catch (Exception e) when (e is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)

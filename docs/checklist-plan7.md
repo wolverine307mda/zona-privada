@@ -39,7 +39,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | ✅ **Hecha**: `Tiempo/Ropa.cs`, chip en Inicio, atajo y `/ropa` | 1 |
 | 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | «**No lo reconozco**» (cierra sesiones y avisa) y **mapa** con «última vez visto» | 1,5 |
-| 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | Atributos SMART útiles, aviso proactivo a N días y «qué ocupa» | 1 |
+| 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | ✅ **Hecha**: contadores extra, avisos a 45/14 días y desgaste 80 %, «Qué ocupa» (`Pc/Espacio.cs`, `agente/Espacio.cs`) | 1 |
 | 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | **App → PC** (subir desde el móvil) y **PC → móvil** con enlace que caduca | 2 |
 | 60 | Abrir y cerrar aplicaciones | `agente/Abrir.cs` (lista cerrada: calculadora, bloc, explorador) | **Catálogo de apps elegidas** (Claude…), y **cerrar** las que más gastan | 2 |
 | 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | **Temas completos** (papel, terminal, sepia, alto contraste, OLED…) | 2 |
@@ -180,12 +180,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 
 ## Fase C · PC y seguridad
 
-### ⬜ 58 · Salud del disco: lo que falta
+### ✅ 58 · Salud del disco: lo que falta
 - ✅ Ya hay: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART distinto de «Healthy» en `Pc.cs`.
-- ⬜ C58.1 El agente añade atributos útiles de `Get-StorageReliabilityCounter` (desgaste, temperatura, horas encendido, errores de lectura/escritura) al informe de salud (ya tiene permisos de administrador).
-- ⬜ C58.2 Aviso proactivo «El disco C: se llena en ~N días» (umbral 45 y 14 días, dedupe por umbral y unidad) y «desgaste del SSD > 80 %».
-- ⬜ C58.3 «Qué ocupa»: orden del agente `espacio` (solo lectura, con tope de profundidad y de tiempo) que devuelve las 15 carpetas más grandes de una raíz que elijas (nunca fuera de las unidades locales); pantalla con barras.
+- ✅ C58.1 El agente añade atributos útiles de `Get-StorageReliabilityCounter` (desgaste, temperatura, horas encendido, errores de lectura/escritura) al informe de salud (ya tiene permisos de administrador).
+- ✅ C58.2 Aviso proactivo «El disco C: se llena en ~N días» (umbral 45 y 14 días, dedupe por umbral y unidad) y «desgaste del SSD > 80 %».
+- ✅ C58.3 «Qué ocupa»: orden del agente `espacio` (solo lectura, con tope de profundidad y de tiempo) que devuelve las 15 carpetas más grandes de una raíz que elijas (nunca fuera de las unidades locales); pantalla con barras.
 - Riesgos: el análisis puede tardar → tiempo límite de 60 s y resultado parcial marcado como tal. Esfuerzo: 1 sesión.
+- Decisión: el agente ya mandaba temperatura, desgaste y errores de lectura; se añaden errores de escritura y horas encendido (opcionales, un agente viejo sigue valiendo). Avisos de llenado a 45 días (🟡) y a 14 (🟠, otro identificador para que avise de nuevo) y de desgaste desde el 80 %. «Qué ocupa»: orden `espacio` (solo se pide desde `POST /api/pc/espacio`, nunca por `/api/pc/ordenes`), la ruta se valida en la API y otra vez en el agente (solo unidades locales fijas, sin red ni `..`), sin entrar en enlaces ni uniones, 60 s de tope con resultado «parcial», 15 carpetas mayores + archivos sueltos. Tarjeta en Mi PC con barras. Sin migración (el último resultado va en `Ajustes`).
 
 ### ⬜ 49 · Dispositivos de confianza: «no lo reconozco» y mapa
 - ✅ Ya hay: tabla de equipos con `Confianza`, aviso de equipo o país nuevo, ubicación por IP (`GeoIp`).

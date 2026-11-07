@@ -12,7 +12,7 @@ namespace Mda.Api.Pc;
 
 // ---------------- salud del PC (lo manda el agente de Windows) ----------------
 
-public record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura);
+public record DiscoSalud(string Nombre, string Modelo, string Salud, string Estado, double? TemperaturaC, int? DesgastePct, long? ErroresLectura, long? ErroresEscritura = null, long? HorasEncendido = null);
 public record VolumenSalud(string Nombre, long LibreBytes, long TotalBytes);
 // CpuTemperaturaC: la de la zona térmica de Windows (ACPI); null si el equipo no la da
 public record SaludPc(DateTimeOffset Hora, IReadOnlyList<DiscoSalud> Discos, IReadOnlyList<VolumenSalud> Volumenes, bool ReinicioPendiente, double? CpuTemperaturaC = null);
@@ -78,7 +78,9 @@ public static class ReglasSalud
     // el procesador a 85 °C o más durante 5 minutos seguidos es calor de verdad, no un pico
     public const double CpuMaxima = 85;
     // se avisa de que un disco «se está llenando» cuando le quedan 30 días o menos
-    public const int DiasAvisoLlenado = 30;
+    // se avisa de que un disco «se está llenando» con 45 días o menos, y con más urgencia con 14 o menos
+    public const int DiasAvisoLlenado = 45, DiasAvisoLlenadoUrgente = 14;
+    public const int DesgasteAviso = 80;
     public static readonly TimeSpan CalienteMinimo = TimeSpan.FromMinutes(5);
 
     public static Dictionary<string, string> Evaluar(SaludPc s, DateTimeOffset? reinicioDesde, DateTimeOffset ahora, double? encendidoDias, DateTimeOffset? calienteDesde = null, IReadOnlyDictionary<string, int>? llenado = null)
@@ -92,14 +94,18 @@ public static class ReglasSalud
             else if (libre < 15) activas[$"disco-libre:{v.Nombre}"] = $"🟠 Disco {v.Nombre} al {100 - libre:0} %: quedan {gb:0.#} GB";
             // aún no está casi lleno, pero al ritmo de las últimas semanas lo estará pronto
             else if (llenado is not null && llenado.TryGetValue(v.Nombre, out var dias) && dias <= DiasAvisoLlenado)
-                activas[$"disco-llenando:{v.Nombre}"] = $"🟡 Al ritmo de las últimas semanas, el disco {v.Nombre} se llenará en unos {dias} días ({gb:0.#} GB libres)";
+            {
+                // un solo aviso activo por unidad: el urgente (14 días) sustituye al de 45 y vuelve a avisar por tener otro identificador
+                if (dias <= DiasAvisoLlenadoUrgente) activas[$"disco-llenando-ya:{v.Nombre}"] = $"🟠 El disco {v.Nombre} se llenará en ~{dias} días al ritmo actual ({gb:0.#} GB libres): libera espacio ya";
+                else activas[$"disco-llenando:{v.Nombre}"] = $"🟡 Al ritmo de las últimas semanas, el disco {v.Nombre} se llenará en unos {dias} días ({gb:0.#} GB libres)";
+            }
         }
         foreach (var d in s.Discos)
         {
             if (!string.Equals(d.Salud, "Healthy", StringComparison.OrdinalIgnoreCase) && d.Salud.Length > 0)
                 activas[$"disco-salud:{d.Nombre}"] = $"🔴 El disco {d.Modelo} ({d.Nombre}) no está sano: {d.Salud}. Haz copia de lo importante ya";
             if (d.TemperaturaC is >= 70) activas[$"disco-temp:{d.Nombre}"] = $"🟠 El disco {d.Modelo} está a {d.TemperaturaC:0} °C";
-            if (d.DesgastePct is >= 90) activas[$"disco-desgaste:{d.Nombre}"] = $"🟠 El disco {d.Modelo} lleva un {d.DesgastePct} % de desgaste";
+            if (d.DesgastePct is >= DesgasteAviso) activas[$"disco-desgaste:{d.Nombre}"] = $"🟠 El disco {d.Modelo} lleva un {d.DesgastePct} % de desgaste";
         }
         if (s.ReinicioPendiente && reinicioDesde is { } desde && ahora - desde > ReinicioMaximo)
             activas["reinicio"] = $"🟠 Windows lleva {(int)(ahora - desde).TotalDays} días pidiendo reiniciar para terminar actualizaciones";
@@ -114,7 +120,7 @@ public static class ReglasSalud
     {
         "disco-libre" => $"✅ Ya hay espacio en el disco {id[(id.IndexOf(':') + 1)..]}",
         "disco-salud" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} vuelve a estar sano",
-        "disco-llenando" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ya no se está llenando deprisa",
+        "disco-llenando" or "disco-llenando-ya" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ya no se está llenando deprisa",
         "disco-temp" => $"✅ El disco {id[(id.IndexOf(':') + 1)..]} ha bajado de temperatura",
         "cpu-temp" => "✅ El procesador ha bajado de temperatura",
         "disco-desgaste" => $"✅ El desgaste del disco {id[(id.IndexOf(':') + 1)..]} ya no es preocupante",
@@ -228,11 +234,11 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
-    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura", "ubicacion"];
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura", "ubicacion", "espacio"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
-    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad"];
+    public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad", "espacio"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
     public static readonly string[] Perfiles = ["equilibrado", "rendimiento", "ahorro", "cine"];
     public const int MaxAbrir = 300;
@@ -294,6 +300,7 @@ public static class OrdenesPc
         "abrir" => $"abrir en el PC: {o.Parametro}",
         "descargar" => $"descargar en el PC: {o.Parametro}",
         "velocidad" => "medir la velocidad de Internet",
+        "espacio" => $"ver qué ocupa en {o.Parametro}",
         "captura" => $"hacer una foto de {Capturas.TextoOrigen(o.Parametro.Split(':')[0])}",
         "ubicacion" => UbicacionIphone.Texto(o),
         _ => o.Tipo,

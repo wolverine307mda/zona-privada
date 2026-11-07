@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -65,6 +65,7 @@ static partial class Ordenes
             }
             if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
             if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
+            if (o.Tipo == "espacio") return await QueOcupa(o.Parametro, http, ct);
             if (o.Tipo == "captura") return await Captura.Hacer(o.Parametro, http, ct);
             if (o.Tipo == "ubicacion") return await Ubicacion.Hacer(o.Parametro, ct);
             // la descarga sigue en segundo plano y manda su resultado final a la misma orden cuando acaba
@@ -128,6 +129,22 @@ static partial class Ordenes
         if (d.Tipo == "url") Process.Start(new ProcessStartInfo("explorer.exe", d.Valor) { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
         else Process.Start(new ProcessStartInfo(d.Valor) { UseShellExecute = true })?.Dispose();
         return new(true, d.Tipo == "url" ? "dirección abierta en el navegador del PC" : $"{parametro.Trim().ToLowerInvariant()} abierto");
+    }
+
+    // «Qué ocupa»: cuenta las carpetas de una raíz (solo lectura, unidades locales, 60 s como mucho) y manda a la API las 15 mayores
+    static async Task<ResultadoOrden> QueOcupa(string parametro, HttpClient http, CancellationToken ct)
+    {
+        if (Espacio.RaizValida(parametro) is not { } raiz) return new(false, "carpeta no válida");
+        try
+        {
+            if (new DriveInfo(raiz[..1]).DriveType != DriveType.Fixed) return new(false, "solo se mira en unidades locales del PC");
+            if (!Directory.Exists(raiz)) return new(false, "esa carpeta no existe");
+            var r = await Task.Run(() => Espacio.Escanear(raiz), ct);
+            var enviado = await http.PostAsJsonAsync("/api/sistema/agente/espacio", r, ct);
+            var texto = $"{r.Carpetas.Count} carpetas en {r.Raiz}{(r.Parcial ? " (parcial: se cortó a los 60 s)" : "")}";
+            return enviado.IsSuccessStatusCode ? new(true, texto) : new(false, $"la API responde {(int)enviado.StatusCode}");
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or ArgumentException) { return new(false, "no se pudo mirar: " + e.Message); }
     }
 
     // Test de velocidad: mide contra Cloudflare (unos 35 MB) y manda a la API las tres cifras
