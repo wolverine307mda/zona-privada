@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewEncapsulation, effect, input, output, untracked, viewChild } from '@angular/core';
 import type * as Leaflet from 'leaflet';
+import { cargarLeaflet } from '../core/leaflet';
 import { Punto } from './ubicacion-logica';
 
 // El mapa de «Ubicación del iPhone»: tocas un sitio y queda elegido (pin del color de la paleta); el punto pulsante es donde está el iPhone ahora.
@@ -38,7 +39,7 @@ export class MapaUbicacion implements OnDestroy {
   }
 
   private async crear(el: HTMLDivElement): Promise<void> {
-    this.L ??= await import('leaflet');
+    this.L ??= await cargarLeaflet();
     if (this.mapa) return;
     const L = this.L;
     const inicio = this.iphone() ?? this.seleccion();

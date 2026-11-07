@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type * as Leaflet from 'leaflet';
 import { TemaService } from '../core/tema.service';
 import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
+import { cargarLeaflet } from '../core/leaflet';
 
 interface PuntoMapa { r: string; v: string; lat: number; lon: number; f: string | null; }
 interface RespuestaMapa { total: number; conGps: number; pendientes: number; indexado: boolean; puntos: PuntoMapa[]; }
@@ -89,7 +90,7 @@ export class MapaFotos implements OnDestroy {
 
   private async pintar(el: HTMLDivElement, pts: PuntoMapa[]): Promise<void> {
     if (!this.L) {
-      const leaflet = await import('leaflet');
+      const leaflet = await cargarLeaflet();
       // el plugin de agrupar espera encontrar L en el navegador
       (window as unknown as { L: unknown }).L = leaflet;
       await import('leaflet.markercluster');

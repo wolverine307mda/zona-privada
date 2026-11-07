@@ -3,6 +3,7 @@ import type * as Leaflet from 'leaflet';
 import { resolverColor } from '../core/color-css';
 import { TemaService } from '../core/tema.service';
 import { euros } from './modelo';
+import { cargarLeaflet } from '../core/leaflet';
 
 export interface ComercioMapa { nombre: string; total: number; pagos: number; }
 export interface ZonaMapa { lat: number; lon: number; total: number; pagos: number; comercios: ComercioMapa[]; }
@@ -36,7 +37,7 @@ export class MapaGasto implements OnDestroy {
   }
 
   private async pintar(el: HTMLDivElement, zonas: ZonaMapa[]): Promise<void> {
-    if (!this.L) this.L = await import('leaflet');
+    if (!this.L) this.L = await cargarLeaflet();
     const L = this.L;
     if (!this.mapa) {
       this.mapa = L.map(el, { worldCopyJump: true, zoomControl: true, attributionControl: true }).setView([40.4, -3.7], 5);

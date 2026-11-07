@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewEncapsulation, inject, signal, viewChild } from '@angular/core';
 import type * as Leaflet from 'leaflet';
 import { firstValueFrom } from 'rxjs';
+import { cargarLeaflet } from '../core/leaflet';
 
 interface Punto { tipo: 'equipo' | 'atajo'; nombre: string; lat: number; lon: number; pais: string; ciudad: string; confianza: boolean; sospechoso: boolean; visto: string | null; }
 interface Respuesta { disponible: boolean; aproximada: boolean; puntos: Punto[]; }
@@ -53,7 +54,7 @@ export class MapaEquipos implements OnDestroy {
   private async pintar(): Promise<void> {
     const el = this.contenedor()?.nativeElement, d = this.datos();
     if (!el || !d?.puntos.length) return;
-    const L = await import('leaflet');
+    const L = await cargarLeaflet();
     this.mapa?.remove();
     this.mapa = L.map(el, { worldCopyJump: true }).setView([40.4, -3.7], 3);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
