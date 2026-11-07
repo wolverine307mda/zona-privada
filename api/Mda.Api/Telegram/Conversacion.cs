@@ -83,6 +83,23 @@ public class Conversacion(
                     await bot.Enviar(await Mda.Api.Contexto.Dormir.Ejecutar(db, motorContexto, tiempo, zona, reloj, noche, ct), ct: ct);
                     return;
                 }
+            case "/agua":
+                {
+                    var hoyL = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
+                    var d = await Mda.Api.Bienestar.BienestarServicio.DiaDe(db, hoyL, ct);
+                    var nuevo = d with { Agua = Math.Min(Mda.Api.Bienestar.BienestarServicio.AguaMaxima, d.Agua + 1) };
+                    await Mda.Api.Bienestar.BienestarServicio.GuardarDia(db, hoyL, nuevo, ct);
+                    await bot.Enviar($"💧 {nuevo.Agua} {(nuevo.Agua == 1 ? "vaso" : "vasos")} de agua hoy.", ct: ct);
+                    return;
+                }
+            case "/entreno":
+                {
+                    var hoyL = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
+                    db.Entrenos.Add(new Mda.Api.Bienestar.EntrenoHecho { Fecha = hoyL, Datos = Mda.Api.Bienestar.BienestarServicio.Cif(new Mda.Api.Bienestar.EntrenoDatos("general", 0, null, "Desde Telegram", null)) });
+                    await db.SaveChangesAsync(ct);
+                    await bot.Enviar("💪 Entreno de hoy apuntado. ¡Bien!", ct: ct);
+                    return;
+                }
             case "/cumples":
                 await bot.Enviar(await Mda.Api.Personas.PersonasServicio.TextoCumples(db, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date), 6, ct), ct: ct);
                 return;

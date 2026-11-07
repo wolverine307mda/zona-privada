@@ -262,6 +262,31 @@ public static class AtajosApi
             return Results.Ok(new { mensaje = $"{p.Nombre} añadido." });
         }).Requiere("personas");
 
+        // Apple Salud por Atajos: un atajo diario manda pasos, peso, sueño (horas) y entrenos de hoy. Todo se guarda cifrado.
+        a.MapPost("/salud", async (Mda.Api.Bienestar.SaludAtajo e, AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        {
+            if (e.Peso is < 25 or > 400 || e.Sueño is < 0 or > 24 || e.Pasos is < 0 or > 100000 || (e.Entrenos?.Count ?? 0) > 10) return Results.BadRequest(new { mensaje = "Datos de salud que no cuadran." });
+            var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date);
+            var d = await Mda.Api.Bienestar.BienestarServicio.DiaDe(db, hoy, ct);
+            await Mda.Api.Bienestar.BienestarServicio.GuardarDia(db, hoy, d with { Sueño = e.Sueño ?? d.Sueño, Pasos = e.Pasos ?? d.Pasos }, ct);
+            if (e.Peso is { } peso)
+            {
+                var m = await db.Medidas.FirstOrDefaultAsync(x => x.Fecha == hoy, ct);
+                var datos = (m is null ? null : Mda.Api.Bienestar.BienestarServicio.Des<Mda.Api.Bienestar.MedidaDatos>(m.Datos)) ?? new Mda.Api.Bienestar.MedidaDatos(null, null, null, null, null);
+                var nuevo = Mda.Api.Bienestar.BienestarServicio.Cif(datos with { Peso = peso });
+                if (m is null) db.Medidas.Add(new Mda.Api.Bienestar.MedidaCuerpo { Fecha = hoy, Datos = nuevo }); else m.Datos = nuevo;
+            }
+            // un entreno de Apple Salud no se duplica si ya apuntaste uno del mismo tipo y duración hoy
+            foreach (var en in e.Entrenos ?? [])
+            {
+                var tipo = (en.Tipo ?? "general").Trim(); tipo = tipo[..Math.Min(tipo.Length, 40)];
+                var yaHay = (await db.Entrenos.Where(x => x.Fecha == hoy).ToListAsync(ct)).Any(x => Mda.Api.Bienestar.BienestarServicio.Des<Mda.Api.Bienestar.EntrenoDatos>(x.Datos) is { } ed && ed.Tipo == tipo && ed.Minutos == (en.Minutos ?? 0));
+                if (!yaHay) db.Entrenos.Add(new Mda.Api.Bienestar.EntrenoHecho { Fecha = hoy, Datos = Mda.Api.Bienestar.BienestarServicio.Cif(new Mda.Api.Bienestar.EntrenoDatos(tipo, Math.Clamp(en.Minutos ?? 0, 0, 600), null, "Apple Salud", null)) });
+            }
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(new { mensaje = "Salud de hoy guardada." });
+        }).Requiere("salud");
+
         // Un momento musical por su nombre («Concentración», «Dormir»…): {"nombre":"Dormir"} pone a sonar su lista
         a.MapPost("/momento", async (Mda.Api.Conexiones.MomentoAtajo e, AppDbContext db, Mda.Api.Conexiones.ServicioConexiones con, CancellationToken ct) =>
         {

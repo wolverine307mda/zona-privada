@@ -49,6 +49,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Cocina.IngredienteReceta> IngredientesReceta => Set<Mda.Api.Cocina.IngredienteReceta>();
     public DbSet<Mda.Api.Cocina.MenuDia> MenuDias => Set<Mda.Api.Cocina.MenuDia>();
     public DbSet<Mda.Api.Series.Titulo> Titulos => Set<Mda.Api.Series.Titulo>();
+    public DbSet<Mda.Api.Bienestar.PerfilBienestar> PerfilesBienestar => Set<Mda.Api.Bienestar.PerfilBienestar>();
+    public DbSet<Mda.Api.Bienestar.PlanEntreno> PlanesEntreno => Set<Mda.Api.Bienestar.PlanEntreno>();
+    public DbSet<Mda.Api.Bienestar.MedidaCuerpo> Medidas => Set<Mda.Api.Bienestar.MedidaCuerpo>();
+    public DbSet<Mda.Api.Bienestar.EntrenoHecho> Entrenos => Set<Mda.Api.Bienestar.EntrenoHecho>();
+    public DbSet<Mda.Api.Bienestar.RegistroDia> RegistrosDia => Set<Mda.Api.Bienestar.RegistroDia>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -302,6 +307,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
         });
+        // bienestar: cada fila lleva un JSON cifrado con la bóveda (la fecha queda en claro para ordenar)
+        b.Entity<Mda.Api.Bienestar.PerfilBienestar>(e => { e.ToTable("bienestar_perfil"); });
+        b.Entity<Mda.Api.Bienestar.PlanEntreno>(e => { e.ToTable("bienestar_planes"); });
+        b.Entity<Mda.Api.Bienestar.MedidaCuerpo>(e => { e.ToTable("bienestar_medidas"); e.HasIndex(x => x.Fecha).IsUnique(); });
+        b.Entity<Mda.Api.Bienestar.EntrenoHecho>(e => { e.ToTable("bienestar_entrenos"); e.HasIndex(x => x.Fecha); });
+        b.Entity<Mda.Api.Bienestar.RegistroDia>(e => { e.ToTable("bienestar_dias"); e.HasIndex(x => x.Fecha).IsUnique(); });
         b.Entity<Mda.Api.Series.Titulo>(e =>
         {
             e.ToTable("titulos");

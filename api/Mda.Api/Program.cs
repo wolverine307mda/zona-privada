@@ -392,6 +392,7 @@ Mda.Api.Conexiones.Momentos.MapMomentos(app);
 Mda.Api.Personas.PersonasEndpoints.MapPersonas(app);
 Mda.Api.Cocina.CocinaEndpoints.MapCocina(app);
 Mda.Api.Series.SeriesEndpoints.MapSeries(app);
+Mda.Api.Bienestar.BienestarEndpoints.MapBienestar(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

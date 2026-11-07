@@ -387,6 +387,114 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("push", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Bienestar.EntrenoHecho", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.ToTable("bienestar_entrenos", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Bienestar.MedidaCuerpo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha")
+                        .IsUnique();
+
+                    b.ToTable("bienestar_medidas", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Bienestar.PerfilBienestar", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("bienestar_perfil", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Bienestar.PlanEntreno", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Inicio")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("bienestar_planes", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Bienestar.RegistroDia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Datos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha")
+                        .IsUnique();
+
+                    b.ToTable("bienestar_dias", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Cocina.IngredienteReceta", b =>
                 {
                     b.Property<int>("Id")

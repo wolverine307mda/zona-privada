@@ -82,6 +82,10 @@ export const MODULOS: Modulo[] = [
     icono: 'M4 6h16v11H4zM8 21h8M12 17v4',
   },
   {
+    id: 'bienestar', titulo: 'Bienestar', resumen: 'Ejercicio, sueño y un plan a tu ritmo (ayuda personal, no consejo médico).', listo: true,
+    icono: 'M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1l8.8 8.8 8.8-8.8a5 5 0 0 0 0-7.1z',
+  },
+  {
     id: 'automatizaciones', titulo: 'Automatizaciones', resumen: 'Si pasa esto (disco lleno, gasto alto…), haz aquello.', listo: true,
     icono: 'M13 2 4 14h7l-1 8 9-12h-7z',
   },
@@ -126,7 +130,7 @@ export const MODULOS: Modulo[] = [
 ];
 
 const GRUPOS_DEF = [
-  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'compra', 'agenda', 'tareas', 'papeles', 'habitos', 'personas', 'cocina', 'series', 'notas'] },
+  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'compra', 'agenda', 'tareas', 'papeles', 'habitos', 'personas', 'cocina', 'series', 'bienestar', 'notas'] },
   { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
   { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'pared', 'contexto', 'servicios', 'automatizaciones', 'documentos', 'seguridad'] },
 ];
