@@ -358,12 +358,12 @@ Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es 
 - Riesgos: iOS refresca los widgets cuando quiere; se dice en la guía. Un widget nativo propio **no** es posible con una PWA (ya está documentado). Esfuerzo: 1 sesión.
 - Decisión: `Atajos/Hoy.cs` suma un bloque `compacto` (`saldoTexto`, `proximo`, `presupuestoPct`, `tareasHoy`, `cumple`, `entrenoHoy`) **sin tocar los campos antiguos** (prueba de que siguen). `herramientas/ios/hoy-widget.js` dibuja los accesorios rectangular, circular (anillo) y en línea además del widget de la pantalla de inicio, guarda la respuesta 15 minutos en el iPhone y sin conexión enseña lo último con «hace 40 min»; el token sigue en el llavero. `herramientas/ios/probar-widget.js` ejecuta el script en Node con unos Scriptable de mentira (todas las familias, servidor antiguo, caché, sin red, respuestas raras). Guía de la pantalla de bloqueo en `LEEME.md`. **No he podido ver los widgets en un iPhone real** (solo la prueba en Node), y las capturas de la guía no están hechas.
 
-### ⬜ 89 · Bienvenida personal
-- ⬜ F89.1 Generador puro `Bienvenida.Componer(contexto)` con **semilla por fecha** (la frase no cambia al recargar): estación, hora, día de la semana, festivos nacionales, cumpleaños de hoy (13), **algo de ayer** (gasto más alto, racha de hábitos, entreno, foto), el tiempo y la luna.
-- ⬜ F89.2 Biblioteca de frases por situación (50–80, en español, sin cursilería), con variantes por hora y por estado de ánimo del día anterior si lo registras.
-- ⬜ F89.3 Se muestra en el héroe de Inicio y como subtítulo del saludo; opción «bienvenida sencilla» para quien no la quiera.
-- ⬜ F89.4 Tests: cada combinación produce una frase, sin repetir la de ayer, y el cumpleaños manda sobre lo demás.
-- Esfuerzo: 1 sesión.
+### ✅ 89 · Bienvenida personal
+- ✅ F89.1 `web/src/app/inicio/bienvenida.ts`: `componer(contexto)` puro con semilla por fecha (misma fecha y contexto = misma frase; dos días seguidos en la misma situación nunca repiten). Entran cumpleaños de hoy, festivos nacionales (fijos + Viernes Santo), gasto de ayer, racha, entreno, ánimo, luna (calculada), lluvia/calor/frío, día de la semana, estación y hora.
+- ✅ F89.2 Biblioteca de ~85 frases en español en `FRASES`, sin exclamaciones a voces.
+- ✅ F89.3 `bienvenida-frase.ts` sustituye el subtítulo del héroe de Inicio; el botón ✕/✎ pasa a «bienvenida sencilla» (el texto de siempre) y se recuerda en el navegador.
+- ✅ F89.4 `bienvenida.spec.ts`: cada combinación da frase, no repite de un día a otro (300 días), el cumpleaños manda sobre el festivo y los datos.
+- Decisión: de momento el front solo alimenta cumpleaños (de `/api/personas/proximos`); gasto de ayer, racha, entreno, ánimo y tiempo ya están soportados por `componer` pero **no se piden aún a la API** (falta un endpoint `bienvenida-datos`). Hoy salen cumple, festivo, luna, día, estación y hora.
 
 ### ⬜ 81 · Constructor visual de reglas
 - ⬜ F81.1 **Modelo unificado** de regla en el front (disparador → condiciones → acciones) que se traduce a lo que ya existe: `ReglaCasa`, `ReglaContexto` y `Automatizaciones` (`Disparadores`). No se rompe nada guardado; el constructor lee y escribe lo mismo.
