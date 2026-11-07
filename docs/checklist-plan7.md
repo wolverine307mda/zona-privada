@@ -43,7 +43,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | ✅ **Hecha**: `Pc/Transferencias.cs` y tarjeta «Archivos entre la app y el PC» | 2 |
 | 60 | Abrir y cerrar aplicaciones | `agente/Abrir.cs` (lista cerrada: calculadora, bloc, explorador) | ✅ **Hecha**: `Pc/AppsPc.cs`, `agente/AppsPc.cs` y tarjeta Aplicaciones en Mi PC | 2 |
 | 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | ✅ **Hecha**: `core/temas.ts`, `TemaService` y Ajustes › Tema | 2 |
-| 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | Registro de tarjetas, **arrastrar/ocultar/tamaño** y varias vistas | 3 |
+| 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | ✅ **Hecha**: `inicio/diseno.ts`, `personalizar-inicio.ts` y `/api/inicio/diseno` | 3 |
 | 69 | Widget en la pantalla de bloqueo | `/api/atajos/hoy` y `herramientas/ios/hoy-widget.js` (Scriptable) | Versión **de pantalla de bloqueo** (accesorios) y contenido nuevo | 1 |
 | 70 | Tipografía y densidad | nada | ✅ **Hecha**: `core/aspecto.ts` y Ajustes › Letra y espacio | 1 |
 | 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | ✅ **Hecha**: `shell/senales-fondo.ts` y ajuste «Reaccionar a» en Fondo | 1,5 |
@@ -339,14 +339,15 @@ Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es 
 - Riesgos: layouts de 3D y gráficas con medidas fijas → se prueban uno a uno. Esfuerzo: 1 sesión.
 - Decisión: `core/aspecto.ts` (cuentas puras probadas) y Ajustes › Letra y espacio, por dispositivo: tamaño de letra 90–130 % (de 5 en 5, sobre el tamaño raíz: escala lo que va en rem), densidad compacta/cómoda/amplia (reescribe `--esp-1…7` y `--hueco`, y las tarjetas `.caja` toman su aire de `data-densidad`) y fuente (la de siempre, del sistema o de lectura con serifas). Comprobado en el navegador a 130 % + amplia + fuente de lectura a 375 px: sin desbordes. **Distinto de lo previsto**: la fuente «de lectura» usa una pila de fuentes serif del sistema (Charter/Cambria/Georgia) porque no he podido descargar ni incluir una fuente libre sin red; el barrido de `px` a `rem` solo se ha hecho en lo común y las gráficas y escenas 3D de medida fija no escalan.
 
-### ⬜ 68 · Inicio personalizable
-- ⬜ F68.1 **Registro de tarjetas**: cada tarjeta de `panel.html` pasa a ser una entrada (`id`, título, componente, tamaños permitidos, condiciones: «solo si hay Spotify»). Las nuevas (cumpleaños, comidas, bienestar, series, garantías) se registran aquí.
-- ⬜ F68.2 **Distribución** guardada en el servidor (JSON, como `PanelCasa`): orden, visibilidad y tamaño por tarjeta, y **una por tipo de dispositivo** (ordenador y móvil), con «Restablecer».
-- ⬜ F68.3 **Modo edición**: arrastrar con `@angular/cdk/drag-drop` (con asa y con teclado para accesibilidad), ocultar y cambiar de tamaño S/M/L.
+### ✅ 68 · Inicio personalizable
+- ✅ F68.1 **Registro de tarjetas**: cada tarjeta de `panel.html` pasa a ser una entrada (`id`, título, componente, tamaños permitidos, condiciones: «solo si hay Spotify»). Las nuevas (cumpleaños, comidas, bienestar, series, garantías) se registran aquí.
+- ✅ F68.2 **Distribución** guardada en el servidor (JSON, como `PanelCasa`): orden, visibilidad y tamaño por tarjeta, y **una por tipo de dispositivo** (ordenador y móvil), con «Restablecer».
+- ✅ F68.3 **Modo edición**: arrastrar con `@angular/cdk/drag-drop` (con asa y con teclado para accesibilidad), ocultar y cambiar de tamaño S/M/L.
 - ⬜ F68.4 **Vistas**: «Día», «Noche», «Trabajo»… con cambio manual o automático por hora/escena (reutiliza el contexto de la 39).
 - ⬜ F68.5 `Modo pared` comparte el registro (mismas tarjetas, otra distribución).
-- ⬜ F68.6 Tests del modelo de distribución (migrar una vieja, tarjeta que desaparece, tarjeta nueva sin hueco) y de que el orden por defecto es el actual.
+- ✅ F68.6 Tests del modelo de distribución (migrar una vieja, tarjeta que desaparece, tarjeta nueva sin hueco) y de que el orden por defecto es el actual.
 - Riesgos: romper el mosaico fluido actual → se mantiene la lógica de `flex-wrap` y solo cambia el orden y la visibilidad. Esfuerzo: 3 sesiones.
+- Decisión: `inicio/diseno.ts` (modelo puro con 7 pruebas: migrar una distribución vieja o rara, quitar tarjetas que ya no existen, añadir las nuevas al final sin hueco, mover/ocultar/tamaño, el orden por defecto es el de siempre) y `inicio/personalizar-inicio.ts`. La distribución (orden, visibles y tamaño S/M/L) va al servidor (`GET/PUT/DELETE /api/inicio/diseno/{pc|movil}`, en `Ajustes`, con `Restablecer`), **una por tipo de dispositivo**. Para no romper el mosaico fluido de `flex-wrap` no se reescribe `panel.html`: cada tarjeta se reconoce por su etiqueta, sus clases y su enlace (`idDeTarjeta`) y se le pone `order`, `display` y `flex-basis` en vivo, con un `MutationObserver` para las que salen cuando llegan sus datos. Sin personalizar, no se toca nada. Verificado en el navegador: subir/bajar y ocultar cambian las tarjetas reales. **Distinto de lo previsto**: se mueve con botones ▲ ▼ (accesibles con teclado) y no arrastrando, porque `@angular/cdk` no está instalado y no he podido añadirlo. **No incluido**: las vistas Día/Noche/Trabajo (F68.4) y que el modo pared comparta el registro (F68.5).
 
 ### ⬜ 69 · Widget en la pantalla de bloqueo del iPhone
 - ✅ Ya hay: `GET /api/atajos/hoy`, `herramientas/ios/hoy-widget.js` (Scriptable) y `LEEME.md`.

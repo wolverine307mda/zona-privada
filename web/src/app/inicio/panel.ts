@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CuentaAtras } from './cuenta-atras';
+import { PersonalizarInicio } from './personalizar-inicio';
 import { CumplesChip } from './cumples-chip';
 import { RopaChip } from './ropa-chip';
 import { Tiempo } from './tiempo';
@@ -27,7 +28,7 @@ interface EstadoPcInicio { agenteConectado: boolean; salud: { volumenes: { nombr
 // y, si su sección aún no tiene datos, invita a empezar.
 @Component({
   selector: 'app-panel',
-  imports: [RouterLink, Tiempo, CuentaAtras, RopaChip, CumplesChip],
+  imports: [RouterLink, Tiempo, CuentaAtras, RopaChip, CumplesChip, PersonalizarInicio],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
