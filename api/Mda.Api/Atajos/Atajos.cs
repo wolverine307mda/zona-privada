@@ -228,12 +228,14 @@ public static class AtajosApi
         }).Requiere("gasto");
 
         // «Llegué a casa» / «Me voy»: una automatización por lugar del iPhone manda {"estado":"llegada"} o {"estado":"salida"}
-        a.MapPost("/casa", async (CasaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, Mda.Api.Contexto.MotorContexto contexto, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
+        a.MapPost("/casa", async (CasaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, Mda.Api.Contexto.MotorContexto contexto, Mda.Api.Domotica.ServicioCasa casa, Bot bot, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
         {
             var estado = (e.Estado ?? "").ToLowerInvariant();
             // además de lo de siempre, se apunta dónde estás y se aplican tus escenas por contexto (aunque el agente del PC no esté en marcha)
             if (estado is "llegada" or "salida") await contexto.Evento(db, estado == "llegada" ? "llego" : "salgo", ct);
             var (ok, mensaje) = await Mda.Api.Pc.Casa.Aplicar(estado, db, agente, avisos, reloj, "Atajo · " + IpCliente.De(ctx), ct);
+            // al salir, además, la comprobación de la casa: puertas abiertas y aparatos que se quedan encendidos
+            if (estado == "salida") { var salida = await Mda.Api.Contexto.SalidaCasa.Ejecutar(db, casa, bot, reloj.GetUtcNow(), ct); mensaje = ok ? $"{mensaje} {salida}" : salida; return Results.Ok(new { mensaje }); }
             return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
         }).Requiere("casa");
 

@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
+import { SalidaCasa } from './salida-casa';
 
 interface Regla {
   id: number; nombre: string; activa: boolean; evento: 'llego' | 'salgo' | 'hora'; desde: string | null; hasta: string | null; dias: number; tiempo: string;
@@ -23,7 +24,7 @@ const TIEMPOS: Record<string, string> = { '': 'Da igual el tiempo', lluvia: 'Si 
 @Component({
   selector: 'app-contexto',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EstadoError, EstadoVacio, Esqueleto],
+  imports: [EstadoError, EstadoVacio, Esqueleto, SalidaCasa],
   styleUrls: ['../gastos/comun.css', '../gastos/dialogos.css'],
   template: `
     <header class="cab">
@@ -80,6 +81,8 @@ const TIEMPOS: Record<string, string> = { '': 'Da igual el tiempo', lluvia: 'Si 
         </ol>
       </details>
     }
+
+    <app-salida-casa />
 
     <dialog class="dlg" #dialogo (click)="fuera($event)" (close)="cerrado()" aria-labelledby="dlg-regla">
       <form class="dlg__caja" (submit)="guardar($event)" novalidate>

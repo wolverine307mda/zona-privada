@@ -34,7 +34,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
 | 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | Evento `duermo`, comprobaciones y mensaje al Atajo | 1,5 |
-| 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | **Lista de comprobación** (ventanas, estufas, aparatos encendidos) | 1 |
+| 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | ✅ **Hecha**: `Contexto/SalidaCasa.cs`, atajo «salida» con comprobación y editor en Escenas | 1 |
 | 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | ✅ **Hecha**: `Domotica/ClimaCasa.cs` y pantalla «Clima» en Casa (los avisos de moho/frío, a mano con Automatizaciones) | 1,5 |
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | Marca «ropa tendida», aviso **minutos antes** de la lluvia | 1 |
@@ -151,12 +151,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: aparatos sin estancia → se muestran en «Sin asignar». Esfuerzo: 1,5 sesiones.
 - Decisión: `Domotica/ClimaCasa.cs` guarda el resumen por día en `casa_resumen_dia` (migración `ResumenClimaCasa`) justo antes de borrar las lecturas de más de 30 días, y poda a 400. `GET /api/domotica/clima?dias=` (1–400; hasta 30 usa las lecturas y más usa el resumen) y `/clima/csv`. Pantalla «Clima» dentro de Casa (botón junto a Automatizaciones). Pendiente de B41.4: las reglas `SoloAvisar` precreadas desde la pantalla de clima (se pueden crear ya a mano en Automatizaciones con el dato de humedad o temperatura).
 
-### ⬜ 40 · Salgo de casa con lista de comprobación
-- ⬜ B40.1 Al llegar el evento `salgo` (ya existe), calcular la **lista**: sensores de puerta/ventana abiertos, aparatos encendidos que no deberían (según una lista que eliges: plancha, estufa, luces) y el PC (que ya se bloquea).
-- ⬜ B40.2 Respuesta del atajo `POST /api/atajos/modo {modo:"salir"}`: «Hasta luego. Ojo: ventana del salón abierta; plancha encendida» (o «Todo cerrado»). Con «apagar automáticamente lo de la lista» opcional (nunca la nevera ni lo marcado como «siempre encendido»).
-- ⬜ B40.3 Notificación de Telegram con botones «Apagar la plancha» por aparato.
-- ⬜ B40.4 Pantalla: en Escenas solas, el editor de «qué comprobar al salir» y el historial de las últimas salidas.
+### ✅ 40 · Salgo de casa con lista de comprobación
+- ✅ B40.1 Al llegar el evento `salgo` (ya existe), calcular la **lista**: sensores de puerta/ventana abiertos, aparatos encendidos que no deberían (según una lista que eliges: plancha, estufa, luces) y el PC (que ya se bloquea).
+- ✅ B40.2 Respuesta del atajo `POST /api/atajos/modo {modo:"salir"}`: «Hasta luego. Ojo: ventana del salón abierta; plancha encendida» (o «Todo cerrado»). Con «apagar automáticamente lo de la lista» opcional (nunca la nevera ni lo marcado como «siempre encendido»).
+- ✅ B40.3 Notificación de Telegram con botones «Apagar la plancha» por aparato.
+- ✅ B40.4 Pantalla: en Escenas solas, el editor de «qué comprobar al salir» y el historial de las últimas salidas.
 - Riesgos: apagar algo importante → solo apaga lo explícitamente marcado. Esfuerzo: 1 sesión.
+- Decisión: se engancha al atajo que ya existe (`POST /api/atajos/casa` con `estado: salida`), no a uno nuevo. Solo se apaga lo que marcas en «Al salir de casa» (Escenas) y solo con «Apagarlos yo» activado; las puertas se avisan siempre. Los botones de Telegram reutilizan «Apagar» del aviso de aparatos encendidos. Un dato de más de 1 h no cuenta (sensor caído). Historial de las últimas 10 salidas en `Ajustes`. Sin migración. Falta (poco valor): la lista «siempre encendido» (no hace falta: solo se toca lo marcado).
 
 ### ⬜ 39 · Modo «me voy a dormir»
 - ⬜ B39.1 Evento `duermo` en `ReglaContexto` (y `despierto`) con las mismas condiciones de franja/días; el disparo viene del Atajo (automatización de la Concentración «Dormir» del iPhone), de Telegram (`/buenas noches`) o de un botón en Inicio.
