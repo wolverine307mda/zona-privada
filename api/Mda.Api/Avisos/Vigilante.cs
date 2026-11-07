@@ -64,6 +64,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Mda.Api.Pc.Transferencias.Limpiar(db, config, reloj.GetUtcNow(), ct), "la bandeja temporal");
         await Aislada(() => Mda.Api.Sistema.SaludApp.Foto(db, DateOnly.FromDateTime(Local), ct), "el tamaño de las tablas");
         await Aislada(() => Mda.Api.Personas.PersonasServicio.AvisarCumples(db, avisos, DateOnly.FromDateTime(Local), log, ct), "los cumpleaños");
+        await Aislada(() => Mda.Api.Cocina.CocinaServicio.AvisarHoy(db, avisos, Local, ct), "lo que toca cocinar");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)

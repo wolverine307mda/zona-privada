@@ -31,7 +31,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | ✅ **Hecha**: `Papeles/Garantias.cs`, sección «Garantías y devoluciones» en Papeles | 1,5 |
 | 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | ✅ **Hecha**: `Gastos/Carburantes.cs`, tarjeta «Dónde repostar» en Gasolina | 1,5 |
 | 13 | Contactos: cumpleaños, datos y gustos | nada | ✅ **Hecha**: `Personas/Personas.cs` y pantalla «Personas» | 3 |
-| 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
+| 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | ✅ **Hecha**: `Cocina/` y pantalla «Cocina» | 3 |
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
 | 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | ✅ **Hecha**: `Contexto/Dormir.cs`, eventos `duermo`/`despierto` y atajo `/api/atajos/dormir` | 1,5 |
 | 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | ✅ **Hecha**: `Contexto/SalidaCasa.cs`, atajo «salida» con comprobación y editor en Escenas | 1 |
@@ -280,14 +280,15 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: datos de otras personas → cifrado, PIN opcional y borrado completo desde la pantalla. Esfuerzo: 3 sesiones.
 - Decisión: `Personas/Personas.cs` (tablas `personas` y `regalos_persona`, migración `Personas`; teléfonos, correos, dirección y notas cifrados con la bóveda). Parser vCard puro (líneas plegadas, QUOTED-PRINTABLE, `BDAY` en 4 formatos, año 1604 de Apple ignorado, varios teléfonos, una tarjeta mala no tumba las demás). Importación en dos pasos —vista previa con duplicados por teléfono/correo/nombre y luego solo lo marcado, con «solo nombre y cumpleaños» o «también contacto»—. Cumpleaños con aviso a 14, 7 y 1 días y el día mismo (sin repetir, 29 de febrero → 28), chip «Próximos cumpleaños» en Inicio y `/cumples` en Telegram. Ideas de regalo por reglas (gustos × presupuesto × lo regalado en 3 años, hasta 5, sin IA). Atajo `/api/atajos/persona` con el permiso nuevo «personas» (y «salud» ya creado para la 19). **No incluido**: importar de Google Contactos (E13.2.3), el cumple de cada persona como evento virtual de Agenda, y «El asistente entiende el cumple de María…». Borrado completo desde la ficha.
 
-### ⬜ 17 · Planificador de comidas
-- ⬜ E17.1 Tablas `Receta` (nombre, raciones, tiempo, etiquetas, pasos, `Origen`), `IngredienteReceta` (nombre, cantidad, unidad) y `MenuDia` (fecha, comida/cena, receta o texto libre).
-- ⬜ E17.2 **Importar receta desde una dirección** leyendo el marcado `schema.org/Recipe` (JSON-LD) que usan casi todas las webs de cocina, sin servicios externos. Parser puro con tests sobre ejemplos reales guardados.
-- ⬜ E17.3 **Generador de menú semanal** (reglas): respeta etiquetas («rápida», «vegetariana»), alergias y gustos, no repite en 14 días y reparte «días de sobras». Siempre editable arrastrando.
-- ⬜ E17.4 **Lista de la compra automática**: suma los ingredientes de la semana, quita lo que ya hay (`Compra` sabe lo que sueles tener) y la envía a `Compra` con la etiqueta de la receta. Tests de unidades (g/kg, ml/l, «un poco»).
-- ⬜ E17.5 Pantalla «Cocina»: semana en cuadrícula, receta con raciones ajustables y «cocinar hoy» (pasos grandes, para el móvil en la cocina, sin que se apague la pantalla).
+### ✅ 17 · Planificador de comidas
+- ✅ E17.1 Tablas `Receta` (nombre, raciones, tiempo, etiquetas, pasos, `Origen`), `IngredienteReceta` (nombre, cantidad, unidad) y `MenuDia` (fecha, comida/cena, receta o texto libre).
+- ✅ E17.2 **Importar receta desde una dirección** leyendo el marcado `schema.org/Recipe` (JSON-LD) que usan casi todas las webs de cocina, sin servicios externos. Parser puro con tests sobre ejemplos reales guardados.
+- ✅ E17.3 **Generador de menú semanal** (reglas): respeta etiquetas («rápida», «vegetariana»), alergias y gustos, no repite en 14 días y reparte «días de sobras». Siempre editable arrastrando.
+- ✅ E17.4 **Lista de la compra automática**: suma los ingredientes de la semana, quita lo que ya hay (`Compra` sabe lo que sueles tener) y la envía a `Compra` con la etiqueta de la receta. Tests de unidades (g/kg, ml/l, «un poco»).
+- ✅ E17.5 Pantalla «Cocina»: semana en cuadrícula, receta con raciones ajustables y «cocinar hoy» (pasos grandes, para el móvil en la cocina, sin que se apague la pantalla).
 - ⬜ E17.6 Aviso diario «Hoy toca: …; descongela X» a la hora que elijas.
 - Riesgos: unidades mezcladas → normalización con tabla pequeña y revisión manual. Esfuerzo: 3 sesiones.
+- Decisión: `Cocina/` (tablas `recetas`, `ingredientes_receta` y `menu_dias`, migración `Cocina`). Lectura de recetas de una web con el JSON-LD de schema.org (grafos, listas, secciones, duraciones ISO, raciones) y SSRF cerrado: solo http(s) públicas, sin credenciales ni puertos raros, se resuelve el DNS antes de pedir y cada redirección se vuelve a comprobar, 2 MB como máximo. Ingredientes con cantidad/unidad normalizada (g/kg, ml/l, fracciones, «½»), suma entre recetas con el factor de raciones. Generador semanal por reglas (todas las etiquetas pedidas, alergias por nombre/ingrediente/etiqueta sin tildes, 14 días sin repetir con reserva escalonada, días de sobras repartidos, semilla repetible). `POST /api/cocina/menu/compra` suma y manda a Compra sin repetir lo pendiente. Aviso diario «Hoy toca…» a la hora elegida. Pantalla Cocina con semana, recetas, «Cocinar» con pasos grandes y pantalla encendida. **No incluido**: arrastrar para cambiar el menú (se edita por casilla), restar lo que ya hay en casa más allá de lo pendiente en Compra, y el «descongela X». Las alergias se escriben como en las recetas (plural/singular importan).
 
 ### ⬜ 79 · Series y películas
 - ⬜ E79.1 Tablas `Titulo` (tipo, id externo, nombre, estado: por ver · viendo · vista, temporada/episodio, nota, plataforma, fecha del próximo episodio o estreno).

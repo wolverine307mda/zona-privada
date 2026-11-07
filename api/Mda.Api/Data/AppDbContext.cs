@@ -45,6 +45,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Conexiones.MomentoMusical> Momentos => Set<Mda.Api.Conexiones.MomentoMusical>();
     public DbSet<Mda.Api.Personas.Persona> Personas => Set<Mda.Api.Personas.Persona>();
     public DbSet<Mda.Api.Personas.RegaloPersona> Regalos => Set<Mda.Api.Personas.RegaloPersona>();
+    public DbSet<Mda.Api.Cocina.Receta> Recetas => Set<Mda.Api.Cocina.Receta>();
+    public DbSet<Mda.Api.Cocina.IngredienteReceta> IngredientesReceta => Set<Mda.Api.Cocina.IngredienteReceta>();
+    public DbSet<Mda.Api.Cocina.MenuDia> MenuDias => Set<Mda.Api.Cocina.MenuDia>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -297,6 +300,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Cocina.Receta>(e =>
+        {
+            e.ToTable("recetas");
+            e.Property(x => x.Nombre).HasMaxLength(120);
+            e.Property(x => x.Etiquetas).HasMaxLength(400);
+            e.Property(x => x.Origen).HasMaxLength(300);
+        });
+        b.Entity<Mda.Api.Cocina.IngredienteReceta>(e =>
+        {
+            e.ToTable("ingredientes_receta");
+            e.Property(x => x.Nombre).HasMaxLength(120);
+            e.Property(x => x.Unidad).HasMaxLength(20);
+            e.Property(x => x.Texto).HasMaxLength(200);
+            e.HasIndex(x => x.RecetaId);
+        });
+        b.Entity<Mda.Api.Cocina.MenuDia>(e =>
+        {
+            e.ToTable("menu_dias");
+            e.Property(x => x.Momento).HasMaxLength(8);
+            e.Property(x => x.Texto).HasMaxLength(120);
+            e.HasIndex(x => new { x.Fecha, x.Momento }).IsUnique();
         });
         b.Entity<Mda.Api.Personas.Persona>(e =>
         {
