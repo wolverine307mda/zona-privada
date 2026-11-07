@@ -10,6 +10,7 @@ import { ConfirmarService } from '../core/confirmar.service';
 import { BateriaSalud } from './bateria-salud';
 import { CasaPc } from './casa';
 import { Escenas } from './escenas';
+import { AppsPc } from './apps-pc';
 import { EspacioPc } from './espacio-pc';
 import { Habitacion3d } from './habitacion-3d';
 import { Hogar } from './hogar';
@@ -49,7 +50,7 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, BandejaPc, BateriaSalud, CapturasPc, UbicacionIphone, CasaPc, Escenas, EspacioPc, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
+  imports: [Pc3d, BandejaPc, BateriaSalud, CapturasPc, UbicacionIphone, CasaPc, Escenas, AppsPc, EspacioPc, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
   templateUrl: './pc.html',
   styleUrls: ['../gastos/comun.css', './pc.css'],
 })

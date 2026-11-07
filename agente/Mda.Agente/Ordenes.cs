@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -66,6 +66,15 @@ static partial class Ordenes
             if (o.Tipo == "bateria-informe") return await InformeDeBateria(http, ct);
             if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
             if (o.Tipo == "espacio") return await QueOcupa(o.Parametro, http, ct);
+            if (o.Tipo == "apps") return await ListaDeApps(http, ct);
+            if (o.Tipo == "abrir-app") { var (ok, m) = await AppsPc.Abrir(o.Parametro, ct); return new(ok, m); }
+            if (o.Tipo == "procesos") return await ListaDeProcesos(http, ct);
+            if (o.Tipo == "cerrar")
+            {
+                if (AppsPc.Cierre(o.Parametro) is not { } c) return new(false, "orden de cierre no válida");
+                var (ok, m) = await AppsPc.Cerrar(c.Pid, c.Inicio, c.Forzar, ct);
+                return new(ok, m);
+            }
             if (o.Tipo == "captura") return await Captura.Hacer(o.Parametro, http, ct);
             if (o.Tipo == "ubicacion") return await Ubicacion.Hacer(o.Parametro, ct);
             // la descarga sigue en segundo plano y manda su resultado final a la misma orden cuando acaba
@@ -129,6 +138,30 @@ static partial class Ordenes
         if (d.Tipo == "url") Process.Start(new ProcessStartInfo("explorer.exe", d.Valor) { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
         else Process.Start(new ProcessStartInfo(d.Valor) { UseShellExecute = true })?.Dispose();
         return new(true, d.Tipo == "url" ? "dirección abierta en el navegador del PC" : $"{parametro.Trim().ToLowerInvariant()} abierto");
+    }
+
+    // El catálogo de aplicaciones del menú Inicio (nombre y AppID) para que elijas cuáles se pueden abrir desde la app
+    static async Task<ResultadoOrden> ListaDeApps(HttpClient http, CancellationToken ct)
+    {
+        try
+        {
+            var apps = await AppsPc.Instaladas(ct);
+            var r = await http.PostAsJsonAsync("/api/sistema/agente/apps", new { apps }, ct);
+            return r.IsSuccessStatusCode ? new(true, $"{apps.Count} aplicaciones") : new(false, $"la API responde {(int)r.StatusCode}");
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidOperationException or System.ComponentModel.Win32Exception) { return new(false, "no se pudo leer la lista: " + e.Message); }
+    }
+
+    // Las aplicaciones con ventana abierta (nombre, memoria, hora de inicio) para poder cerrarlas desde la app
+    static async Task<ResultadoOrden> ListaDeProcesos(HttpClient http, CancellationToken ct)
+    {
+        try
+        {
+            var l = await Task.Run(AppsPc.ConVentana, ct);
+            var r = await http.PostAsJsonAsync("/api/sistema/agente/procesos", new { procesos = l }, ct);
+            return r.IsSuccessStatusCode ? new(true, $"{l.Count} aplicaciones abiertas") : new(false, $"la API responde {(int)r.StatusCode}");
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { return new(false, "no se pudo mandar la lista: " + e.Message); }
     }
 
     // «Qué ocupa»: cuenta las carpetas de una raíz (solo lectura, unidades locales, 60 s como mucho) y manda a la API las 15 mayores

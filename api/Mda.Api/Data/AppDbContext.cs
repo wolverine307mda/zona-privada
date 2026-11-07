@@ -37,6 +37,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PrecioCarburante> PreciosCarburante => Set<PrecioCarburante>();
     public DbSet<Mda.Api.Papeles.Garantia> Garantias => Set<Mda.Api.Papeles.Garantia>();
     public DbSet<Mda.Api.Domotica.ResumenCasaDia> ResumenesCasaDia => Set<Mda.Api.Domotica.ResumenCasaDia>();
+    public DbSet<Mda.Api.Pc.AppPc> AppsPc => Set<Mda.Api.Pc.AppPc>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -289,6 +290,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Pc.AppPc>(e =>
+        {
+            e.ToTable("apps_pc");
+            e.Property(x => x.Clave).HasMaxLength(40);
+            e.Property(x => x.Nombre).HasMaxLength(80);
+            e.Property(x => x.AppId).HasMaxLength(260);
+            e.HasIndex(x => x.Clave).IsUnique();
         });
         b.Entity<Mda.Api.Domotica.ResumenCasaDia>(e =>
         {
