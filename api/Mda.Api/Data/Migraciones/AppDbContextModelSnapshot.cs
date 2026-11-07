@@ -2759,6 +2759,86 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("sondas_registradas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Series.Titulo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("AvisadoEstreno")
+                        .HasColumnType("date");
+
+                    b.Property<int>("AvisadoNivel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Episodio")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Generos")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int?>("IdExterno")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Imagen")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("Minutos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int?>("Nota")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Plataforma")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int>("ProximaTemporada")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("Proximo")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ProximoEpisodio")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Temporada")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Terminada")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly?>("Terminado")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdExterno");
+
+                    b.ToTable("titulos", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Servicios.ServicioVigilado", b =>
                 {
                     b.Property<int>("Id")

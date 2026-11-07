@@ -272,6 +272,9 @@ builder.Services.AddSingleton<Mda.Api.Conexiones.ServicioLetras>();
 builder.Services.AddHttpClient("recetas", c => { c.Timeout = TimeSpan.FromSeconds(15); c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; zona-privada/1.0)"); })
     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseProxy = false, AutomaticDecompression = System.Net.DecompressionMethods.All }).RemoveAllLoggers();
 builder.Services.AddSingleton<Mda.Api.Cocina.ServicioRecetas>();
+// series: TVMaze (gratis y sin clave)
+builder.Services.AddHttpClient("tvmaze", c => { c.Timeout = TimeSpan.FromSeconds(10); c.DefaultRequestHeaders.UserAgent.ParseAdd("zona-privada/1.0 (uso personal)"); });
+builder.Services.AddSingleton<Mda.Api.Series.ServicioTVMaze>();
 // avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
 builder.Services.AddSingleton<ServicioLuz>();
 builder.Services.AddSingleton<ServicioAurora>();
@@ -388,6 +391,7 @@ Mda.Api.Conexiones.LetrasEndpoints.MapLetras(app);
 Mda.Api.Conexiones.Momentos.MapMomentos(app);
 Mda.Api.Personas.PersonasEndpoints.MapPersonas(app);
 Mda.Api.Cocina.CocinaEndpoints.MapCocina(app);
+Mda.Api.Series.SeriesEndpoints.MapSeries(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

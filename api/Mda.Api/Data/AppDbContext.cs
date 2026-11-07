@@ -48,6 +48,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Cocina.Receta> Recetas => Set<Mda.Api.Cocina.Receta>();
     public DbSet<Mda.Api.Cocina.IngredienteReceta> IngredientesReceta => Set<Mda.Api.Cocina.IngredienteReceta>();
     public DbSet<Mda.Api.Cocina.MenuDia> MenuDias => Set<Mda.Api.Cocina.MenuDia>();
+    public DbSet<Mda.Api.Series.Titulo> Titulos => Set<Mda.Api.Series.Titulo>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -300,6 +301,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Series.Titulo>(e =>
+        {
+            e.ToTable("titulos");
+            e.Property(x => x.Tipo).HasMaxLength(10);
+            e.Property(x => x.Nombre).HasMaxLength(120);
+            e.Property(x => x.Imagen).HasMaxLength(300);
+            e.Property(x => x.Estado).HasMaxLength(10);
+            e.Property(x => x.Plataforma).HasMaxLength(60);
+            e.Property(x => x.Generos).HasMaxLength(120);
+            e.HasIndex(x => x.IdExterno);
         });
         b.Entity<Mda.Api.Cocina.Receta>(e =>
         {

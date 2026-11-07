@@ -50,7 +50,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | ✅ **Hecha**: `Conexiones/Letras.cs` y panel de letra en el reproductor | 1,5 |
 | 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
 | 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | ✅ **Hecha**: `Conexiones/Momentos.cs` y tarjeta «Momentos» en Música | 1,5 |
-| 79 | Series y películas | nada | Módulo con estados, avisos de estreno y «dónde verlo» | 2,5 |
+| 79 | Series y películas | nada | ✅ **Hecha**: `Series/Series.cs` y pantalla «Series» | 2,5 |
 | 81 | Constructor visual de reglas | `Automatizaciones` (formulario), `ReglaCasa`, `ReglaContexto` | **Constructor por bloques** unificado y simulación | 3 |
 | 85 | Panel de salud de la app | `Avisos/Vigilancia.cs` (última vez de cada comprobación) y 5xx | ✅ **Hecha**: `Sistema/SaludApp.cs` y tarjeta «Salud de la app» en Seguridad | 1,5 |
 | 89 | Pantalla de bienvenida personal | saludo por hora en el héroe de Inicio | Frases según estación, cumpleaños, lo de ayer… | 1 |
@@ -290,13 +290,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: unidades mezcladas → normalización con tabla pequeña y revisión manual. Esfuerzo: 3 sesiones.
 - Decisión: `Cocina/` (tablas `recetas`, `ingredientes_receta` y `menu_dias`, migración `Cocina`). Lectura de recetas de una web con el JSON-LD de schema.org (grafos, listas, secciones, duraciones ISO, raciones) y SSRF cerrado: solo http(s) públicas, sin credenciales ni puertos raros, se resuelve el DNS antes de pedir y cada redirección se vuelve a comprobar, 2 MB como máximo. Ingredientes con cantidad/unidad normalizada (g/kg, ml/l, fracciones, «½»), suma entre recetas con el factor de raciones. Generador semanal por reglas (todas las etiquetas pedidas, alergias por nombre/ingrediente/etiqueta sin tildes, 14 días sin repetir con reserva escalonada, días de sobras repartidos, semilla repetible). `POST /api/cocina/menu/compra` suma y manda a Compra sin repetir lo pendiente. Aviso diario «Hoy toca…» a la hora elegida. Pantalla Cocina con semana, recetas, «Cocinar» con pasos grandes y pantalla encendida. **No incluido**: arrastrar para cambiar el menú (se edita por casilla), restar lo que ya hay en casa más allá de lo pendiente en Compra, y el «descongela X». Las alergias se escriben como en las recetas (plural/singular importan).
 
-### ⬜ 79 · Series y películas
-- ⬜ E79.1 Tablas `Titulo` (tipo, id externo, nombre, estado: por ver · viendo · vista, temporada/episodio, nota, plataforma, fecha del próximo episodio o estreno).
+### ✅ 79 · Series y películas
+- ✅ E79.1 Tablas `Titulo` (tipo, id externo, nombre, estado: por ver · viendo · vista, temporada/episodio, nota, plataforma, fecha del próximo episodio o estreno).
 - ⬜ E79.2 **Series con TVMaze** (sin clave): búsqueda, ficha y `next episode`; servicio de fondo diario que actualiza las fechas. **Películas**: si pones una clave gratuita de **TMDB** se activan estrenos y «dónde verlo» en España; sin clave, entrada manual.
-- ⬜ E79.3 Avisos («Mañana sale el 3×05 de …», «Hoy se estrena …») con dedupe, y un resumen semanal «Esta semana sale…».
-- ⬜ E79.4 Pantalla con tres columnas (por ver · viendo · vista), marcar el siguiente episodio con un toque y estadísticas del año (horas, géneros).
-- ⬜ E79.5 Tests del cálculo de «próximo episodio», zonas horarias y series canceladas. Si se usa TMDB, el aviso de atribución que exige.
+- ✅ E79.3 Avisos («Mañana sale el 3×05 de …», «Hoy se estrena …») con dedupe, y un resumen semanal «Esta semana sale…».
+- ✅ E79.4 Pantalla con tres columnas (por ver · viendo · vista), marcar el siguiente episodio con un toque y estadísticas del año (horas, géneros).
+- ✅ E79.5 Tests del cálculo de «próximo episodio», zonas horarias y series canceladas. Si se usa TMDB, el aviso de atribución que exige.
 - Riesgos: horarios de emisión según país → se muestra la fecha local del estreno. Esfuerzo: 2,5 sesiones.
+- Decisión: `Series/Series.cs` (tabla `titulos`, migración `Series`). TVMaze (sin clave): búsqueda, ficha y siguiente episodio con la fecha pasada a TU zona horaria (`airstamp`: un estreno a las 23:30 UTC cae al día siguiente en Madrid). Actualización diaria de las series en curso desde la ronda del vigilante, aviso la víspera y el día del estreno sin repetir, y resumen semanal los domingos a partir de las 18:00. Columnas por ver/viendo/vistas, «Vi uno», nota 1–10 y estadísticas del año (vistas, horas estimadas, géneros, nota media). Películas a mano con fecha de estreno opcional (aviso igual). Las series terminadas no se vuelven a consultar. **No incluido**: TMDB (estrenos y «dónde verlo» en España) —sin clave de TMDB se queda en entrada manual—, por lo que tampoco hay aviso de atribución. Las temporadas no se cuentan: «Vi uno» sube el episodio y la temporada la pones tú.
 
 ### ⬜ 19 · Bienestar: salud, ejercicio y un plan (módulo grande)
 Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es una **ayuda personal, no consejo médico**: la pantalla lo dice y manda consultar a un profesional ante dolor, mareos, enfermedad o embarazo.
