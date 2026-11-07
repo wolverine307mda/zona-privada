@@ -384,6 +384,7 @@ app.MapHabitos();
 app.MapTareas();
 app.MapPapeles();
 app.MapGarantias();
+Mda.Api.Domotica.ClimaCasa.MapClima(app);
 app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();

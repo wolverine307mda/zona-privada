@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Mda.Api.Domotica;
 
 // Une los drivers con la base de datos: refresca el estado de los aparatos, guarda el histórico y reenvía las órdenes.
-public sealed class ServicioCasa(IEnumerable<IDriverCasa> drivers, TimeProvider reloj)
+public sealed class ServicioCasa(IEnumerable<IDriverCasa> drivers, TimeProvider reloj, Mda.Api.Agenda.Zona zona)
 {
     public static readonly TimeSpan CadaLectura = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan Historia = TimeSpan.FromDays(30);
@@ -61,6 +61,8 @@ public sealed class ServicioCasa(IEnumerable<IDriverCasa> drivers, TimeProvider 
     // borra las lecturas de más de 30 días
     public async Task Compactar(AppDbContext db, CancellationToken ct)
     {
+        // antes de borrar, el resumen por días de lo que ya se cerró (para el clima de meses atrás)
+        await ClimaCasa.Resumir(db, reloj.GetUtcNow(), zona.Info, ct);
         var limite = reloj.GetUtcNow() - Historia;
         db.Lecturas.RemoveRange(await db.Lecturas.Where(l => l.Fecha < limite).ToListAsync(ct));
         await db.SaveChangesAsync(ct);

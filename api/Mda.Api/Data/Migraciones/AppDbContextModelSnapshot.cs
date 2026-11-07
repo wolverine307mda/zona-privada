@@ -847,6 +847,31 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("casa_reglas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Domotica.ResumenCasaDia", b =>
+                {
+                    b.Property<int>("EntidadId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Dia")
+                        .HasColumnType("date");
+
+                    b.Property<double>("Max")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Media")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Min")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("Muestras")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EntidadId", "Dia");
+
+                    b.ToTable("casa_resumen_dia", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Galeria.FotoGeo", b =>
                 {
                     b.Property<int>("Id")
@@ -2631,6 +2656,15 @@ namespace Mda.Api.Data.Migraciones
                 });
 
             modelBuilder.Entity("Mda.Api.Domotica.LecturaCasa", b =>
+                {
+                    b.HasOne("Mda.Api.Domotica.Entidad", null)
+                        .WithMany()
+                        .HasForeignKey("EntidadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Mda.Api.Domotica.ResumenCasaDia", b =>
                 {
                     b.HasOne("Mda.Api.Domotica.Entidad", null)
                         .WithMany()

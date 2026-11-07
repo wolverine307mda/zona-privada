@@ -1,6 +1,7 @@
 import { Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { CasaService } from './casa.service';
 import { AparatoCasa, DispositivoTuya, EscenaCasa, PANEL_VACIO, PanelGuardado, alternarOculto, aparatosDe, encendido, leerPanel, mover, numero } from './modelo';
+import { ClimaCasa } from './clima-casa';
 import { ReglasCasa } from './reglas-casa';
 import { TarjetaAparato } from './tarjeta-aparato';
 import { EstadoError, EstadoVacio } from '../ui';
@@ -12,7 +13,7 @@ const CLAVE_PESTANA = 'mda.casa.pestana';
 // (termómetro, lámpara, aire, tele…) que responde a un toque; lo que se ve se actualiza solo cada 15 segundos.
 @Component({
   selector: 'app-casa',
-  imports: [TarjetaAparato, ReglasCasa, EstadoVacio, EstadoError],
+  imports: [TarjetaAparato, ReglasCasa, ClimaCasa, EstadoVacio, EstadoError],
   templateUrl: './casa.html',
   styleUrls: ['./casa.css'],
 })
@@ -25,7 +26,7 @@ export class Casa implements OnInit {
 
   protected readonly estado = this.casa.estado;
   protected readonly editando = signal(false);
-  protected readonly vista = signal<'panel' | 'reglas'>('panel');
+  protected readonly vista = signal<'panel' | 'reglas' | 'clima'>('panel');
   protected readonly pestana = signal<Pestana>('todo');
   protected readonly panel = signal<PanelGuardado>(PANEL_VACIO);
   protected readonly ocupado = signal(false);

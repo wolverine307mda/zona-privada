@@ -36,6 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<PresupuestoSemanal> PresupuestosSemanales => Set<PresupuestoSemanal>();
     public DbSet<PrecioCarburante> PreciosCarburante => Set<PrecioCarburante>();
     public DbSet<Mda.Api.Papeles.Garantia> Garantias => Set<Mda.Api.Papeles.Garantia>();
+    public DbSet<Mda.Api.Domotica.ResumenCasaDia> ResumenesCasaDia => Set<Mda.Api.Domotica.ResumenCasaDia>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -287,6 +288,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
+            e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Domotica.ResumenCasaDia>(e =>
+        {
+            e.ToTable("casa_resumen_dia");
+            e.HasKey(x => new { x.EntidadId, x.Dia });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<Mda.Api.Domotica.ReglaCasa>(e =>

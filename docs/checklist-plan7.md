@@ -35,7 +35,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
 | 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | Evento `duermo`, comprobaciones y mensaje al Atajo | 1,5 |
 | 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | **Lista de comprobación** (ventanas, estufas, aparatos encendidos) | 1 |
-| 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | Vista **por estancia**, semana/mes, mín/media/máx y avisos de moho/frío | 1,5 |
+| 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | ✅ **Hecha**: `Domotica/ClimaCasa.cs` y pantalla «Clima» en Casa (los avisos de moho/frío, a mano con Automatizaciones) | 1,5 |
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | Marca «ropa tendida», aviso **minutos antes** de la lluvia | 1 |
 | 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | «**No lo reconozco**» (cierra sesiones y avisa) y **mapa** con «última vez visto» | 1,5 |
@@ -143,12 +143,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: sensores que reportan tarde (Tuya local vs nube); el aviso dice «según el último dato de hace X min». Esfuerzo: 1 sesión.
 - Decisión: sin campo nuevo ni migración. Una regla de estado es una regla numérica con el estado convertido a 1/0 (umbral 0,5, operador «>» puestos por la API), así que reutiliza el «lleva así X min» y el rearme al cambiar. Solo `abierto` y `encendido` se pueden vigilar. El botón «Apagar» sale solo si el sensor es un enchufe o luz que se puede apagar; «Ya lo sé» solo anota (la regla no repite hasta que el estado cambie).
 
-### ⬜ 41 · Clima de la casa por estancia
-- ⬜ B41.1 Tabla `ResumenCasaDia` (aparato, clave, día, mín, media, máx), rellenada de noche desde `LecturaCasa` y con retención de 400 días (las lecturas crudas siguen en 30). Función pura de agregación con tests (huecos, un solo dato, cambio de hora).
-- ⬜ B41.2 `GET /api/casa/clima?estancia&dias`: por estancia agrupa los sensores de temperatura y humedad y devuelve series, mín/media/máx y el «cuándo fue lo más frío/cálido».
-- ⬜ B41.3 Pantalla «Clima» en Casa: una tarjeta por estancia con línea de 24 h/semana/mes (ECharts), comparativa entre estancias y marcas de «moho > 65 % de humedad» y «frío < 17 °».
-- ⬜ B41.4 Avisos opcionales por umbral sostenido (reglas `SoloAvisar` precreadas desde la pantalla) y exportación CSV del rango.
+### ✅ 41 · Clima de la casa por estancia
+- ✅ B41.1 Tabla `ResumenCasaDia` (aparato, clave, día, mín, media, máx), rellenada de noche desde `LecturaCasa` y con retención de 400 días (las lecturas crudas siguen en 30). Función pura de agregación con tests (huecos, un solo dato, cambio de hora).
+- ✅ B41.2 `GET /api/casa/clima?estancia&dias`: por estancia agrupa los sensores de temperatura y humedad y devuelve series, mín/media/máx y el «cuándo fue lo más frío/cálido».
+- ✅ B41.3 Pantalla «Clima» en Casa: una tarjeta por estancia con línea de 24 h/semana/mes (ECharts), comparativa entre estancias y marcas de «moho > 65 % de humedad» y «frío < 17 °».
+- ✅ B41.4 (parcial) Avisos opcionales por umbral sostenido (reglas `SoloAvisar` precreadas desde la pantalla) y exportación CSV del rango.
 - Riesgos: aparatos sin estancia → se muestran en «Sin asignar». Esfuerzo: 1,5 sesiones.
+- Decisión: `Domotica/ClimaCasa.cs` guarda el resumen por día en `casa_resumen_dia` (migración `ResumenClimaCasa`) justo antes de borrar las lecturas de más de 30 días, y poda a 400. `GET /api/domotica/clima?dias=` (1–400; hasta 30 usa las lecturas y más usa el resumen) y `/clima/csv`. Pantalla «Clima» dentro de Casa (botón junto a Automatizaciones). Pendiente de B41.4: las reglas `SoloAvisar` precreadas desde la pantalla de clima (se pueden crear ya a mano en Automatizaciones con el dato de humedad o temperatura).
 
 ### ⬜ 40 · Salgo de casa con lista de comprobación
 - ⬜ B40.1 Al llegar el evento `salgo` (ya existe), calcular la **lista**: sensores de puerta/ventana abiertos, aparatos encendidos que no deberían (según una lista que eliges: plancha, estufa, luces) y el PC (que ya se bloquea).
