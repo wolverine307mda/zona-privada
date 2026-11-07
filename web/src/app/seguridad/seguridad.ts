@@ -8,6 +8,7 @@ import { Atajos } from './atajos';
 import { Claves } from './claves';
 import { Equipos } from './equipos';
 import { VigilanciaFondo } from './vigilancia';
+import { SaludApp } from './salud-app';
 import { Llamadas } from './llamadas';
 import { Llaves } from './llaves';
 import { PinAjustes } from './pin-ajustes';
@@ -37,7 +38,7 @@ const ICONOS: Record<string, string> = {
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
   selector: 'app-seguridad',
-  imports: [Atajos, Claves, Equipos, GloboSondas, Llamadas, Llaves, PinAjustes, VigilanciaFondo, Esqueleto],
+  imports: [Atajos, Claves, Equipos, GloboSondas, Llamadas, Llaves, PinAjustes, VigilanciaFondo, SaludApp, Esqueleto],
   templateUrl: './seguridad.html',
   styleUrls: ['../gastos/comun.css', './seguridad.css'],
 })

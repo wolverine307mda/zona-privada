@@ -374,6 +374,7 @@ app.MapVelocidad();
 app.MapEspacio();
 Mda.Api.Pc.AppsPcEndpoints.MapAppsPc(app);
 Mda.Api.Pc.Transferencias.MapTransferencias(app);
+Mda.Api.Sistema.SaludApp.MapSaludApp(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

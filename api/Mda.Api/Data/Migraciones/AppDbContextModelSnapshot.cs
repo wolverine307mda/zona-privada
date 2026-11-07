@@ -2461,6 +2461,23 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("servicios_vigilados", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Sistema.TamanoTabla", b =>
+                {
+                    b.Property<DateOnly>("Dia")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Tabla")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Dia", "Tabla");
+
+                    b.ToTable("tamanos_tabla", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Tareas.Tarea", b =>
                 {
                     b.Property<int>("Id")

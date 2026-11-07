@@ -52,7 +52,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | Listas asignadas a «momentos» y un toque para ponerlas | 1,5 |
 | 79 | Series y películas | nada | Módulo con estados, avisos de estreno y «dónde verlo» | 2,5 |
 | 81 | Constructor visual de reglas | `Automatizaciones` (formulario), `ReglaCasa`, `ReglaContexto` | **Constructor por bloques** unificado y simulación | 3 |
-| 85 | Panel de salud de la app | `Avisos/Vigilancia.cs` (última vez de cada comprobación) y 5xx | Tamaño de la base, tablas que crecen, copias y **acciones de limpieza** | 1,5 |
+| 85 | Panel de salud de la app | `Avisos/Vigilancia.cs` (última vez de cada comprobación) y 5xx | ✅ **Hecha**: `Sistema/SaludApp.cs` y tarjeta «Salud de la app» en Seguridad | 1,5 |
 | 89 | Pantalla de bienvenida personal | saludo por hora en el héroe de Inicio | Frases según estación, cumpleaños, lo de ayer… | 1 |
 
 Esfuerzo en «sesiones» (una sesión = una tanda larga de trabajo con pruebas). Suma aproximada: **~50 sesiones**.
@@ -216,13 +216,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: espacio y antivirus → almacén con tope de 1 GB y limpieza; nada se ejecuta. Esfuerzo: 2 sesiones.
 - Decisión: tabla `bandeja_transferencias` (migración `BandejaTransferencias`) y almacén temporal cifrado con la bóveda (tope 1 GB, 100 MB por archivo, sin ejecutables, 24 h; se borra al recoger, bajar o caducar, con limpieza en la ronda del vigilante). App → PC: orden `recibir` (pide Face ID o contraseña) y el agente lo deja en `Bandeja\Recibidos` sin pisar nada. PC → móvil: el agente vigila `Bandeja\Para el móvil` y sube; el «enlace» es una descarga con sesión (no hay enlaces públicos por el Funnel) y los de más de 20 MB piden la contraseña otra vez. **Sin trozos**: la subida va en una sola petición de hasta 100 MB. **No incluido**: la hoja de compartir del iPhone («Enviar al PC»), y la lista antigua de «llegado al PC» sigue en memoria.
 
-### ⬜ 85 · Panel de salud de la app
-- ⬜ C85.1 `GET /api/sistema/app` con: tamaño de la base (`pg_database_size`), las 10 tablas más grandes (`pg_total_relation_size`), filas de cada una, antigüedad de la última copia y del último simulacro, errores 5xx recientes (ya hay contador), memoria de la API y tiempo en marcha.
-- ⬜ C85.2 Tabla `TamanoTabla` con una foto diaria para ver **cuál crece más** (y su tendencia, como `TendenciaDisco`).
-- ⬜ C85.3 Acciones de mantenimiento **con confirmación y vista previa**: purgar llamadas externas antiguas, regenerar miniaturas, limpiar lecturas viejas, `VACUUM ANALYZE` (solo si no hay otra tarea).
-- ⬜ C85.4 Pantalla en Seguridad › Vigilancia (o «Sistema») con tarjetas y las recomendaciones («`lecturas` ocupa 400 MB: se pueden resumir»).
-- ⬜ C85.5 Tests de la lógica pura y que funcione igual en el nativo y en Docker.
+### ✅ 85 · Panel de salud de la app
+- ✅ C85.1 `GET /api/sistema/app` con: tamaño de la base (`pg_database_size`), las 10 tablas más grandes (`pg_total_relation_size`), filas de cada una, antigüedad de la última copia y del último simulacro, errores 5xx recientes (ya hay contador), memoria de la API y tiempo en marcha.
+- ✅ C85.2 Tabla `TamanoTabla` con una foto diaria para ver **cuál crece más** (y su tendencia, como `TendenciaDisco`).
+- ✅ C85.3 Acciones de mantenimiento **con confirmación y vista previa**: purgar llamadas externas antiguas, regenerar miniaturas, limpiar lecturas viejas, `VACUUM ANALYZE` (solo si no hay otra tarea).
+- ✅ C85.4 Pantalla en Seguridad › Vigilancia (o «Sistema») con tarjetas y las recomendaciones («`lecturas` ocupa 400 MB: se pueden resumir»).
+- ✅ C85.5 Tests de la lógica pura y que funcione igual en el nativo y en Docker.
 - Riesgos: `VACUUM FULL` bloquea → no se ofrece. Esfuerzo: 1,5 sesiones.
+- Decisión: `Sistema/SaludApp.cs` y tabla `tamanos_tabla` (migración `TamanosTabla`; una foto al día desde la ronda del vigilante, 120 días). `GET /api/sistema/app` da tamaño de la base, las 10 tablas mayores con filas aproximadas y su crecimiento diario, copia, errores 5xx, memoria y recomendaciones en castellano. Mantenimiento con vista previa y confirmación explícita + contraseña otra vez: purgar llamadas externas de más de 90 días, limpiar lecturas viejas de la casa y VACUUM ANALYZE (nunca FULL). El borrado va por tandas de 5.000 para valer igual en PostgreSQL y en pruebas. Las consultas de catálogo son de PostgreSQL: con otra base el panel responde sin tablas. **No incluido**: regenerar miniaturas ni el último simulacro de restauración en el panel.
 
 ---
 
