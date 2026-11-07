@@ -77,6 +77,14 @@ public class Conversacion(
         switch (comando)
         {
             case "/ayuda" or "/help": await bot.Enviar(Ayuda, html: true, ct: ct); return;
+            case "/ropa":
+                {
+                    // «/ropa» la marca como tendida; «/ropa recogida» la quita
+                    var recoger = texto.Contains("recog", StringComparison.OrdinalIgnoreCase);
+                    if (recoger) await Mda.Api.Tiempo.Ropa.Recoger(db, ct); else await Mda.Api.Tiempo.Ropa.Tender(db, reloj.GetUtcNow(), ct);
+                    await bot.Enviar(recoger ? "🧺 Ropa recogida." : "🧺 Ropa tendida. Te aviso si va a llover.", ct: ct);
+                    return;
+                }
             case "/hoy": await bot.Enviar(await Hoy(ct), html: true, ct: ct); return;
             case "/habitos" or "/hábitos": await bot.Enviar(await HabitosDeHoy(ct), html: true, ct: ct); return;
             case "/tareas": await bot.Enviar(await ListaTareas(ct), html: true, ct: ct); return;
@@ -155,6 +163,11 @@ public class Conversacion(
                     await Contestar(cb, bien ? "Apagado" : null, ct);
                     return;
                 }
+            case "rr":
+                await Mda.Api.Tiempo.Ropa.Recoger(db, ct);
+                await Editar(chat, idMensaje, "🧺 Ropa recogida.", null, ct);
+                await Contestar(cb, null, ct);
+                return;
             case "cv":
                 await Editar(chat, idMensaje, "👍 Vale, anotado.", null, ct);
                 await Contestar(cb, null, ct);

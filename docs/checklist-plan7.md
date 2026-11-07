@@ -37,7 +37,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | ✅ **Hecha**: `Contexto/SalidaCasa.cs`, atajo «salida» con comprobación y editor en Escenas | 1 |
 | 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | ✅ **Hecha**: `Domotica/ClimaCasa.cs` y pantalla «Clima» en Casa (los avisos de moho/frío, a mano con Automatizaciones) | 1,5 |
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
-| 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | Marca «ropa tendida», aviso **minutos antes** de la lluvia | 1 |
+| 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | ✅ **Hecha**: `Tiempo/Ropa.cs`, chip en Inicio, atajo y `/ropa` | 1 |
 | 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | «**No lo reconozco**» (cierra sesiones y avisa) y **mapa** con «última vez visto» | 1,5 |
 | 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | Atributos SMART útiles, aviso proactivo a N días y «qué ocupa» | 1 |
 | 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | **App → PC** (subir desde el móvil) y **PC → móvil** con enlace que caduca | 2 |
@@ -167,12 +167,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - ⬜ B39.5 Pantalla en Escenas solas, tests con reloj falso y receta de Atajos con texto para pegar.
 - Riesgos: apagar cosas de noche por error → registro visible y un botón «deshacer» (reponer luces) durante 10 min. Esfuerzo: 1,5 sesiones.
 
-### ⬜ 46 · Ropa tendida y lluvia
-- ⬜ B46.1 Ajuste `ropa-tendida` (fecha de inicio) con tres maneras de marcarla: botón en Inicio, Atajo («Ropa tendida») y Telegram (`/ropa`). Caduca sola a las 10 h o al marcar «recogida».
-- ⬜ B46.2 `ServicioTiempo` pide `minutely_15` y `precipitation_probability` de Open-Meteo para tu lugar. Pura `Lluvia.EnMinutos(datos, ahora)` → «empieza en ~25 min» o nada. Tests con series sintéticas (chubasco corto, lluvia ya empezada, falsa alarma).
-- ⬜ B46.3 Vigilante cada 5 min mientras haya ropa tendida: aviso («Va a llover en ~25 min: recoge la ropa») por push + Telegram, con dedupe por episodio y un botón «Recogida».
-- ⬜ B46.4 Chip en Inicio «Ropa tendida desde las 10:20» con el estado del cielo.
+### ✅ 46 · Ropa tendida y lluvia
+- ✅ B46.1 Ajuste `ropa-tendida` (fecha de inicio) con tres maneras de marcarla: botón en Inicio, Atajo («Ropa tendida») y Telegram (`/ropa`). Caduca sola a las 10 h o al marcar «recogida».
+- ✅ B46.2 `ServicioTiempo` pide `minutely_15` y `precipitation_probability` de Open-Meteo para tu lugar. Pura `Lluvia.EnMinutos(datos, ahora)` → «empieza en ~25 min» o nada. Tests con series sintéticas (chubasco corto, lluvia ya empezada, falsa alarma).
+- ✅ B46.3 Vigilante cada 5 min mientras haya ropa tendida: aviso («Va a llover en ~25 min: recoge la ropa») por push + Telegram, con dedupe por episodio y un botón «Recogida».
+- ✅ B46.4 Chip en Inicio «Ropa tendida desde las 10:20» con el estado del cielo.
 - Riesgos: predicción a 15 min es aproximada → el aviso dice «probable». Esfuerzo: 1 sesión.
+- Decisión: `Tiempo/Ropa.cs`. La lluvia se pide aparte (`minutely_15=precipitation`, en UTC, guardada 5 min) para no tocar el `Prevision` que ya usa todo el tiempo; sin `precipitation_probability` porque no existe en tramos de 15 min. Un tramo suelto de menos de 0,2 mm sin otro al lado es falsa alarma. La vigilancia va en la rueda de un minuto de `MotorContexto` (solo trabaja si hay ropa tendida), avisa una vez por episodio con margen de 30 min y botón «Recogida». Marcas: botón en Inicio, `POST /api/atajos/ropa` (permiso «casa») y `/ropa` o `/ropa recogida` en Telegram. Sin migración.
 
 ---
 

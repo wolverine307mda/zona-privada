@@ -264,6 +264,7 @@ builder.Services.AddScoped<Conversacion>();
 builder.Services.AddHostedService<Sondeo>();
 // el tiempo (Open-Meteo)
 builder.Services.AddSingleton<ServicioTiempo>();
+builder.Services.AddSingleton<Mda.Api.Tiempo.ILluvia, Mda.Api.Tiempo.ServicioLluvia>();
 // avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
 builder.Services.AddSingleton<ServicioLuz>();
 builder.Services.AddSingleton<ServicioAurora>();
@@ -386,6 +387,7 @@ app.MapPapeles();
 app.MapGarantias();
 Mda.Api.Domotica.ClimaCasa.MapClima(app);
 Mda.Api.Contexto.SalidaCasa.MapSalidaCasa(app);
+Mda.Api.Tiempo.Ropa.MapRopa(app);
 app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();

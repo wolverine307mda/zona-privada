@@ -239,6 +239,15 @@ public static class AtajosApi
             return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
         }).Requiere("casa");
 
+        // «Ropa tendida» / «Ropa recogida»: un atajo del iPhone manda {"estado":"tendida"} o {"estado":"recogida"}
+        a.MapPost("/ropa", async (CasaAtajo e, AppDbContext db, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var estado = (e.Estado ?? "").ToLowerInvariant();
+            if (estado is "tendida" or "tender") { await Mda.Api.Tiempo.Ropa.Tender(db, reloj.GetUtcNow(), ct); return Results.Ok(new { mensaje = "Ropa tendida. Te aviso si va a llover." }); }
+            if (estado is "recogida" or "recoger") { await Mda.Api.Tiempo.Ropa.Recoger(db, ct); return Results.Ok(new { mensaje = "Ropa recogida." }); }
+            return Results.BadRequest(new { mensaje = "Manda estado «tendida» o «recogida»." });
+        }).Requiere("casa");
+
         // Una escena del PC por su nombre («Cine», «Trabajo»…); las que apagan el PC se aplican solo desde la app, con Face ID
         a.MapPost("/escena", async (Mda.Api.Pc.EscenaAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
         {

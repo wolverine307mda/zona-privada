@@ -135,7 +135,7 @@ public static class ServicioContexto
 }
 
 // Cada minuto mira las reglas «a una hora»; las de llegar y salir las dispara `Evento` cuando el iPhone avisa
-public sealed class MotorContexto(IServiceScopeFactory ambitos, ServicioCasa casa, EstadoAgente agente, IAvisos avisos, ServicioTiempo tiempo, TimeProvider reloj, Zona zona, RegistroVigilancia registro, ILogger<MotorContexto> log) : BackgroundService
+public sealed class MotorContexto(IServiceScopeFactory ambitos, ServicioCasa casa, EstadoAgente agente, IAvisos avisos, ServicioTiempo tiempo, ILluvia lluvia, Mda.Api.Telegram.Bot bot, TimeProvider reloj, Zona zona, RegistroVigilancia registro, ILogger<MotorContexto> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -147,6 +147,9 @@ public sealed class MotorContexto(IServiceScopeFactory ambitos, ServicioCasa cas
             {
                 try { using var scope = ambitos.CreateScope(); await Disparar(scope.ServiceProvider.GetRequiredService<AppDbContext>(), "hora", ct); registro.Anotar("escenas por contexto"); }
                 catch (Exception e) when (e is not OperationCanceledException) { registro.Anotar("escenas por contexto", e); log.LogWarning(e, "No se pudieron evaluar las escenas por contexto"); }
+                // la ropa tendida: si va a llover, un aviso (aislado, para que un fallo aquí no pare las escenas)
+                try { using var scope = ambitos.CreateScope(); await Ropa.Vigilar(scope.ServiceProvider.GetRequiredService<AppDbContext>(), tiempo, lluvia, avisos, bot, reloj.GetUtcNow(), log, ct); }
+                catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "No se pudo vigilar la ropa tendida"); }
             } while (await t.WaitForNextTickAsync(ct));
         }
         catch (OperationCanceledException) { /* se apaga la API */ }
