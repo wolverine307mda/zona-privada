@@ -191,3 +191,11 @@
 .presu__modo button[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 .presu__arrastrar { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; font-size: .84rem; color: var(--soft); cursor: pointer; }
 .presu__arrastrar input { margin-top: 2px; accent-color: var(--brand); }
+
+/* el día de cobro */
+.cobro__dia { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 4px; }
+.cobro__dia strong { font: 600 1.5rem/1.1 var(--font-display); letter-spacing: -0.02em; }
+.cobro__dia small { color: var(--soft); font-size: .78rem; }
+.cobro__texto { margin: 0; color: var(--soft); font-size: .9rem; line-height: 1.45; }
+.cobro__texto b { color: var(--texto); font-weight: 600; }
+.cobro__texto--mal { color: var(--bad); }

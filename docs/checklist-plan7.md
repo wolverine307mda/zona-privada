@@ -27,7 +27,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 1 | Previsión de fin de mes con rango | ✅ **Hecha** (Plan 6, `9d92919`): `Gastos/Prevision.cs` (central, bajo y alto, fijos y nóminas pendientes, serie día a día) y `gastos/grafica-prevision.ts` | Nada nuevo; solo una pasada de pulido (leerla en el móvil, explicar «bajo/alto» con una frase) | 0,2 |
 | 5 | Gasto por lugar en un mapa | ✅ **Hecha**: `Gastos/Lugares.cs` + `gastos/mapa-gasto.ts` (Leaflet), con filtro por categoría y detrás del PIN | — | 1 |
 | 6 | Presupuesto por semana | ✅ **Hecha**: `PresupuestoSemanal` + `PresupuestosSemana` + interruptor en Cartera (queda la línea semanal del atajo `/hoy`) | — | 1 |
-| 8 | Fecha de cobro de la nómina | `Recurrente` (incluye nóminas) y la previsión suma las pendientes | **Detectar el día de cobro**, «dinero hasta cobrar» y aviso si no llega | 1 |
+| 8 | Fecha de cobro de la nómina | ✅ **Hecha**: `Gastos/Cobro.cs`, tarjeta en Cartera, «hasta cobrar» en Inicio y dos avisos | — | 1 |
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | Garantía/devolución **ligada a un gasto**, con foto del ticket | 1,5 |
 | 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | Precios de las gasolineras (Ministerio), la más barata cerca y «conviene hoy» | 1,5 |
 | 13 | Contactos: cumpleaños, datos y gustos | nada | **Módulo Personas** + importación selectiva (vCard / Google / Atajo) | 3 |
@@ -104,12 +104,12 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - ✅ A6.4 Cartera: interruptor «Mes · Semana» en la tarjeta (solo mirando el mes actual) y pestañas «Al mes / A la semana» en el diálogo, con la casilla «sumar lo que sobre». Rutas: `GET /api/gastos/presupuestos-semana`, `PUT` y `DELETE /api/gastos/presupuestos-semana/{categoria}`.
 - ⬜ A6.5 Pendiente (poco valor): la línea semanal en `/api/atajos/hoy` (el atajo sigue hablando del mes).
 
-### ⬜ 8 · Día de cobro de la nómina
-- ⬜ A8.1 Función pura `DiaDeCobro.Detectar(ingresos)`: toma los ingresos grandes de los últimos 6 meses (≥ 60 % del ingreso mensual medio o marcados como nómina en `Recurrente`) y devuelve el día habitual (mediana) y su fiabilidad; si el día cae en fin de semana, anota «se adelanta al viernes». Ajuste manual que manda sobre la detección. Tests: 3 meses regulares, día variable, un mes sin nómina, mes de 28 días.
-- ⬜ A8.2 «Dinero hasta cobrar»: `Consejos` hoy divide hasta fin de mes; se añade el **horizonte = próximo cobro** (si se conoce) con «te quedan 340 € para 9 días: 37 €/día».
-- ⬜ A8.3 Aviso «hoy es día de cobro y aún no hay ingreso apuntado» (a las 20:00, una sola vez) y, si llega un ingreso grande, «nómina recibida: toca apartar a tus huchas» con botón.
-- ⬜ A8.4 Pantalla: ajuste «Mi día de cobro» (auto/manual) en Cartera y la cuenta atrás en la tarjeta de dinero de Inicio.
-- Riesgos: falsos positivos con ingresos puntuales → pide al menos 3 meses y deja cambiarlo. Esfuerzo: 1 sesión.
+### ✅ 8 · Día de cobro de la nómina
+- ✅ A8.1 `Gastos/Cobro.cs` (`DiaDeCobro`): `Detectar` mira el ingreso más grande de cada uno de los últimos 6 meses, descarta los meses sin nómina y saca el día habitual (mediana); es fiable con 3 meses o más y si el 60 % cae a ±3 días. Prioridad: **lo que pongas tú**, después una **nómina en tus fijos** (`Recurrente`) y después **lo detectado**. `Pagado` adelanta al viernes si cae en fin de semana y ajusta días que no existen (31 en febrero). Tests (17): nómina regular, bizums que no la confunden, mes sin nómina, pocos meses, día inestable, fines de semana, retraso.
+- ✅ A8.2 «Dinero hasta cobrar»: `GET /api/gastos/cobro` devuelve el próximo cobro, los días que faltan y lo que puedes gastar al día hasta entonces (libre = saldo − huchas). Inicio dice «X €/día hasta cobrar (N días)» en vez de «hasta fin de mes» cuando se conoce el día; `Consejos` no se tocó.
+- ✅ A8.3 Avisos (push + Telegram, una vez al mes cada uno, con dedupe en `Ajustes`): a partir de las 20:00, «no ha entrado la nómina» si el día de cobro llegó y no hay ingreso parecido a la nómina (`DiaDeCobro.Comprobar`, dentro de la revisión del vigilante); y «nómina recibida: toca repartirla» al apuntar un ingreso grande (`AlRecibirIngreso`, en `GastosEndpoints.Crear`).
+- ✅ A8.4 Cartera: tarjeta «Día de cobro» (de dónde sale el día, próximo cobro y €/día) y diálogo para ponerlo a mano o dejarlo automático (`PUT /api/gastos/cobro {dia}`; `null` = automático).
+- Decisión: el aviso de «llegó la nómina» no ofrece todavía un botón para repartir entre huchas; solo recuerda hacerlo.
 
 ### ⬜ 12 · Gasolina: cuándo y dónde repostar
 - ⬜ A12.1 `ServicioCarburantes`: descarga diaria (con caché de 12 h en memoria) del servicio público del Ministerio (`PreciosCarburantes/EstacionesTerrestres`), sin clave. Parser puro con tests sobre una muestra guardada (cabeceras con comas decimales y tildes).

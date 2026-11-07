@@ -68,6 +68,8 @@ export interface Hucha { id: number; nombre: string; objetivo: number; ahorrado:
 export interface Presupuesto { categoria: string; limite: number; gastado: number; porcentaje: number; }
 // el presupuesto de la semana de hoy (de lunes a domingo): `limiteEfectivo` suma lo que sobró la semana pasada si «arrastrar» está activo
 export interface PresupuestoSemana { categoria: string; limite: number; limiteEfectivo: number; arrastrar: boolean; gastado: number; porcentaje: number; diasRestantes: number; porDia: number; reinicio: string; }
+// tu día de cobro: de dónde sale (`manual`, `fijo` o `detectado`), el próximo cobro y lo que puedes gastar al día hasta entonces
+export interface EstadoCobro { dia: number | null; fuente: 'manual' | 'fijo' | 'detectado' | null; fiable: boolean; tipico: number; proximo: string | null; diasHasta: number | null; libre: number | null; porDia: number | null; retrasado: boolean; mesesVistos: number; }
 export interface PresupuestosSemana { semana: string; desde: string; reinicio: string; presupuestos: PresupuestoSemana[]; }
 export interface Consejo { icono: string; titulo: string; texto: string; tono: 'bueno' | 'malo' | 'aviso' | 'info'; }
 export interface Consejos {

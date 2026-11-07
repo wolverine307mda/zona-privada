@@ -172,6 +172,21 @@
         }
         }
       </article>
+      @if (esActual() && cobro(); as c) {
+        <article class="caja">
+          <header class="caja__cab"><h3>Día de cobro</h3><button class="enlace" type="button" (click)="abrirCobro()">{{ c.dia ? 'Cambiar' : 'Poner' }} →</button></header>
+          @if (c.dia) {
+            <p class="cobro__dia"><strong>Día {{ c.dia }}</strong> <small>{{ c.fuente === 'manual' ? 'puesto por ti' : c.fuente === 'fijo' ? 'de tu nómina en Recurrentes' : 'detectado en tus últimos ' + c.mesesVistos + ' meses' }}</small></p>
+            @if (c.retrasado) { <p class="cobro__texto cobro__texto--mal">Debería haber entrado la nómina y todavía no hay ningún ingreso apuntado este mes.</p> }
+            @else if (c.proximo) {
+              <p class="cobro__texto">Cobras el {{ fechaCorta(c.proximo) }}: {{ c.diasHasta === 0 ? 'es hoy' : 'faltan ' + diasTexto(c.diasHasta!) }}.
+                @if ((c.porDia ?? 0) > 0) { Puedes gastar unos <b>{{ euros(c.porDia) }} al día</b> hasta entonces, sin tocar las huchas. } @else { Ahora mismo no te queda margen hasta cobrar. }</p>
+            }
+          } @else {
+            <p class="cobro__texto">Todavía no sé cuándo cobras. Apunta tu nómina unos meses (o ponla en Recurrentes) y lo detecto solo, o dime el día.</p>
+          }
+        </article>
+      }
     </section>
   }
 
@@ -310,6 +325,24 @@
       </footer>
     </form>
   }
+</dialog>
+
+<!-- Día de cobro -->
+<dialog class="dlg" #dlgCobro (click)="cerrarFuera($event)" aria-labelledby="dlg-cobro-t">
+  <form class="dlg__caja" (submit)="guardarCobro($event)" novalidate>
+    <header class="dlg__cabeza"><h2 id="dlg-cobro-t">Día de cobro</h2>
+      <button class="dlg__x" type="button" (click)="dlgCobro.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
+    <p class="dlg__lead">El día del mes en que suele entrar tu nómina. Si cae en fin de semana, cuenta el viernes anterior. Déjalo en blanco para que lo detecte solo (con tres meses de nóminas apuntadas, o con la nómina en Recurrentes).</p>
+    <label class="limite">
+      <span class="limite__nombre">Día del mes</span>
+      <span class="limite__campo"><input type="text" inputmode="numeric" placeholder="automático" [value]="diaCobro()" (input)="diaCobro.set($any($event.target).value)"></span>
+    </label>
+    @if (errorDlg()) { <p class="error">{{ errorDlg() }}</p> }
+    <footer class="dlg__pie">
+      <button class="button button--ghost" type="button" (click)="dlgCobro.close()">Cancelar</button>
+      <button class="button" type="submit">Guardar</button>
+    </footer>
+  </form>
 </dialog>
 
 <!-- Presupuestos por categoría -->

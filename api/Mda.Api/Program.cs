@@ -368,6 +368,7 @@ Mda.Api.Domotica.EscenasCasa.MapEscenasCasa(app);
 app.MapVelocidad();
 app.MapHogar();
 app.MapCartera();
+app.MapCobro();
 app.MapCoche();
 app.MapPush();
 app.MapPerfil();

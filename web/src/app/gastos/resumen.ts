@@ -4,7 +4,7 @@ import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
 import { GraficaPrevision } from './grafica-prevision';
-import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, PresupuestoSemana, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
+import { CATEGORIAS, Consejos, Movimiento, Pendiente, EstadoCobro, PrevisionCierre, Presupuesto, PresupuestoSemana, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
 import { EstadoError, Esqueleto } from '../ui';
 
 // Resumen del mes: el dinero que tienes (saldo que se arrastra de mes en mes), lo que puedes gastar al día,
@@ -23,6 +23,7 @@ export class Resumen implements OnDestroy {
   private readonly dlgSaldo = viewChild<ElementRef<HTMLDialogElement>>('dlgSaldo');
   private readonly dlgAplicar = viewChild<ElementRef<HTMLDialogElement>>('dlgAplicar');
   private readonly dlgPresupuestos = viewChild<ElementRef<HTMLDialogElement>>('dlgPresupuestos');
+  private readonly dlgCobro = viewChild<ElementRef<HTMLDialogElement>>('dlgCobro');
   private rosco?: echarts.ECharts;
   private observador?: ResizeObserver;
 
@@ -36,6 +37,8 @@ export class Resumen implements OnDestroy {
   protected readonly presupuestos = signal<Presupuesto[]>([]);
   // presupuestos de la semana de hoy; `vistaPresu` elige cuál se ve en la tarjeta y `modoDlg` cuál se edita en el diálogo
   protected readonly semanales = signal<PresupuestoSemana[]>([]);
+  protected readonly cobro = signal<EstadoCobro | null>(null);
+  protected readonly diaCobro = signal('');
   protected readonly vistaPresu = signal<'mes' | 'semana'>('mes');
   protected readonly modoDlg = signal<'mes' | 'semana'>('mes');
   protected readonly limitesSemana = signal<Record<string, string>>({});
@@ -121,6 +124,7 @@ export class Resumen implements OnDestroy {
       this.presupuestos.set(p);
       if (this.g.esMesActual()) this.g.presupuestosSemana().then((s) => { this.semanales.set(s.presupuestos); if (!s.presupuestos.length) this.vistaPresu.set('mes'); }).catch(() => this.semanales.set([]));
       else { this.semanales.set([]); this.vistaPresu.set('mes'); }
+      if (this.g.esMesActual()) this.g.cobro().then((c) => this.cobro.set(c)).catch(() => this.cobro.set(null)); else this.cobro.set(null);
       if (this.g.esMesActual()) { this.g.consejos().then((c) => this.consejos.set(c)).catch(() => {}); this.g.prevision().then((p) => this.prevision.set(p)).catch(() => {}); }
       else { this.consejos.set(null); this.prevision.set(null); }
     } catch {
@@ -247,6 +251,22 @@ export class Resumen implements OnDestroy {
       this.dlgPresupuestos()?.nativeElement.close();
       this.g.recargar();
     } catch { this.errorDlg.set('Algún límite no es válido.'); }
+  }
+
+  protected abrirCobro(): void {
+    this.diaCobro.set(this.cobro()?.fuente === 'manual' ? String(this.cobro()!.dia) : '');
+    this.errorDlg.set('');
+    this.dlgCobro()?.nativeElement.showModal();
+  }
+
+  protected async guardarCobro(e: Event): Promise<void> {
+    e.preventDefault();
+    const texto = this.diaCobro().trim(), n = texto ? Number(texto) : null;
+    if (n !== null && (!Number.isInteger(n) || n < 1 || n > 31)) { this.errorDlg.set('Pon un día entre 1 y 31, o déjalo en blanco para que lo detecte solo.'); return; }
+    try {
+      this.cobro.set(await this.g.ponerCobro(n));
+      this.dlgCobro()?.nativeElement.close();
+    } catch { this.errorDlg.set('No se pudo guardar.'); }
   }
 
   protected diasTexto(n: number): string { return `${n} ${n === 1 ? 'día' : 'días'}`; }

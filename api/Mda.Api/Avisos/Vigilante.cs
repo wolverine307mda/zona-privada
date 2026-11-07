@@ -50,6 +50,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Resumen(db, ct), "el resumen semanal");
         await Aislada(() => Coche(db, ct), "el coche");
         await Aislada(() => Cartera.ComprobarTodos(db, avisos, DateOnly.FromDateTime(Local), log, ct), "los presupuestos");
+        await Aislada(() => DiaDeCobro.Comprobar(db, avisos, Local, log, ct), "el día de cobro");
         await Aislada(() => Copias(db, ct), "las copias");
         await Aislada(() => ResultadoSimulacro(db, ct), "el simulacro de restauración");
         await Aislada(() => CopiaNueva(db, ct), "la copia nueva");

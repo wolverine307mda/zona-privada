@@ -20,7 +20,8 @@
           <span class="etq">Disponible para gastar</span>
           <strong class="disp__cifra">{{ euros(saldo()!.libre) }}</strong>
           <small>
-            @if (porDia() != null && porDia()! > 0) { <b>{{ euros(porDia()) }}/día</b> hasta fin de mes }
+            @if (cobro()?.dia && !cobro()!.retrasado && cobro()!.porDia != null && cobro()!.porDia! > 0) { <b>{{ euros(cobro()!.porDia) }}/día</b> hasta cobrar ({{ cobro()!.diasHasta === 0 ? 'hoy' : cobro()!.diasHasta === 1 ? '1 día' : cobro()!.diasHasta + ' días' }}) }
+            @else if (porDia() != null && porDia()! > 0) { <b>{{ euros(porDia()) }}/día</b> hasta fin de mes }
             @else if (porDia() != null) { Este mes ya no queda margen }
             @if (saldo()!.enHuchas > 0) { · tienes {{ euros(saldo()!.actual) }} y {{ euros(saldo()!.enHuchas) }} están en huchas }
           </small>

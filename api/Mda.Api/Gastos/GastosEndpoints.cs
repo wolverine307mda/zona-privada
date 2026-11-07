@@ -222,6 +222,7 @@ public static class GastosEndpoints
         db.Movimientos.Add(m);
         await db.SaveChangesAsync(ct);
         if (m.Tipo == TipoMovimiento.Gasto) { await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct); await PresupuestosSemana.Comprobar(db, avisos, m.Categoria, m.Fecha, DateOnly.FromDateTime(DateTime.UtcNow), log, ct); }
+        if (m.Tipo == TipoMovimiento.Ingreso) await DiaDeCobro.AlRecibirIngreso(db, avisos, m, log, ct);
         return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
     }
 

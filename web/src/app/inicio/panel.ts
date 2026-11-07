@@ -43,6 +43,8 @@ export class Panel {
   protected readonly mes = signal<ResumenMes | null>(null);
   protected readonly saldo = signal<{ configurado: boolean; actual: number; libre: number; enHuchas: number } | null>(null);
   protected readonly porDia = signal<number | null>(null);
+  // tu próximo cobro (si se conoce): el «por día» se cuenta hasta entonces, no hasta fin de mes
+  protected readonly cobro = signal<{ dia: number | null; proximo: string | null; diasHasta: number | null; porDia: number | null; retrasado: boolean } | null>(null);
   protected readonly sonando = signal<Sonando | null>(null);
   protected readonly spotify = signal<'si' | 'no' | null>(null);
   protected readonly progreso = signal(0);
@@ -117,6 +119,7 @@ export class Panel {
       get<ResumenMes>(`/api/gastos/mes/${hoy.getFullYear()}/${hoy.getMonth() + 1}`).then((m) => this.mes.set(m)),
       get<{ configurado: boolean; actual: number; libre: number; enHuchas: number }>('/api/gastos/saldo').then((x) => this.saldo.set(x)),
       get<{ porDia: number }>('/api/gastos/consejos').then((c) => this.porDia.set(c.porDia)),
+      get<{ dia: number | null; proximo: string | null; diasHasta: number | null; porDia: number | null; retrasado: boolean }>('/api/gastos/cobro').then((c) => this.cobro.set(c)).catch(() => this.cobro.set(null)),
       get<Deudas>('/api/gastos/deudas').then((d) => this.deudas.set(d)),
       get<Aparicion[]>('/api/agenda/proximos?dias=14').then((a) => this.agenda.set(a)).catch(() => this.agenda.update((v) => v ?? [])),
       get<Nota[]>('/api/notas').then((n) => this.notas.set(n)).catch(() => this.notas.update((v) => v ?? [])),
