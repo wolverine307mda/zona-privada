@@ -27,6 +27,50 @@ static class Vigias
 
     public static readonly string RutaBandeja = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Zona privada", "Bandeja");
 
+    // «Para el móvil»: lo que dejes en esta carpeta lo sube el agente a la app, que lo ofrece 24 horas (hasta 100 MB; los archivos se quedan en el PC)
+    public static void ParaElMovil(HttpClient http, CancellationToken ct)
+    {
+        var carpeta = Path.Combine(RutaBandeja, "Para el móvil");
+        try
+        {
+            Directory.CreateDirectory(carpeta);
+            var w = new FileSystemWatcher(carpeta) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.Size | NotifyFilters.LastWrite, EnableRaisingEvents = true };
+            void Visto(string ruta) { _ = Subir(http, ruta, ct); }
+            w.Created += (_, e) => Visto(e.FullPath);
+            w.Renamed += (_, e) => Visto(e.FullPath);
+            ct.Register(w.Dispose);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { /* esa carpeta no se puede vigilar */ }
+    }
+
+    static async Task Subir(HttpClient http, string ruta, CancellationToken ct)
+    {
+        try
+        {
+            if (Temporales.Contains(Path.GetExtension(ruta), StringComparer.OrdinalIgnoreCase) || Directory.Exists(ruta)) return;
+            var ahora = DateTime.UtcNow;
+            if (Vistos.TryGetValue(ruta, out var antes) && ahora - antes < TimeSpan.FromSeconds(30)) return;
+            Vistos[ruta] = ahora;
+            long ultimo = -1;
+            for (var i = 0; i < 40 && !ct.IsCancellationRequested; i++)
+            {
+                await Task.Delay(1500, ct);
+                if (!File.Exists(ruta)) return;
+                var tamano = new FileInfo(ruta).Length;
+                if (tamano == ultimo && tamano > 0)
+                {
+                    if (tamano > BandejaLogica.Maximo) { await Enviar(http, "bandeja", $"{Path.GetFileName(ruta)} pasa de 100 MB: no se sube al móvil", ct); return; }
+                    await using var f = File.OpenRead(ruta);
+                    using var contenido = new StreamContent(f);
+                    using var r = await http.PostAsync($"/api/sistema/agente/bandeja/subir?nombre={Uri.EscapeDataString(Path.GetFileName(ruta))}", contenido, ct);
+                    return;
+                }
+                ultimo = tamano;
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or OperationCanceledException or HttpRequestException) { /* se movió, se borró o la API no está */ }
+    }
+
     static void Vigilar(HttpClient http, string carpeta, string tipo, bool crear, CancellationToken ct)
     {
         try

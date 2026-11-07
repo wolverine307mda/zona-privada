@@ -2003,6 +2003,55 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("salud_dias", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Pc.Transferencia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Archivo")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateTimeOffset>("Caduca")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("Creada")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("Tamano")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Caduca");
+
+                    b.ToTable("bandeja_transferencias", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Acceso", b =>
                 {
                     b.Property<int>("Id")

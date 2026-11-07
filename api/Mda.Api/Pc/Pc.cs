@@ -234,9 +234,9 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar", "recibir"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
-    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar"];
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar", "recibir"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
     public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad", "espacio", "apps", "procesos"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
@@ -302,6 +302,7 @@ public static class OrdenesPc
         "velocidad" => "medir la velocidad de Internet",
         "espacio" => $"ver qué ocupa en {o.Parametro}",
         "apps" => "leer las aplicaciones del menú Inicio",
+        "recibir" => "recoger un archivo de la bandeja",
         "abrir-app" => "abrir una aplicación del catálogo",
         "procesos" => "ver las aplicaciones abiertas",
         "cerrar" => o.Parametro.EndsWith(":forzar") ? "forzar el cierre de una aplicación" : "cerrar una aplicación",

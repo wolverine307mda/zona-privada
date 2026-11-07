@@ -23,6 +23,7 @@
     <Compile Include="..\..\agente\Mda.Agente\Velocidad.cs" Link="Agente\Velocidad.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Espacio.cs" Link="Agente\Espacio.cs" />
     <Compile Include="..\..\agente\Mda.Agente\AppsPc.cs" Link="Agente\AppsPc.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\BandejaLogica.cs" Link="Agente\BandejaLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\CapturaLogica.cs" Link="Agente\CapturaLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\UbicacionLogica.cs" Link="Agente\UbicacionLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\DescargaLogica.cs" Link="Agente\DescargaLogica.cs" />

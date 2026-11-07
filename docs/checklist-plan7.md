@@ -40,7 +40,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | ✅ **Hecha**: `Tiempo/Ropa.cs`, chip en Inicio, atajo y `/ropa` | 1 |
 | 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | ✅ **Hecha**: «No lo reconozco», estado y mapa en Equipos (`Seguridad/EquiposConfianza.cs`) | 1,5 |
 | 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | ✅ **Hecha**: contadores extra, avisos a 45/14 días y desgaste 80 %, «Qué ocupa» (`Pc/Espacio.cs`, `agente/Espacio.cs`) | 1 |
-| 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | **App → PC** (subir desde el móvil) y **PC → móvil** con enlace que caduca | 2 |
+| 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | ✅ **Hecha**: `Pc/Transferencias.cs` y tarjeta «Archivos entre la app y el PC» | 2 |
 | 60 | Abrir y cerrar aplicaciones | `agente/Abrir.cs` (lista cerrada: calculadora, bloc, explorador) | ✅ **Hecha**: `Pc/AppsPc.cs`, `agente/AppsPc.cs` y tarjeta Aplicaciones en Mi PC | 2 |
 | 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | **Temas completos** (papel, terminal, sepia, alto contraste, OLED…) | 2 |
 | 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | Registro de tarjetas, **arrastrar/ocultar/tamaño** y varias vistas | 3 |
@@ -207,13 +207,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: es lo más delicado del plan; por eso catálogo cerrado, verificación en el agente, protegidos y confirmación. Esfuerzo: 2 sesiones.
 - Decisión: tabla `apps_pc` (migración `AppsPc`) y órdenes `apps`, `abrir-app`, `procesos` y `cerrar` (solo desde sus rutas, nunca por `/api/pc/ordenes`). La orden de abrir lleva el AppID del catálogo y el agente comprueba que sigue en `Get-StartApps`; cerrar exige número + hora de inicio de la última lista, protegidos (sistema, zona privada, Postgres, Docker, Tailscale), cierre amable y «Forzar» aparte, ambos con Face ID o contraseña. Tarjeta «Aplicaciones» en Mi PC. **No incluido**: el atajo «Modo trabajo terminado» y `/cerrar chrome` de Telegram (C60.5) y el tope propio de 1 cierre por segundo (lo cubre el límite «sensible» de las rutas).
 
-### ⬜ 59 · Bandeja en los dos sentidos
-- ⬜ C59.1 **App → PC**: «Enviar al PC» en Mi PC sube el archivo (límite 100 MB, sin ejecutables, como `Archivos:PermitirEjecutables`) a un almacén temporal cifrado; el agente lo recoge (como `descargar`) y lo deja en `Zona privada\Bandeja\Recibidos` con su estado «en el PC».
-- ⬜ C59.2 **PC → móvil**: lo que dejes en `Bandeja\Para el móvil` lo sube el agente (en trozos) al almacén temporal; la app lo ofrece con un **enlace que caduca en 24 h** (y se borra al descargar o al caducar). Detrás de «contraseña otra vez» si pesa más de 20 MB.
-- ⬜ C59.3 La lista de la bandeja deja de ser «50 en memoria»: tabla `ElementoBandeja` (dirección, nombre, tamaño, estado, caduca) con limpieza diaria.
+### ✅ 59 · Bandeja en los dos sentidos
+- ✅ C59.1 **App → PC**: «Enviar al PC» en Mi PC sube el archivo (límite 100 MB, sin ejecutables, como `Archivos:PermitirEjecutables`) a un almacén temporal cifrado; el agente lo recoge (como `descargar`) y lo deja en `Zona privada\Bandeja\Recibidos` con su estado «en el PC».
+- ✅ C59.2 **PC → móvil**: lo que dejes en `Bandeja\Para el móvil` lo sube el agente (en trozos) al almacén temporal; la app lo ofrece con un **enlace que caduca en 24 h** (y se borra al descargar o al caducar). Detrás de «contraseña otra vez» si pesa más de 20 MB.
+- ✅ C59.3 La lista de la bandeja deja de ser «50 en memoria»: tabla `ElementoBandeja` (dirección, nombre, tamaño, estado, caduca) con limpieza diaria.
 - ⬜ C59.4 Pantalla: dos pestañas «Para el PC» y «Para el móvil», progreso y errores claros; y en el iPhone, la hoja de compartir con un Atajo («Enviar al PC»).
-- ⬜ C59.5 Tests (límites, tipos prohibidos, caducidad) y docs.
+- ✅ C59.5 Tests (límites, tipos prohibidos, caducidad) y docs.
 - Riesgos: espacio y antivirus → almacén con tope de 1 GB y limpieza; nada se ejecuta. Esfuerzo: 2 sesiones.
+- Decisión: tabla `bandeja_transferencias` (migración `BandejaTransferencias`) y almacén temporal cifrado con la bóveda (tope 1 GB, 100 MB por archivo, sin ejecutables, 24 h; se borra al recoger, bajar o caducar, con limpieza en la ronda del vigilante). App → PC: orden `recibir` (pide Face ID o contraseña) y el agente lo deja en `Bandeja\Recibidos` sin pisar nada. PC → móvil: el agente vigila `Bandeja\Para el móvil` y sube; el «enlace» es una descarga con sesión (no hay enlaces públicos por el Funnel) y los de más de 20 MB piden la contraseña otra vez. **Sin trozos**: la subida va en una sola petición de hasta 100 MB. **No incluido**: la hoja de compartir del iPhone («Enviar al PC»), y la lista antigua de «llegado al PC» sigue en memoria.
 
 ### ⬜ 85 · Panel de salud de la app
 - ⬜ C85.1 `GET /api/sistema/app` con: tamaño de la base (`pg_database_size`), las 10 tablas más grandes (`pg_total_relation_size`), filas de cada una, antigüedad de la última copia y del último simulacro, errores 5xx recientes (ya hay contador), memoria de la API y tiempo en marcha.

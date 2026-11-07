@@ -38,6 +38,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Papeles.Garantia> Garantias => Set<Mda.Api.Papeles.Garantia>();
     public DbSet<Mda.Api.Domotica.ResumenCasaDia> ResumenesCasaDia => Set<Mda.Api.Domotica.ResumenCasaDia>();
     public DbSet<Mda.Api.Pc.AppPc> AppsPc => Set<Mda.Api.Pc.AppPc>();
+    public DbSet<Mda.Api.Pc.Transferencia> Transferencias => Set<Mda.Api.Pc.Transferencia>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -290,6 +291,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Pc.Transferencia>(e =>
+        {
+            e.ToTable("bandeja_transferencias");
+            e.Property(x => x.Direccion).HasMaxLength(8);
+            e.Property(x => x.Nombre).HasMaxLength(200);
+            e.Property(x => x.Estado).HasMaxLength(20);
+            e.Property(x => x.Archivo).HasMaxLength(60);
+            e.Property(x => x.Mensaje).HasMaxLength(200);
+            e.HasIndex(x => x.Caduca);
         });
         b.Entity<Mda.Api.Pc.AppPc>(e =>
         {

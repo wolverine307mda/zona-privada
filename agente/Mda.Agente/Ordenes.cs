@@ -13,7 +13,7 @@ record TextoPortapapeles(string Texto);
 
 static partial class Ordenes
 {
-    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar"];
+    static readonly HashSet<string> Permitidas = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion", "espacio", "apps", "abrir-app", "procesos", "cerrar", "recibir"];
 
     public static async Task Bucle(HttpClient esperaLarga, string secreto, CancellationToken ct)
     {
@@ -67,6 +67,7 @@ static partial class Ordenes
             if (o.Tipo == "velocidad") return await TestDeVelocidad(http, ct);
             if (o.Tipo == "espacio") return await QueOcupa(o.Parametro, http, ct);
             if (o.Tipo == "apps") return await ListaDeApps(http, ct);
+            if (o.Tipo == "recibir") return await Recibir(o.Parametro, http, ct);
             if (o.Tipo == "abrir-app") { var (ok, m) = await AppsPc.Abrir(o.Parametro, ct); return new(ok, m); }
             if (o.Tipo == "procesos") return await ListaDeProcesos(http, ct);
             if (o.Tipo == "cerrar")
@@ -138,6 +139,32 @@ static partial class Ordenes
         if (d.Tipo == "url") Process.Start(new ProcessStartInfo("explorer.exe", d.Valor) { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
         else Process.Start(new ProcessStartInfo(d.Valor) { UseShellExecute = true })?.Dispose();
         return new(true, d.Tipo == "url" ? "dirección abierta en el navegador del PC" : $"{parametro.Trim().ToLowerInvariant()} abierto");
+    }
+
+    // «Enviar al PC»: baja el archivo que subiste a la app y lo deja en «Zona privada\Bandeja\Recibidos» (nombre seguro, sin pisar nada, sin ejecutables)
+    static async Task<ResultadoOrden> Recibir(string parametro, HttpClient http, CancellationToken ct)
+    {
+        if (!int.TryParse(parametro, out var id) || id <= 0) return new(false, "orden de recepción no válida");
+        try
+        {
+            using var r = await http.GetAsync($"/api/sistema/agente/bandeja/{id}", HttpCompletionOption.ResponseHeadersRead, ct);
+            if (!r.IsSuccessStatusCode) return await Hecho(http, id, false, $"la API responde {(int)r.StatusCode}", ct);
+            var nombre = BandejaLogica.NombreSeguro(r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+            if (nombre is null || BandejaLogica.Bloqueada(nombre)) return await Hecho(http, id, false, "nombre o tipo de archivo no permitido", ct);
+            if ((r.Content.Headers.ContentLength ?? 0) > BandejaLogica.Maximo) return await Hecho(http, id, false, "pasa de 100 MB", ct);
+            var carpeta = Path.Combine(Vigias.RutaBandeja, "Recibidos");
+            Directory.CreateDirectory(carpeta);
+            var destino = Path.Combine(carpeta, BandejaLogica.Unico(nombre, n => File.Exists(Path.Combine(carpeta, n))));
+            await using (var f = File.Create(destino)) await r.Content.CopyToAsync(f, ct);
+            return await Hecho(http, id, true, $"guardado como {Path.GetFileName(destino)}", ct);
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or UnauthorizedAccessException or TaskCanceledException) { return await Hecho(http, id, false, "no se pudo guardar: " + e.Message, ct); }
+    }
+
+    static async Task<ResultadoOrden> Hecho(HttpClient http, int id, bool ok, string mensaje, CancellationToken ct)
+    {
+        try { await http.PostAsJsonAsync($"/api/sistema/agente/bandeja/{id}/hecho", new { ok, mensaje }, ct); } catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { /* la API no se entera: el archivo ya está */ }
+        return new(ok, mensaje);
     }
 
     // El catálogo de aplicaciones del menú Inicio (nombre y AppID) para que elijas cuáles se pueden abrir desde la app

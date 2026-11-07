@@ -17,6 +17,7 @@ static class AgenteServicio
 
         Vigias.Descargas(http, ct);
         Vigias.Bandeja(http, ct);
+        Vigias.ParaElMovil(http, ct);
         _ = Task.Run(async () =>
         {
             try
