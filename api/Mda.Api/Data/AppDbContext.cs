@@ -34,6 +34,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Pc.ElementoPortapapeles> Portapapeles => Set<Mda.Api.Pc.ElementoPortapapeles>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
     public DbSet<PresupuestoSemanal> PresupuestosSemanales => Set<PresupuestoSemanal>();
+    public DbSet<PrecioCarburante> PreciosCarburante => Set<PrecioCarburante>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -533,6 +534,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Categoria).HasMaxLength(40);
             e.Property(x => x.Limite).HasPrecision(12, 2);
             e.Property(x => x.AvisadoMes).HasMaxLength(7);
+        });
+
+        b.Entity<PrecioCarburante>(e =>
+        {
+            e.ToTable("precios_carburante");
+            e.HasKey(x => new { x.Fecha, x.Combustible });
+            e.Property(x => x.Combustible).HasMaxLength(20);
+            e.Property(x => x.Media).HasPrecision(6, 3);
+            e.Property(x => x.MinimoCerca).HasPrecision(6, 3);
         });
 
         b.Entity<PresupuestoSemanal>(e =>

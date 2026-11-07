@@ -1180,6 +1180,28 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("movimientos", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Gastos.PrecioCarburante", b =>
+                {
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Combustible")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Media")
+                        .HasPrecision(6, 3)
+                        .HasColumnType("numeric(6,3)");
+
+                    b.Property<decimal>("MinimoCerca")
+                        .HasPrecision(6, 3)
+                        .HasColumnType("numeric(6,3)");
+
+                    b.HasKey("Fecha", "Combustible");
+
+                    b.ToTable("precios_carburante", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Gastos.Presupuesto", b =>
                 {
                     b.Property<string>("Categoria")

@@ -4,11 +4,12 @@ import { GastosService } from './gastos.service';
 import { echarts, opcionesGasolina } from './graficas-gastos';
 import { Gasolina as DatosGasolina, Movimiento, Repostaje, diaCorto, euros, numero } from './modelo';
 import { EstadoError, Esqueleto } from '../ui';
+import { DondeRepostar } from './donde-repostar';
 
 // Gasolina: consumo (L/100 km), precio medio y último del litro, coste por km y cada repostaje
 @Component({
   selector: 'app-gasolina',
-  imports: [EstadoError, Esqueleto],
+  imports: [EstadoError, Esqueleto, DondeRepostar],
   template: `
     @if (datos(); as d) {
       <section class="kpis">
@@ -23,6 +24,8 @@ import { EstadoError, Esqueleto } from '../ui';
         <article data-inclina class="caja kpi"><span class="etq">Coste por km</span><strong class="grande">{{ d.costePorKm != null ? numero(d.costePorKm * 100, 1) : '—' }}<small>cént.</small></strong>
           <span class="sub">{{ d.kmRecorridos != null ? numero(d.kmRecorridos, 0) + ' km registrados' : 'sin kilómetros todavía' }}</span></article>
       </section>
+
+      <app-donde-repostar />
 
       <div class="barra-acciones">
         <button class="button" type="button" (click)="nuevo()">

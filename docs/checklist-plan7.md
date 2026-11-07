@@ -29,7 +29,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 6 | Presupuesto por semana | ✅ **Hecha**: `PresupuestoSemanal` + `PresupuestosSemana` + interruptor en Cartera (queda la línea semanal del atajo `/hoy`) | — | 1 |
 | 8 | Fecha de cobro de la nómina | ✅ **Hecha**: `Gastos/Cobro.cs`, tarjeta en Cartera, «hasta cobrar» en Inicio y dos avisos | — | 1 |
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | Garantía/devolución **ligada a un gasto**, con foto del ticket | 1,5 |
-| 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | Precios de las gasolineras (Ministerio), la más barata cerca y «conviene hoy» | 1,5 |
+| 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | ✅ **Hecha**: `Gastos/Carburantes.cs`, tarjeta «Dónde repostar» en Gasolina | 1,5 |
 | 13 | Contactos: cumpleaños, datos y gustos | nada | **Módulo Personas** + importación selectiva (vCard / Google / Atajo) | 3 |
 | 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
@@ -111,13 +111,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - ✅ A8.4 Cartera: tarjeta «Día de cobro» (de dónde sale el día, próximo cobro y €/día) y diálogo para ponerlo a mano o dejarlo automático (`PUT /api/gastos/cobro {dia}`; `null` = automático).
 - Decisión: el aviso de «llegó la nómina» no ofrece todavía un botón para repartir entre huchas; solo recuerda hacerlo.
 
-### ⬜ 12 · Gasolina: cuándo y dónde repostar
-- ⬜ A12.1 `ServicioCarburantes`: descarga diaria (con caché de 12 h en memoria) del servicio público del Ministerio (`PreciosCarburantes/EstacionesTerrestres`), sin clave. Parser puro con tests sobre una muestra guardada (cabeceras con comas decimales y tildes).
-- ⬜ A12.2 Ajustes del coche: combustible (Gasolina 95 / Diésel A…), radio (km) y punto de referencia (casa, que ya se sabe por `Luz`/tiempo, o el que elijas). Función pura `Carburantes.MasBaratas(estaciones, punto, radio, combustible)`.
-- ⬜ A12.3 «¿Conviene repostar hoy?»: compara el precio más barato cercano con la **media de tu provincia de la semana** y con tu propio histórico de `Repostaje.PrecioLitro`; veredicto con las tres cifras (nunca un «sí» sin explicarse). Tests con casos de subida, bajada y pocos datos.
-- ⬜ A12.4 Pantalla «Gasolina» (en Coche): las 5 más baratas con distancia y precio, tu último repostaje, el ahorro posible por depósito (litros típicos × diferencia) y un enlace a Maps. Móvil a 375 px.
-- ⬜ A12.5 Aviso opcional («Diésel bajó 6 céntimos cerca de ti») con dedupe diario y umbral configurable.
+### ✅ 12 · Gasolina: cuándo y dónde repostar
+- ✅ A12.1 `ServicioCarburantes`: descarga diaria (con caché de 12 h en memoria) del servicio público del Ministerio (`PreciosCarburantes/EstacionesTerrestres`), sin clave. Parser puro con tests sobre una muestra guardada (cabeceras con comas decimales y tildes).
+- ✅ A12.2 Ajustes del coche: combustible (Gasolina 95 / Diésel A…), radio (km) y punto de referencia (casa, que ya se sabe por `Luz`/tiempo, o el que elijas). Función pura `Carburantes.MasBaratas(estaciones, punto, radio, combustible)`.
+- ✅ A12.3 «¿Conviene repostar hoy?»: compara el precio más barato cercano con la **media de tu provincia de la semana** y con tu propio histórico de `Repostaje.PrecioLitro`; veredicto con las tres cifras (nunca un «sí» sin explicarse). Tests con casos de subida, bajada y pocos datos.
+- ✅ A12.4 Pantalla «Gasolina» (en Coche): las 5 más baratas con distancia y precio, tu último repostaje, el ahorro posible por depósito (litros típicos × diferencia) y un enlace a Maps. Móvil a 375 px.
+- ✅ A12.5 Aviso opcional («Diésel bajó 6 céntimos cerca de ti») con dedupe diario y umbral configurable.
 - Riesgos: el servicio del Ministerio a veces tarda o cae → caché y mensaje «datos de hace X horas». Esfuerzo: 1,5 sesiones.
+- Decisión: los datos se piden al Ministerio como mucho cada 3 h (caché en memoria; si falla, se usa la última copia y se marca «antiguos»). La mediana de la provincia hace de «media» para que un precio raro no la deforme. El punto es el que elijas, tu ubicación o el lugar del tiempo.
 
 ### ⬜ 9 · Garantías y devoluciones
 - ⬜ A9.1 Tabla `Garantia` (`MovimientoId?`, `Producto`, `Comercio`, `FechaCompra`, `GarantiaHasta`, `DevolucionHasta?`, `Estado`: vigente · devuelta · reclamada · caducada, `Notas`, `ArchivoRuta?` del ticket o la foto). Por defecto, 3 años de garantía legal (artículo 120 de la Ley General para la Defensa de los Consumidores, para bienes nuevos) y 14 días de desistimiento en compras a distancia; ambos editables.

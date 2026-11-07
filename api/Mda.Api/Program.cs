@@ -253,6 +253,10 @@ builder.Services.AddHttpClient("conexiones", c => c.Timeout = TimeSpan.FromSecon
 builder.Services.AddHttpClient("telegram", c => c.Timeout = TimeSpan.FromSeconds(20)).RemoveAllLoggers();
 builder.Services.AddHttpClient("telegram-largo", c => c.Timeout = TimeSpan.FromSeconds(75)).RemoveAllLoggers(); // getUpdates espera hasta 50 s
 builder.Services.AddHttpClient("tiempo", c => c.Timeout = TimeSpan.FromSeconds(10));
+// precios de las gasolineras (el servicio del Ministerio manda unos 8 MB de JSON, con gzip): una consulta cada 3 horas como mucho
+builder.Services.AddHttpClient("carburantes", c => { c.Timeout = TimeSpan.FromSeconds(45); c.DefaultRequestHeaders.UserAgent.ParseAdd("zona-privada/1.0"); c.DefaultRequestHeaders.Accept.ParseAdd("application/json"); })
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AutomaticDecompression = System.Net.DecompressionMethods.All }).RemoveAllLoggers();
+builder.Services.AddSingleton<Mda.Api.Gastos.ICarburantes, Mda.Api.Gastos.ServicioCarburantes>();
 builder.Services.AddSingleton<Push>();
 // bot de Telegram: avisos y hablar con el asistente desde el chat
 builder.Services.AddSingleton<Bot>();
@@ -369,6 +373,7 @@ app.MapVelocidad();
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();
+app.MapCarburantes();
 app.MapCoche();
 app.MapPush();
 app.MapPerfil();
