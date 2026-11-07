@@ -265,6 +265,9 @@ builder.Services.AddHostedService<Sondeo>();
 // el tiempo (Open-Meteo)
 builder.Services.AddSingleton<ServicioTiempo>();
 builder.Services.AddSingleton<Mda.Api.Tiempo.ILluvia, Mda.Api.Tiempo.ServicioLluvia>();
+// letras de lo que suena (LRCLIB, comunitaria): con un User-Agent educado, como piden sus normas
+builder.Services.AddHttpClient("lrclib", c => { c.Timeout = TimeSpan.FromSeconds(10); c.DefaultRequestHeaders.UserAgent.ParseAdd("zona-privada/1.0 (uso personal)"); });
+builder.Services.AddSingleton<Mda.Api.Conexiones.ServicioLetras>();
 // avisos de luz para fotografiar: hora dorada y noches de Vía Láctea
 builder.Services.AddSingleton<ServicioLuz>();
 builder.Services.AddSingleton<ServicioAurora>();
@@ -377,6 +380,7 @@ Mda.Api.Pc.AppsPcEndpoints.MapAppsPc(app);
 Mda.Api.Pc.Transferencias.MapTransferencias(app);
 Mda.Api.Sistema.SaludApp.MapSaludApp(app);
 Mda.Api.Conexiones.HistorialMusicaEndpoints.MapHistorialMusica(app);
+Mda.Api.Conexiones.LetrasEndpoints.MapLetras(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

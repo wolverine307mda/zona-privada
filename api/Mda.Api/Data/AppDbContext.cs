@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Pc.Transferencia> Transferencias => Set<Mda.Api.Pc.Transferencia>();
     public DbSet<Mda.Api.Sistema.TamanoTabla> TamanosTabla => Set<Mda.Api.Sistema.TamanoTabla>();
     public DbSet<Mda.Api.Conexiones.Escucha> Escuchas => Set<Mda.Api.Conexiones.Escucha>();
+    public DbSet<Mda.Api.Conexiones.Letra> Letras => Set<Mda.Api.Conexiones.Letra>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -293,6 +294,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Conexiones.Letra>(e =>
+        {
+            e.ToTable("letras");
+            e.Property(x => x.CancionId).HasMaxLength(40);
+            e.HasIndex(x => x.CancionId).IsUnique();
         });
         b.Entity<Mda.Api.Conexiones.Escucha>(e =>
         {

@@ -47,7 +47,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 69 | Widget en la pantalla de bloqueo | `/api/atajos/hoy` y `herramientas/ios/hoy-widget.js` (Scriptable) | Versión **de pantalla de bloqueo** (accesorios) y contenido nuevo | 1 |
 | 70 | Tipografía y densidad | nada | Tamaño de letra, densidad y fuente legible **por dispositivo** | 1 |
 | 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | Señales vivas (música, carga del PC, hora) que los muevan | 1,5 |
-| 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | Letras de LRCLIB, resaltado por tiempo y caché | 1,5 |
+| 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | ✅ **Hecha**: `Conexiones/Letras.cs` y panel de letra en el reproductor | 1,5 |
 | 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
 | 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | Listas asignadas a «momentos» y un toque para ponerlas | 1,5 |
 | 79 | Series y películas | nada | Módulo con estados, avisos de estreno y «dónde verlo» | 2,5 |
@@ -237,12 +237,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: Spotify limita el ritmo → 20 min es de sobra. Esfuerzo: 2 sesiones.
 - Decisión: `Conexiones/HistorialMusica.cs`, tabla `escuchas` (migración `EscuchasMusica`, única por canción + hora) y un recolector cada 20 min con `recently-played?after=`. Estadísticas puras (top de canciones y artistas —una colaboración cuenta para cada uno—, horas locales, racha, artistas nuevos, canción de la semana). Tarjeta «Lo que escuchas» en Música con borrado desde la propia tarjeta (dos toques). Sin datos propios la pantalla lo dice y deja el «Lo más escuchado» de Spotify.
 
-### ⬜ 75 · Letras sincronizadas
-- ⬜ D75.1 `ServicioLetras`: consulta a **LRCLIB** (`/api/get` por título, artista, álbum y duración; sin clave y con un `User-Agent` educado) y cachea el resultado por canción en una tabla `Letra` (para no repetir).
-- ⬜ D75.2 Parser puro del formato LRC (`[mm:ss.xx]`, etiquetas, líneas repetidas) con tests, y búsqueda de «la línea actual» según el progreso.
-- ⬜ D75.3 En el reproductor de escritorio (`mini-musica.ts`), un panel de letra con la línea actual resaltada y desplazamiento suave (el progreso ya se actualiza cada segundo); solo en ordenador y con interruptor.
-- ⬜ D75.4 Si no hay letra, un mensaje discreto; si solo hay sin sincronizar, se enseña estática.
+### ✅ 75 · Letras sincronizadas
+- ✅ D75.1 `ServicioLetras`: consulta a **LRCLIB** (`/api/get` por título, artista, álbum y duración; sin clave y con un `User-Agent` educado) y cachea el resultado por canción en una tabla `Letra` (para no repetir).
+- ✅ D75.2 Parser puro del formato LRC (`[mm:ss.xx]`, etiquetas, líneas repetidas) con tests, y búsqueda de «la línea actual» según el progreso.
+- ✅ D75.3 En el reproductor de escritorio (`mini-musica.ts`), un panel de letra con la línea actual resaltada y desplazamiento suave (el progreso ya se actualiza cada segundo); solo en ordenador y con interruptor.
+- ✅ D75.4 Si no hay letra, un mensaje discreto; si solo hay sin sincronizar, se enseña estática.
 - Riesgos: no todas las canciones tienen letra y son de la comunidad; se muestra la fuente y se guarda solo caché local. Esfuerzo: 1,5 sesiones.
+- Decisión: `Conexiones/Letras.cs`, tabla `letras` (migración `LetrasMusica`): LRCLIB con User-Agent propio, caché por canción (lo encontrado para siempre; «no hay» se vuelve a mirar a la semana, y un fallo del servicio no se guarda como «no hay»). Parser LRC puro (varios tiempos por línea, etiquetas ignoradas, pausas conservadas) y línea actual por búsqueda binaria en servidor y en el front. Panel «Letra» en el reproductor de escritorio (solo con pantalla ancha, interruptor guardado en el navegador, línea actual centrada); sin sincronizar se enseña estática, sin letra se dice. No se ha probado con LRCLIB de verdad (sin red en las pruebas).
 
 ### ⬜ 77 · Listas por estado de ánimo
 - ⬜ D77.1 Permiso extra de Spotify para leer tus listas (`playlist-read-private`); hay que volver a autorizar la conexión desde Seguridad (lo dice la pantalla, sin tocar el código de acceso).

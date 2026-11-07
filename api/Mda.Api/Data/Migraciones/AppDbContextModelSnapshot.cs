@@ -526,6 +526,41 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("escuchas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Conexiones.Letra", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CancionId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<bool>("Encontrada")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Plana")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sincronizada")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CancionId")
+                        .IsUnique();
+
+                    b.ToTable("letras", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Contexto.ReglaContexto", b =>
                 {
                     b.Property<int>("Id")

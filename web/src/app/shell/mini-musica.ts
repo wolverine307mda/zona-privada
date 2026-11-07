@@ -1,9 +1,17 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 interface Cancion { id: string; nombre: string; artistas: string; album: string | null; imagen: string | null; duracion: number; }
+interface LineaLetra { ms: number; texto: string; }
+interface Letra { estado: 'sincronizada' | 'plana' | 'nada'; lineas: LineaLetra[]; plana: string | null; fuente: string; }
+// el índice de la línea que suena (-1 si aún no ha empezado la primera): búsqueda binaria, las líneas vienen ordenadas
+export function lineaActual(lineas: LineaLetra[], ms: number): number {
+  let lo = 0, hi = lineas.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (lineas[m].ms <= ms) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
 interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; dispositivo: string | null; volumen: number | null; }
 
 // Lo que suena, en la barra de arriba: portada que gira, título y pausa / siguiente desde cualquier sección.
@@ -70,6 +78,23 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
                 {{ a.dispositivo }}{{ a.volumen != null ? ' · ' + a.volumen + ' %' : '' }}
               </p>
             }
+            @if (letra(); as l) {
+              <section class="letra" aria-label="Letra de la canción">
+                <header class="letra__cab">
+                  <h3>Letra</h3>
+                  <button type="button" class="letra__tog" (click)="alternarLetra()" [attr.aria-pressed]="verLetra()">{{ verLetra() ? 'Ocultar' : 'Mostrar' }}</button>
+                </header>
+                @if (verLetra()) {
+                  @if (l.estado === 'sincronizada') {
+                    <div class="letra__texto" #cuerpoLetra>
+                      @for (x of l.lineas; track $index) { <p [class.actual]="$index === actual()" [class.pasada]="$index < actual()">{{ x.texto || '♪' }}</p> }
+                    </div>
+                  } @else if (l.estado === 'plana') { <div class="letra__texto letra__texto--plana"><p>{{ l.plana }}</p></div> }
+                  @else { <p class="letra__nada">No hay letra para esta canción.</p> }
+                  @if (l.estado !== 'nada') { <small class="letra__fuente">Letra de la comunidad de {{ l.fuente }}</small> }
+                }
+              </section>
+            }
             @if (cola().length) {
               <section class="siguiente" aria-labelledby="mm-cola">
                 <h3 id="mm-cola">A continuación</h3>
@@ -91,6 +116,20 @@ interface Ahora { sonando: boolean; cancion: Cancion | null; progreso: number; d
   styles: `
     :host { display: contents; }
     .mini { display: flex; align-items: center; gap: 8px; height: 42px; padding: 4px 6px 4px 4px; max-width: 280px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: var(--vidrio); backdrop-filter: var(--desenfoque); animation: entra 500ms var(--ease-expo); }
+    /* la letra: solo en pantalla ancha (en el móvil la ventana ya va justa) */
+    .letra { display: none; }
+    @media (min-width: 900px) and (min-height: 640px) {
+      .letra { display: grid; gap: 6px; width: 100%; text-align: left; }
+      .letra__cab { display: flex; align-items: center; justify-content: space-between; }
+      .letra__cab h3 { margin: 0; font: 600 .78rem/1 var(--font-text); text-transform: uppercase; letter-spacing: .08em; color: var(--soft); }
+      .letra__tog { border: 0; background: none; color: var(--soft); font: inherit; font-size: .78rem; cursor: pointer; }
+      .letra__texto { max-height: 168px; overflow-y: auto; scroll-behavior: smooth; padding: 6px 2px; mask: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+      .letra__texto p { margin: 0 0 8px; font: 600 1.05rem/1.35 var(--font-text); color: color-mix(in srgb, var(--texto) 38%, transparent); transition: color .3s, transform .3s; transform-origin: left; }
+      .letra__texto p.pasada { color: color-mix(in srgb, var(--texto) 55%, transparent); }
+      .letra__texto p.actual { color: var(--texto); transform: scale(1.04); }
+      .letra__texto--plana p { white-space: pre-line; font-weight: 500; color: color-mix(in srgb, var(--texto) 75%, transparent); }
+      .letra__nada, .letra__fuente { margin: 0; color: var(--soft); font-size: .8rem; }
+    }
     @keyframes entra { from { opacity: 0; transform: translateY(-6px) scale(0.96); } }
     .mini__disco { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; overflow: hidden; background: #111; cursor: pointer; box-shadow: 0 0 0 2px color-mix(in srgb, #1ed760 70%, transparent); animation: gira 6s linear infinite; }
     .mini--parado .mini__disco { animation-play-state: paused; box-shadow: 0 0 0 2px var(--linea); }
@@ -224,10 +263,29 @@ export class MiniMusica {
   protected readonly tono = signal('#1ed760');
   protected readonly abierto = signal(false);
   protected readonly progreso = signal(0);
+  protected readonly letra = signal<Letra | null>(null);
+  protected readonly verLetra = signal(MiniMusica.guardadoVerLetra());
+  protected readonly actual = computed(() => { const l = this.letra(); return l?.estado === 'sincronizada' ? lineaActual(l.lineas, this.progreso() + 300) : -1; });
+  private readonly cuerpoLetra = viewChild<ElementRef<HTMLDivElement>>('cuerpoLetra');
   protected readonly pct = computed(() => { const c = this.ahora()?.cancion; return c?.duracion ? Math.round(Math.min(100, (this.progreso() / c.duracion) * 100)) : 0; });
   private sinSpotify = false;
   private ultimaId = '';
   private ultimaPortada = '';
+
+  private static guardadoVerLetra(): boolean { try { return localStorage.getItem('zp-letra') !== 'no'; } catch { return true; } }
+
+  protected alternarLetra(): void {
+    this.verLetra.update((v) => !v);
+    try { localStorage.setItem('zp-letra', this.verLetra() ? 'si' : 'no'); } catch { /* sin almacenamiento: vale esta vez */ }
+  }
+
+  // la línea que suena se mantiene centrada en el cuadro de la letra
+  private readonly seguirLinea = effect(() => {
+    const i = this.actual(), cuerpo = this.cuerpoLetra()?.nativeElement;
+    if (!cuerpo || i < 0) return;
+    const p = cuerpo.children[i] as HTMLElement | undefined;
+    if (p) cuerpo.scrollTo({ top: p.offsetTop - cuerpo.clientHeight / 2 + p.clientHeight / 2 });
+  });
 
   constructor() {
     this.leer();
@@ -250,10 +308,20 @@ export class MiniMusica {
       this.progreso.set(r.progreso);
       const c = r.cancion;
       if (this.abierto() && c) {
-        if ((c.id) !== this.ultimaId) { this.ultimaId = c.id; void this.leerCola(); }
+        if ((c.id) !== this.ultimaId) { this.ultimaId = c.id; void this.leerCola(); void this.leerLetra(c); }
         if (c.imagen && c.imagen !== this.ultimaPortada) { this.ultimaPortada = c.imagen; void this.leerTono(c.imagen); }
       }
     } catch (e) { if ((e as { status?: number }).status === 409) this.sinSpotify = true; this.ahora.set(null); }
+  }
+
+  private async leerLetra(c: Cancion): Promise<void> {
+    this.letra.set(null);
+    try {
+      const q = new URLSearchParams({ id: c.id, nombre: c.nombre, artista: c.artistas, duracion: String(c.duracion ?? 0) });
+      if (c.album) q.set('album', c.album);
+      const l = await firstValueFrom(this.http.get<Letra>(`/api/musica/letra?${q}`));
+      if (this.ultimaId === c.id) this.letra.set(l);       // si ya ha cambiado la canción, esta letra no vale
+    } catch { /* sin letra: el panel no aparece */ }
   }
 
   private async leerCola(): Promise<void> {
