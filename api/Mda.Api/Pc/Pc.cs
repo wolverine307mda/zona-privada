@@ -228,9 +228,9 @@ public record ResultadoOrden(bool Ok, string? Resultado);
 public static class OrdenesPc
 {
     // lista cerrada: el agente rechaza cualquier otra cosa aunque llegara
-    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar"];
+    public static readonly string[] Tipos = ["bloquear", "despierto", "reiniciar", "suspender", "apagar", "cancelar", "volumen", "brillo", "multimedia", "portapapeles", "copiar", "wol", "energia", "limpiar", "bateria-informe", "abrir", "velocidad", "captura", "descargar", "ubicacion"];
     // se piden solo desde sus propias rutas (con su validación): por /api/pc/ordenes no
-    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura"];
+    public static readonly string[] Dedicadas = ["multimedia", "portapapeles", "copiar", "wol", "captura", "ubicacion"];
     // órdenes inocuas (no apagan ni exponen nada): no piden volver a confirmar con Face ID cada vez
     public static readonly string[] SinConfirmar = ["volumen", "brillo", "multimedia", "portapapeles", "copiar", "energia", "bateria-informe", "velocidad"];
     // planes de energía: equilibrado, rendimiento y ahorro son de Windows; «cine» es el equilibrado con el PC y la pantalla despiertos
@@ -295,6 +295,7 @@ public static class OrdenesPc
         "descargar" => $"descargar en el PC: {o.Parametro}",
         "velocidad" => "medir la velocidad de Internet",
         "captura" => $"hacer una foto de {Capturas.TextoOrigen(o.Parametro.Split(':')[0])}",
+        "ubicacion" => UbicacionIphone.Texto(o),
         _ => o.Tipo,
     };
 
@@ -417,7 +418,7 @@ public static class OrdenesPc
             return Results.Ok(Array.Empty<object>());
         });
 
-        a.MapPost("/ordenes/{id:int}", async (int id, ResultadoOrden r, HttpRequest req, AppDbContext db, IConfiguration config, IAvisos avisos, CancellationToken ct) =>
+        a.MapPost("/ordenes/{id:int}", async (int id, ResultadoOrden r, HttpRequest req, AppDbContext db, IConfiguration config, IAvisos avisos, TimeProvider reloj, CancellationToken ct) =>
         {
             if (ComprobarAgente(req, config) is { } no) return no;
             var o = await db.OrdenesPc.FindAsync([id], ct);
@@ -425,6 +426,8 @@ public static class OrdenesPc
             o.Estado = r.Ok ? "hecha" : "error";
             o.Resultado = (r.Resultado ?? "").Length > 200 ? r.Resultado![..200] : r.Resultado ?? "";
             await db.SaveChangesAsync(ct);
+            // la ubicación del iPhone se apunta solo cuando el agente confirma que quedó puesta
+            if (o.Tipo == "ubicacion") await UbicacionIphone.Aplicar(db, o, r.Ok, reloj, ct);
             // una descarga acaba mucho después de pedirla: el resultado final llega por aquí y te avisa (el «descargando…» inicial no)
             if (o.Tipo == "descargar" && !o.Resultado.StartsWith("descargando", StringComparison.Ordinal))
                 _ = avisos.PorTelegram(r.Ok ? $"⬇️ {o.Resultado}" : $"⚠️ La descarga no se hizo: {o.Resultado}");

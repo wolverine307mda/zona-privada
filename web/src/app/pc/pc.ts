@@ -1,4 +1,5 @@
 import { CapturasPc } from './capturas';
+import { UbicacionIphone } from './ubicacion';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -27,6 +28,8 @@ interface Estado {
   salud: { discos: Disco[]; volumenes: Volumen[]; reinicioPendiente: boolean } | null;
 }
 
+type Pestana = 'equipo' | 'controles' | 'casa' | 'iphone';
+
 const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; parametro?: string; aviso?: string }[] = [
   { tipo: 'bloquear', texto: 'Bloquear la pantalla', icono: '🔒' },
   { tipo: 'despierto', texto: 'Mantener despierto', icono: '☕', parametro: 'on' },
@@ -45,16 +48,16 @@ const ORDENES: { tipo: string; texto: string; icono: string; peligro?: boolean; 
 // (y el código de dos pasos si lo tienes) y avisa a Telegram; el agente de Windows solo ejecuta una lista cerrada y firmada.
 @Component({
   selector: 'app-pc',
-  imports: [Pc3d, BandejaPc, BateriaSalud, CapturasPc, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
+  imports: [Pc3d, BandejaPc, BateriaSalud, CapturasPc, UbicacionIphone, CasaPc, Escenas, Habitacion3d, Hogar, RedCasa, PortapapelesPc, Velocidad, Esqueleto],
   templateUrl: './pc.html',
   styleUrls: ['../gastos/comun.css', './pc.css'],
 })
 export class Pc implements OnInit, OnDestroy {
   // las secciones de la pantalla; se recuerda la última que miraste
-  protected readonly pestana = signal<'equipo' | 'controles' | 'casa'>(((): 'equipo' | 'controles' | 'casa' => {
-    try { const g = localStorage.getItem('mda.pc.pestana'); return g === 'controles' || g === 'casa' ? g : 'equipo'; } catch { return 'equipo'; }
+  protected readonly pestana = signal<Pestana>(((): Pestana => {
+    try { const g = localStorage.getItem('mda.pc.pestana'); return g === 'controles' || g === 'casa' || g === 'iphone' ? g : 'equipo'; } catch { return 'equipo'; }
   })());
-  protected ponerPestana(p: 'equipo' | 'controles' | 'casa'): void {
+  protected ponerPestana(p: Pestana): void {
     this.pestana.set(p);
     try { localStorage.setItem('mda.pc.pestana', p); } catch { /* sin almacenamiento */ }
   }

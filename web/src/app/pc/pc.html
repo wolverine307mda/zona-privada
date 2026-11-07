@@ -2,6 +2,7 @@
   <button type="button" role="tab" [attr.aria-selected]="pestana() === 'equipo'" (click)="ponerPestana('equipo')">Equipo</button>
   <button type="button" role="tab" [attr.aria-selected]="pestana() === 'controles'" (click)="ponerPestana('controles')">Controles</button>
   <button type="button" role="tab" [attr.aria-selected]="pestana() === 'casa'" (click)="ponerPestana('casa')">Casa y red</button>
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'iphone'" (click)="ponerPestana('iphone')">iPhone</button>
 </nav>
 
 @if (pestana() === 'equipo') {
@@ -184,4 +185,8 @@
 
 <app-casa-pc />
 <app-red-casa />
+}
+
+@if (pestana() === 'iphone') {
+  <app-ubicacion-iphone />
 }

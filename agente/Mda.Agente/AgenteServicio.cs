@@ -72,5 +72,6 @@ static class AgenteServicio
             }
         }
         catch (OperationCanceledException) { }
+        finally { Ubicacion.ParaAlSalir(); } // si el agente se cierra, el iPhone recupera su ubicación real
     }
 }

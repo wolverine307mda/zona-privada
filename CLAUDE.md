@@ -50,5 +50,6 @@ en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**
 | modo pared · bandeja de entrada del PC · recetas de Siri | `web/src/app/pared/`; `agente/Mda.Agente/Vigias.cs` + `api/Mda.Api/Pc/Bandeja.cs`; [docs/12-siri-y-atajos.md](docs/12-siri-y-atajos.md) |
 | última vez de cada vigilancia y alerta de errores 5xx | `api/Mda.Api/Avisos/Vigilancia.cs` |
 | recuperar tras perder el equipo / desplegar con vuelta atrás | [docs/11-recuperacion.md](docs/11-recuperacion.md), `herramientas/desplegar.ps1` |
+| ubicación del iPhone (simular GPS desde el PC) | `agente/Mda.Agente/Ubicacion*.cs`, `api/Mda.Api/Pc/UbicacionIphone.cs`, front `web/src/app/pc/ubicacion*.ts`, `mapa-ubicacion.*` |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |
 | medir la velocidad de la galería | `python herramientas/medir-galeria.py` |

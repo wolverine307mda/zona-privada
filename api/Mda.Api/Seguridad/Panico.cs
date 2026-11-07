@@ -39,6 +39,8 @@ public static class Panico
         cache.Remove(Clave);
         // si lo tienes activado en los ajustes de fotos, pantalla y cámara del PC quedan apuntadas (un fallo aquí nunca impide el pánico)
         try { await Mda.Api.Pc.Capturas.EnPanico(db, reloj, ct); } catch (Exception e) when (e is DbUpdateException or InvalidOperationException) { /* el pánico ya está hecho */ }
+        // si el iPhone tenía una ubicación simulada, vuelve la real
+        try { await Mda.Api.Pc.UbicacionIphone.EnPanico(db, reloj, ct); } catch (Exception e) when (e is DbUpdateException or InvalidOperationException) { /* el pánico ya está hecho */ }
         return new Resultado(abiertas.Count, tokens.Count, hasta);
     }
 

@@ -22,6 +22,7 @@
     <Compile Include="..\..\agente\Mda.Agente\Abrir.cs" Link="Agente\Abrir.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Velocidad.cs" Link="Agente\Velocidad.cs" />
     <Compile Include="..\..\agente\Mda.Agente\CapturaLogica.cs" Link="Agente\CapturaLogica.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\UbicacionLogica.cs" Link="Agente\UbicacionLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\DescargaLogica.cs" Link="Agente\DescargaLogica.cs" />
   </ItemGroup>
 

@@ -392,6 +392,7 @@ app.MapBandeja();
 app.MapVigilancia();
 app.MapHoy();
 app.MapCapturas();
+app.MapUbicacionIphone();
 app.MapTelegram();
 app.MapTiempo();
 app.MapLuz();

@@ -62,6 +62,7 @@ Elegir ciudad en la tarjeta del tiempo de Inicio. Aviso la víspera (desde las 2
 
 No es externo, pero vive fuera de Docker: `agente/Mda.Agente` (consola .NET 10). Variables: `AGENTE_URL`
 (por defecto `http://localhost:8080`) y `AGENTE_TOKEN` (si no está en el entorno lo lee del `.env` del repo).
+Para la ubicación del iPhone (ver [10](10-nuevas-funciones.md)) acepta además `AGENTE_PYMOBILEDEVICE3` y `AGENTE_IPHONE`.
 Manda cada 2 s CPU, memoria, discos y red reales a `POST /api/sistema/agente` con `X-Agente-Token`. Cada 5 min manda además la **salud** (estado de los discos por WMI, espacio, reinicio pendiente; la temperatura y el desgaste solo con el agente como administrador) y atiende las **órdenes** de «Mi PC» preguntando a la API (bloquear, mantener despierto, reiniciar, suspender, apagar), solo si la firma y la caducidad cuadran. Es un programa para Windows (`net10.0-windows`).
 
 ## Home Assistant (casa conectada)
