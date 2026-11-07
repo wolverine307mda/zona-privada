@@ -390,6 +390,7 @@ Mda.Api.Domotica.ClimaCasa.MapClima(app);
 Mda.Api.Contexto.SalidaCasa.MapSalidaCasa(app);
 Mda.Api.Tiempo.Ropa.MapRopa(app);
 Mda.Api.Contexto.Dormir.MapDormir(app);
+Mda.Api.Seguridad.EquiposConfianza.MapEquiposConfianza(app);
 app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();

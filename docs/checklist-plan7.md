@@ -38,7 +38,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | ✅ **Hecha**: `Domotica/ClimaCasa.cs` y pantalla «Clima» en Casa (los avisos de moho/frío, a mano con Automatizaciones) | 1,5 |
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | ✅ **Hecha**: `Tiempo/Ropa.cs`, chip en Inicio, atajo y `/ropa` | 1 |
-| 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | «**No lo reconozco**» (cierra sesiones y avisa) y **mapa** con «última vez visto» | 1,5 |
+| 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | ✅ **Hecha**: «No lo reconozco», estado y mapa en Equipos (`Seguridad/EquiposConfianza.cs`) | 1,5 |
 | 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | ✅ **Hecha**: contadores extra, avisos a 45/14 días y desgaste 80 %, «Qué ocupa» (`Pc/Espacio.cs`, `agente/Espacio.cs`) | 1 |
 | 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | **App → PC** (subir desde el móvil) y **PC → móvil** con enlace que caduca | 2 |
 | 60 | Abrir y cerrar aplicaciones | `agente/Abrir.cs` (lista cerrada: calculadora, bloc, explorador) | **Catálogo de apps elegidas** (Claude…), y **cerrar** las que más gastan | 2 |
@@ -188,13 +188,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: el análisis puede tardar → tiempo límite de 60 s y resultado parcial marcado como tal. Esfuerzo: 1 sesión.
 - Decisión: el agente ya mandaba temperatura, desgaste y errores de lectura; se añaden errores de escritura y horas encendido (opcionales, un agente viejo sigue valiendo). Avisos de llenado a 45 días (🟡) y a 14 (🟠, otro identificador para que avise de nuevo) y de desgaste desde el 80 %. «Qué ocupa»: orden `espacio` (solo se pide desde `POST /api/pc/espacio`, nunca por `/api/pc/ordenes`), la ruta se valida en la API y otra vez en el agente (solo unidades locales fijas, sin red ni `..`), sin entrar en enlaces ni uniones, 60 s de tope con resultado «parcial», 15 carpetas mayores + archivos sueltos. Tarjeta en Mi PC con barras. Sin migración (el último resultado va en `Ajustes`).
 
-### ⬜ 49 · Dispositivos de confianza: «no lo reconozco» y mapa
+### ✅ 49 · Dispositivos de confianza: «no lo reconozco» y mapa
 - ✅ Ya hay: tabla de equipos con `Confianza`, aviso de equipo o país nuevo, ubicación por IP (`GeoIp`).
-- ⬜ C49.1 Botón **«No lo reconozco»** en cada equipo: cierra sus sesiones, lo marca `Sospechoso` (el semáforo pasa a ámbar), avisa por Telegram con IP y ciudad, y pregunta si cambiar la contraseña (enlace a Perfil). Función pura de la acción con tests (equipo con sesiones abiertas, sin sesiones, el propio equipo → no se deja).
-- ⬜ C49.2 Campo «última vez visto» legible («hace 3 h desde Madrid») y estado «en línea / dormido / hace tiempo» en la lista.
-- ⬜ C49.3 **Mapa** de equipos y de redes de los atajos (`TokenAtajo.Redes`) con Leaflet y `GeoIp`, detrás del PIN; en otro color los de confianza.
-- ⬜ C49.4 Tests y docs en `07-seguridad.md`.
+- ✅ C49.1 Botón **«No lo reconozco»** en cada equipo: cierra sus sesiones, lo marca `Sospechoso` (el semáforo pasa a ámbar), avisa por Telegram con IP y ciudad, y pregunta si cambiar la contraseña (enlace a Perfil). Función pura de la acción con tests (equipo con sesiones abiertas, sin sesiones, el propio equipo → no se deja).
+- ✅ C49.2 Campo «última vez visto» legible («hace 3 h desde Madrid») y estado «en línea / dormido / hace tiempo» en la lista.
+- ✅ C49.3 **Mapa** de equipos y de redes de los atajos (`TokenAtajo.Redes`) con Leaflet y `GeoIp`, detrás del PIN; en otro color los de confianza.
+- ✅ C49.4 Tests y docs en `07-seguridad.md`.
 - Riesgos: GeoIP impreciso con VPN → se dice «ubicación aproximada». Esfuerzo: 1,5 sesiones.
+- Decisión: `Seguridad/EquiposConfianza.cs` y migración `EquiposSospechosos` (`Sospechoso`, `SospechosoDesde`). Las sesiones no guardan el país, así que «sus sesiones» son las abiertas con el mismo tipo de equipo y la misma IP que la última vez que se vio. El mapa reutiliza `GeoIp` y el Leaflet de «Dónde gastas». Docs en `07-seguridad.md`.
 
 ### ⬜ 60 · Abrir y cerrar aplicaciones desde la app
 - ⬜ C60.1 **Catálogo de apps** elegidas por ti. El agente lista las aplicaciones del menú Inicio (`Get-StartApps`: nombre y AppID, que incluye Claude y las de la Tienda) y las manda a la API; en Seguridad/Mi PC eliges cuáles se pueden abrir y se guardan en una tabla `AppPc` (clave, nombre, AppID). La orden `abrir` acepta **solo una clave del catálogo** (nunca una ruta) y el agente comprueba que ese AppID sigue en `Get-StartApps` antes de abrirlo con `explorer.exe shell:AppsFolder\<AppID>`.

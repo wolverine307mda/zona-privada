@@ -18,6 +18,9 @@ public class EquipoConocido
     public int Entradas { get; set; } = 1;
     // marcado a mano: un equipo de confianza (por ejemplo, tu móvil) cambia de país sin dar el aviso de «país nuevo»
     public bool Confianza { get; set; }
+    // «No lo reconozco»: el equipo se marca como sospechoso (el semáforo pasa a ámbar) hasta que lo marques de confianza o lo olvides
+    public bool Sospechoso { get; set; }
+    public DateTimeOffset? SospechosoDesde { get; set; }
 }
 
 public record EntradaEquipo(EquipoConocido Equipo, bool Nuevo, bool PaisNuevo, bool Aprendiendo);

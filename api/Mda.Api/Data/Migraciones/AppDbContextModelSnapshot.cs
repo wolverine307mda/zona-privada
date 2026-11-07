@@ -2059,6 +2059,12 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<DateTimeOffset>("Primera")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("Sospechoso")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("SospechosoDesde")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("Ultima")
                         .HasColumnType("timestamp with time zone");
 

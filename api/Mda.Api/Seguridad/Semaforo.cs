@@ -13,7 +13,7 @@ public record AreaVida(string Id, string Nombre, string Estado, string Motivo);
 public record Semaforo(string Estado, IReadOnlyList<AreaVida> Areas);
 public record DatosVida(
     bool CopiaVigilada, double? CopiaHoras, bool PanicoActivo, int FallosAcceso, bool DosPasos,
-    decimal? SaldoLibre, int PresupuestosPasados, bool AgenteConectado, int AlertasPc, bool? FunnelResponde, int? DiasCertificado, int DispositivosCaidos);
+    decimal? SaldoLibre, int PresupuestosPasados, bool AgenteConectado, int AlertasPc, bool? FunnelResponde, int? DiasCertificado, int DispositivosCaidos, int EquiposSospechosos = 0);
 
 // Un vistazo: cada área de tu vida digital en verde, ámbar o rojo con el motivo. El estado global es el peor de todos.
 public static class SemaforoVida
@@ -39,6 +39,7 @@ public static class SemaforoVida
 
     private static AreaVida Seguridad(DatosVida d) =>
         d.PanicoActivo ? new("seguridad", "Seguridad", Rojo, "El botón de pánico está activo: el acceso está bloqueado.")
+        : d.EquiposSospechosos > 0 ? new("seguridad", "Seguridad", Ambar, $"{d.EquiposSospechosos} equipo(s) marcado(s) como «no lo reconozco»: cambia la contraseña y revísalos.")
         : d.FallosAcceso >= 10 ? new("seguridad", "Seguridad", Ambar, $"{d.FallosAcceso} intentos de acceso fallidos este mes.")
         : !d.DosPasos ? new("seguridad", "Seguridad", Ambar, "No tienes verificación en dos pasos activada.")
         : new("seguridad", "Seguridad", Verde, "Sin incidencias.");
@@ -87,7 +88,7 @@ public static class SemaforoVida
             var dosPasos = await db.Users.AnyAsync(u => u.TwoFactorEnabled, ct);
             return Evaluar(new DatosVida(copia.Vigilada, copia.Fecha is { } f ? (ahora - f).TotalHours : null, panicoActivo,
                 await db.Accesos.CountAsync(a => !a.Exito && !a.Revisado && a.Fecha > desde, ct), dosPasos, libre, pasados, agente.Conectado(TimeSpan.FromMinutes(2)), alertas,
-                funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos));
+                funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos, await db.Equipos.CountAsync(e => e.Sospechoso, ct)));
         }
     }
 

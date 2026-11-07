@@ -92,14 +92,23 @@ public static class SeguridadEndpoints
         });
 
         // los equipos desde los que has entrado: avisa solo de los que no estén aquí
-        g.MapGet("/equipos", async (AppDbContext db) =>
-            Results.Ok(await db.Equipos.AsNoTracking().OrderByDescending(e => e.Ultima)
-                .Select(e => new { e.Id, e.Nombre, e.Pais, e.Ciudad, e.UltimaIp, e.Primera, e.Ultima, e.Entradas, e.Confianza }).ToListAsync()));
+        g.MapGet("/equipos", async (AppDbContext db, TimeProvider reloj) =>
+        {
+            var ahora = reloj.GetUtcNow();
+            var enLinea = (await db.Sesiones.AsNoTracking().Where(s => s.Cerrada == null && s.UltimaVez > ahora - Sesiones.EnLinea).ToListAsync()).Select(s => (s.Ip, Nombre: Dispositivo.Nombre(s.Agente))).ToHashSet();
+            return Results.Ok((await db.Equipos.AsNoTracking().OrderByDescending(e => e.Ultima).ToListAsync()).Select(e => new
+            {
+                e.Id, e.Nombre, e.Pais, e.Ciudad, e.UltimaIp, e.Primera, e.Ultima, e.Entradas, e.Confianza, e.Sospechoso,
+                estado = EquiposConfianza.Estado(e.Ultima, enLinea.Contains((e.UltimaIp, e.Nombre)), ahora),
+                visto = EquiposConfianza.Visto(e.Ultima, e.Pais, e.Ciudad, ahora),
+            }));
+        });
         g.MapPut("/equipos/{id:int}/confianza", async (int id, ConfianzaEquipo c, AppDbContext db) =>
         {
             var e = await db.Equipos.FindAsync(id);
             if (e is null) return Results.NotFound();
             e.Confianza = c.Confianza;
+            if (c.Confianza) { e.Sospechoso = false; e.SospechosoDesde = null; }
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
