@@ -295,6 +295,7 @@ builder.Services.AddSingleton<IComprobadorServicios, ComprobadorReal>();
 builder.Services.AddSingleton<MotorServicios>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MotorServicios>());
 // escenas que se ponen solas según el contexto (llegar o salir de casa, la hora, el tiempo)
+builder.Services.AddHostedService<Mda.Api.Conexiones.RecolectorMusica>();
 builder.Services.AddSingleton<MotorContexto>();
 // lo que va cayendo en la carpeta «Bandeja» del PC (la vigila el agente)
 builder.Services.AddSingleton<Mda.Api.Pc.BandejaPc>();
@@ -375,6 +376,7 @@ app.MapEspacio();
 Mda.Api.Pc.AppsPcEndpoints.MapAppsPc(app);
 Mda.Api.Pc.Transferencias.MapTransferencias(app);
 Mda.Api.Sistema.SaludApp.MapSaludApp(app);
+Mda.Api.Conexiones.HistorialMusicaEndpoints.MapHistorialMusica(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

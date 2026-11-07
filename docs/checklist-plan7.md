@@ -48,7 +48,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 70 | Tipografía y densidad | nada | Tamaño de letra, densidad y fuente legible **por dispositivo** | 1 |
 | 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | Señales vivas (música, carga del PC, hora) que los muevan | 1,5 |
 | 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | Letras de LRCLIB, resaltado por tiempo y caché | 1,5 |
-| 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | **Historial propio persistente** (Spotify solo da 50) y estadísticas | 2 |
+| 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
 | 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | Listas asignadas a «momentos» y un toque para ponerlas | 1,5 |
 | 79 | Series y películas | nada | Módulo con estados, avisos de estreno y «dónde verlo» | 2,5 |
 | 81 | Constructor visual de reglas | `Automatizaciones` (formulario), `ReglaCasa`, `ReglaContexto` | **Constructor por bloques** unificado y simulación | 3 |
@@ -229,12 +229,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 
 ## Fase D · Música
 
-### ⬜ 76 · Historial propio de lo que escuchas
-- ⬜ D76.1 Servicio de fondo que cada 20 min pide `recently-played?after=<último>` y guarda en `Escucha` (id de la canción, nombre, artistas, álbum, portada, duración, `Fecha`); Spotify solo guarda las últimas 50, así que hay que ir recogiéndolas. Dedupe por (canción, fecha).
-- ⬜ D76.2 Estadísticas puras con tests: top del mes y del año, horas del día (mapa de calor), racha de días, artista descubierto este mes, «canción de la semana».
-- ⬜ D76.3 Pantalla «Lo que escuchas» en Música: tarjetas por periodo, gráfico de horas y lista de las más repetidas; reutiliza `/top` mientras no haya datos propios.
-- ⬜ D76.4 Retención ilimitada pero pequeña (unos pocos MB al año); borrar el historial desde Ajustes.
+### ✅ 76 · Historial propio de lo que escuchas
+- ✅ D76.1 Servicio de fondo que cada 20 min pide `recently-played?after=<último>` y guarda en `Escucha` (id de la canción, nombre, artistas, álbum, portada, duración, `Fecha`); Spotify solo guarda las últimas 50, así que hay que ir recogiéndolas. Dedupe por (canción, fecha).
+- ✅ D76.2 Estadísticas puras con tests: top del mes y del año, horas del día (mapa de calor), racha de días, artista descubierto este mes, «canción de la semana».
+- ✅ D76.3 Pantalla «Lo que escuchas» en Música: tarjetas por periodo, gráfico de horas y lista de las más repetidas; reutiliza `/top` mientras no haya datos propios.
+- ✅ D76.4 Retención ilimitada pero pequeña (unos pocos MB al año); borrar el historial desde Ajustes.
 - Riesgos: Spotify limita el ritmo → 20 min es de sobra. Esfuerzo: 2 sesiones.
+- Decisión: `Conexiones/HistorialMusica.cs`, tabla `escuchas` (migración `EscuchasMusica`, única por canción + hora) y un recolector cada 20 min con `recently-played?after=`. Estadísticas puras (top de canciones y artistas —una colaboración cuenta para cada uno—, horas locales, racha, artistas nuevos, canción de la semana). Tarjeta «Lo que escuchas» en Música con borrado desde la propia tarjeta (dos toques). Sin datos propios la pantalla lo dice y deja el «Lo más escuchado» de Spotify.
 
 ### ⬜ 75 · Letras sincronizadas
 - ⬜ D75.1 `ServicioLetras`: consulta a **LRCLIB** (`/api/get` por título, artista, álbum y duración; sin clave y con un `User-Agent` educado) y cachea el resultado por canción en una tabla `Letra` (para no repetir).

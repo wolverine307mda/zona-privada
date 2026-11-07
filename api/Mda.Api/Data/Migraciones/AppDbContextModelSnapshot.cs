@@ -479,6 +479,53 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("conexiones", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Conexiones.Escucha", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Album")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Artistas")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("CancionId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("Duracion")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Imagen")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.HasIndex("CancionId", "Fecha")
+                        .IsUnique();
+
+                    b.ToTable("escuchas", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Contexto.ReglaContexto", b =>
                 {
                     b.Property<int>("Id")
