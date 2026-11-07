@@ -1,6 +1,7 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, untracked, viewChildren } from '@angular/core';
 import { resolverColor } from '../core/color-css';
 import { AMBITOS, FONDOS, GRUPOS_FONDO, TemaService, type FondoId } from '../core/tema.service';
+import { REACCIONES, SenalesFondo } from './senales-fondo';
 
 // «Fondo» dentro de Ajustes: elegir el fondo animado de toda la app, cuánto se ve, cuánto se mueve, la fuerza de su color y dónde.
 // Cada miniatura es el fondo de verdad, dibujado una vez en pequeño con tu color y tu fuerza.
@@ -33,6 +34,21 @@ import { AMBITOS, FONDOS, GRUPOS_FONDO, TemaService, type FondoId } from '../cor
           <label class="regla"><span>Velocidad <output>{{ tema.velocidad() }} %</output></span>
             <input type="range" min="25" max="200" step="5" [value]="tema.velocidad()" (input)="tema.ponerVelocidad(+$any($event.target).value)"></label>
         </div>
+      }
+      @if (animado(tema.fondo())) {
+        <div class="ambito" role="group" aria-label="Reaccionar a">
+          <span>Reaccionar a</span>
+          @for (r of reacciones; track r.id) {
+            <button type="button" class="chip" [attr.aria-pressed]="senales.modo() === r.id" [title]="r.nota" (click)="senales.ponerModo(r.id)">{{ r.nombre }}</button>
+          }
+        </div>
+        @if (senales.modo() !== 'nada') {
+          <div class="reglas">
+            <label class="regla"><span>Cuánto reacciona <output>{{ senales.cuanto() }} %</output></span>
+              <input type="range" min="0" max="100" step="5" [value]="senales.cuanto()" (input)="senales.ponerCuanto(+$any($event.target).value)"></label>
+          </div>
+          <p class="nota">Es un latido suave y aproximado: sabe que suena algo, no sigue el ritmo real. En el móvil solo reacciona la música, y más despacio, para gastar menos batería.</p>
+        }
       }
       @if (tema.fondo() !== 'ninguno') {
         <div class="ambito" role="group" aria-label="Dónde se ve el fondo">
@@ -79,6 +95,8 @@ import { AMBITOS, FONDOS, GRUPOS_FONDO, TemaService, type FondoId } from '../cor
 export class AjustesFondo {
   protected readonly tema = inject(TemaService);
   protected readonly ambitos = AMBITOS;
+  protected readonly senales = inject(SenalesFondo);
+  protected readonly reacciones = REACCIONES;
   protected readonly grupos = GRUPOS_FONDO.map((g) => ({ ...g, fondos: FONDOS.filter((f) => f.grupo === g.id) }));
   private readonly vistas = viewChildren<ElementRef<HTMLCanvasElement>>('vista');
   private generacion = 0;

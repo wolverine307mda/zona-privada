@@ -2,6 +2,7 @@ import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, unt
 import { TemaService } from '../core/tema.service';
 import type { Escena, Opciones, Paleta } from './fondos';
 import { resolverColor } from '../core/color-css';
+import { SenalesFondo, factorIntensidad, factorVelocidad } from './senales-fondo';
 
 // Capa fija detrás de toda la app con el fondo animado elegido en Ajustes. «Aura» y «Nada» no usan el canvas (los pinta styles.css).
 // El dibujo se descarga solo cuando hace falta, va a 30 fotogramas, se para con la pestaña oculta y, con «reducir movimiento», se queda quieto.
@@ -25,6 +26,8 @@ import { resolverColor } from '../core/color-css';
 })
 export class Fondo {
   private readonly tema = inject(TemaService);
+  private readonly senales = inject(SenalesFondo);
+  private baseIntensidad = 0.6;
   private readonly lienzo = viewChild.required<ElementRef<HTMLCanvasElement>>('lienzo');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected oculto = true;
@@ -49,8 +52,10 @@ export class Fondo {
     // intensidad, velocidad y fuerza del color se aplican sobre la marcha, sin volver a montar
     effect(() => {
       const i = this.tema.intensidad(), v = this.tema.velocidad(), f = this.tema.fuerza();
-      untracked(() => { this.opciones.intensidad = i / 100; this.opciones.velocidad = v / 100; if (this.paleta) this.paleta.fuerza = f / 100; if (this.reducido && this.escena) this.escena.dibujar(this.t, 0); });
+      untracked(() => { this.baseIntensidad = i / 100; this.opciones.intensidad = i / 100; this.opciones.velocidad = v / 100; if (this.paleta) this.paleta.fuerza = f / 100; if (this.reducido && this.escena) this.escena.dibujar(this.t, 0); });
     });
+    // «reaccionar a»: música, carga del PC u hora (solo se pregunta al servidor mientras haga falta)
+    effect(() => { this.senales.modo(); untracked(() => this.senales.vigilar(this.tactil)); });
     // en el móvil, al esconderse o aparecer la barra del navegador el alto cambia unos píxeles: no se vuelve a crear el dibujo por eso
     const ajustar = () => {
       const w = this.host.nativeElement.clientWidth, h = this.host.nativeElement.clientHeight;
@@ -65,7 +70,7 @@ export class Fondo {
     afterNextRender(() => ro.observe(this.host.nativeElement));
     const visibilidad = () => { if (document.hidden) this.parar(); else if (this.escena && !this.reducido) this.arrancar(); };
     document.addEventListener('visibilitychange', visibilidad);
-    inject(DestroyRef).onDestroy(() => { this.generacion++; this.parar(); ro.disconnect(); document.removeEventListener('visibilitychange', visibilidad); window.removeEventListener('scroll', alScroll, { capture: true } as EventListenerOptions); clearTimeout(this.finScroll); });
+    inject(DestroyRef).onDestroy(() => { this.generacion++; this.parar(); this.senales.parar(); ro.disconnect(); document.removeEventListener('visibilitychange', visibilidad); window.removeEventListener('scroll', alScroll, { capture: true } as EventListenerOptions); clearTimeout(this.finScroll); });
   }
 
   protected mover(e: PointerEvent): void {
@@ -106,7 +111,10 @@ export class Fondo {
       if (dt < (this.tactil ? 1 / 20 : 1 / 30)) return; // 30 fotogramas (20 en el móvil): de sobra para un fondo y gasta la mitad
       if (this.desplazando) { this.ultimo = ahora; return; } // haciendo scroll no se dibuja
       this.ultimo = ahora;
-      const paso = Math.min(dt, 0.1) * this.opciones.velocidad;
+      // la energía de lo que pasa (0 sin reacción) acelera un poco el fondo y lo aviva; siempre con tope
+      const e = this.senales.energia(this.t, this.tactil), cuanto = this.senales.cuanto() / 100;
+      this.opciones.intensidad = Math.min(1, this.baseIntensidad * factorIntensidad(e, cuanto));
+      const paso = Math.min(dt, 0.1) * this.opciones.velocidad * factorVelocidad(e, cuanto);
       this.t += paso;
       this.escena?.dibujar(this.t, paso);
     };

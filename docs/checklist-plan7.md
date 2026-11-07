@@ -46,7 +46,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | Registro de tarjetas, **arrastrar/ocultar/tamaño** y varias vistas | 3 |
 | 69 | Widget en la pantalla de bloqueo | `/api/atajos/hoy` y `herramientas/ios/hoy-widget.js` (Scriptable) | Versión **de pantalla de bloqueo** (accesorios) y contenido nuevo | 1 |
 | 70 | Tipografía y densidad | nada | Tamaño de letra, densidad y fuente legible **por dispositivo** | 1 |
-| 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | Señales vivas (música, carga del PC, hora) que los muevan | 1,5 |
+| 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | ✅ **Hecha**: `shell/senales-fondo.ts` y ajuste «Reaccionar a» en Fondo | 1,5 |
 | 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | ✅ **Hecha**: `Conexiones/Letras.cs` y panel de letra en el reproductor | 1,5 |
 | 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
 | 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | ✅ **Hecha**: `Conexiones/Momentos.cs` y tarjeta «Momentos» en Música | 1,5 |
@@ -253,13 +253,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: sin Premium no se puede controlar la reproducción; se detecta y se avisa. Esfuerzo: 1,5 sesiones.
 - Decisión: `Conexiones/Momentos.cs`, tabla `momentos_musicales` (migración `MomentosMusicales`) con cinco de serie (Concentración, Cocina, Entrenar, Dormir, Fiesta, con franja y volumen sugeridos). La lista se elige entre tus listas de Spotify (nuevos permisos `playlist-read-private` y `-collaborative`: hay que **desconectar y volver a conectar Spotify desde Seguridad**, y la pantalla lo dice si falta) o pegando su dirección; solo se aceptan URIs de lista de Spotify. `POST /api/musica/momento/{id}` y `POST /api/atajos/momento` (permiso «casa») la ponen a sonar mezclada y con volumen, explicando los errores (sin aparato, sin Premium). Chips con sugerencia por hora en Música. **No incluido**: chips dentro del mini reproductor y arrancar el momento «Dormir» automáticamente desde la rutina de dormir (se puede lanzar con el atajo). No probado contra Spotify real.
 
-### ⬜ 74 · Fondos que reaccionan
+### ✅ 74 · Fondos que reaccionan
 - ⬜ D74.1 Servicio `SenalesFondo` (signals): `musica` (suena o no y progreso), `carga` (CPU del PC, que ya llega por SignalR), `hora` y `tonoPortada` (el color de la portada que ya extrae `tonoDe`).
 - ⬜ D74.2 `Opciones` gana `energia` (0–1) y `tono?`; la base de los fondos las lee cada fotograma. Cambios por escena, pocos y pequeños: la nebulosa y el plasma respiran con la música, la lluvia digital cae más rápido con carga alta, el reactor late a más velocidad, y con el tono de la portada la paleta se tiñe.
-- ⬜ D74.3 Ajustes › Fondo: «Reaccionar a: música · carga del PC · hora · nada» (por dispositivo) con un deslizador de «cuánto».
-- ⬜ D74.4 El latido es suave y aproximado (Spotify ya no da análisis de audio a apps nuevas): se basa en que suena y en el progreso, no en el ritmo real.
-- ⬜ D74.5 Tests de las señales y de que ninguna escena rompe con `energia` en los extremos.
+- ✅ D74.3 Ajustes › Fondo: «Reaccionar a: música · carga del PC · hora · nada» (por dispositivo) con un deslizador de «cuánto».
+- ✅ D74.4 El latido es suave y aproximado (Spotify ya no da análisis de audio a apps nuevas): se basa en que suena y en el progreso, no en el ritmo real.
+- ✅ D74.5 Tests de las señales y de que ninguna escena rompe con `energia` en los extremos.
 - Riesgos: gasto de batería en el móvil → en `ligero` solo reacciona la música, a media tasa. Esfuerzo: 1,5 sesiones.
+- Decisión: solo front (`shell/senales-fondo.ts`): en vez de tocar cada escena, el bucle del fondo modula la velocidad (hasta ×1,8) y la intensidad (hasta ×1,35, con tope 1) con una energía de 0 a 1 que sale de la música (respiración lenta mientras suena), la carga del PC (`/api/sistema`) o la hora. Ajustes › Fondo: «Reaccionar a» (nada · música · carga · hora) y «Cuánto», por dispositivo. En el móvil solo música y a media tasa. Pruebas de las cuentas y de que las escenas no se rompen con energía 0 y 1. **No incluido**: teñir la paleta con el color de la portada. No he podido verlo en el navegador (los ajustes no cargan con el mock).
 
 ---
 
