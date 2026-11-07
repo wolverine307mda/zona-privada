@@ -16,6 +16,21 @@ Abre `/hoy` en la app (o busca «Hoy» con Ctrl K): gasto de hoy, presupuestos q
 
 El widget llama a `GET /api/atajos/hoy` con el token como `Authorization: Bearer …`. Ese token **solo sirve para leer** (no apunta gastos ni abre la app) y lo puedes revocar desde Seguridad cuando quieras.
 
+### Widgets de la pantalla de bloqueo (iOS 16 o más)
+
+El mismo script dibuja tres **accesorios** para la pantalla de bloqueo:
+
+1. Bloquea el iPhone, mantén pulsada la pantalla de bloqueo → **Personalizar** → **Bloqueada**.
+2. Toca el recuadro de widgets (debajo de la hora) o la línea de encima de la hora.
+3. Elige **Scriptable**, y dentro: *Rectangular* (saldo y siguiente cita), *Circular* (anillo con el % del presupuesto más apretado) o *En línea* («Disponible 523 €»).
+4. Toca el widget colocado → **Script**: «Hoy».
+
+Son blanco y negro (así los dibuja iOS en el bloqueo). Si el servidor es antiguo y no manda los datos nuevos (`compacto`), enseñan el gasto de hoy en su lugar.
+
+**Caché y sin conexión**: la respuesta se guarda 15 minutos en el iPhone y no se vuelve a pedir antes; si no hay red (o el equipo de casa está apagado) se enseña lo último con su antigüedad («hace 40 min»). iOS refresca los widgets cuando le parece (a veces tarda más de 15 minutos): es cosa suya y no se puede forzar.
+
+**Probar sin iPhone**: `node herramientas/ios/probar-widget.js` ejecuta el script con unos Scriptable de mentira y datos falsos y comprueba cada tamaño, la caché y el modo sin conexión.
+
 ## 3. El número sobre el icono
 
 Si tienes la app instalada en la pantalla de inicio y has permitido las notificaciones (iOS 16.4 o más), cada aviso que llega suma uno al globo del icono (cuenta los avisos que aún no has mirado) y se quita al abrir la app.
