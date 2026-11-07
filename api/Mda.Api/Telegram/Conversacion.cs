@@ -19,7 +19,7 @@ namespace Mda.Api.Telegram;
 // «recuérdame mañana a las 9 llamar al taller», «¿cuánto llevo en restaurantes?», «¿va a llover mañana?»).
 // Lo que hay que guardar llega con botones para confirmarlo, y después se puede deshacer.
 public class Conversacion(
-    Bot bot, AppDbContext db, IAvisos avisos, GoogleCalendar google, ServicioConexiones con, ServicioTiempo tiempo,
+    Bot bot, AppDbContext db, IAvisos avisos, GoogleCalendar google, ServicioConexiones con, ServicioTiempo tiempo, Mda.Api.Domotica.ServicioCasa casa,
     Zona zona, TimeProvider reloj, IMemoryCache cache, ILogger<Conversacion> log)
 {
     private static readonly CultureInfo Es = new("es-ES");
@@ -145,6 +145,20 @@ public class Conversacion(
                     await Contestar(cb, null, ct);
                     return;
                 }
+            case "ca":
+                {
+                    // «Apagar» en el aviso de un aparato que lleva mucho encendido
+                    var a = int.TryParse(clave, out var aid) ? await db.Aparatos.FindAsync([aid], ct) : null;
+                    if (a is null) { await Editar(chat, idMensaje, "Ese aparato ya no existe.", null, ct); await Contestar(cb, null, ct); return; }
+                    var (bien, mensajeCasa, _) = await casa.Ejecutar(db, a, "encendido", "false", ct);
+                    await Editar(chat, idMensaje, bien ? $"✅ {H(a.Nombre)} apagado." : $"⚠️ No se pudo apagar {H(a.Nombre)}: {H(mensajeCasa)}", null, ct);
+                    await Contestar(cb, bien ? "Apagado" : null, ct);
+                    return;
+                }
+            case "cv":
+                await Editar(chat, idMensaje, "👍 Vale, anotado.", null, ct);
+                await Contestar(cb, null, ct);
+                return;
             case "sy":
                 await Editar(chat, idMensaje, "✅ Vale, anotado: fuiste tú.", null, ct);
                 await Contestar(cb, null, ct);

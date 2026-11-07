@@ -110,9 +110,9 @@ public class ReglasCasaTests(ModulosFactory factory) : IClassFixture<ModulosFact
         var luz = await Crear(c, "Luz 2", "luz");
         var mala = await c.PostAsJsonAsync("/api/domotica/reglas", new { nombre = "", sensorId = 999, sensorClave = "temperatura", operador = "=", umbral = 1, minutos = 5000, destinoId = luz, accion = "volar", revertir = false, histeresis = 1, esperaMinutos = 0, soloAvisar = false });
         Assert.Equal(HttpStatusCode.BadRequest, mala.StatusCode);
-        // un dato de solo lectura que no es numérico no vale de sensor
-        var puerta = await Crear(c, "Puerta 2", "puerta");
-        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/domotica/reglas", new { nombre = "x", sensorId = puerta, sensorClave = "abierto", operador = ">", umbral = 1, minutos = 0, destinoId = luz, accion = "encender", revertir = false, histeresis = 1, esperaMinutos = 5, soloAvisar = false })).StatusCode);
+        // un dato que no es número ni «abierto»/«encendido» no vale de sensor
+        var altavoz = await Crear(c, "Altavoz 2", "altavoz");
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/domotica/reglas", new { nombre = "x", sensorId = altavoz, sensorClave = "reproduciendo", operador = ">", umbral = 1, minutos = 0, destinoId = luz, accion = "encender", revertir = false, histeresis = 1, esperaMinutos = 5, soloAvisar = false })).StatusCode);
         var plantillas = await c.GetFromJsonAsync<JsonElement>("/api/domotica/reglas/plantillas");
         Assert.True(plantillas.GetArrayLength() >= 3);
         // solo avisar no necesita aparato de destino

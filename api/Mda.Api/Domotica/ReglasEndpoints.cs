@@ -17,8 +17,10 @@ public static class ReglasEndpoints
         var mal = new Dictionary<string, string[]>();
         if (string.IsNullOrWhiteSpace(e.Nombre) || e.Nombre.Trim().Length > 40) mal["nombre"] = ["Ponle un nombre (hasta 40 letras)."];
         if (!aparatos.TryGetValue(e.SensorId, out var sensor)) mal["sensorId"] = ["Elige un sensor."];
-        else if (Catalogo.Buscar(sensor.Tipo, e.SensorClave ?? "") is not { Tipo: "numero" }) mal["sensorClave"] = ["Elige un dato numérico (temperatura, humedad…)."];
-        if (e.Operador is not (">" or "<")) mal["operador"] = ["«>» (más de) o «<» (menos de)."];
+        else if (Catalogo.Buscar(sensor.Tipo, e.SensorClave ?? "") is not { Tipo: "numero" } && !EvaluadorReglas.EsEstado(sensor.Tipo, e.SensorClave ?? "")) mal["sensorClave"] = ["Elige un dato numérico (temperatura, humedad…) o un estado (abierta, encendido)."];
+        // en una regla de estado el operador y el umbral los pone el sistema (el estado se convierte en 1/0)
+        var estado = sensor is not null && EvaluadorReglas.EsEstado(sensor.Tipo, e.SensorClave ?? "");
+        if (!estado && e.Operador is not (">" or "<")) mal["operador"] = ["«>» (más de) o «<» (menos de)."];
         if (e.Minutos is < 0 or > 1440) mal["minutos"] = ["De 0 a 1440 minutos."];
         if (e.Histeresis is < 0 or > 20) mal["histeresis"] = ["De 0 a 20."];
         if (e.EsperaMinutos is < 1 or > 1440) mal["esperaMinutos"] = ["De 1 a 1440 minutos."];
@@ -33,10 +35,10 @@ public static class ReglasEndpoints
         return mal;
     }
 
-    private static void Copiar(ReglaEntrada e, ReglaCasa r)
+    private static void Copiar(ReglaEntrada e, ReglaCasa r, bool estado)
     {
-        r.Nombre = e.Nombre!.Trim(); r.Activa = e.Activa ?? true; r.SensorId = e.SensorId; r.SensorClave = e.SensorClave!; r.Operador = e.Operador!;
-        r.Umbral = e.Umbral; r.Minutos = e.Minutos; r.DestinoId = e.SoloAvisar ? e.SensorId : e.DestinoId; r.Accion = e.Accion ?? "encender";
+        r.Nombre = e.Nombre!.Trim(); r.Activa = e.Activa ?? true; r.SensorId = e.SensorId; r.SensorClave = e.SensorClave!;
+        r.Operador = estado ? ">" : e.Operador!; r.Umbral = estado ? 0.5 : e.Umbral; r.Minutos = e.Minutos; r.DestinoId = e.SoloAvisar ? e.SensorId : e.DestinoId; r.Accion = e.Accion ?? "encender";
         r.Objetivo = e.Objetivo; r.Modo = string.IsNullOrEmpty(e.Modo) ? null : e.Modo; r.Revertir = e.Revertir;
         r.Histeresis = e.Histeresis; r.EsperaMinutos = e.EsperaMinutos; r.SoloAvisar = e.SoloAvisar;
         // si se cambia la regla, empieza de cero
@@ -51,11 +53,17 @@ public static class ReglasEndpoints
         g.MapGet("/plantillas", () => new[]
         {
             new { id = "aire-calor", nombre = "Aire si hace calor", descripcion = "Enciende el aire a 24 ° cuando pasa de 26 ° durante 5 min y lo apaga al bajar de 24 °.",
-                  valores = new { operador = ">", umbral = 26.0, minutos = 5, accion = "encender", objetivo = (double?)24, modo = "frio", revertir = true, histeresis = 2.0, esperaMinutos = 15, soloAvisar = false } },
+                  valores = new { operador = ">", umbral = 26.0, minutos = 5, accion = "encender", objetivo = (double?)24, modo = "frio", revertir = true, histeresis = 2.0, esperaMinutos = 15, soloAvisar = false, sensorClave = (string?)null } },
             new { id = "calor-frio", nombre = "Calefacción si hace frío", descripcion = "Enciende el aparato a 21 ° cuando baja de 18 ° durante 10 min y lo apaga al subir de 20 °.",
-                  valores = new { operador = "<", umbral = 18.0, minutos = 10, accion = "encender", objetivo = (double?)21, modo = "calor", revertir = true, histeresis = 2.0, esperaMinutos = 15, soloAvisar = false } },
+                  valores = new { operador = "<", umbral = 18.0, minutos = 10, accion = "encender", objetivo = (double?)21, modo = "calor", revertir = true, histeresis = 2.0, esperaMinutos = 15, soloAvisar = false, sensorClave = (string?)null } },
+            new { id = "puerta-abierta", nombre = "Puerta abierta demasiado tiempo", descripcion = "Te avisa por Telegram si una puerta lleva abierta más de 10 min (elige el sensor de la puerta, dato «abierto»).",
+                  valores = new { operador = ">", umbral = 0.5, minutos = 10, accion = "encender", objetivo = (double?)null, modo = (string?)null, revertir = false, histeresis = 0.0, esperaMinutos = 30, soloAvisar = true, sensorClave = "abierto" } },
+            new { id = "enchufe-encendido", nombre = "Enchufe o plancha encendido demasiado tiempo", descripcion = "Te avisa (con botón para apagarlo) si un enchufe lleva encendido más de 60 min.",
+                  valores = new { operador = ">", umbral = 0.5, minutos = 60, accion = "encender", objetivo = (double?)null, modo = (string?)null, revertir = false, histeresis = 0.0, esperaMinutos = 60, soloAvisar = true, sensorClave = "encendido" } },
+            new { id = "luz-encendida", nombre = "Luz encendida mucho rato", descripcion = "Te avisa (con botón para apagarla) si una luz lleva encendida más de 3 horas.",
+                  valores = new { operador = ">", umbral = 0.5, minutos = 180, accion = "encender", objetivo = (double?)null, modo = (string?)null, revertir = false, histeresis = 0.0, esperaMinutos = 60, soloAvisar = true, sensorClave = "encendido" } },
             new { id = "avisar-calor", nombre = "Avisarme si hace mucho calor", descripcion = "Te escribe por Telegram si pasa de 30 ° durante 10 min, sin tocar nada.",
-                  valores = new { operador = ">", umbral = 30.0, minutos = 10, accion = "encender", objetivo = (double?)null, modo = (string?)null, revertir = false, histeresis = 1.0, esperaMinutos = 60, soloAvisar = true } },
+                  valores = new { operador = ">", umbral = 30.0, minutos = 10, accion = "encender", objetivo = (double?)null, modo = (string?)null, revertir = false, histeresis = 1.0, esperaMinutos = 60, soloAvisar = true, sensorClave = (string?)null } },
         });
 
         g.MapGet("/", async (AppDbContext db, CancellationToken ct) =>
@@ -65,7 +73,8 @@ public static class ReglasEndpoints
             return Results.Ok((await db.Reglas.AsNoTracking().OrderBy(r => r.Id).ToListAsync(ct)).Select(r => new
             {
                 r.Id, r.Nombre, r.Activa, r.SensorId, r.SensorClave, r.Operador, r.Umbral, r.Minutos, r.DestinoId, r.Accion, r.Objetivo, r.Modo, r.Revertir, r.Histeresis,
-                r.EsperaMinutos, r.SoloAvisar, r.Disparada, r.Ultima, resumen = EvaluadorReglas.Resumen(r, N(r.SensorId), N(r.DestinoId)),
+                r.EsperaMinutos, r.SoloAvisar, r.Disparada, r.Ultima, resumen = EvaluadorReglas.Resumen(r, N(r.SensorId), N(r.DestinoId), aparatos.TryGetValue(r.SensorId, out var sa) && EvaluadorReglas.EsEstado(sa.Tipo, r.SensorClave)),
+                estado = aparatos.TryGetValue(r.SensorId, out var sb) && EvaluadorReglas.EsEstado(sb.Tipo, r.SensorClave),
             }));
         });
 
@@ -74,7 +83,7 @@ public static class ReglasEndpoints
             var aparatos = await db.Aparatos.AsNoTracking().ToDictionaryAsync(a => a.Id, ct);
             if (Validar(e, aparatos) is { Count: > 0 } mal) return Results.ValidationProblem(mal);
             if (await db.Reglas.CountAsync(ct) >= Maximo) return Results.ValidationProblem(new Dictionary<string, string[]> { ["nombre"] = [$"Máximo {Maximo} reglas."] });
-            var r = new ReglaCasa(); Copiar(e, r);
+            var r = new ReglaCasa(); Copiar(e, r, aparatos[e.SensorId] is { } s0 && EvaluadorReglas.EsEstado(s0.Tipo, e.SensorClave!));
             db.Reglas.Add(r);
             await db.SaveChangesAsync(ct);
             return Results.Ok(new { r.Id });
@@ -85,7 +94,7 @@ public static class ReglasEndpoints
             if (await db.Reglas.FindAsync([id], ct) is not { } r) return Results.NotFound();
             var aparatos = await db.Aparatos.AsNoTracking().ToDictionaryAsync(a => a.Id, ct);
             if (Validar(e, aparatos) is { Count: > 0 } mal) return Results.ValidationProblem(mal);
-            Copiar(e, r);
+            Copiar(e, r, aparatos[e.SensorId] is { } s1 && EvaluadorReglas.EsEstado(s1.Tipo, e.SensorClave!));
             await db.SaveChangesAsync(ct);
             return Results.Ok(new { r.Id });
         });

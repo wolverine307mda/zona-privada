@@ -13,9 +13,11 @@ export interface ReglaCasa {
   id: number; nombre: string; activa: boolean; sensorId: number; sensorClave: string; operador: '>' | '<'; umbral: number; minutos: number; destinoId: number;
   accion: 'encender' | 'apagar'; objetivo: number | null; modo: string | null; revertir: boolean; histeresis: number; esperaMinutos: number; soloAvisar: boolean;
   disparada: boolean; ultima: string | null; resumen: string;
+  // regla de estado («la puerta lleva abierta 10 min»): el operador y el valor los pone la API
+  estado: boolean;
 }
-export type ReglaEntrada = Omit<ReglaCasa, 'id' | 'disparada' | 'ultima' | 'resumen'>;
-export interface PlantillaRegla { id: string; nombre: string; descripcion: string; valores: Partial<ReglaEntrada>; }
+export type ReglaEntrada = Omit<ReglaCasa, 'id' | 'disparada' | 'ultima' | 'resumen' | 'estado'>;
+export interface PlantillaRegla { id: string; nombre: string; descripcion: string; valores: Partial<ReglaEntrada> & { sensorClave?: string | null }; }
 export interface RegistroRegla { id: number; reglaId: number | null; fecha: string; texto: string; ok: boolean; }
 export interface EscenaCasa { id: number; nombre: string; icono: string; acciones: number; }
 export interface PuntoHistorial { fecha: string; valor: number; }

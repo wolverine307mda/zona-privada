@@ -36,7 +36,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | Evento `duermo`, comprobaciones y mensaje al Atajo | 1,5 |
 | 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | **Lista de comprobación** (ventanas, estufas, aparatos encendidos) | 1 |
 | 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | Vista **por estancia**, semana/mes, mín/media/máx y avisos de moho/frío | 1,5 |
-| 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | Que el motor entienda **estados** (abierto/encendido) y avise con botón de apagar | 1 |
+| 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
 | 46 | Ropa tendida y lluvia | `Tiempo` (Open-Meteo) y avisos de víspera | Marca «ropa tendida», aviso **minutos antes** de la lluvia | 1 |
 | 49 | Mapa de dispositivos de confianza | `Equipo` con `Confianza`, aviso de equipo/país nuevo, `GeoIp` | «**No lo reconozco**» (cierra sesiones y avisa) y **mapa** con «última vez visto» | 1,5 |
 | 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | Atributos SMART útiles, aviso proactivo a N días y «qué ocupa» | 1 |
@@ -135,12 +135,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 
 ## Fase B · Casa y rutinas
 
-### ⬜ 43 · Aviso de puerta o aparato abierto/encendido demasiado tiempo
-- ⬜ B43.1 Leer cómo guarda el motor los estados `bool` (`Catalogo.cs`: `abierto` en sensores de puerta; `encendido` en enchufes y luces) y en `MotorReglas` añadir el tipo de condición **estado** (`Estado = "abierto" | "encendido"`, `Minutos`) además del numérico. Migración solo si hace falta un campo (`Tipo` en `ReglaCasa`).
-- ⬜ B43.2 Pura `EvaluadorReglas.Estado(regla, historialDeEstado, ahora)`: «lleva así desde X» con histéresis para no avisar por un rebote. Tests: abre y cierra rápido, se queda abierta, aparato que se enciende justo al aviso, aparato sin conexión (no avisa).
-- ⬜ B43.3 Aviso por Telegram/push con **botón** «Apagar» o «Ya lo sé (1 h)» (los botones en línea de Telegram ya existen para «Fui yo»). Dedupe por regla y por episodio.
-- ⬜ B43.4 Pantalla: en el diálogo de reglas de casa, plantillas «Puerta abierta más de N min», «Enchufe/plancha encendido más de N min» y «Luz encendida sin nadie».
+### ✅ 43 · Aviso de puerta o aparato abierto/encendido demasiado tiempo
+- ✅ B43.1 Leer cómo guarda el motor los estados `bool` (`Catalogo.cs`: `abierto` en sensores de puerta; `encendido` en enchufes y luces) y en `MotorReglas` añadir el tipo de condición **estado** (`Estado = "abierto" | "encendido"`, `Minutos`) además del numérico. Migración solo si hace falta un campo (`Tipo` en `ReglaCasa`).
+- ✅ B43.2 Pura `EvaluadorReglas.Estado(regla, historialDeEstado, ahora)`: «lleva así desde X» con histéresis para no avisar por un rebote. Tests: abre y cierra rápido, se queda abierta, aparato que se enciende justo al aviso, aparato sin conexión (no avisa).
+- ✅ B43.3 Aviso por Telegram/push con **botón** «Apagar» o «Ya lo sé (1 h)» (los botones en línea de Telegram ya existen para «Fui yo»). Dedupe por regla y por episodio.
+- ✅ B43.4 Pantalla: en el diálogo de reglas de casa, plantillas «Puerta abierta más de N min», «Enchufe/plancha encendido más de N min» y «Luz encendida sin nadie».
 - Riesgos: sensores que reportan tarde (Tuya local vs nube); el aviso dice «según el último dato de hace X min». Esfuerzo: 1 sesión.
+- Decisión: sin campo nuevo ni migración. Una regla de estado es una regla numérica con el estado convertido a 1/0 (umbral 0,5, operador «>» puestos por la API), así que reutiliza el «lleva así X min» y el rearme al cambiar. Solo `abierto` y `encendido` se pueden vigilar. El botón «Apagar» sale solo si el sensor es un enchufe o luz que se puede apagar; «Ya lo sé» solo anota (la regla no repite hasta que el estado cambie).
 
 ### ⬜ 41 · Clima de la casa por estancia
 - ⬜ B41.1 Tabla `ResumenCasaDia` (aparato, clave, día, mín, media, máx), rellenada de noche desde `LecturaCasa` y con retención de 400 días (las lecturas crudas siguen en 30). Función pura de agregación con tests (huecos, un solo dato, cambio de hora).

@@ -39,24 +39,28 @@ const VACIA: ReglaEntrada = {
           <label class="campo"><span>Nombre</span><input type="text" maxlength="40" [value]="f().nombre" (input)="poner('nombre', $any($event.target).value)" placeholder="Aire si hace calor"></label>
           <div class="fila">
             <label class="campo"><span>Cuando…</span>
-              <select (change)="poner('sensorId', +$any($event.target).value)">
+              <select (change)="elegirSensor(+$any($event.target).value)">
                 <option value="0" [selected]="f().sensorId === 0">Elige un sensor</option>
                 @for (s of sensores(); track s.id) { <option [value]="s.id" [selected]="f().sensorId === s.id">{{ s.nombre }}</option> }
               </select></label>
             <label class="campo"><span>Dato</span>
               <select (change)="poner('sensorClave', $any($event.target).value)">
-                <option value="temperatura" [selected]="f().sensorClave === 'temperatura'">Temperatura</option>
-                <option value="humedad" [selected]="f().sensorClave === 'humedad'">Humedad</option>
+                @for (d of datosSensor(); track d.clave) { <option [value]="d.clave" [selected]="f().sensorClave === d.clave">{{ d.etiqueta }}{{ d.tipo === 'bool' ? ' (sí/no)' : '' }}</option> }
               </select></label>
           </div>
           <div class="fila">
-            <label class="campo"><span>Esté</span>
-              <select (change)="poner('operador', $any($event.target).value)">
-                <option value=">" [selected]="f().operador === '>'">por encima de</option>
-                <option value="<" [selected]="f().operador === '<'">por debajo de</option>
-              </select></label>
-            <label class="campo"><span>Valor</span><input type="number" step="0.5" [value]="f().umbral" (input)="poner('umbral', +$any($event.target).value)"></label>
-            <label class="campo"><span>Durante (min)</span><input type="number" min="0" max="1440" [value]="f().minutos" (input)="poner('minutos', +$any($event.target).value)"></label>
+            @if (esEstado()) {
+              <p class="ayuda">Te aviso cuando «{{ datoActual()?.etiqueta?.toLowerCase() }}» lleve así más de los minutos que pongas. Si el sensor tarda en dar el dato, el aviso dice de hace cuánto es.</p>
+              <label class="campo"><span>Durante más de (min)</span><input type="number" min="0" max="1440" [value]="f().minutos" (input)="poner('minutos', +$any($event.target).value)"></label>
+            } @else {
+              <label class="campo"><span>Esté</span>
+                <select (change)="poner('operador', $any($event.target).value)">
+                  <option value=">" [selected]="f().operador === '>'">por encima de</option>
+                  <option value="<" [selected]="f().operador === '<'">por debajo de</option>
+                </select></label>
+              <label class="campo"><span>Valor</span><input type="number" step="0.5" [value]="f().umbral" (input)="poner('umbral', +$any($event.target).value)"></label>
+              <label class="campo"><span>Durante (min)</span><input type="number" min="0" max="1440" [value]="f().minutos" (input)="poner('minutos', +$any($event.target).value)"></label>
+            }
           </div>
           <label class="marca"><input type="checkbox" [checked]="f().soloAvisar" (change)="poner('soloAvisar', $any($event.target).checked)"> Solo avisarme por Telegram (no toca nada)</label>
           @if (!f().soloAvisar) {
@@ -117,7 +121,13 @@ export class ReglasCasa implements OnInit {
   protected readonly hace = hace;
   protected readonly modos = [['auto', 'Auto'], ['frio', 'Frío'], ['calor', 'Calor'], ['eco', 'Eco']];
 
-  protected readonly sensores = computed(() => this.aparatos().filter((a) => a.tipo === 'sensor'));
+  // quien da un dato que se puede vigilar: números (temperatura, humedad…) o estados (abierto, encendido)
+  private static readonly VIGILABLES = ['abierto', 'encendido'];
+  private readonly vigilables = (a: AparatoCasa) => a.entidades.filter((e) => e.tipo === 'numero' || (e.tipo === 'bool' && ReglasCasa.VIGILABLES.includes(e.clave)));
+  protected readonly sensores = computed(() => this.aparatos().filter((a) => a.tipo === 'sensor' || this.vigilables(a).some((e) => e.tipo === 'bool')));
+  protected readonly datosSensor = computed(() => { const a = this.aparatos().find((x) => x.id === this.f().sensorId); return a ? this.vigilables(a) : []; });
+  protected readonly datoActual = computed(() => this.datosSensor().find((d) => d.clave === this.f().sensorClave));
+  protected readonly esEstado = computed(() => this.datoActual()?.tipo === 'bool');
   protected readonly destinos = computed(() => this.aparatos().filter((a) => a.entidades.some((e) => e.clave === 'encendido')));
   protected readonly esAire = computed(() => this.aparatos().find((a) => a.id === this.f().destinoId)?.tipo === 'clima');
 
@@ -135,9 +145,19 @@ export class ReglasCasa implements OnInit {
 
   protected poner<K extends keyof ReglaEntrada>(k: K, v: ReglaEntrada[K]): void { this.f.update((x) => ({ ...x, [k]: v })); }
 
+  // al cambiar de sensor, el dato pasa al primero que tenga (temperatura, abierto…)
+  protected elegirSensor(id: number): void {
+    const a = this.aparatos().find((x) => x.id === id);
+    const clave = a ? (this.vigilables(a)[0]?.clave ?? 'temperatura') : 'temperatura';
+    this.f.update((x) => ({ ...x, sensorId: id, sensorClave: clave }));
+  }
+
   protected usar(p: PlantillaRegla | null): void {
-    const s = this.sensores()[0], d = this.destinos().find((x) => x.tipo === 'clima') ?? this.destinos()[0];
-    this.f.set({ ...VACIA, ...(p?.valores ?? {}), nombre: p?.nombre ?? '', sensorId: s?.id ?? 0, destinoId: d?.id ?? 0 });
+    const { sensorClave: claveP, ...valores } = p?.valores ?? {};
+    // las plantillas de estado buscan un aparato que tenga ese dato (la puerta, el enchufe, la luz); las demás, el primer sensor
+    const s = claveP ? (this.aparatos().find((a) => a.entidades.some((e) => e.clave === claveP && e.tipo === 'bool' && (claveP === 'abierto' || a.tipo === (p!.id === 'luz-encendida' ? 'luz' : 'enchufe'))))) : this.sensores()[0];
+    const d = this.destinos().find((x) => x.tipo === 'clima') ?? this.destinos()[0];
+    this.f.set({ ...VACIA, ...valores, sensorClave: claveP ?? VACIA.sensorClave, nombre: p?.nombre ?? '', sensorId: s?.id ?? 0, destinoId: d?.id ?? 0 });
     this.error.set('');
     this.editando.set(true);
   }
@@ -157,8 +177,8 @@ export class ReglasCasa implements OnInit {
   }
 
   protected async alternar(r: ReglaCasa): Promise<void> {
-    const { id, disparada, ultima, resumen, ...entrada } = r;
-    void disparada; void ultima; void resumen;
+    const { id, disparada, ultima, resumen, estado, ...entrada } = r;
+    void disparada; void ultima; void resumen; void estado;
     try { await this.casa.guardarRegla({ ...entrada, activa: !r.activa }, id); await this.recargar(); } catch { this.error.set('No se pudo cambiar.'); }
   }
 

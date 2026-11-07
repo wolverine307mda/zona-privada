@@ -44,6 +44,25 @@ public enum PasoRegla { Nada, Disparar, Revertir }
 
 public static class EvaluadorReglas
 {
+    // Una regla de ESTADO («la puerta lleva abierta 10 min») es una regla numérica con el estado convertido a 1/0:
+    // se dispara cuando el valor es 1 (> 0,5) durante `Minutos`, y se rearma cuando vuelve a 0. Así se reutiliza toda la histéresis y la espera.
+    public static double? Numero(string? valor)
+    {
+        if (valor is null) return null;
+        if (bool.TryParse(valor, out var b)) return b ? 1 : 0;
+        return double.TryParse(valor, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
+    }
+
+    public static bool EsEstado(string sensorTipo, string clave) => Catalogo.Buscar(sensorTipo, clave) is { Tipo: "bool", Clave: "abierto" or "encendido" };
+
+    // la frase de la regla de estado: «Puerta de la calle: abierta más de 10 min»
+    public static string FraseEstado(string clave, bool alReves = false) => (clave, alReves) switch
+    {
+        ("abierto", false) => "abierta", ("abierto", true) => "cerrada",
+        ("encendido", false) => "encendido", ("encendido", true) => "apagado",
+        _ => clave,
+    };
+
     public static bool Cumple(ReglaCasa r, double v) => r.Operador == ">" ? v > r.Umbral : v < r.Umbral;
 
     // Un paso de la regla con la lectura actual: decide si hay que actuar y deja anotado su estado (Desde, Disparada, Ultima)
@@ -72,12 +91,13 @@ public static class EvaluadorReglas
         return PasoRegla.Nada;
     }
 
-    public static string Resumen(ReglaCasa r, string sensor, string destino) =>
+    public static string Resumen(ReglaCasa r, string sensor, string destino, bool estado = false) =>
+        estado ? $"{sensor}: {FraseEstado(r.SensorClave)}{(r.Minutos > 0 ? $" más de {r.Minutos} min" : "")} → {(r.SoloAvisar ? "avisar" : $"{r.Accion} {destino}")}" :
         $"{sensor}: {(r.Operador == ">" ? "más de" : "menos de")} {r.Umbral.ToString("0.#", CultureInfo.GetCultureInfo("es-ES"))}{(r.Minutos > 0 ? $" durante {r.Minutos} min" : "")} → {(r.SoloAvisar ? "avisar" : $"{r.Accion} {destino}")}";
 }
 
 // Mira las reglas cada 30 segundos y actúa; cada vez que dispara o revierte lo apunta en el registro
-public sealed class MotorReglas(IServiceScopeFactory ambitos, ServicioCasa casa, IAvisos avisos, TimeProvider reloj, ILogger<MotorReglas> log) : BackgroundService
+public sealed class MotorReglas(IServiceScopeFactory ambitos, ServicioCasa casa, IAvisos avisos, Mda.Api.Telegram.Bot bot, TimeProvider reloj, ILogger<MotorReglas> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -108,16 +128,36 @@ public sealed class MotorReglas(IServiceScopeFactory ambitos, ServicioCasa casa,
             var e = entidades.FirstOrDefault(x => x.AparatoId == r.SensorId && x.Clave == r.SensorClave);
             // un dato con más de 30 minutos no sirve para decidir: puede que el sensor esté caído
             if (e?.Valor is null || e.Actualizado is null || ahora - e.Actualizado > TimeSpan.FromMinutes(30)) continue;
-            if (!double.TryParse(e.Valor, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) continue;
+            if (EvaluadorReglas.Numero(e.Valor) is not { } v) continue;
+            var estado = EvaluadorReglas.EsEstado(sensor.Tipo, r.SensorClave);
             var paso = EvaluadorReglas.Evaluar(r, v, ahora);
             if (paso == PasoRegla.Nada) continue;
-            await Actuar(db, r, sensor, destino, v, paso, ahora, ct);
+            await Actuar(db, r, sensor, destino, v, paso, ahora, ct, estado, (int)Math.Max(0, (ahora - e.Actualizado.Value).TotalMinutes));
         }
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task Actuar(AppDbContext db, ReglaCasa r, Aparato sensor, Aparato destino, double v, PasoRegla paso, DateTimeOffset ahora, CancellationToken ct)
+    private async Task Actuar(AppDbContext db, ReglaCasa r, Aparato sensor, Aparato destino, double v, PasoRegla paso, DateTimeOffset ahora, CancellationToken ct, bool estado = false, int datoHace = 0)
     {
+        if (estado && r.SoloAvisar)
+        {
+            // «Puerta de la calle lleva abierta más de 10 min» (con el último dato de hace X min) y, si se puede, un botón para apagarlo
+            var frase = EvaluadorReglas.FraseEstado(r.SensorClave, paso == PasoRegla.Revertir);
+            var t = paso == PasoRegla.Disparar
+                ? $"«{r.Nombre}»: {sensor.Nombre} lleva {frase}{(r.Minutos > 0 ? $" más de {r.Minutos} min" : "")} (último dato hace {datoHace} min)."
+                : $"«{r.Nombre}»: {sensor.Nombre} vuelve a estar {EvaluadorReglas.FraseEstado(r.SensorClave, true)}.";
+            if (paso == PasoRegla.Disparar && bot.Vinculado)
+            {
+                var puedeApagar = Catalogo.Buscar(sensor.Tipo, "encendido") is { Escribible: true } && r.SensorClave == "encendido";
+                var botones = puedeApagar
+                    ? new[] { new { text = "Apagar", callback_data = $"ca:{sensor.Id}" }, new { text = "Ya lo sé", callback_data = "cv:" } }
+                    : new[] { new { text = "Ya lo sé", callback_data = "cv:" } };
+                _ = bot.Enviar($"🏠 {t}", new { inline_keyboard = new[] { botones } }, ct: ct);
+            }
+            else _ = avisos.PorTelegram($"🏠 {t}", ct);
+            db.RegistrosCasa.Add(new RegistroCasa { ReglaId = r.Id, Fecha = ahora, Texto = t, Ok = true });
+            return;
+        }
         var enciende = (r.Accion == "encender") == (paso == PasoRegla.Disparar);
         var valor = v.ToString("0.#", CultureInfo.GetCultureInfo("es-ES"));
         string texto; var ok = true;
