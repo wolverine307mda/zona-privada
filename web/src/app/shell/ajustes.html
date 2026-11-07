@@ -12,7 +12,7 @@
       <div class="modos" role="group" aria-labelledby="ajustes-modo">
         @for (m of modos; track m.id) {
           <button type="button" class="modo" [attr.data-modo]="m.id" [attr.aria-pressed]="tema.modo() === m.id"
-                  (click)="tema.ponerModo(m.id, $any($event.currentTarget))">
+                  [disabled]="!!tema.modoFijo()" (click)="tema.ponerModo(m.id, $any($event.currentTarget))">
             <span class="modo__vista" aria-hidden="true"><span></span><span></span><span></span></span>
             <span class="modo__nombre">{{ m.nombre }}</span>
           </button>
@@ -33,6 +33,8 @@
         }
       </div>
     </section>
+
+    <app-ajustes-tema />
 
     <app-ajustes-fondo />
     <app-ajustes-entrada />

@@ -4,13 +4,14 @@ import { SesionService } from '../core/sesion.service';
 import { COLORES, MODOS, TemaService } from '../core/tema.service';
 import { AjustesEntrada } from './ajustes-entrada';
 import { AjustesFondo } from './ajustes-fondo';
+import { AjustesTema } from './ajustes-tema';
 import { AjustesSonido } from './ajustes-sonido';
 
 // Ajustes de la app en un modal: modo (día, noche, sistema), paleta de colores, fondo animado, sonido, instalar la app y la sesión.
 // Se cierra con Esc, con la X o pulsando fuera de la caja. `salir` avisa al marco de que se ha pedido cerrar la sesión.
 @Component({
   selector: 'app-ajustes',
-  imports: [AjustesEntrada, AjustesFondo, AjustesSonido],
+  imports: [AjustesEntrada, AjustesFondo, AjustesSonido, AjustesTema],
   templateUrl: './ajustes.html',
   styleUrl: './ajustes.css',
 })

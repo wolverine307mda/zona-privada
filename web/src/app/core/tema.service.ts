@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
+import { TEMA_POR_DEFECTO, TemaId, VARIABLES_TEMAS, esTema, temaDe } from './temas';
 
 export type Modo = 'light' | 'dark' | 'system';
 export type Color = 'morado' | 'rojo' | 'naranja' | 'rosa' | 'cobalto' | 'turquesa' | 'lima' | 'ambar';
@@ -98,6 +99,9 @@ export class TemaService {
   readonly modo = signal<Modo>(leer('mode', 'dark') as Modo);
   readonly color = signal<Color>(colorGuardado(leer('color', 'naranja')));
   readonly cambio = signal(0);
+  // el tema completo (fondo, superficies, texto y fuente): «cristal» es el de siempre; los otros fijan su propio modo claro u oscuro
+  readonly tema = signal<TemaId>(esTema(leer('mda-tema', TEMA_POR_DEFECTO)) ? (leer('mda-tema', TEMA_POR_DEFECTO) as TemaId) : TEMA_POR_DEFECTO);
+  readonly modoFijo = computed(() => temaDe(this.tema()).modo);
 
   // fondo animado de toda la app: cuál, cuánto se ve (0-100), cuánto se mueve (25-200 %) y dónde
   readonly fondo = signal<FondoId>(FONDOS.some((f) => f.id === leer('mda-fondo', 'aura')) ? (leer('mda-fondo', 'aura') as FondoId) : 'aura');
@@ -118,13 +122,20 @@ export class TemaService {
   ponerFuerza(n: number): void { this.fuerza.set(entre(n, 50, 200, 100)); guardar('mda-fondo-col', String(this.fuerza())); }
   ponerAmbito(a: Ambito): void { this.ambito.set(a); guardar('mda-fondo-ambito', a); this.aplicar(); }
 
+  ponerTema(t: TemaId, origen?: HTMLElement): void { this.transicion(origen, () => { this.tema.set(t); guardar('mda-tema', t); }); }
+
   ponerModo(m: Modo, origen?: HTMLElement): void { this.transicion(origen, () => { this.modo.set(m); guardar('mode', m); }); }
   ponerColor(c: Color, origen?: HTMLElement): void { this.transicion(origen, () => { this.color.set(c); guardar('color', c); }); }
 
   private aplicar(): void {
     const d = document.documentElement;
-    const oscuro = this.modo() === 'dark' || (this.modo() === 'system' && this.sistemaOscuro.matches);
+    const t = temaDe(this.tema());
+    const oscuro = t.modo ? t.modo === 'dark' : this.modo() === 'dark' || (this.modo() === 'system' && this.sistemaOscuro.matches);
     d.dataset['mode'] = oscuro ? 'dark' : 'light';
+    d.dataset['tema'] = t.id;
+    // las variables del tema van sobre <html>; al cambiar de tema se quitan las del anterior
+    for (const v of VARIABLES_TEMAS) d.style.removeProperty(v);
+    for (const [v, valor] of Object.entries(t.vars)) d.style.setProperty(v, valor);
     d.dataset['color'] = this.color();
     d.dataset['fondo'] = this.fondo();
     d.dataset['ambito'] = this.ambito();

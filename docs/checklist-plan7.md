@@ -42,7 +42,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 58 | Salud del disco y cuándo se llena | ✅ en gran parte: `TendenciaDisco.cs` (días hasta llenarse), aviso de SMART ≠ Healthy | ✅ **Hecha**: contadores extra, avisos a 45/14 días y desgaste 80 %, «Qué ocupa» (`Pc/Espacio.cs`, `agente/Espacio.cs`) | 1 |
 | 59 | Bandeja bidireccional | `Pc/Bandeja.cs` (PC → app) y orden `descargar` | ✅ **Hecha**: `Pc/Transferencias.cs` y tarjeta «Archivos entre la app y el PC» | 2 |
 | 60 | Abrir y cerrar aplicaciones | `agente/Abrir.cs` (lista cerrada: calculadora, bloc, explorador) | ✅ **Hecha**: `Pc/AppsPc.cs`, `agente/AppsPc.cs` y tarjeta Aplicaciones en Mi PC | 2 |
-| 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | **Temas completos** (papel, terminal, sepia, alto contraste, OLED…) | 2 |
+| 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | ✅ **Hecha**: `core/temas.ts`, `TemaService` y Ajustes › Tema | 2 |
 | 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | Registro de tarjetas, **arrastrar/ocultar/tamaño** y varias vistas | 3 |
 | 69 | Widget en la pantalla de bloqueo | `/api/atajos/hoy` y `herramientas/ios/hoy-widget.js` (Scriptable) | Versión **de pantalla de bloqueo** (accesorios) y contenido nuevo | 1 |
 | 70 | Tipografía y densidad | nada | Tamaño de letra, densidad y fuente legible **por dispositivo** | 1 |
@@ -323,13 +323,14 @@ Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es 
 
 ## Fase F · Interfaz
 
-### ⬜ 67 · Temas completos
-- ⬜ F67.1 Concepto `Tema` (aparte del color de acento): conjunto de variables (`--fondo`, `--tarjeta`, `--texto`, `--soft`, `--linea`, radios, sombras, tipografía) aplicado con `data-tema`. Temas: **Papel** (claro, serif suave), **Terminal** (oscuro, monoespaciado y verde), **Sepia** (cálido, descansa la vista), **Alto contraste** (negro y amarillo/blanco, bordes gruesos), **Medianoche OLED** (negro puro, para ahorrar batería) y **Cristal** (el de ahora, por defecto).
-- ⬜ F67.2 Cada tema fija su modo (`data-mode`) para que los 3D (`pc-3d`, `habitacion-3d`, `candado-3d`) y los fondos sigan funcionando; el selector claro/oscuro se desactiva en los que son de un solo modo.
-- ⬜ F67.3 **Comprobación de contraste automática** en los tests: función pura que calcula la razón WCAG de cada par texto/fondo de cada tema y exige AA (4,5:1 para texto normal; 7:1 en alto contraste).
+### ✅ 67 · Temas completos
+- ✅ F67.1 Concepto `Tema` (aparte del color de acento): conjunto de variables (`--fondo`, `--tarjeta`, `--texto`, `--soft`, `--linea`, radios, sombras, tipografía) aplicado con `data-tema`. Temas: **Papel** (claro, serif suave), **Terminal** (oscuro, monoespaciado y verde), **Sepia** (cálido, descansa la vista), **Alto contraste** (negro y amarillo/blanco, bordes gruesos), **Medianoche OLED** (negro puro, para ahorrar batería) y **Cristal** (el de ahora, por defecto).
+- ✅ F67.2 Cada tema fija su modo (`data-mode`) para que los 3D (`pc-3d`, `habitacion-3d`, `candado-3d`) y los fondos sigan funcionando; el selector claro/oscuro se desactiva en los que son de un solo modo.
+- ✅ F67.3 **Comprobación de contraste automática** en los tests: función pura que calcula la razón WCAG de cada par texto/fondo de cada tema y exige AA (4,5:1 para texto normal; 7:1 en alto contraste).
 - ⬜ F67.4 Ajustes › Tema con rejilla de tarjetas de vista previa en vivo y persistencia por dispositivo (con opción de sincronizar con el servidor).
-- ⬜ F67.5 `theme-color` del navegador del móvil y los gráficos de ECharts siguen al tema (`resolverColor`).
+- ✅ F67.5 `theme-color` del navegador del móvil y los gráficos de ECharts siguen al tema (`resolverColor`).
 - Riesgos: pantallas con colores fijos a mano → barrido y corrección de cada una a los tokens. Esfuerzo: 2 sesiones.
+- Decisión: `core/temas.ts`: seis temas (Cristal —el de siempre, sin tocar nada—, Papel, Terminal, Sepia, Alto contraste y Medianoche OLED) como conjuntos de variables CSS que `TemaService` pone sobre `<html>` con `data-tema`, quitando las del anterior. Los de un solo modo fijan claro u oscuro (así `data-mode`, los 3D y los fondos siguen funcionando) y desactivan el selector de modo en Ajustes. Las paletas viven en TypeScript para poder **comprobar el contraste WCAG en las pruebas**: cada par texto/fondo de cada tema llega a 4,5:1 (7:1 en alto contraste). Ajustes › Tema con rejilla de vistas previas hechas con las variables de cada tema; se guarda por dispositivo. `theme-color` y las gráficas siguen al tema porque leen las mismas variables. Comprobado en el navegador con Papel (letra serif, fondo crema). **Pendiente**: el barrido de pantallas con colores fijos a mano (por ejemplo, la tarjeta grande de Inicio se ve apagada en Papel) y sincronizar el tema con el servidor.
 
 ### ⬜ 70 · Tipografía y densidad
 - ⬜ F70.1 Ajustes por dispositivo: **tamaño de letra** (90–130 %), **densidad** (compacta · cómoda · amplia → `--hueco`, rellenos y alto de filas) y **fuente** (la de siempre, del sistema, o una de lectura cómoda con licencia libre incluida en la app).
