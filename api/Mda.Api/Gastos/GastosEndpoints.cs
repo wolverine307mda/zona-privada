@@ -95,7 +95,7 @@ public static class GastosEndpoints
             await db.SaveChangesAsync(ct);
             // corregir la categoría de un gasto enseña la regla «este comercio → esta categoría»
             if (m.Categoria != categoriaAntes) await Reglas.Aprender(db, m.Concepto, m.Categoria, m.Tipo, ct);
-            if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
+            if (m.Tipo == TipoMovimiento.Gasto) { await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct); await PresupuestosSemana.Comprobar(db, avisos, m.Categoria, m.Fecha, DateOnly.FromDateTime(DateTime.UtcNow), log, ct); }
             return Results.Ok(m);
         });
 
@@ -221,7 +221,7 @@ public static class GastosEndpoints
         }
         db.Movimientos.Add(m);
         await db.SaveChangesAsync(ct);
-        if (m.Tipo == TipoMovimiento.Gasto) await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct);
+        if (m.Tipo == TipoMovimiento.Gasto) { await Cartera.ComprobarPresupuesto(db, avisos, m.Categoria, m.Fecha, log, ct); await PresupuestosSemana.Comprobar(db, avisos, m.Categoria, m.Fecha, DateOnly.FromDateTime(DateTime.UtcNow), log, ct); }
         return Results.Created($"/api/gastos/movimientos/{m.Id}", m);
     }
 

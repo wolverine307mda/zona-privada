@@ -136,7 +136,25 @@
         </article>
       }
       <article class="caja">
-        <header class="caja__cab"><h3>Presupuestos</h3><button class="enlace" type="button" (click)="abrirPresupuestos()">{{ presupuestos().length ? 'Editar' : 'Crear' }} →</button></header>
+        <header class="caja__cab"><h3>Presupuestos</h3><button class="enlace" type="button" (click)="abrirPresupuestos()">{{ (vistaPresu() === 'semana' ? semanales().length : presupuestos().length) ? 'Editar' : 'Crear' }} →</button></header>
+        @if (esActual() && semanales().length) {
+          <div class="presu__modo" role="group" aria-label="Periodo de los presupuestos">
+            <button type="button" [attr.aria-pressed]="vistaPresu() === 'mes'" (click)="vistaPresu.set('mes')">Mes</button>
+            <button type="button" [attr.aria-pressed]="vistaPresu() === 'semana'" (click)="vistaPresu.set('semana')">Semana</button>
+          </div>
+        }
+        @if (vistaPresu() === 'semana' && esActual()) {
+          @for (p of semanales(); track p.categoria) {
+            <div class="presu" [style.--c]="categoria(p.categoria).color" [class.presu--cerca]="p.porcentaje >= 80" [class.presu--pasado]="p.porcentaje >= 100">
+              <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
+              <div class="presu__texto">
+                <div class="presu__fila"><strong>{{ categoria(p.categoria).nombre }}</strong><span>{{ euros(p.gastado) }} <em>de {{ eurosCorto(p.limiteEfectivo) }}</em></span></div>
+                <span class="presu__barra"><span [style.width.%]="p.porcentaje > 100 ? 100 : p.porcentaje"></span></span>
+                <small>{{ p.porcentaje >= 100 ? 'Te has pasado ' + euros(p.gastado - p.limiteEfectivo) + ' · se reinicia el ' + fechaCorta(p.reinicio) : 'Quedan ' + euros(p.limiteEfectivo - p.gastado) + ' · ' + diasTexto(p.diasRestantes) + ', unos ' + euros(p.porDia) + ' al día' }}{{ p.limiteEfectivo > p.limite ? ' · con ' + euros(p.limiteEfectivo - p.limite) + ' de la semana pasada' : '' }}</small>
+              </div>
+            </div>
+          }
+        } @else {
         @for (p of presupuestos(); track p.categoria) {
           <div class="presu" [style.--c]="categoria(p.categoria).color" [class.presu--cerca]="p.porcentaje >= 80" [class.presu--pasado]="p.porcentaje >= 100">
             <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="categoria(p.categoria).icono" /></svg></span>
@@ -149,8 +167,9 @@
         } @empty {
           <div class="vacio">
             <strong>Ponle un límite a lo que más se escapa</strong>
-            Restaurantes, ocio, ropa… Te aviso al llegar al 80 % y al pasarte.
+            Restaurantes, ocio, ropa… Te aviso al llegar al 80 % y al pasarte, al mes o a la semana.
           </div>
+        }
         }
       </article>
     </section>
@@ -296,15 +315,28 @@
 <!-- Presupuestos por categoría -->
 <dialog class="dlg" #dlgPresupuestos (click)="cerrarFuera($event)" aria-labelledby="dlg-presu-t">
   <form class="dlg__caja" (submit)="guardarPresupuestos($event)" novalidate>
-    <header class="dlg__cabeza"><h2 id="dlg-presu-t">Presupuestos al mes</h2>
+    <header class="dlg__cabeza"><h2 id="dlg-presu-t">Presupuestos {{ modoDlg() === 'semana' ? 'a la semana' : 'al mes' }}</h2>
       <button class="dlg__x" type="button" (click)="dlgPresupuestos.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
-    <p class="dlg__lead">Deja en blanco las categorías sin límite. Te aviso (notificación y correo) al llegar al 80 % y al pasarte.</p>
+    @if (esActual()) {
+      <div class="presu__modo" role="group" aria-label="Periodo">
+        <button type="button" [attr.aria-pressed]="modoDlg() === 'mes'" (click)="modoDlg.set('mes')">Al mes</button>
+        <button type="button" [attr.aria-pressed]="modoDlg() === 'semana'" (click)="modoDlg.set('semana')">A la semana</button>
+      </div>
+    }
+    <p class="dlg__lead">{{ modoDlg() === 'semana' ? 'De lunes a domingo; se reinicia cada lunes. Deja en blanco las categorías sin límite. Te aviso (notificación y Telegram) al llegar al 80 % y al pasarte.' : 'Deja en blanco las categorías sin límite. Te aviso (notificación y correo) al llegar al 80 % y al pasarte.' }}</p>
+    @if (modoDlg() === 'semana') {
+      <label class="presu__arrastrar"><input type="checkbox" [checked]="arrastrar()" (change)="arrastrar.set($any($event.target).checked)"> Sumar a la semana siguiente lo que sobre (como mucho la mitad del límite)</label>
+    }
     <div class="limites">
       @for (c of categoriasGasto; track c.id) {
         <label class="limite" [style.--c]="c.color">
           <span class="icono-cat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="c.icono" /></svg></span>
           <span class="limite__nombre">{{ c.nombre }}</span>
-          <span class="limite__campo"><input type="text" inputmode="decimal" placeholder="—" [value]="limites()[c.id] ?? ''" (input)="ponerLimite(c.id, $event)"><em>€</em></span>
+          @if (modoDlg() === 'semana') {
+            <span class="limite__campo"><input type="text" inputmode="decimal" placeholder="—" [value]="limitesSemana()[c.id] ?? ''" (input)="ponerLimiteSemana(c.id, $event)"><em>€</em></span>
+          } @else {
+            <span class="limite__campo"><input type="text" inputmode="decimal" placeholder="—" [value]="limites()[c.id] ?? ''" (input)="ponerLimite(c.id, $event)"><em>€</em></span>
+          }
         </label>
       }
     </div>

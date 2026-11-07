@@ -147,6 +147,37 @@ public static class Cartera
             return Results.NoContent();
         });
 
+        // ---- Presupuestos por semana (de lunes a domingo; la semana es la de hoy) ----
+        g.MapGet("/presupuestos-semana", async (AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        {
+            var hoy = Hoy(reloj, zona);
+            var lista = new List<EstadoSemana>();
+            foreach (var p in await db.PresupuestosSemanales.AsNoTracking().Where(p => p.Limite > 0).ToListAsync(ct))
+                if (Categorias.Todas.ContainsKey(p.Categoria)) lista.Add(await PresupuestosSemana.EstadoDe(db, p, hoy, ct));
+            return Results.Ok(new { semana = Semana.Clave(hoy), desde = Semana.Lunes(hoy), reinicio = Semana.Lunes(hoy).AddDays(7), presupuestos = lista.OrderByDescending(p => p.Porcentaje) });
+        });
+        g.MapPut("/presupuestos-semana/{categoria}", async (string categoria, PresupuestoSemanalEntrada e, AppDbContext db, CancellationToken ct) =>
+        {
+            if (!Categorias.Valida(categoria, TipoMovimiento.Gasto)) return Results.ValidationProblem(new Dictionary<string, string[]> { ["categoria"] = ["Esa categoría de gasto no existe."] });
+            if (e.Limite <= 0 || e.Limite > 1_000_000) return Results.ValidationProblem(new Dictionary<string, string[]> { ["limite"] = ["El límite tiene que ser mayor que 0."] });
+            var p = await db.PresupuestosSemanales.FindAsync([categoria], ct);
+            if (p is null) db.PresupuestosSemanales.Add(p = new PresupuestoSemanal { Categoria = categoria });
+            p.Limite = e.Limite;
+            p.Arrastrar = e.Arrastrar;
+            p.AvisadoSemana = null;
+            p.AvisadoNivel = 0;
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(p);
+        });
+        g.MapDelete("/presupuestos-semana/{categoria}", async (string categoria, AppDbContext db, CancellationToken ct) =>
+        {
+            var p = await db.PresupuestosSemanales.FindAsync([categoria], ct);
+            if (p is null) return Results.NotFound();
+            db.PresupuestosSemanales.Remove(p);
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        });
+
         // Con cuánto cerrarás el mes, con banda de «mejor» y «peor» caso
         g.MapGet("/prevision", async (AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {
@@ -302,6 +333,7 @@ public static class Cartera
     {
         foreach (var c in await db.Presupuestos.Where(p => p.Limite > 0).Select(p => p.Categoria).ToListAsync(ct))
             if (Categorias.Todas.ContainsKey(c)) await ComprobarPresupuesto(db, avisos, c, hoy, log, ct);
+        await PresupuestosSemana.ComprobarTodos(db, avisos, hoy, log, ct);
     }
 
     public static async Task ComprobarPresupuesto(AppDbContext db, IAvisos avisos, string categoria, DateOnly fecha, ILogger log, CancellationToken ct)

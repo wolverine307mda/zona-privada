@@ -26,7 +26,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 |---|---|---|---|---|
 | 1 | Previsión de fin de mes con rango | ✅ **Hecha** (Plan 6, `9d92919`): `Gastos/Prevision.cs` (central, bajo y alto, fijos y nóminas pendientes, serie día a día) y `gastos/grafica-prevision.ts` | Nada nuevo; solo una pasada de pulido (leerla en el móvil, explicar «bajo/alto» con una frase) | 0,2 |
 | 5 | Gasto por lugar en un mapa | ✅ **Hecha**: `Gastos/Lugares.cs` + `gastos/mapa-gasto.ts` (Leaflet), con filtro por categoría y detrás del PIN | — | 1 |
-| 6 | Presupuesto por semana | `Presupuesto` mensual con aviso al 80/100 % (Plan 6) | Periodo **semanal** con reinicio el lunes, aviso y barra | 1 |
+| 6 | Presupuesto por semana | ✅ **Hecha**: `PresupuestoSemanal` + `PresupuestosSemana` + interruptor en Cartera (queda la línea semanal del atajo `/hoy`) | — | 1 |
 | 8 | Fecha de cobro de la nómina | `Recurrente` (incluye nóminas) y la previsión suma las pendientes | **Detectar el día de cobro**, «dinero hasta cobrar» y aviso si no llega | 1 |
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | Garantía/devolución **ligada a un gasto**, con foto del ticket | 1,5 |
 | 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | Precios de las gasolineras (Ministerio), la más barata cerca y «conviene hoy» | 1,5 |
@@ -97,13 +97,12 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - ✅ A5.4 Filtros de mes/año y de categoría; estado vacío con la explicación del atajo; probado en pantalla con datos de ejemplo.
 - Decisión: se mantiene el círculo por zona de ~1 km (no se ve el portal) y no se añadió `leaflet.heat`.
 
-### ⬜ 6 · Presupuesto por semana
-- ⬜ A6.1 `Presupuesto.Periodo` (`Mes` | `Semana`, por defecto `Mes`) o tabla `PresupuestoSemanal` (decidir al ver `Modelo.cs`; migración con `ef`). La semana empieza el lunes en la zona horaria de la app (`Zona`).
-- ⬜ A6.2 Función pura `Presupuestos.EstadoSemana(gastado, limite, hoy)` → %, días que quedan hasta el domingo y euros por día; opción «arrastrar lo que sobra» (rollover) y su tope. Tests: lunes, domingo, cambio de mes en medio de la semana, límite 0, rollover.
-- ⬜ A6.3 Vigilante: aviso al 80 y 100 % con dedupe `presupuesto-avisado:{año}-W{semana}:{categoria}:{80|100}` (limpieza al pasar la semana).
-- ⬜ A6.4 Cartera: interruptor «Mes · Semana» en la tarjeta de presupuestos, barra que se vacía el lunes y cuenta atrás «se reinicia en 3 días».
-- ⬜ A6.5 El atajo del iPhone y el semáforo siguen diciendo el presupuesto del mes; el de la semana se añade a `/atajos/hoy` (línea nueva).
-- Riesgos: duplicar un presupuesto mensual y uno semanal de la misma categoría → se permite, con una nota que explique cuál manda. Esfuerzo: 1 sesión.
+### ✅ 6 · Presupuesto por semana
+- ✅ A6.1 Tabla propia `presupuestos_semanales` (`PresupuestoSemanal`: categoría, límite, `Arrastrar`, semana y nivel ya avisados) con migración generada por `dotnet ef`. El presupuesto mensual no se toca. La semana va de lunes a domingo.
+- ✅ A6.2 Lógica pura en `Gastos/PresupuestoSemanal.cs` (`Semana`, `PresupuestosSemana.Estado/Nivel/Arrastre`): porcentaje, días que quedan contando hoy, euros por día y arrastre de lo que sobró la semana pasada con tope de la mitad del límite. Tests: lunes/domingo, año que cruza, 80/100 %, arrastre.
+- ✅ A6.3 Aviso al 80 y 100 % por push y Telegram (sin correo, para no llenar el buzón) con dedupe por semana en la propia fila; se comprueba al apuntar un gasto y en el barrido del vigilante (`Cartera.ComprobarTodos`). Un gasto de otra semana no avisa de la de hoy. Tests con reloj fijo y un `IAvisos` falso.
+- ✅ A6.4 Cartera: interruptor «Mes · Semana» en la tarjeta (solo mirando el mes actual) y pestañas «Al mes / A la semana» en el diálogo, con la casilla «sumar lo que sobre». Rutas: `GET /api/gastos/presupuestos-semana`, `PUT` y `DELETE /api/gastos/presupuestos-semana/{categoria}`.
+- ⬜ A6.5 Pendiente (poco valor): la línea semanal en `/api/atajos/hoy` (el atajo sigue hablando del mes).
 
 ### ⬜ 8 · Día de cobro de la nómina
 - ⬜ A8.1 Función pura `DiaDeCobro.Detectar(ingresos)`: toma los ingresos grandes de los últimos 6 meses (≥ 60 % del ingreso mensual medio o marcados como nómina en `Recurrente`) y devuelve el día habitual (mediana) y su fiabilidad; si el día cae en fin de semana, anota «se adelanta al viernes». Ajuste manual que manda sobre la detección. Tests: 3 meses regulares, día variable, un mes sin nómina, mes de 28 días.

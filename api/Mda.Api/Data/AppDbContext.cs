@@ -33,6 +33,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Pc.DispositivoRed> DispositivosRed => Set<Mda.Api.Pc.DispositivoRed>();
     public DbSet<Mda.Api.Pc.ElementoPortapapeles> Portapapeles => Set<Mda.Api.Pc.ElementoPortapapeles>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
+    public DbSet<PresupuestoSemanal> PresupuestosSemanales => Set<PresupuestoSemanal>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -532,6 +533,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Categoria).HasMaxLength(40);
             e.Property(x => x.Limite).HasPrecision(12, 2);
             e.Property(x => x.AvisadoMes).HasMaxLength(7);
+        });
+
+        b.Entity<PresupuestoSemanal>(e =>
+        {
+            e.ToTable("presupuestos_semanales");
+            e.HasKey(x => x.Categoria);
+            e.Property(x => x.Categoria).HasMaxLength(40);
+            e.Property(x => x.Limite).HasPrecision(12, 2);
+            e.Property(x => x.AvisadoSemana).HasMaxLength(8);
         });
 
         b.Entity<EquipoConocido>(e =>

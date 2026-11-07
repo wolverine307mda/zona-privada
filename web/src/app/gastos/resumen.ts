@@ -4,7 +4,7 @@ import { TemaService } from '../core/tema.service';
 import { GastosService } from './gastos.service';
 import { echarts, opcionesRosco } from './graficas-gastos';
 import { GraficaPrevision } from './grafica-prevision';
-import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
+import { CATEGORIAS, Consejos, Movimiento, Pendiente, PrevisionCierre, Presupuesto, PresupuestoSemana, ResumenMes, Saldo, categoria, diaCorto, euros, eurosCorto } from './modelo';
 import { EstadoError, Esqueleto } from '../ui';
 
 // Resumen del mes: el dinero que tienes (saldo que se arrastra de mes en mes), lo que puedes gastar al día,
@@ -34,6 +34,12 @@ export class Resumen implements OnDestroy {
   protected readonly prevision = signal<PrevisionCierre | null>(null);
   protected informe(): string { return `/api/gastos/informe?anio=${this.g.anio()}&mes=${this.g.mes()}`; }
   protected readonly presupuestos = signal<Presupuesto[]>([]);
+  // presupuestos de la semana de hoy; `vistaPresu` elige cuál se ve en la tarjeta y `modoDlg` cuál se edita en el diálogo
+  protected readonly semanales = signal<PresupuestoSemana[]>([]);
+  protected readonly vistaPresu = signal<'mes' | 'semana'>('mes');
+  protected readonly modoDlg = signal<'mes' | 'semana'>('mes');
+  protected readonly limitesSemana = signal<Record<string, string>>({});
+  protected readonly arrastrar = signal(false);
   // diálogos
   protected readonly saldoTexto = signal('');
   protected readonly aplicando = signal<Pendiente | null>(null);
@@ -113,6 +119,8 @@ export class Resumen implements OnDestroy {
       this.datos.set(d);
       this.saldo.set(s);
       this.presupuestos.set(p);
+      if (this.g.esMesActual()) this.g.presupuestosSemana().then((s) => { this.semanales.set(s.presupuestos); if (!s.presupuestos.length) this.vistaPresu.set('mes'); }).catch(() => this.semanales.set([]));
+      else { this.semanales.set([]); this.vistaPresu.set('mes'); }
       if (this.g.esMesActual()) { this.g.consejos().then((c) => this.consejos.set(c)).catch(() => {}); this.g.prevision().then((p) => this.prevision.set(p)).catch(() => {}); }
       else { this.consejos.set(null); this.prevision.set(null); }
     } catch {
@@ -202,14 +210,19 @@ export class Resumen implements OnDestroy {
 
   protected abrirPresupuestos(): void {
     this.limites.set(Object.fromEntries(this.presupuestos().map((p) => [p.categoria, String(p.limite).replace('.', ',')])));
+    this.limitesSemana.set(Object.fromEntries(this.semanales().map((p) => [p.categoria, String(p.limite).replace('.', ',')])));
+    this.arrastrar.set(this.semanales().some((p) => p.arrastrar));
+    this.modoDlg.set(this.esActual() ? this.vistaPresu() : 'mes');
     this.errorDlg.set('');
     this.dlgPresupuestos()?.nativeElement.showModal();
   }
 
   protected ponerLimite(cat: string, e: Event): void { this.limites.update((l) => ({ ...l, [cat]: this.valor(e) })); }
+  protected ponerLimiteSemana(cat: string, e: Event): void { this.limitesSemana.update((l) => ({ ...l, [cat]: this.valor(e) })); }
 
   protected async guardarPresupuestos(e: Event): Promise<void> {
     e.preventDefault();
+    if (this.modoDlg() === 'semana') { await this.guardarSemanales(); return; }
     const antes = new Map(this.presupuestos().map((p) => [p.categoria, p.limite]));
     try {
       for (const c of this.categoriasGasto) {
@@ -221,6 +234,23 @@ export class Resumen implements OnDestroy {
       this.g.recargar();
     } catch { this.errorDlg.set('Algún límite no es válido.'); }
   }
+
+  private async guardarSemanales(): Promise<void> {
+    const antes = new Map(this.semanales().map((p) => [p.categoria, p]));
+    try {
+      for (const c of this.categoriasGasto) {
+        const v = this.num(this.limitesSemana()[c.id] ?? ''), previo = antes.get(c.id);
+        if (v && v > 0 && (v !== previo?.limite || this.arrastrar() !== previo?.arrastrar)) await this.g.ponerPresupuestoSemana(c.id, v, this.arrastrar());
+        else if (!v && previo) await this.g.quitarPresupuestoSemana(c.id);
+      }
+      this.vistaPresu.set('semana');
+      this.dlgPresupuestos()?.nativeElement.close();
+      this.g.recargar();
+    } catch { this.errorDlg.set('Algún límite no es válido.'); }
+  }
+
+  protected diasTexto(n: number): string { return `${n} ${n === 1 ? 'día' : 'días'}`; }
+  protected fechaCorta(iso: string): string { return new Date(iso + 'T12:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }); }
 
   protected cerrarFuera(e: MouseEvent): void { const d = e.target as HTMLElement; if (d.tagName === 'DIALOG') (d as HTMLDialogElement).close(); }
   protected iconoConsejo(i: string): string {

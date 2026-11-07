@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Consejos, Deudas, PrevisionCierre, Estadisticas, Frecuencia, Gasolina, Hucha, Mantenimiento, Movimiento, Presupuesto, Recurrente, ResumenMes, Saldo, Tipo } from './modelo';
+import { Consejos, Deudas, PrevisionCierre, Estadisticas, Frecuencia, Gasolina, Hucha, Mantenimiento, Movimiento, Presupuesto, Recurrente, ResumenMes, Saldo, Tipo, PresupuestosSemana } from './modelo';
 import { RecargaService } from '../core/recarga';
 
 export type MovimientoEntrada = Omit<Movimiento, 'id' | 'recurrenteId' | 'tieneTicket' | 'moneda' | 'importeOriginal'> & { moneda?: string | null; importeOriginal?: number | null } & { recurrenteId?: number | null; repite?: Frecuencia | null; variable?: boolean };
@@ -91,6 +91,9 @@ export class GastosService {
   presupuestos(anio: number, mes: number) { return firstValueFrom(this.http.get<Presupuesto[]>(`${this.base}/presupuestos`, { params: { anio, mes } })); }
   ponerPresupuesto(categoria: string, limite: number) { return firstValueFrom(this.http.put(`${this.base}/presupuestos/${categoria}`, { limite })); }
   quitarPresupuesto(categoria: string) { return firstValueFrom(this.http.delete(`${this.base}/presupuestos/${categoria}`)); }
+  presupuestosSemana() { return firstValueFrom(this.http.get<PresupuestosSemana>(`${this.base}/presupuestos-semana`)); }
+  ponerPresupuestoSemana(categoria: string, limite: number, arrastrar: boolean) { return firstValueFrom(this.http.put(`${this.base}/presupuestos-semana/${categoria}`, { limite, arrastrar })); }
+  quitarPresupuestoSemana(categoria: string) { return firstValueFrom(this.http.delete(`${this.base}/presupuestos-semana/${categoria}`)); }
   prevision() { return firstValueFrom(this.http.get<PrevisionCierre>(`${this.base}/prevision`)); }
   consejos() { return firstValueFrom(this.http.get<Consejos>(`${this.base}/consejos`)); }
 

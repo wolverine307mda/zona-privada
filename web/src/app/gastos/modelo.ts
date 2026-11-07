@@ -66,6 +66,9 @@ export interface Gasolina {
 export interface Saldo { configurado: boolean; actual: number; inicioMes: number; finMes: number; previsto: number; enHuchas: number; libre: number; }
 export interface Hucha { id: number; nombre: string; objetivo: number; ahorrado: number; color: string; emoji: string; fecha: string | null; porcentaje: number; alMes: number | null; }
 export interface Presupuesto { categoria: string; limite: number; gastado: number; porcentaje: number; }
+// el presupuesto de la semana de hoy (de lunes a domingo): `limiteEfectivo` suma lo que sobró la semana pasada si «arrastrar» está activo
+export interface PresupuestoSemana { categoria: string; limite: number; limiteEfectivo: number; arrastrar: boolean; gastado: number; porcentaje: number; diasRestantes: number; porDia: number; reinicio: string; }
+export interface PresupuestosSemana { semana: string; desde: string; reinicio: string; presupuestos: PresupuestoSemana[]; }
 export interface Consejo { icono: string; titulo: string; texto: string; tono: 'bueno' | 'malo' | 'aviso' | 'info'; }
 export interface Consejos {
   porDia: number; diasRestantes: number; disponible: number; proyeccion: number;

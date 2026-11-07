@@ -184,3 +184,10 @@
 .cierre__desglose div { display: flex; justify-content: space-between; gap: 12px; }
 .cierre__desglose dt { color: var(--soft); }
 .cierre__desglose dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* el interruptor «Mes · Semana» de los presupuestos (en la tarjeta y en el diálogo) */
+.presu__modo { display: inline-flex; gap: 4px; margin: 0 0 10px; }
+.presu__modo button { border: 1px solid var(--vidrio-borde); background: none; color: var(--soft); border-radius: 999px; padding: 6px 14px; font: 500 .78rem/1 var(--font-text); min-height: 34px; cursor: pointer; }
+.presu__modo button[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.presu__arrastrar { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; font-size: .84rem; color: var(--soft); cursor: pointer; }
+.presu__arrastrar input { margin-top: 2px; accent-color: var(--brand); }
