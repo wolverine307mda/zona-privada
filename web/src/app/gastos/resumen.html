@@ -37,7 +37,7 @@
             <div class="cierre" [attr.aria-label]="'Previsión de cierre de mes: entre ' + euros(p.bajo) + ' y ' + euros(p.alto)">
               <p class="etq">Cerrarás el mes con</p>
               <p class="cierre__cifra" [class.rojo]="p.central < 0">{{ euros(p.central) }}</p>
-              <p class="cierre__rango">entre <b>{{ eurosCorto(p.bajo) }}</b> y <b>{{ eurosCorto(p.alto) }}</b> · gastas unos {{ euros(p.ritmoDia) }} al día en lo variable</p>
+              <p class="cierre__rango">Si gastas más de lo normal, <b>{{ eurosCorto(p.bajo) }}</b>; si gastas menos, <b>{{ eurosCorto(p.alto) }}</b> · tu ritmo en lo variable: unos {{ euros(p.ritmoDia) }} al día</p>
               @if (p.serie && p.serie.length > 1) { <app-grafica-prevision [p]="p" /> }
               <dl class="cierre__desglose">
                 <div><dt>Saldo hoy</dt><dd>{{ euros(p.saldoActual) }}</dd></div>
@@ -45,7 +45,7 @@
                 @if (p.fijosPendientes) { <div><dt>Fijos aún sin apuntar</dt><dd>−{{ euros(p.fijosPendientes) }}</dd></div> }
                 @if (p.ingresosPendientes) { <div><dt>Ingresos aún sin apuntar</dt><dd>+{{ euros(p.ingresosPendientes) }}</dd></div> }
               </dl>
-              @if (!p.fiable) { <p class="cierre__aviso">Aún hay pocos días apuntados ({{ p.diasDeDatos }}): la previsión mejorará con el tiempo.</p> }
+              @if (!p.fiable) { <p class="cierre__aviso">Solo hay {{ p.diasDeDatos }} {{ p.diasDeDatos === 1 ? 'día apuntado' : 'días apuntados' }} este mes: la horquilla es orientativa y se afina cuanto más apuntes.</p> }
             </div>
           }
         }
