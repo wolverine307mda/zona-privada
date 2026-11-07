@@ -43,6 +43,9 @@
     <Compile Include="..\..\agente\Mda.Agente\Descargas.cs" Link="Agente\Descargas.cs" />
     <Compile Include="..\..\agente\Mda.Agente\UbicacionLogica.cs" Link="Agente\UbicacionLogica.cs" />
     <Compile Include="..\..\agente\Mda.Agente\Ubicacion.cs" Link="Agente\Ubicacion.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\Espacio.cs" Link="Agente\Espacio.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\AppsPc.cs" Link="Agente\AppsPc.cs" />
+    <Compile Include="..\..\agente\Mda.Agente\BandejaLogica.cs" Link="Agente\BandejaLogica.cs" />
     <Compile Include="..\..\api\Mda.Api\Sistema\LectorSistema.cs" Link="Agente\LectorSistema.cs" />
     <PackageReference Include="System.Management" Version="10.0.14" />
   </ItemGroup>
