@@ -2184,6 +2184,121 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("bandeja_transferencias", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Personas.Persona", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Apodo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("AvisadoAnio")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AvisadoNivel")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Avisar")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Correos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CumpleAnio")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CumpleDia")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CumpleMes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Gustos")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Notas")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Relacion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Telefonos")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("UltimaVez")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("personas", (string)null);
+                });
+
+            modelBuilder.Entity("Mda.Api.Personas.RegaloPersona", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateOnly?>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Idea")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Ocasion")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int>("PersonaId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("Precio")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<string>("Sento")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonaId");
+
+                    b.ToTable("regalos_persona", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Seguridad.Acceso", b =>
                 {
                     b.Property<int>("Id")

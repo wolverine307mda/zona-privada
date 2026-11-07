@@ -43,6 +43,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Conexiones.Escucha> Escuchas => Set<Mda.Api.Conexiones.Escucha>();
     public DbSet<Mda.Api.Conexiones.Letra> Letras => Set<Mda.Api.Conexiones.Letra>();
     public DbSet<Mda.Api.Conexiones.MomentoMusical> Momentos => Set<Mda.Api.Conexiones.MomentoMusical>();
+    public DbSet<Mda.Api.Personas.Persona> Personas => Set<Mda.Api.Personas.Persona>();
+    public DbSet<Mda.Api.Personas.RegaloPersona> Regalos => Set<Mda.Api.Personas.RegaloPersona>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -295,6 +297,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Personas.Persona>(e =>
+        {
+            e.ToTable("personas");
+            e.Property(x => x.Nombre).HasMaxLength(80);
+            e.Property(x => x.Apodo).HasMaxLength(40);
+            e.Property(x => x.Relacion).HasMaxLength(40);
+            e.Property(x => x.Gustos).HasMaxLength(300);
+            // lo que es de otras personas va cifrado en la base
+            e.Property(x => x.Telefonos).Cifrada("personas");
+            e.Property(x => x.Correos).Cifrada("personas");
+            e.Property(x => x.Direccion).Cifrada("personas");
+            e.Property(x => x.Notas).Cifrada("personas");
+        });
+        b.Entity<Mda.Api.Personas.RegaloPersona>(e =>
+        {
+            e.ToTable("regalos_persona");
+            e.Property(x => x.Idea).HasMaxLength(120);
+            e.Property(x => x.Ocasion).HasMaxLength(60);
+            e.Property(x => x.Estado).HasMaxLength(10);
+            e.Property(x => x.Sento).HasMaxLength(200);
+            e.Property(x => x.Precio).HasPrecision(8, 2);
+            e.HasIndex(x => x.PersonaId);
         });
         b.Entity<Mda.Api.Conexiones.MomentoMusical>(e =>
         {

@@ -67,7 +67,7 @@ public record DespertarAtajo(string? Nombre);
 
 public static class AtajosApi
 {
-    public static readonly string[] Alcances = ["gasto", "pago", "lectura", "casa", "nota", "pc", "panico"];
+    public static readonly string[] Alcances = ["gasto", "pago", "lectura", "casa", "nota", "pc", "panico", "personas", "salud"];
     private static readonly CultureInfo Es = new("es-ES");
 
     public static string Hashear(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
@@ -246,6 +246,21 @@ public static class AtajosApi
             if (estado is not ("duermo" or "despierto")) return Results.BadRequest(new { mensaje = "Manda estado «duermo» o «despierto»." });
             return Results.Ok(new { mensaje = await Mda.Api.Contexto.Dormir.Ejecutar(db, contexto, tiempo, zona, reloj, estado == "duermo", ct) });
         }).Requiere("casa");
+
+        // «Añadir a mi zona privada» desde la hoja de compartir de un contacto: nombre, cumpleaños y, si quieres, teléfono y correo
+        a.MapPost("/persona", async (Mda.Api.Personas.PersonaAtajo e, AppDbContext db, CancellationToken ct) =>
+        {
+            var entrada = new Mda.Api.Personas.PersonaEntrada(e.Nombre, null, null, e.Telefono, e.Correo, null, null, e.Dia, e.Mes, e.Anio, null, null, null);
+            if (Mda.Api.Personas.PersonasServicio.Validar(entrada, true) is { Count: > 0 } mal) return Results.ValidationProblem(mal);
+            if (await db.Personas.CountAsync(ct) >= Mda.Api.Personas.PersonasServicio.Maximo) return Results.Conflict(new { mensaje = "Ya hay demasiadas personas." });
+            var existentes = await db.Personas.ToListAsync(ct);
+            var c = new Mda.Api.Personas.ContactoVcf(e.Nombre!.Trim(), string.IsNullOrWhiteSpace(e.Telefono) ? [] : [e.Telefono], string.IsNullOrWhiteSpace(e.Correo) ? [] : [e.Correo], "", e.Dia, e.Mes, e.Anio, "");
+            if (Mda.Api.Personas.Duplicados.Buscar(c, existentes) is { } ya) return Results.Ok(new { mensaje = $"{ya.Nombre} ya estaba en tu lista." });
+            var p = new Mda.Api.Personas.Persona(); Mda.Api.Personas.PersonasServicio.Copiar(entrada, p);
+            db.Personas.Add(p);
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(new { mensaje = $"{p.Nombre} añadido." });
+        }).Requiere("personas");
 
         // Un momento musical por su nombre («Concentración», «Dormir»…): {"nombre":"Dormir"} pone a sonar su lista
         a.MapPost("/momento", async (Mda.Api.Conexiones.MomentoAtajo e, AppDbContext db, Mda.Api.Conexiones.ServicioConexiones con, CancellationToken ct) =>

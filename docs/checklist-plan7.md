@@ -30,7 +30,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 8 | Fecha de cobro de la nómina | ✅ **Hecha**: `Gastos/Cobro.cs`, tarjeta en Cartera, «hasta cobrar» en Inicio y dos avisos | — | 1 |
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | ✅ **Hecha**: `Papeles/Garantias.cs`, sección «Garantías y devoluciones» en Papeles | 1,5 |
 | 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | ✅ **Hecha**: `Gastos/Carburantes.cs`, tarjeta «Dónde repostar» en Gasolina | 1,5 |
-| 13 | Contactos: cumpleaños, datos y gustos | nada | **Módulo Personas** + importación selectiva (vCard / Google / Atajo) | 3 |
+| 13 | Contactos: cumpleaños, datos y gustos | nada | ✅ **Hecha**: `Personas/Personas.cs` y pantalla «Personas» | 3 |
 | 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
 | 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | ✅ **Hecha**: `Contexto/Dormir.cs`, eventos `duermo`/`despierto` y atajo `/api/atajos/dormir` | 1,5 |
@@ -266,18 +266,19 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 
 ## Fase E · Módulos de vida
 
-### ⬜ 13 · Personas: cumpleaños, contactos y gustos
-- ⬜ E13.1 Tablas `Persona` (nombre, apodo, relación, teléfonos y correos en JSON **cifrados**, dirección, cumpleaños día/mes y año opcional, **gustos** como etiquetas más texto, tallas, alergias, notas, `Avisar` y antelación por persona) y `RegaloPersona` (idea, precio estimado, ocasión, fecha, estado: idea · comprado · regalado, cómo sentó).
-- ⬜ E13.2 **Importación elegida por ti** (nada se importa sin que lo marques):
+### ✅ 13 · Personas: cumpleaños, contactos y gustos
+- ✅ E13.1 Tablas `Persona` (nombre, apodo, relación, teléfonos y correos en JSON **cifrados**, dirección, cumpleaños día/mes y año opcional, **gustos** como etiquetas más texto, tallas, alergias, notas, `Avisar` y antelación por persona) y `RegaloPersona` (idea, precio estimado, ocasión, fecha, estado: idea · comprado · regalado, cómo sentó).
+- ✅ E13.2 **Importación elegida por ti** (nada se importa sin que lo marques):
   1. **Archivo vCard (.vcf)**: en el iPhone, Contactos → seleccionar → Compartir → «Guardar en Archivos» y subirlo aquí (o AirDrop al PC). Parser puro de vCard 3.0/4.0 (líneas plegadas, `QUOTED-PRINTABLE`, `BDAY` en `YYYYMMDD`, `YYYY-MM-DD` y `--MMDD`, varios teléfonos), con tests.
   2. **Uno a uno desde el iPhone**: un Atajo «Añadir a mi zona privada» en la hoja de compartir de la ficha de contacto (permiso `personas`).
   3. **Google Contactos** con la conexión de Google que ya tienes (hay que volver a autorizar con el permiso de lectura de contactos; solo si lo quieres).
-- ⬜ E13.3 **Pantalla de importación**: lista con buscador y casillas, detección de duplicados (mismo teléfono/correo/nombre), y un selector «¿qué traigo?»: solo nombre y cumpleaños, o también teléfono, correo, dirección y notas. Vista previa antes de guardar.
-- ⬜ E13.4 Pantalla «Personas»: tarjeta por persona con próxima fecha, gustos, ideas y regalos pasados; filtros «cumples del mes», «sin regalo pensado» y «sin hablar hace tiempo» (campo opcional «última vez que hablamos»).
-- ⬜ E13.5 **Cumpleaños**: aviso escalonado (14, 7, 1 días y el día mismo) con dedupe, en Agenda como eventos virtuales (sin duplicar en la base) y una tarjeta «Próximos cumpleaños» en Inicio. Telegram `/cumples`. El asistente entiende «el cumple de María es el 3 de marzo».
-- ⬜ E13.6 **Ideas de regalo**: reglas propias por **gustos × presupuesto × lo que ya se regaló** (nunca repite dentro de 3 años), con 5 sugerencias por persona y la opción de guardar una como idea. Sin IA externa.
-- ⬜ E13.7 Tests (parser, duplicados, fechas bisiestas del 29 de febrero, avisos), receta del Atajo y sección en docs.
+- ✅ E13.3 **Pantalla de importación**: lista con buscador y casillas, detección de duplicados (mismo teléfono/correo/nombre), y un selector «¿qué traigo?»: solo nombre y cumpleaños, o también teléfono, correo, dirección y notas. Vista previa antes de guardar.
+- ✅ E13.4 Pantalla «Personas»: tarjeta por persona con próxima fecha, gustos, ideas y regalos pasados; filtros «cumples del mes», «sin regalo pensado» y «sin hablar hace tiempo» (campo opcional «última vez que hablamos»).
+- ✅ E13.5 **Cumpleaños**: aviso escalonado (14, 7, 1 días y el día mismo) con dedupe, en Agenda como eventos virtuales (sin duplicar en la base) y una tarjeta «Próximos cumpleaños» en Inicio. Telegram `/cumples`. El asistente entiende «el cumple de María es el 3 de marzo».
+- ✅ E13.6 **Ideas de regalo**: reglas propias por **gustos × presupuesto × lo que ya se regaló** (nunca repite dentro de 3 años), con 5 sugerencias por persona y la opción de guardar una como idea. Sin IA externa.
+- ✅ E13.7 Tests (parser, duplicados, fechas bisiestas del 29 de febrero, avisos), receta del Atajo y sección en docs.
 - Riesgos: datos de otras personas → cifrado, PIN opcional y borrado completo desde la pantalla. Esfuerzo: 3 sesiones.
+- Decisión: `Personas/Personas.cs` (tablas `personas` y `regalos_persona`, migración `Personas`; teléfonos, correos, dirección y notas cifrados con la bóveda). Parser vCard puro (líneas plegadas, QUOTED-PRINTABLE, `BDAY` en 4 formatos, año 1604 de Apple ignorado, varios teléfonos, una tarjeta mala no tumba las demás). Importación en dos pasos —vista previa con duplicados por teléfono/correo/nombre y luego solo lo marcado, con «solo nombre y cumpleaños» o «también contacto»—. Cumpleaños con aviso a 14, 7 y 1 días y el día mismo (sin repetir, 29 de febrero → 28), chip «Próximos cumpleaños» en Inicio y `/cumples` en Telegram. Ideas de regalo por reglas (gustos × presupuesto × lo regalado en 3 años, hasta 5, sin IA). Atajo `/api/atajos/persona` con el permiso nuevo «personas» (y «salud» ya creado para la 19). **No incluido**: importar de Google Contactos (E13.2.3), el cumple de cada persona como evento virtual de Agenda, y «El asistente entiende el cumple de María…». Borrado completo desde la ficha.
 
 ### ⬜ 17 · Planificador de comidas
 - ⬜ E17.1 Tablas `Receta` (nombre, raciones, tiempo, etiquetas, pasos, `Origen`), `IngredienteReceta` (nombre, cantidad, unidad) y `MenuDia` (fecha, comida/cena, receta o texto libre).

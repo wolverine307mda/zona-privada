@@ -83,6 +83,9 @@ public class Conversacion(
                     await bot.Enviar(await Mda.Api.Contexto.Dormir.Ejecutar(db, motorContexto, tiempo, zona, reloj, noche, ct), ct: ct);
                     return;
                 }
+            case "/cumples":
+                await bot.Enviar(await Mda.Api.Personas.PersonasServicio.TextoCumples(db, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), zona.Info).Date), 6, ct), ct: ct);
+                return;
             case "/ropa":
                 {
                     // «/ropa» la marca como tendida; «/ropa recogida» la quita

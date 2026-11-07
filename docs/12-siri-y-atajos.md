@@ -18,7 +18,9 @@ Para ejecutarlo con la voz: ponle un nombre corto al atajo («Oye Siri, enciende
 | avisar de un pago de Apple Pay | `POST /api/atajos/pago` | pago | `{"comercio":"Mercadona","importe":12.5}` | — |
 | «llegué a casa» / «me voy» | `POST /api/atajos/casa` | casa | `{"estado":"llegada"}` o `{"estado":"salida"}` | `mensaje` (al salir, con la comprobación: puertas abiertas y aparatos encendidos) |
 | «me voy a dormir» / «despierto» | `POST /api/atajos/dormir` | casa | `{"estado":"duermo"}` o `{"estado":"despierto"}` | `mensaje` (agenda, tiempo, hora de despertar y lo que queda abierto) |
-| «ropa tendida» / «ropa recogida» | `POST /api/atajos/ropa` | casa | `{"estado":"tendida"}` o `{"estado":"recogida"}` | `mensaje` |
+| «ropa tendida» / «ropa recogida» | `POST /api/atajos/ropa` | casa | `{"estado":"tendida"}` o `{"estado":"recogida"}` | `mensaje` |
+| añadir un contacto desde su ficha (hoja de compartir) | `POST /api/atajos/persona` | personas | `{"nombre":"María","dia":3,"mes":3,"telefono":"600…"}` | `mensaje` (si ya estaba, lo dice y no lo repite) |
+| poner un momento musical | `POST /api/atajos/momento` | casa | `{"nombre":"Dormir"}` | `mensaje` |
 | poner una escena del PC | `POST /api/atajos/escena` | casa | `{"nombre":"Cine"}` | `mensaje` |
 | despertar un aparato de la red (tele, NAS, otro PC) | `POST /api/atajos/despertar` | pc | `{"nombre":"NAS"}` | `mensaje` |
 | el pánico | `POST /api/atajos/panico` | panico | — | `mensaje` |
