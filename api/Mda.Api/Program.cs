@@ -381,6 +381,7 @@ Mda.Api.Pc.Transferencias.MapTransferencias(app);
 Mda.Api.Sistema.SaludApp.MapSaludApp(app);
 Mda.Api.Conexiones.HistorialMusicaEndpoints.MapHistorialMusica(app);
 Mda.Api.Conexiones.LetrasEndpoints.MapLetras(app);
+Mda.Api.Conexiones.Momentos.MapMomentos(app);
 app.MapHogar();
 app.MapCartera();
 app.MapCobro();

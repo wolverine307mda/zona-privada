@@ -42,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Sistema.TamanoTabla> TamanosTabla => Set<Mda.Api.Sistema.TamanoTabla>();
     public DbSet<Mda.Api.Conexiones.Escucha> Escuchas => Set<Mda.Api.Conexiones.Escucha>();
     public DbSet<Mda.Api.Conexiones.Letra> Letras => Set<Mda.Api.Conexiones.Letra>();
+    public DbSet<Mda.Api.Conexiones.MomentoMusical> Momentos => Set<Mda.Api.Conexiones.MomentoMusical>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -294,6 +295,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.ToTable("casa_lecturas");
             e.HasIndex(x => new { x.EntidadId, x.Fecha });
             e.HasOne<Mda.Api.Domotica.Entidad>().WithMany().HasForeignKey(x => x.EntidadId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Mda.Api.Conexiones.MomentoMusical>(e =>
+        {
+            e.ToTable("momentos_musicales");
+            e.Property(x => x.Nombre).HasMaxLength(30);
+            e.Property(x => x.Icono).HasMaxLength(8);
+            e.Property(x => x.PlaylistUri).HasMaxLength(60);
+            e.Property(x => x.PlaylistNombre).HasMaxLength(120);
+            e.Property(x => x.Desde).HasMaxLength(5);
+            e.Property(x => x.Hasta).HasMaxLength(5);
         });
         b.Entity<Mda.Api.Conexiones.Letra>(e =>
         {

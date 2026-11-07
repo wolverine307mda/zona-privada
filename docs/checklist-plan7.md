@@ -49,7 +49,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | Señales vivas (música, carga del PC, hora) que los muevan | 1,5 |
 | 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | ✅ **Hecha**: `Conexiones/Letras.cs` y panel de letra en el reproductor | 1,5 |
 | 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
-| 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | Listas asignadas a «momentos» y un toque para ponerlas | 1,5 |
+| 77 | Listas por estado de ánimo | control de reproducción (`/control/{accion}`) | ✅ **Hecha**: `Conexiones/Momentos.cs` y tarjeta «Momentos» en Música | 1,5 |
 | 79 | Series y películas | nada | Módulo con estados, avisos de estreno y «dónde verlo» | 2,5 |
 | 81 | Constructor visual de reglas | `Automatizaciones` (formulario), `ReglaCasa`, `ReglaContexto` | **Constructor por bloques** unificado y simulación | 3 |
 | 85 | Panel de salud de la app | `Avisos/Vigilancia.cs` (última vez de cada comprobación) y 5xx | ✅ **Hecha**: `Sistema/SaludApp.cs` y tarjeta «Salud de la app» en Seguridad | 1,5 |
@@ -245,12 +245,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: no todas las canciones tienen letra y son de la comunidad; se muestra la fuente y se guarda solo caché local. Esfuerzo: 1,5 sesiones.
 - Decisión: `Conexiones/Letras.cs`, tabla `letras` (migración `LetrasMusica`): LRCLIB con User-Agent propio, caché por canción (lo encontrado para siempre; «no hay» se vuelve a mirar a la semana, y un fallo del servicio no se guarda como «no hay»). Parser LRC puro (varios tiempos por línea, etiquetas ignoradas, pausas conservadas) y línea actual por búsqueda binaria en servidor y en el front. Panel «Letra» en el reproductor de escritorio (solo con pantalla ancha, interruptor guardado en el navegador, línea actual centrada); sin sincronizar se enseña estática, sin letra se dice. No se ha probado con LRCLIB de verdad (sin red en las pruebas).
 
-### ⬜ 77 · Listas por estado de ánimo
-- ⬜ D77.1 Permiso extra de Spotify para leer tus listas (`playlist-read-private`); hay que volver a autorizar la conexión desde Seguridad (lo dice la pantalla, sin tocar el código de acceso).
-- ⬜ D77.2 Tabla `MomentoMusical` (nombre, icono, `playlistUri`, franja opcional); los «momentos» de serie: Concentración, Cocina, Entrenar, Dormir, Fiesta; tú eliges la lista de cada uno.
-- ⬜ D77.3 `POST /api/musica/momento/{id}`: empieza la lista (`/me/player/play` con `context_uri`, mezclar activado, volumen sugerido). Requiere Premium y un dispositivo; los errores se explican («abre Spotify en algún aparato»).
-- ⬜ D77.4 Chips en Música y en el reproductor, y **sugerencia por hora** («son las 23:00: ¿Dormir?»). Se puede usar desde las escenas de contexto (39: al dormir) y desde Atajos.
+### ✅ 77 · Listas por estado de ánimo
+- ✅ D77.1 Permiso extra de Spotify para leer tus listas (`playlist-read-private`); hay que volver a autorizar la conexión desde Seguridad (lo dice la pantalla, sin tocar el código de acceso).
+- ✅ D77.2 Tabla `MomentoMusical` (nombre, icono, `playlistUri`, franja opcional); los «momentos» de serie: Concentración, Cocina, Entrenar, Dormir, Fiesta; tú eliges la lista de cada uno.
+- ✅ D77.3 `POST /api/musica/momento/{id}`: empieza la lista (`/me/player/play` con `context_uri`, mezclar activado, volumen sugerido). Requiere Premium y un dispositivo; los errores se explican («abre Spotify en algún aparato»).
+- ✅ D77.4 Chips en Música y en el reproductor, y **sugerencia por hora** («son las 23:00: ¿Dormir?»). Se puede usar desde las escenas de contexto (39: al dormir) y desde Atajos.
 - Riesgos: sin Premium no se puede controlar la reproducción; se detecta y se avisa. Esfuerzo: 1,5 sesiones.
+- Decisión: `Conexiones/Momentos.cs`, tabla `momentos_musicales` (migración `MomentosMusicales`) con cinco de serie (Concentración, Cocina, Entrenar, Dormir, Fiesta, con franja y volumen sugeridos). La lista se elige entre tus listas de Spotify (nuevos permisos `playlist-read-private` y `-collaborative`: hay que **desconectar y volver a conectar Spotify desde Seguridad**, y la pantalla lo dice si falta) o pegando su dirección; solo se aceptan URIs de lista de Spotify. `POST /api/musica/momento/{id}` y `POST /api/atajos/momento` (permiso «casa») la ponen a sonar mezclada y con volumen, explicando los errores (sin aparato, sin Premium). Chips con sugerencia por hora en Música. **No incluido**: chips dentro del mini reproductor y arrancar el momento «Dormir» automáticamente desde la rutina de dormir (se puede lanzar con el atajo). No probado contra Spotify real.
 
 ### ⬜ 74 · Fondos que reaccionan
 - ⬜ D74.1 Servicio `SenalesFondo` (signals): `musica` (suena o no y progreso), `carga` (CPU del PC, que ya llega por SignalR), `hora` y `tonoPortada` (el color de la portada que ya extrae `tonoDe`).

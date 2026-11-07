@@ -247,6 +247,17 @@ public static class AtajosApi
             return Results.Ok(new { mensaje = await Mda.Api.Contexto.Dormir.Ejecutar(db, contexto, tiempo, zona, reloj, estado == "duermo", ct) });
         }).Requiere("casa");
 
+        // Un momento musical por su nombre («Concentración», «Dormir»…): {"nombre":"Dormir"} pone a sonar su lista
+        a.MapPost("/momento", async (Mda.Api.Conexiones.MomentoAtajo e, AppDbContext db, Mda.Api.Conexiones.ServicioConexiones con, CancellationToken ct) =>
+        {
+            await Mda.Api.Conexiones.Momentos.Sembrar(db, ct);
+            var nombre = (e.Nombre ?? "").Trim();
+            var m = (await db.Momentos.AsNoTracking().ToListAsync(ct)).FirstOrDefault(x => string.Equals(x.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
+            if (m is null) return Results.NotFound(new { mensaje = "No hay ningún momento con ese nombre." });
+            var (ok, mensaje, estado) = await Mda.Api.Conexiones.Momentos.Reproducir(con, m, ct);
+            return ok ? Results.Ok(new { mensaje }) : Results.Json(new { mensaje }, statusCode: estado);
+        }).Requiere("casa");
+
         // «Ropa tendida» / «Ropa recogida»: un atajo del iPhone manda {"estado":"tendida"} o {"estado":"recogida"}
         a.MapPost("/ropa", async (CasaAtajo e, AppDbContext db, TimeProvider reloj, CancellationToken ct) =>
         {

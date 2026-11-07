@@ -29,7 +29,7 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
     IDataProtectionProvider proteccion, ILogger<ServicioConexiones> log)
 {
     public static readonly Proveedor Spotify = new("spotify", "Spotify", "Spotify", "https://accounts.spotify.com/authorize", "https://accounts.spotify.com/api/token",
-        "user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-recently-played user-top-read", [], "/musica");
+        "user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative", [], "/musica");
     public static readonly Proveedor Google = new("google", "Google Calendar", "Google", "https://accounts.google.com/o/oauth2/v2/auth", "https://oauth2.googleapis.com/token",
         "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly", ["access_type=offline", "prompt=consent"], "/agenda");
     public static readonly Proveedor[] Todos = [Spotify, Google];
