@@ -1527,6 +1527,59 @@ namespace Mda.Api.Data.Migraciones
                     b.ToTable("notas", (string)null);
                 });
 
+            modelBuilder.Entity("Mda.Api.Papeles.Garantia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AvisadoDevolucion")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("AvisadoGarantia")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comercio")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateOnly?>("DevolucionHasta")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<DateOnly>("FechaCompra")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("GarantiaHasta")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notas")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Producto")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GarantiaHasta");
+
+                    b.ToTable("garantias", (string)null);
+                });
+
             modelBuilder.Entity("Mda.Api.Papeles.Papel", b =>
                 {
                     b.Property<int>("Id")

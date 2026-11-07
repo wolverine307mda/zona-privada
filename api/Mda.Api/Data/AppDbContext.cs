@@ -35,6 +35,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
     public DbSet<PresupuestoSemanal> PresupuestosSemanales => Set<PresupuestoSemanal>();
     public DbSet<PrecioCarburante> PreciosCarburante => Set<PrecioCarburante>();
+    public DbSet<Mda.Api.Papeles.Garantia> Garantias => Set<Mda.Api.Papeles.Garantia>();
     public DbSet<Mantenimiento> Mantenimientos => Set<Mantenimiento>();
     public DbSet<Adjunto> Adjuntos => Set<Adjunto>();
     public DbSet<PushSuscripcion> Push => Set<PushSuscripcion>();
@@ -425,6 +426,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Categoria).HasMaxLength(20);
             e.Property(x => x.Notas).HasMaxLength(500);
             e.HasIndex(x => x.Vence);
+        });
+
+        b.Entity<Mda.Api.Papeles.Garantia>(e =>
+        {
+            e.ToTable("garantias");
+            e.Property(x => x.Producto).HasMaxLength(80);
+            e.Property(x => x.Comercio).HasMaxLength(80);
+            e.Property(x => x.Estado).HasMaxLength(12);
+            e.Property(x => x.Notas).HasMaxLength(500);
+            e.HasIndex(x => x.GarantiaHasta);
         });
 
         b.Entity<Mda.Api.Automatizaciones.Automatizacion>(e =>

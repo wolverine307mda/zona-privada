@@ -60,6 +60,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         await Aislada(() => Habitos(db, ct), "los hábitos");
         await Aislada(() => TareasDeHoy(db, ct), "las tareas");
         await Aislada(() => PapelesPorCaducar(db, ct), "los papeles que caducan");
+        await Aislada(() => Mda.Api.Papeles.Garantias.Comprobar(db, avisos, DateOnly.FromDateTime(Local), log, ct), "las garantías");
     }
 
     private async Task Aislada(Func<Task> paso, string nombre)

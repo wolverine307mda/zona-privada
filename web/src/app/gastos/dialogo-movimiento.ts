@@ -1,4 +1,5 @@
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Errores, GastosService, erroresDe, reducirFoto } from './gastos.service';
 import { firstValueFrom } from 'rxjs';
@@ -34,6 +35,15 @@ export class DialogoMovimiento {
   protected readonly original = signal('');
   protected readonly cambio = signal('');
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+
+  // un gasto de 50 € o más puede llevar garantía: el botón lleva a Papeles con el producto, el comercio y la fecha rellenos
+  protected readonly admiteGarantia = computed(() => !!this.id() && this.tipo() === 'Gasto' && (this.num(this.importe()) ?? 0) >= 50);
+  protected guardarGarantia(): void {
+    const q = { garantia: 1, producto: this.concepto().trim(), fecha: this.fecha(), movimiento: this.id() };
+    this.cerrar();
+    void this.router.navigate(['/papeles'], { queryParams: q });
+  }
   protected readonly errores = signal<Errores>({});
   protected readonly guardando = signal(false);
   protected readonly confirmarBorrado = signal(false);

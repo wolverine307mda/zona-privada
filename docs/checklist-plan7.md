@@ -28,7 +28,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 5 | Gasto por lugar en un mapa | ✅ **Hecha**: `Gastos/Lugares.cs` + `gastos/mapa-gasto.ts` (Leaflet), con filtro por categoría y detrás del PIN | — | 1 |
 | 6 | Presupuesto por semana | ✅ **Hecha**: `PresupuestoSemanal` + `PresupuestosSemana` + interruptor en Cartera (queda la línea semanal del atajo `/hoy`) | — | 1 |
 | 8 | Fecha de cobro de la nómina | ✅ **Hecha**: `Gastos/Cobro.cs`, tarjeta en Cartera, «hasta cobrar» en Inicio y dos avisos | — | 1 |
-| 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | Garantía/devolución **ligada a un gasto**, con foto del ticket | 1,5 |
+| 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | ✅ **Hecha**: `Papeles/Garantias.cs`, sección «Garantías y devoluciones» en Papeles | 1,5 |
 | 12 | Gasolina: cuándo y dónde repostar | `Repostaje` con precio por litro y consumo (`CocheEndpoints.cs`) | ✅ **Hecha**: `Gastos/Carburantes.cs`, tarjeta «Dónde repostar» en Gasolina | 1,5 |
 | 13 | Contactos: cumpleaños, datos y gustos | nada | **Módulo Personas** + importación selectiva (vCard / Google / Atajo) | 3 |
 | 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
@@ -120,12 +120,13 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: el servicio del Ministerio a veces tarda o cae → caché y mensaje «datos de hace X horas». Esfuerzo: 1,5 sesiones.
 - Decisión: los datos se piden al Ministerio como mucho cada 3 h (caché en memoria; si falla, se usa la última copia y se marca «antiguos»). La mediana de la provincia hace de «media» para que un precio raro no la deforme. El punto es el que elijas, tu ubicación o el lugar del tiempo.
 
-### ⬜ 9 · Garantías y devoluciones
-- ⬜ A9.1 Tabla `Garantia` (`MovimientoId?`, `Producto`, `Comercio`, `FechaCompra`, `GarantiaHasta`, `DevolucionHasta?`, `Estado`: vigente · devuelta · reclamada · caducada, `Notas`, `ArchivoRuta?` del ticket o la foto). Por defecto, 3 años de garantía legal (artículo 120 de la Ley General para la Defensa de los Consumidores, para bienes nuevos) y 14 días de desistimiento en compras a distancia; ambos editables.
-- ⬜ A9.2 Función pura `Garantias.Estado(g, hoy)` y los **avisos escalonados** reutilizando la lógica de `Papeles` (60/30/7 días antes de la garantía; 3 días antes de que acabe la devolución). Tests con el reloj falso.
-- ⬜ A9.3 Entrada fácil: en cada movimiento ≥ 50 € (umbral ajustable) un botón «Guardar garantía» (rellena producto, comercio y fecha); en Telegram, tras un gasto grande, un botón «¿Guardo garantía?»; y subir la foto del ticket (se guarda cifrada en `Archivos`).
-- ⬜ A9.4 Pantalla «Garantías» (en Papeles o Cartera): lista por fecha de fin, filtros «vigentes / por caducar / cerradas», y detalle con el ticket. Tarjeta «Por caducar» en Inicio.
+### ✅ 9 · Garantías y devoluciones
+- ✅ A9.1 Tabla `Garantia` (`MovimientoId?`, `Producto`, `Comercio`, `FechaCompra`, `GarantiaHasta`, `DevolucionHasta?`, `Estado`: vigente · devuelta · reclamada · caducada, `Notas`, `ArchivoRuta?` del ticket o la foto). Por defecto, 3 años de garantía legal (artículo 120 de la Ley General para la Defensa de los Consumidores, para bienes nuevos) y 14 días de desistimiento en compras a distancia; ambos editables.
+- ✅ A9.2 Función pura `Garantias.Estado(g, hoy)` y los **avisos escalonados** reutilizando la lógica de `Papeles` (60/30/7 días antes de la garantía; 3 días antes de que acabe la devolución). Tests con el reloj falso.
+- ✅ A9.3 Entrada fácil: en cada movimiento ≥ 50 € (umbral ajustable) un botón «Guardar garantía» (rellena producto, comercio y fecha); en Telegram, tras un gasto grande, un botón «¿Guardo garantía?»; y subir la foto del ticket (se guarda cifrada en `Archivos`).
+- ✅ A9.4 Pantalla «Garantías» (en Papeles o Cartera): lista por fecha de fin, filtros «vigentes / por caducar / cerradas», y detalle con el ticket. Tarjeta «Por caducar» en Inicio.
 - Riesgos: la garantía real depende del producto y del país; se muestra como **«según la regla por defecto»** y se puede cambiar. Esfuerzo: 1,5 sesiones.
+- Decisión: la garantía se guarda en `garantias` (migración `Garantias`) con avisos a 60, 30 y 7 días y a 3 días del fin de la devolución (una vez cada uno, sin avisar de una devolución que ya pasó). El botón «Guardar garantía de esta compra» sale al editar un gasto de 50 € o más y lleva a Papeles con producto, comercio y fecha rellenos (el umbral es fijo, no ajustable). El ticket no se sube aparte: la garantía guarda el `MovimientoId` y el gasto ya admite su foto. Pendientes (poco valor): el botón «¿Guardo garantía?» en Telegram y la tarjeta «Por caducar» en Inicio.
 
 ### ✅ 1 · Previsión de fin de mes
 - ⬜ A1.1 Pasada de pulido (0,2 sesiones): leer la tarjeta en el móvil, frase que explique «bajo/alto» y revisar el estado «pocos datos». Sin tablas ni rutas nuevas.

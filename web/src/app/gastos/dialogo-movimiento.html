@@ -133,6 +133,10 @@
       <p class="error">{{ (errores()['litros'] ?? errores()['precioLitro'] ?? errores()['kilometros'])[0] }}</p>
     }
 
+    @if (admiteGarantia()) {
+      <button class="button button--ghost" type="button" (click)="guardarGarantia()">Guardar garantía de esta compra</button>
+    }
+
     <footer class="dlg__pie">
       @if (id()) {
         <button class="boton-borrar" type="button" (click)="borrar()">{{ confirmarBorrado() ? '¿Seguro? Pulsa otra vez' : 'Eliminar' }}</button>

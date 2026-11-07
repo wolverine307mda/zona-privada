@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
+import { Garantias } from './garantias';
 
 interface Papel { id: number; nombre: string; categoria: string; vence: string; avisarDias: number; notas: string; dias: number; estado: 'bien' | 'pronto' | 'caducado'; }
 interface Respuesta { categorias: string[]; papeles: Papel[]; }
@@ -11,7 +12,7 @@ interface Respuesta { categorias: string[]; papeles: Papel[]; }
 @Component({
   selector: 'app-papeles',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EstadoError, EstadoVacio, Esqueleto],
+  imports: [EstadoError, EstadoVacio, Esqueleto, Garantias],
   styleUrls: ['../gastos/comun.css', '../gastos/dialogos.css'],
   template: `
     <header class="cab">
@@ -39,6 +40,8 @@ interface Respuesta { categorias: string[]; papeles: Papel[]; }
         }
       </ul>
     }
+
+    <app-garantias />
 
     <dialog class="dlg" #dialogo (click)="fuera($event)" (close)="cerrado()" aria-labelledby="dlg-papel">
       <form class="dlg__caja" (submit)="guardar($event)" novalidate>

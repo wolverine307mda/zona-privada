@@ -383,6 +383,7 @@ app.MapBuscarTexto();
 app.MapHabitos();
 app.MapTareas();
 app.MapPapeles();
+app.MapGarantias();
 app.MapAutomatizaciones();
 app.MapServicios();
 app.MapCompra();
