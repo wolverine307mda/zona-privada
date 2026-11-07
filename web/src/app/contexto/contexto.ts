@@ -5,7 +5,7 @@ import { EstadoError, EstadoVacio, Esqueleto } from '../ui';
 import { SalidaCasa } from './salida-casa';
 
 interface Regla {
-  id: number; nombre: string; activa: boolean; evento: 'llego' | 'salgo' | 'hora'; desde: string | null; hasta: string | null; dias: number; tiempo: string;
+  id: number; nombre: string; activa: boolean; evento: 'llego' | 'salgo' | 'duermo' | 'despierto' | 'hora'; desde: string | null; hasta: string | null; dias: number; tiempo: string;
   soloEnCasa: boolean; escenaCasaId: number | null; escenaPcId: number | null; aviso: string; esperaMinutos: number; ultima: string | null; resultado: string;
 }
 interface Escena { id: number; nombre: string; icono: string; apaga?: boolean; }
@@ -44,6 +44,8 @@ const TIEMPOS: Record<string, string> = { '': 'Da igual el tiempo', lluvia: 'Si 
         <div class="donde__botones">
           <button type="button" class="button" [disabled]="ocupado()" (click)="evento('llego')">Llegué a casa</button>
           <button type="button" class="button button--ghost button--sm" [disabled]="ocupado()" (click)="evento('salgo')">Me voy</button>
+          <button type="button" class="button button--ghost button--sm" [disabled]="ocupado()" (click)="rutina('duermo')">Buenas noches</button>
+          <button type="button" class="button button--ghost button--sm" [disabled]="ocupado()" (click)="rutina('despierto')">Buenos días</button>
         </div>
         <p class="nota">Esto hace lo mismo que tu iPhone al llegar o salir: apunta dónde estás y aplica tus reglas.</p>
       </section>
@@ -96,6 +98,8 @@ const TIEMPOS: Record<string, string> = { '': 'Da igual el tiempo', lluvia: 'Si 
           <select class="campo__input" [value]="evento_()" (change)="evento_.set(valor($event))">
             <option value="llego">Cuando llegue a casa</option>
             <option value="salgo">Cuando salga de casa</option>
+            <option value="duermo">Cuando me vaya a dormir</option>
+            <option value="despierto">Cuando me despierte</option>
             <option value="hora">Todos los días a una hora</option>
           </select></label>
         <div class="fila2">
@@ -222,7 +226,7 @@ export class Contexto {
 
   protected descripcion(r: Regla): string {
     const d = this.datos();
-    const cuando = r.evento === 'llego' ? 'Al llegar a casa' : r.evento === 'salgo' ? 'Al salir de casa' : `Cada día a las ${r.desde}`;
+    const cuando = r.evento === 'llego' ? 'Al llegar a casa' : r.evento === 'salgo' ? 'Al salir de casa' : r.evento === 'duermo' ? 'Al irme a dormir' : r.evento === 'despierto' ? 'Al despertar' : `Cada día a las ${r.desde}`;
     const partes = [cuando];
     if (r.evento !== 'hora' && (r.desde || r.hasta)) partes.push(r.desde && r.hasta ? `de ${r.desde} a ${r.hasta}` : r.desde ? `desde las ${r.desde}` : `hasta las ${r.hasta}`);
     if (r.dias !== 127) partes.push(NOMBRE_DIAS.filter((_, i) => r.dias & (1 << i)).map((n) => n.slice(0, 3)).join(' '));
@@ -246,6 +250,14 @@ export class Contexto {
       const x = await firstValueFrom(this.http.post<{ resumen: string }>(`/api/contexto/${r.id}/probar`, {}));
       this.aviso.set(`Regla aplicada: ${x.resumen}.`); await this.cargar();
     } catch { this.aviso.set('No se pudo probar.'); } finally { this.probando.set(null); }
+  }
+
+  // la rutina de la noche o de la mañana: aplica tus reglas y enseña lo que contestaría el atajo
+  protected async rutina(e: 'duermo' | 'despierto'): Promise<void> {
+    if (this.ocupado()) return;
+    this.ocupado.set(true); this.aviso.set('');
+    try { this.aviso.set((await firstValueFrom(this.http.post<{ mensaje: string }>('/api/contexto/dormir', { evento: e }))).mensaje); await this.cargar(); }
+    catch { this.aviso.set('No se pudo.'); } finally { this.ocupado.set(false); }
   }
 
   protected async evento(e: 'llego' | 'salgo'): Promise<void> {

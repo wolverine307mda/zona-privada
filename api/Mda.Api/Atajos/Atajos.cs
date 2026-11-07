@@ -239,6 +239,14 @@ public static class AtajosApi
             return ok ? Results.Ok(new { mensaje }) : Results.Conflict(new { mensaje });
         }).Requiere("casa");
 
+        // «Me voy a dormir» / «Despierto»: la Concentración «Dormir» del iPhone manda {"estado":"duermo"} y la contesta con lo de mañana
+        a.MapPost("/dormir", async (CasaAtajo e, AppDbContext db, Mda.Api.Contexto.MotorContexto contexto, Mda.Api.Tiempo.ServicioTiempo tiempo, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        {
+            var estado = (e.Estado ?? "").ToLowerInvariant();
+            if (estado is not ("duermo" or "despierto")) return Results.BadRequest(new { mensaje = "Manda estado «duermo» o «despierto»." });
+            return Results.Ok(new { mensaje = await Mda.Api.Contexto.Dormir.Ejecutar(db, contexto, tiempo, zona, reloj, estado == "duermo", ct) });
+        }).Requiere("casa");
+
         // «Ropa tendida» / «Ropa recogida»: un atajo del iPhone manda {"estado":"tendida"} o {"estado":"recogida"}
         a.MapPost("/ropa", async (CasaAtajo e, AppDbContext db, TimeProvider reloj, CancellationToken ct) =>
         {

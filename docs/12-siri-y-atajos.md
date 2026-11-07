@@ -16,7 +16,9 @@ Para ejecutarlo con la voz: ponle un nombre corto al atajo («Oye Siri, enciende
 | saber si todo está bien | `GET /api/atajos/estado` | lectura | — | `mensaje` |
 | guardar una nota dictada | `POST /api/atajos/nota` | nota | `{"texto":"llamar al fontanero"}` | — |
 | avisar de un pago de Apple Pay | `POST /api/atajos/pago` | pago | `{"comercio":"Mercadona","importe":12.5}` | — |
-| «llegué a casa» / «me voy» | `POST /api/atajos/casa` | casa | `{"estado":"llegada"}` o `{"estado":"salida"}` | `mensaje` |
+| «llegué a casa» / «me voy» | `POST /api/atajos/casa` | casa | `{"estado":"llegada"}` o `{"estado":"salida"}` | `mensaje` (al salir, con la comprobación: puertas abiertas y aparatos encendidos) |
+| «me voy a dormir» / «despierto» | `POST /api/atajos/dormir` | casa | `{"estado":"duermo"}` o `{"estado":"despierto"}` | `mensaje` (agenda, tiempo, hora de despertar y lo que queda abierto) |
+| «ropa tendida» / «ropa recogida» | `POST /api/atajos/ropa` | casa | `{"estado":"tendida"}` o `{"estado":"recogida"}` | `mensaje` |
 | poner una escena del PC | `POST /api/atajos/escena` | casa | `{"nombre":"Cine"}` | `mensaje` |
 | despertar un aparato de la red (tele, NAS, otro PC) | `POST /api/atajos/despertar` | pc | `{"nombre":"NAS"}` | `mensaje` |
 | el pánico | `POST /api/atajos/panico` | panico | — | `mensaje` |
@@ -27,6 +29,8 @@ En Atajos › **Automatización › +** (personal), con «Ejecutar inmediatament
 
 - **Llegar** a tu casa → `/api/atajos/casa` con `{"estado":"llegada"}`. Además de poner el PC a punto, **apunta que estás en casa y dispara tus escenas por contexto** (pantalla «Escenas solas»).
 - **Salir** de casa → lo mismo con `{"estado":"salida"}`.
+- **Foco «Dormir»** (al activarse) → `/api/atajos/dormir` con `{"estado":"duermo"}`; al desactivarse, `{"estado":"despierto"}`. Aplica tus reglas de «Escenas solas» con evento «Cuando me vaya a dormir» / «Cuando me despierte» (escena de casa, escena del PC —las que apagan el PC nunca solas— y aviso) y contesta con lo de mañana: **Pronunciar texto** con `mensaje` lo lee en voz alta. En Telegram: `/buenasnoches` y `/buenosdias`.
+- **Ropa tendida**: un atajo con `{"estado":"tendida"}` (y otro con `"recogida"`). Mientras esté tendida te aviso ~30 min antes de que llueva. En Telegram: `/ropa` y `/ropa recogida`.
 - **Transacción** (Apple Pay) → `/api/atajos/pago` (el gasto entra «por confirmar»).
 - **Hora del día** → lo que quieras (p. ej. `/api/atajos/resumen` y **Pronunciar texto** cada mañana).
 - **Foco** (Trabajo, Descanso…) → `/api/atajos/escena` con el nombre de una escena del PC.

@@ -33,7 +33,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 13 | Contactos: cumpleaños, datos y gustos | nada | **Módulo Personas** + importación selectiva (vCard / Google / Atajo) | 3 |
 | 17 | Planificador de comidas | `Compra` (lista con memoria y «ya toca») | **Recetas + menú semanal + lista de la compra automática** | 3 |
 | 19 | Salud y ejercicio con un plan | (la «Salud» que hay es la del PC) | **Módulo Bienestar**: peso y medidas, entrenos, plan guiado, ayuda | 4 |
-| 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | Evento `duermo`, comprobaciones y mensaje al Atajo | 1,5 |
+| 39 | Modo «me voy a dormir» | `Contexto` (llego/salgo/hora), escenas de casa y de PC | ✅ **Hecha**: `Contexto/Dormir.cs`, eventos `duermo`/`despierto` y atajo `/api/atajos/dormir` | 1,5 |
 | 40 | Modo «salgo de casa» | evento `salgo` (apaga el PC y lo bloquea) | ✅ **Hecha**: `Contexto/SalidaCasa.cs`, atajo «salida» con comprobación y editor en Escenas | 1 |
 | 41 | Historial de temperatura y humedad | `LecturaCasa` (30 días) y `/aparatos/{id}/historial` + gráfica **por aparato** | ✅ **Hecha**: `Domotica/ClimaCasa.cs` y pantalla «Clima» en Casa (los avisos de moho/frío, a mano con Automatizaciones) | 1,5 |
 | 43 | Aviso de puerta o aparato abierto | `ReglaCasa` con «durante N minutos» (solo números) y `SoloAvisar` | ✅ **Hecha**: estados `abierto`/`encendido` en `Domotica/Reglas.cs`, plantillas y botones «Apagar»/«Ya lo sé» | 1 |
@@ -159,13 +159,14 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 - Riesgos: apagar algo importante → solo apaga lo explícitamente marcado. Esfuerzo: 1 sesión.
 - Decisión: se engancha al atajo que ya existe (`POST /api/atajos/casa` con `estado: salida`), no a uno nuevo. Solo se apaga lo que marcas en «Al salir de casa» (Escenas) y solo con «Apagarlos yo» activado; las puertas se avisan siempre. Los botones de Telegram reutilizan «Apagar» del aviso de aparatos encendidos. Un dato de más de 1 h no cuenta (sensor caído). Historial de las últimas 10 salidas en `Ajustes`. Sin migración. Falta (poco valor): la lista «siempre encendido» (no hace falta: solo se toca lo marcado).
 
-### ⬜ 39 · Modo «me voy a dormir»
-- ⬜ B39.1 Evento `duermo` en `ReglaContexto` (y `despierto`) con las mismas condiciones de franja/días; el disparo viene del Atajo (automatización de la Concentración «Dormir» del iPhone), de Telegram (`/buenas noches`) o de un botón en Inicio.
-- ⬜ B39.2 La rutina compone: **escena de casa** (apagar luces, calefacción a nocturna), **escena del PC** (bloquear, permitir suspender, volumen 0; las que apagan el PC nunca solas) y la **música** (pausa o temporizador de sueño).
-- ⬜ B39.3 Mensaje de vuelta al atajo: «Buenas noches. Mañana: reunión a las 9:00. Despierta a las 7:30. Tiempo: 4 °.» con la agenda y la alarma sugerida; más las comprobaciones de la 40 (ventanas, estufa).
-- ⬜ B39.4 «Despierto»: lo opuesto, a su hora o al desbloquear el PC por primera vez («Buenos días: tiempo, agenda y tareas de hoy»).
-- ⬜ B39.5 Pantalla en Escenas solas, tests con reloj falso y receta de Atajos con texto para pegar.
+### ✅ 39 · Modo «me voy a dormir»
+- ✅ B39.1 Evento `duermo` en `ReglaContexto` (y `despierto`) con las mismas condiciones de franja/días; el disparo viene del Atajo (automatización de la Concentración «Dormir» del iPhone), de Telegram (`/buenas noches`) o de un botón en Inicio.
+- ✅ B39.2 La rutina compone: **escena de casa** (apagar luces, calefacción a nocturna), **escena del PC** (bloquear, permitir suspender, volumen 0; las que apagan el PC nunca solas) y la **música** (pausa o temporizador de sueño).
+- ✅ B39.3 Mensaje de vuelta al atajo: «Buenas noches. Mañana: reunión a las 9:00. Despierta a las 7:30. Tiempo: 4 °.» con la agenda y la alarma sugerida; más las comprobaciones de la 40 (ventanas, estufa).
+- ✅ B39.4 «Despierto»: lo opuesto, a su hora o al desbloquear el PC por primera vez («Buenos días: tiempo, agenda y tareas de hoy»).
+- ✅ B39.5 Pantalla en Escenas solas, tests con reloj falso y receta de Atajos con texto para pegar.
 - Riesgos: apagar cosas de noche por error → registro visible y un botón «deshacer» (reponer luces) durante 10 min. Esfuerzo: 1,5 sesiones.
+- Decisión: `Contexto/Dormir.cs`. Los eventos `duermo` y `despierto` entran en `ReglaContexto` (franja que pasa de medianoche incluida) y se disparan con `POST /api/atajos/dormir`, `/buenasnoches` y `/buenosdias` de Telegram y los botones «Buenas noches» / «Buenos días» de Escenas solas. El mensaje lleva la agenda de mañana (o de hoy), el tiempo, la hora de despertar (hora y media antes de lo primero del día) y, por la noche, lo abierto o encendido de la lista de «Al salir de casa». Sin migración. **No incluido**: pausar la música o temporizador de sueño, «despertar al desbloquear el PC» y el botón «deshacer» de 10 min (el resultado de cada regla queda visible en su tarjeta).
 
 ### ✅ 46 · Ropa tendida y lluvia
 - ✅ B46.1 Ajuste `ropa-tendida` (fecha de inicio) con tres maneras de marcarla: botón en Inicio, Atajo («Ropa tendida») y Telegram (`/ropa`). Caduca sola a las 10 h o al marcar «recogida».

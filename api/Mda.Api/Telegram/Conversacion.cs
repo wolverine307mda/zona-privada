@@ -20,7 +20,7 @@ namespace Mda.Api.Telegram;
 // Lo que hay que guardar llega con botones para confirmarlo, y después se puede deshacer.
 public class Conversacion(
     Bot bot, AppDbContext db, IAvisos avisos, GoogleCalendar google, ServicioConexiones con, ServicioTiempo tiempo, Mda.Api.Domotica.ServicioCasa casa,
-    Zona zona, TimeProvider reloj, IMemoryCache cache, ILogger<Conversacion> log)
+    Zona zona, TimeProvider reloj, IMemoryCache cache, Mda.Api.Contexto.MotorContexto motorContexto, ILogger<Conversacion> log)
 {
     private static readonly CultureInfo Es = new("es-ES");
 
@@ -77,6 +77,12 @@ public class Conversacion(
         switch (comando)
         {
             case "/ayuda" or "/help": await bot.Enviar(Ayuda, html: true, ct: ct); return;
+            case "/buenasnoches" or "/dormir" or "/buenosdias":
+                {
+                    var noche = !texto.StartsWith("/buenosdias", StringComparison.OrdinalIgnoreCase);
+                    await bot.Enviar(await Mda.Api.Contexto.Dormir.Ejecutar(db, motorContexto, tiempo, zona, reloj, noche, ct), ct: ct);
+                    return;
+                }
             case "/ropa":
                 {
                     // «/ropa» la marca como tendida; «/ropa recogida» la quita

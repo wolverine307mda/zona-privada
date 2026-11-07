@@ -12,7 +12,7 @@ namespace Mda.Api.Contexto;
 
 // Escenas que se ponen solas según el contexto: llegas o te vas de casa (el iPhone avisa con una automatización de Atajos), una hora del día, el tiempo que hace.
 // «Cuando llegue a casa, de noche y si llueve, pon la escena Cine de casa y la del PC».
-//   Evento:  llego (llegaste a casa) · salgo (te vas) · hora (todos los días a la hora de «Desde», una sola vez)
+//   Evento:  llego (llegaste a casa) · salgo (te vas) · duermo (me voy a dormir) · despierto (buenos días) · hora (todos los días a la hora de «Desde», una sola vez)
 //   Franja:  Desde/Hasta (HH:mm; pasa de medianoche si Hasta < Desde) y los días de la semana
 //   Tiempo:  lluvia · seco · frio (≤ 10 °) · calor (≥ 28 °); vacío = da igual
 // Las escenas del PC que lo apagan nunca se aplican solas.
@@ -43,7 +43,7 @@ public static class ServicioContexto
 {
     public const int Maximo = 20;
     public const string ClavePresencia = "contexto-presencia", ClaveDesde = "contexto-presencia-desde";
-    public static readonly string[] Eventos = ["llego", "salgo", "hora"];
+    public static readonly string[] Eventos = ["llego", "salgo", "duermo", "despierto", "hora"];
     public static readonly string[] Tiempos = ["", "lluvia", "seco", "frio", "calor"];
 
     public static bool HoraValida(string? h) => TimeOnly.TryParseExact(h, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
@@ -103,7 +103,7 @@ public static class ServicioContexto
     {
         var mal = new Dictionary<string, string[]>();
         if (nueva || e.Nombre is not null) { if (string.IsNullOrWhiteSpace(e.Nombre) || e.Nombre.Trim().Length > 60) mal["nombre"] = ["Ponle un nombre (máximo 60 letras)."]; }
-        if (e.Evento is not null && !Eventos.Contains(e.Evento)) mal["evento"] = ["El evento es llego, salgo u hora."];
+        if (e.Evento is not null && !Eventos.Contains(e.Evento)) mal["evento"] = ["El evento es llego, salgo, duermo, despierto u hora."];
         if (!string.IsNullOrEmpty(e.Desde) && !HoraValida(e.Desde)) mal["desde"] = ["La hora va como 20:30."];
         if (!string.IsNullOrEmpty(e.Hasta) && !HoraValida(e.Hasta)) mal["hasta"] = ["La hora va como 23:30."];
         if (e.Dias is { } d && d is < 1 or > 127) mal["dias"] = ["Elige al menos un día."];
@@ -177,7 +177,7 @@ public sealed class MotorContexto(IServiceScopeFactory ambitos, ServicioCasa cas
             DateTime? ultimaLocal = r.Ultima is { } u ? TimeZoneInfo.ConvertTime(u, zona.Info).DateTime : null;
             if (!ServicioContexto.Cumple(r, evento, local, presencia, clima, ahora, ultimaLocal)) continue;
             r.Ultima = ahora;
-            r.Resultado = await Aplicar(db, r, evento == "llego" ? "llegaste a casa" : evento == "salgo" ? "te vas de casa" : "a su hora", ct);
+            r.Resultado = await Aplicar(db, r, evento switch { "llego" => "llegaste a casa", "salgo" => "te vas de casa", "duermo" => "a dormir", "despierto" => "te despiertas", _ => "a su hora" }, ct);
         }
         await db.SaveChangesAsync(ct);
     }
