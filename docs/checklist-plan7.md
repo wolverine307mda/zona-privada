@@ -25,7 +25,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | # | Idea | Ya hay | Falta | Esfuerzo |
 |---|---|---|---|---|
 | 1 | Previsión de fin de mes con rango | ✅ **Hecha** (Plan 6, `9d92919`): `Gastos/Prevision.cs` (central, bajo y alto, fijos y nóminas pendientes, serie día a día) y `gastos/grafica-prevision.ts` | Nada nuevo; solo una pasada de pulido (leerla en el móvil, explicar «bajo/alto» con una frase) | 0,2 |
-| 5 | Gasto por lugar en un mapa | `Gastos/Lugares.cs` (zonas de ~1 km, comercios) y `gastos/lugares.ts` (lista, **sin mapa**) | El **mapa de calor** con Leaflet (ya está en el proyecto) | 1 |
+| 5 | Gasto por lugar en un mapa | ✅ **Hecha**: `Gastos/Lugares.cs` + `gastos/mapa-gasto.ts` (Leaflet), con filtro por categoría y detrás del PIN | — | 1 |
 | 6 | Presupuesto por semana | `Presupuesto` mensual con aviso al 80/100 % (Plan 6) | Periodo **semanal** con reinicio el lunes, aviso y barra | 1 |
 | 8 | Fecha de cobro de la nómina | `Recurrente` (incluye nóminas) y la previsión suma las pendientes | **Detectar el día de cobro**, «dinero hasta cobrar» y aviso si no llega | 1 |
 | 9 | Garantías y devoluciones | `Papeles` (caducidades con avisos escalonados) | Garantía/devolución **ligada a un gasto**, con foto del ticket | 1,5 |
@@ -90,12 +90,12 @@ Dependencias duras: 43 → 40 → 39 · 43 → 81 · 13 → 89 · 19 → 89 · 1
 
 ## Fase A · Dinero
 
-### ⬜ 5 · Mapa de lo que gastas
-- ⬜ A5.1 Ruta `GET /api/gastos/lugares/mapa?desde&hasta&categoria` con las zonas (ya las calcula `Lugares.Agrupar`) y una «intensidad» normalizada 0–1. Tests: sin pagos con ubicación, una zona, filtro por categoría, coordenadas inválidas (0,0).
-- ⬜ A5.2 Pantalla: pestaña «Mapa» dentro de `gastos/lugares.ts` con Leaflet y círculos (o `leaflet.heat` si se añade) que crecen con el gasto; ventana al pulsar con los comercios de la zona y el total. Teselas de OSM con `referrerPolicy: 'origin'` y filtro oscuro como `galeria/mapa-fotos`.
-- ⬜ A5.3 Filtros: mes/año/todo y categoría. Detrás del PIN (`PinFiltro`) porque delata rutinas.
-- ⬜ A5.4 Estado vacío cuidado («los pagos con Apple Pay traen ubicación; apunta alguno desde el atajo») y móvil a 375 px.
-- Riesgos: pocas coordenadas → mapa casi vacío; se explica en la propia pantalla. Esfuerzo: 1 sesión.
+### ✅ 5 · Mapa de lo que gastas
+- ✅ A5.1 Se amplió la ruta que ya había, `GET /api/gastos/lugares?anio&mes&categoria` (sin ruta nueva): devuelve las zonas de la categoría pedida y las `categorias` del periodo (de más a menos gasto) para los filtros. Tests de `Categorias` y `DeCategoria`.
+- ✅ A5.2 `gastos/mapa-gasto.ts`: mapa real de Leaflet con OpenStreetMap (teselas con `referrerPolicy: 'origin'`, modo oscuro invertido), un círculo por zona que crece con el gasto y ventana al pulsar con los comercios (hecha con elementos, no con HTML pegado). Sustituye al dibujo esquemático en SVG.
+- ✅ A5.3 Detrás del PIN (`PinFiltro`): sin PIN configurado no pide nada; con PIN, el teclado sale solo al abrir Estadísticas (el interceptor ya repite la petición).
+- ✅ A5.4 Filtros de mes/año y de categoría; estado vacío con la explicación del atajo; probado en pantalla con datos de ejemplo.
+- Decisión: se mantiene el círculo por zona de ~1 km (no se ve el portal) y no se añadió `leaflet.heat`.
 
 ### ⬜ 6 · Presupuesto por semana
 - ⬜ A6.1 `Presupuesto.Periodo` (`Mes` | `Semana`, por defecto `Mes`) o tabla `PresupuestoSemanal` (decidir al ver `Modelo.cs`; migración con `ef`). La semana empieza el lunes en la zona horaria de la app (`Zona`).

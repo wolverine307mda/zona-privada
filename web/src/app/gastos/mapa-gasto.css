@@ -1,0 +1,17 @@
+@import 'leaflet/dist/leaflet.css';
+
+/* el mapa de lo que gastas (estos estilos son globales: llevan el prefijo del componente) */
+.mapa-gasto { width: 100%; height: min(52vh, 420px); min-height: 260px; margin-bottom: 10px; border-radius: var(--radio-m); overflow: hidden; border: 1px solid var(--vidrio-borde); background: var(--tarjeta-2); z-index: 0; }
+
+/* de noche las teselas de OpenStreetMap se invierten (mapa oscuro de verdad, no solo atenuado) */
+:root[data-mode='dark'] .mapa-gasto .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
+.mapa-gasto .leaflet-container { font-family: var(--font-text); background: var(--tarjeta-2); }
+.mapa-gasto .leaflet-control-attribution { background: color-mix(in srgb, var(--tarjeta) 85%, transparent); color: var(--soft); font-size: 10px; }
+.mapa-gasto .leaflet-control-attribution a { color: var(--acento); }
+.mapa-gasto .leaflet-bar a { background: var(--tarjeta); color: var(--texto); border-color: var(--vidrio-borde); }
+
+/* la ventana al tocar un círculo */
+.mapa-gasto .leaflet-popup-content-wrapper, .mapa-gasto .leaflet-popup-tip { background: var(--tarjeta); color: var(--texto); border: 1px solid var(--vidrio-borde); }
+.mapa-gasto__ventana { display: grid; gap: 6px; font: 400 .85rem/1.3 var(--font-text); }
+.mapa-gasto__ventana strong { font: 600 .95rem/1.2 var(--font-code); }
+.mapa-gasto__ventana ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; color: var(--soft); }

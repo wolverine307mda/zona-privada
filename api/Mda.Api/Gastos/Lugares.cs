@@ -7,6 +7,7 @@ namespace Mda.Api.Gastos;
 public record ZonaGasto(double Lat, double Lon, decimal Total, int Pagos, IReadOnlyList<ComercioZona> Comercios);
 public record ComercioZona(string Nombre, decimal Total, int Pagos);
 public record ComercioTotal(string Nombre, decimal Total, int Pagos, int Zonas);
+public record CategoriaLugar(string Id, decimal Total, int Pagos);
 
 // Dónde gastas: los pagos de Apple Pay pueden traer la ubicación (la guarda el atajo del iPhone) y aquí se juntan por zonas de ~1 km y por comercio.
 public static class Lugares
@@ -28,18 +29,29 @@ public static class Lugares
         return (zonas, comercios);
     }
 
+    // qué categorías hay entre los pagos con ubicación (para los filtros del mapa), de más a menos gasto
+    public static List<CategoriaLugar> Categorias(IEnumerable<Movimiento> movs) =>
+        movs.Where(m => m.Tipo == TipoMovimiento.Gasto && m.Lat is not null && m.Lon is not null)
+            .GroupBy(m => string.IsNullOrWhiteSpace(m.Categoria) ? "otros" : m.Categoria)
+            .Select(g => new CategoriaLugar(g.Key, g.Sum(m => m.Importe), g.Count())).OrderByDescending(c => c.Total).ToList();
+
+    // solo los pagos de una categoría (vacío o null = todos)
+    public static IEnumerable<Movimiento> DeCategoria(IEnumerable<Movimiento> movs, string? categoria) =>
+        string.IsNullOrWhiteSpace(categoria) ? movs : movs.Where(m => string.Equals(m.Categoria, categoria, StringComparison.OrdinalIgnoreCase));
+
     public static void MapLugares(this IEndpointRouteBuilder app)
     {
-        // el mapa de calor de un mes (o de todo el año con mes = 0)
-        app.MapGet("/api/gastos/lugares", async (int? anio, int? mes, AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        // el mapa de calor de un mes (o de todo el año con mes = 0), de una categoría si se pide. Dónde gastas delata rutinas: va detrás del PIN (si lo hay)
+        app.MapGet("/api/gastos/lugares", async (int? anio, int? mes, string? categoria, AppDbContext db, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {
             var hoy = Cartera.Hoy(reloj, zona);
             var y = anio ?? hoy.Year;
             var desde = mes == 0 ? new DateOnly(y, 1, 1) : new DateOnly(y, Math.Clamp(mes ?? hoy.Month, 1, 12), 1);
             var hasta = mes == 0 ? desde.AddYears(1) : desde.AddMonths(1);
             var movs = await db.Movimientos.AsNoTracking().Where(m => m.Fecha >= desde && m.Fecha < hasta && m.Lat != null).ToListAsync(ct);
-            var (zonas, comercios) = Agrupar(movs);
-            return Results.Ok(new { desde, hasta, zonas, comercios, conUbicacion = movs.Count });
-        }).RequireAuthorization();
+            var categorias = Categorias(movs);
+            var (zonas, comercios) = Agrupar(DeCategoria(movs, categoria));
+            return Results.Ok(new { desde, hasta, zonas, comercios, categorias, conUbicacion = movs.Count });
+        }).RequireAuthorization().AddEndpointFilter<Seguridad.PinFiltro>();
     }
 }

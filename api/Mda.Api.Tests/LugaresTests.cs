@@ -37,4 +37,28 @@ public class LugaresTests
         Assert.False(Lugares.Valida(0, 0));                 // un 0,0 suele ser «sin señal»
         Assert.Equal(40.417, Lugares.Redondear(40.41684));
     }
+
+    private static Movimiento C(string comercio, decimal importe, string categoria, double? lat = 40.4, double? lon = -3.7) =>
+        new() { Tipo = TipoMovimiento.Gasto, Concepto = comercio, Importe = importe, Categoria = categoria, Lat = lat, Lon = lon, Fecha = new DateOnly(2026, 11, 3) };
+
+    [Fact]
+    public void Las_categorias_salen_de_mas_a_menos_gasto_y_solo_cuentan_pagos_con_ubicacion()
+    {
+        var movs = new[] { C("A", 30, "restaurantes"), C("B", 80, "supermercado"), C("C", 20, "restaurantes"), C("Online", 500, "ocio", null, null), C("Sin", 5, "") };
+        var cats = Lugares.Categorias(movs);
+        Assert.Equal(["supermercado", "restaurantes", "otros"], cats.Select(c => c.Id));
+        Assert.Equal(50, cats.First(c => c.Id == "restaurantes").Total);
+        Assert.Equal(2, cats.First(c => c.Id == "restaurantes").Pagos);
+        Assert.DoesNotContain(cats, c => c.Id == "ocio");   // el de 500 € no tiene ubicación
+    }
+
+    [Fact]
+    public void Se_filtra_por_categoria_sin_distinguir_mayusculas_y_vacio_es_todo()
+    {
+        var movs = new[] { C("A", 30, "restaurantes"), C("B", 80, "supermercado") };
+        Assert.Single(Lugares.DeCategoria(movs, "RESTAURANTES"));
+        Assert.Equal(2, Lugares.DeCategoria(movs, null).Count());
+        Assert.Equal(2, Lugares.DeCategoria(movs, "  ").Count());
+        Assert.Empty(Lugares.DeCategoria(movs, "ocio"));
+    }
 }
