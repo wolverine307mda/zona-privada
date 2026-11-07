@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { Densidad, ESCALA_POR_DEFECTO, Fuente, VARIABLES_ASPECTO, esDensidad, esFuente, limitarEscala, variablesAspecto } from './aspecto';
 import { TEMA_POR_DEFECTO, TemaId, VARIABLES_TEMAS, esTema, temaDe } from './temas';
 
 export type Modo = 'light' | 'dark' | 'system';
@@ -102,6 +103,10 @@ export class TemaService {
   // el tema completo (fondo, superficies, texto y fuente): «cristal» es el de siempre; los otros fijan su propio modo claro u oscuro
   readonly tema = signal<TemaId>(esTema(leer('mda-tema', TEMA_POR_DEFECTO)) ? (leer('mda-tema', TEMA_POR_DEFECTO) as TemaId) : TEMA_POR_DEFECTO);
   readonly modoFijo = computed(() => temaDe(this.tema()).modo);
+  // tipografía y densidad, por dispositivo
+  readonly escala = signal(limitarEscala(leer('mda-escala', String(ESCALA_POR_DEFECTO))));
+  readonly densidad = signal<Densidad>(esDensidad(leer('mda-densidad', 'comoda')) ? (leer('mda-densidad', 'comoda') as Densidad) : 'comoda');
+  readonly fuente = signal<Fuente>(esFuente(leer('mda-fuente', 'siempre')) ? (leer('mda-fuente', 'siempre') as Fuente) : 'siempre');
 
   // fondo animado de toda la app: cuál, cuánto se ve (0-100), cuánto se mueve (25-200 %) y dónde
   readonly fondo = signal<FondoId>(FONDOS.some((f) => f.id === leer('mda-fondo', 'aura')) ? (leer('mda-fondo', 'aura') as FondoId) : 'aura');
@@ -122,6 +127,11 @@ export class TemaService {
   ponerFuerza(n: number): void { this.fuerza.set(entre(n, 50, 200, 100)); guardar('mda-fondo-col', String(this.fuerza())); }
   ponerAmbito(a: Ambito): void { this.ambito.set(a); guardar('mda-fondo-ambito', a); this.aplicar(); }
 
+  ponerEscala(n: number): void { this.escala.set(limitarEscala(n)); guardar('mda-escala', String(this.escala())); this.aplicar(); }
+  ponerDensidad(d: Densidad): void { this.densidad.set(d); guardar('mda-densidad', d); this.aplicar(); }
+  ponerFuente(f: Fuente): void { this.fuente.set(f); guardar('mda-fuente', f); this.aplicar(); }
+  restablecerAspecto(): void { this.ponerEscala(ESCALA_POR_DEFECTO); this.ponerDensidad('comoda'); this.ponerFuente('siempre'); }
+
   ponerTema(t: TemaId, origen?: HTMLElement): void { this.transicion(origen, () => { this.tema.set(t); guardar('mda-tema', t); }); }
 
   ponerModo(m: Modo, origen?: HTMLElement): void { this.transicion(origen, () => { this.modo.set(m); guardar('mode', m); }); }
@@ -136,6 +146,12 @@ export class TemaService {
     // las variables del tema van sobre <html>; al cambiar de tema se quitan las del anterior
     for (const v of VARIABLES_TEMAS) d.style.removeProperty(v);
     for (const [v, valor] of Object.entries(t.vars)) d.style.setProperty(v, valor);
+    // y encima, la tipografía y la densidad de este dispositivo
+    for (const v of VARIABLES_ASPECTO) if (!(v in t.vars) || v.startsWith('--esp') || v === '--hueco') d.style.removeProperty(v);
+    const a = variablesAspecto({ escala: this.escala(), densidad: this.densidad(), fuente: this.fuente() });
+    d.style.fontSize = a.tamanoRaiz === '100%' ? '' : a.tamanoRaiz;
+    d.dataset['densidad'] = this.densidad();
+    for (const [v, valor] of Object.entries(a.vars)) if (this.densidad() !== 'comoda' || !v.startsWith('--esp')) d.style.setProperty(v, valor);
     d.dataset['color'] = this.color();
     d.dataset['fondo'] = this.fondo();
     d.dataset['ambito'] = this.ambito();

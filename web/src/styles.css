@@ -333,3 +333,7 @@ html:has(dialog[open]), html.menu-movil-abierto { overflow: hidden; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (display-mode: standalone) and (pointer: coarse) { :root { --seguro-arriba: calc(env(safe-area-inset-top, 0px) + 14px); } }
+
+/* densidad: las tarjetas y las filas toman su aire de la elección de cada dispositivo (Ajustes › Letra y espacio) */
+[data-densidad='compacta'] .caja { padding: 16px; gap: 10px; }
+[data-densidad='amplia'] .caja { padding: 28px; gap: 18px; }

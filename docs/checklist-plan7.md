@@ -45,7 +45,7 @@ Numeración = la de la lista de 90 ideas que se habló con Mario (6 de noviembre
 | 67 | Temas de color completos | 8 colores de acento + claro/oscuro/sistema (`tema.service.ts`) | ✅ **Hecha**: `core/temas.ts`, `TemaService` y Ajustes › Tema | 2 |
 | 68 | Inicio personalizable | `panel.html` fijo; patrón de guardado en servidor (`PanelCasa`) | Registro de tarjetas, **arrastrar/ocultar/tamaño** y varias vistas | 3 |
 | 69 | Widget en la pantalla de bloqueo | `/api/atajos/hoy` y `herramientas/ios/hoy-widget.js` (Scriptable) | Versión **de pantalla de bloqueo** (accesorios) y contenido nuevo | 1 |
-| 70 | Tipografía y densidad | nada | Tamaño de letra, densidad y fuente legible **por dispositivo** | 1 |
+| 70 | Tipografía y densidad | nada | ✅ **Hecha**: `core/aspecto.ts` y Ajustes › Letra y espacio | 1 |
 | 74 | Fondos que reaccionan | 33 fondos con intensidad, velocidad y fuerza | ✅ **Hecha**: `shell/senales-fondo.ts` y ajuste «Reaccionar a» en Fondo | 1,5 |
 | 75 | Letras sincronizadas | reproductor de escritorio (`shell/mini-musica.ts`) | ✅ **Hecha**: `Conexiones/Letras.cs` y panel de letra en el reproductor | 1,5 |
 | 76 | Historial de lo que escuchas | `/api/musica/recientes` y `/top` (Spotify) | ✅ **Hecha**: `Conexiones/HistorialMusica.cs` y tarjeta «Lo que escuchas» | 2 |
@@ -332,11 +332,12 @@ Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es 
 - Riesgos: pantallas con colores fijos a mano → barrido y corrección de cada una a los tokens. Esfuerzo: 2 sesiones.
 - Decisión: `core/temas.ts`: seis temas (Cristal —el de siempre, sin tocar nada—, Papel, Terminal, Sepia, Alto contraste y Medianoche OLED) como conjuntos de variables CSS que `TemaService` pone sobre `<html>` con `data-tema`, quitando las del anterior. Los de un solo modo fijan claro u oscuro (así `data-mode`, los 3D y los fondos siguen funcionando) y desactivan el selector de modo en Ajustes. Las paletas viven en TypeScript para poder **comprobar el contraste WCAG en las pruebas**: cada par texto/fondo de cada tema llega a 4,5:1 (7:1 en alto contraste). Ajustes › Tema con rejilla de vistas previas hechas con las variables de cada tema; se guarda por dispositivo. `theme-color` y las gráficas siguen al tema porque leen las mismas variables. Comprobado en el navegador con Papel (letra serif, fondo crema). **Pendiente**: el barrido de pantallas con colores fijos a mano (por ejemplo, la tarjeta grande de Inicio se ve apagada en Papel) y sincronizar el tema con el servidor.
 
-### ⬜ 70 · Tipografía y densidad
-- ⬜ F70.1 Ajustes por dispositivo: **tamaño de letra** (90–130 %), **densidad** (compacta · cómoda · amplia → `--hueco`, rellenos y alto de filas) y **fuente** (la de siempre, del sistema, o una de lectura cómoda con licencia libre incluida en la app).
+### ✅ 70 · Tipografía y densidad
+- ✅ F70.1 Ajustes por dispositivo: **tamaño de letra** (90–130 %), **densidad** (compacta · cómoda · amplia → `--hueco`, rellenos y alto de filas) y **fuente** (la de siempre, del sistema, o una de lectura cómoda con licencia libre incluida en la app).
 - ⬜ F70.2 Auditar que el tamaño se escala (`rem`) y corregir los `px` que no: barrido de `styles.css` y de los componentes más usados.
-- ⬜ F70.3 Pruebas visuales a 90 %, 130 % y 375 px (sin desbordes ni textos cortados) y test de que los ajustes se guardan y se aplican.
+- ✅ F70.3 Pruebas visuales a 90 %, 130 % y 375 px (sin desbordes ni textos cortados) y test de que los ajustes se guardan y se aplican.
 - Riesgos: layouts de 3D y gráficas con medidas fijas → se prueban uno a uno. Esfuerzo: 1 sesión.
+- Decisión: `core/aspecto.ts` (cuentas puras probadas) y Ajustes › Letra y espacio, por dispositivo: tamaño de letra 90–130 % (de 5 en 5, sobre el tamaño raíz: escala lo que va en rem), densidad compacta/cómoda/amplia (reescribe `--esp-1…7` y `--hueco`, y las tarjetas `.caja` toman su aire de `data-densidad`) y fuente (la de siempre, del sistema o de lectura con serifas). Comprobado en el navegador a 130 % + amplia + fuente de lectura a 375 px: sin desbordes. **Distinto de lo previsto**: la fuente «de lectura» usa una pila de fuentes serif del sistema (Charter/Cambria/Georgia) porque no he podido descargar ni incluir una fuente libre sin red; el barrido de `px` a `rem` solo se ha hecho en lo común y las gráficas y escenas 3D de medida fija no escalan.
 
 ### ⬜ 68 · Inicio personalizable
 - ⬜ F68.1 **Registro de tarjetas**: cada tarjeta de `panel.html` pasa a ser una entrada (`id`, título, componente, tamaños permitidos, condiciones: «solo si hay Spotify»). Las nuevas (cumpleaños, comidas, bienestar, series, garantías) se registran aquí.
