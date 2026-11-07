@@ -365,14 +365,14 @@ Nombre del módulo: **Bienestar** (la «Salud» que ya existe es la del PC). Es 
 - ✅ F89.4 `bienvenida.spec.ts`: cada combinación da frase, no repite de un día a otro (300 días), el cumpleaños manda sobre el festivo y los datos.
 - Decisión: de momento el front solo alimenta cumpleaños (de `/api/personas/proximos`); gasto de ayer, racha, entreno, ánimo y tiempo ya están soportados por `componer` pero **no se piden aún a la API** (falta un endpoint `bienvenida-datos`). Hoy salen cumple, festivo, luna, día, estación y hora.
 
-### ⬜ 81 · Constructor visual de reglas
-- ⬜ F81.1 **Modelo unificado** de regla en el front (disparador → condiciones → acciones) que se traduce a lo que ya existe: `ReglaCasa`, `ReglaContexto` y `Automatizaciones` (`Disparadores`). No se rompe nada guardado; el constructor lee y escribe lo mismo.
-- ⬜ F81.2 **Bloques** arrastrables: «Cuando…» (hora, llego/salgo/duermo, un aparato, el tiempo, el dinero, una tarea vencida, un papel que caduca, un estado sostenido de la 43), «Y si…» (franja, día, tiempo) y «Entonces…» (escena de casa o PC, avisar, crear tarea, apuntar algo, pausar música).
-- ⬜ F81.3 **Lectura en español** de cada regla («Cuando llegues a casa, de noche y con lluvia, pon la escena Cine») y validación en vivo (qué falta, qué choca).
-- ⬜ F81.4 **Simulación**: «con lo que pasó estas últimas 24 h, esta regla se habría disparado 3 veces» (pura, sobre las lecturas guardadas), sin ejecutar nada.
-- ⬜ F81.5 Reglas con **plantillas** (las de las fases B y A) y exportar/importar como JSON.
-- ⬜ F81.6 Tests de la traducción en los dos sentidos y de la simulación.
-- Riesgos: es la pieza más grande de interfaz → se hace la última y por tramos (primero casa, luego contexto, luego automatizaciones). Esfuerzo: 3 sesiones.
+### 🟡 81 · Constructor visual de reglas (núcleo hecho, sin pantalla)
+- ✅ F81.1 Modelo unificado `ReglaUnificada` (cuando → y si → entonces) en `web/src/app/reglas/regla-unificada.ts`, con traducción en los dos sentidos a `ReglaContexto` y `ReglaCasa` (sin pérdida, probado).
+- ⬜ F81.2 Bloques arrastrables: **no hecho** (no hay pantalla del constructor). Las automatizaciones (`Disparadores`) tampoco están traducidas aún.
+- ✅ F81.3 Lectura en español (`leer`) y validación en vivo (`validar`, `choques`).
+- ✅ F81.4 Simulación pura sobre sucesos de las últimas 24 h (`simular`). Falta alimentarla con las lecturas guardadas reales.
+- ✅ F81.5 Plantillas (`PLANTILLAS`) y exportar/importar JSON versionado (`exportar`/`importar`).
+- ✅ F81.6 Tests (`regla-unificada.spec.ts`).
+- Decisión: se entrega el núcleo probado; la interfaz de bloques queda para otra sesión.
 
 ---
 
