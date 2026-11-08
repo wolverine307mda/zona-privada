@@ -58,7 +58,8 @@ type Resultado = 'ok' | 'sin-agente' | 'cancelado' | 'error';
     .mp-sw i { flex: none; width: 36px; height: 21px; border-radius: 999px; background: color-mix(in srgb, var(--soft) 40%, transparent); position: relative; transition: background .2s; }
     .mp-sw i::after { content: ''; position: absolute; left: 3px; top: 3px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: translate .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
     .mp-sw.on i { background: var(--brand); } .mp-sw.on i::after { translate: 15px 0; }
-    .mp-bloq { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 14px; padding: 0 16px; background: var(--tarjeta-2); color: var(--texto); font: 500 13px var(--font-text); cursor: pointer; } .mp-bloq .icon { width: 18px; height: 18px; }
+    .mp-bloq { min-height: 44px; justify-content: center; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 14px; padding: 0 16px; background: var(--tarjeta-2); color: var(--texto); font: 500 13px var(--font-text); cursor: pointer; } .mp-bloq .icon { width: 18px; height: 18px; }
+    @media (max-width: 480px) { .mp-acc { grid-template-columns: minmax(0, 1fr); } app-mando-pc { padding: 18px; } }
     .mp-aviso { margin: 0; min-height: 1.2em; font-size: 12.5px; color: var(--soft); }
     .mp-mas { font-size: 13px; color: var(--acento); text-decoration: none; } .mp-mas:hover { text-decoration: underline; }
   `,

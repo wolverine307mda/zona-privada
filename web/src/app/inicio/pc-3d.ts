@@ -69,7 +69,11 @@ const NOMBRES: Record<string, string> = { bat: 'Batería', ssd: 'Disco', ram: 'M
     .p3-fallo { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; color: var(--soft); background: var(--tarjeta); }
     .p3-fallo svg { width: 84px; fill: none; stroke: var(--brand); stroke-width: 2; opacity: .6; } .p3-fallo p { margin: 0; font-size: .9rem; }
     .p3-fallo button { border: 1px solid var(--vidrio-borde); border-radius: 999px; background: none; color: var(--acento); font: 600 .84rem/1 var(--font-text); padding: 10px 16px; min-height: 40px; cursor: pointer; }
-    @media (max-width: 560px) { .p3-detalle { display: none; } .p3-et { font-size: 11px; } }
+    @media (max-width: 560px) {
+      .p3-etqs, .p3-lineas { display: none; }
+      .p3-detalle { left: 10px; top: 10px; width: 150px; padding: 8px 10px; font-size: 12px; border-radius: 14px; } .p3-detalle strong { font-size: 1.1rem; margin-bottom: 4px; } .p3-detalle h4 { font-size: 10px; }
+      .p3-barra { left: 10px; right: 10px; bottom: 10px; gap: 6px; } .p3-seg button, .p3-gira { padding: 6px 10px; font-size: 12px; } .p3-desp input { width: 64px; }
+    }
   `,
 })
 export class Pc3d {
@@ -300,7 +304,11 @@ export class Pc3d {
 
     // —— tamaño y visibilidad ——
     let w = 0, h = 0, visible = true;
-    const ajustar = () => { const r = canvas.getBoundingClientRect(); w = r.width; h = r.height; if (w < 2 || h < 2) return; renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+    const ajustar = () => { const r = canvas.getBoundingClientRect(); w = r.width; h = r.height; if (w < 2 || h < 2) return; renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h, false); camera.aspect = w / h;
+      // en una pantalla estrecha (el móvil) la cámara se aleja para que quepa a lo ancho y el PC sube un poco, para que la barra de abajo no lo tape
+      const estrecho = w < 560, k = estrecho ? Math.min(1.5, 1.05 / camera.aspect) : 1;
+      camera.position.set(4 * k, 6.2 * k, 11.2 * k); camera.lookAt(0, estrecho ? 2.45 : 2.95, 0);
+      camera.updateProjectionMatrix(); };
     const observador = new ResizeObserver(ajustar); observador.observe(canvas); ajustar();
     const visibilidad = new IntersectionObserver((es) => { visible = es.some((x) => x.isIntersecting); }); visibilidad.observe(canvas);
 

@@ -66,8 +66,9 @@
   <div class="equipo__der">
     <div class="equipo__par">
       @if (panel()?.tCoche(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }
-      <div class="equipo__pila">@if (panel()?.tGasolina(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }@if (panel()?.tTiempo(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
+      <div class="equipo__pila">@if (panel()?.tGasolina(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
     </div>
+    @if (panel()?.tTiempo(); as t) { <div class="slot slot--tiempo"><ng-container [ngTemplateOutlet]="t" /></div> }
     <app-mando-pc [volumen]="a()?.volumen ?? null" [brillo]="a()?.brillo ?? null" [enLinea]="real()" />
     <article class="tarjeta bloque bloque--grafica">
     <header class="bloque__cabeza">

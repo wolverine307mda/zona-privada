@@ -178,7 +178,7 @@ app-panel { display: none; }
   .ch { display: flex; flex-direction: column; gap: var(--hueco, 14px); min-height: 0; }
   .ch__hola { order: 0; padding: 4px 4px 0; flex-wrap: wrap; } .ch__estado { width: 100%; }
   .ch__globo { order: 1; height: clamp(380px, 70vw, 520px); }
-  .ch__izq, .ch__der { order: 2; padding: 0; }
+  .ch__izq, .ch__der { order: 2; padding: 0; align-self: stretch; }
   .ch__dock { position: static; translate: none; width: auto; order: 3; }
   .equipo__par { grid-template-columns: minmax(0, 1fr); }
 }
@@ -191,3 +191,12 @@ app-panel { display: none; }
 .equipo__par:not(:has(> .slot)) { grid-template-columns: minmax(0, 1fr); }
 .ch__dock ::ng-deep .musica { padding: 14px 18px; gap: 8px; }
 .ch__dock ::ng-deep .musica > .cab { display: none; }
+/* el tiempo, a todo lo ancho de la columna y sin la tira de horas: con un lugar elegido la tarjeta se estiraba mucho */
+.slot--tiempo ::ng-deep .horas { display: none; }
+.slot--tiempo ::ng-deep .ahora__icono { font-size: 44px; }
+/* móvil: el PC más alto, las cifras de red sin las etiquetas que se pegaban y las cajas con menos relleno */
+@media (max-width: 640px) {
+  .equipo .pc-vivo__escena { height: 560px; }
+  .kpis .red code { display: none; }
+  .ch__hola { padding: 2px 2px 0; } .ch__titulo { font-size: clamp(1.8rem, 9vw, 2.4rem); }
+}
