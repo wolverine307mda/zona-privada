@@ -1,5 +1,7 @@
 import { Linea } from './linea';
 import { BienvenidaFrase } from './bienvenida-frase';
+import { GloboInicio } from './globo-inicio';
+import { MandoPc } from './mando-pc';
 import { SemaforoVida } from './semaforo';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -29,7 +31,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Bateria, Espacio, Linea, BienvenidaFrase, Panel, RouterLink, Pc3d, SemaforoVida, Numero],
+  imports: [Bateria, Espacio, Linea, BienvenidaFrase, GloboInicio, MandoPc, Panel, RouterLink, Pc3d, SemaforoVida, Numero],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })

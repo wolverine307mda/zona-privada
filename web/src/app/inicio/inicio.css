@@ -141,3 +141,14 @@
 .modulo dd { margin: 0; font: 600 .92rem/1.2 var(--font-code); font-variant-numeric: tabular-nums; text-align: right; }
 .pc-vivo__enlace { color: var(--acento); font-weight: 600; font-size: .88rem; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { .etq { animation: none; } }
+
+/* —— Inicio «central»: la portada con el globo y el equipo en dos columnas —— */
+.globo-hero { margin-top: 4px; }
+.equipo { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--hueco, 14px); align-items: start; }
+.equipo__izq, .equipo__der { display: grid; gap: var(--hueco, 14px); min-width: 0; }
+.equipo__izq .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.equipo .pc-vivo__marco::before { display: none; }
+.equipo .pc-vivo__escena { height: clamp(460px, 48vw, 680px); -webkit-mask-image: none; mask-image: none; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); box-shadow: var(--sombra); overflow: hidden; }
+.equipo .pc-vivo__datos { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); box-shadow: var(--sombra); }
+@media (max-width: 1100px) { .equipo { grid-template-columns: minmax(0, 1fr); } }
+.equipo__der .fila { grid-template-columns: minmax(0, 1fr); }
