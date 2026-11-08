@@ -55,3 +55,22 @@ export function puntosDeTierra(paso = 3): [number, number][] {
   }
   return r;
 }
+
+// La posición horizontal (0–1) de una longitud en la textura de los continentes: la esfera de Three empieza en el meridiano −90°, no en el −180°
+export const columnaTextura = (lon: number): number => (((lon + 90) / 360) % 1 + 1) % 1;
+
+// Los continentes como una imagen (relleno y costa), para pegarla sobre una esfera; se dibuja tres veces para que lo que cruza el borde de la textura no se corte
+export function texturaTierra(relleno: string, costa: string, ancho = 2048): HTMLCanvasElement {
+  const c = document.createElement('canvas'); c.width = ancho; c.height = ancho / 2;
+  const x = c.getContext('2d');
+  if (!x) return c;
+  x.fillStyle = relleno; x.strokeStyle = costa; x.lineWidth = Math.max(1.5, ancho / 900); x.lineJoin = 'round';
+  for (const desfase of [-ancho, 0, ancho]) {
+    for (const poly of CONTORNOS) {
+      x.beginPath();
+      poly.forEach(([lon, lat], i) => { const px = ((lon + 90) / 360) * ancho + desfase, py = ((90 - lat) / 180) * (ancho / 2); if (i) x.lineTo(px, py); else x.moveTo(px, py); });
+      x.closePath(); x.fill(); x.stroke();
+    }
+  }
+  return c;
+}

@@ -22,3 +22,12 @@ describe('tierra del globo', () => {
     expect(n).toBeLessThan(5000);
   });
 });
+
+describe('textura de los continentes', () => {
+  it('la columna de la textura empieza en el meridiano −90° y siempre cae entre 0 y 1', async () => {
+    const { columnaTextura } = await import('./tierra');
+    expect(columnaTextura(-90)).toBeCloseTo(0, 6); expect(columnaTextura(0)).toBeCloseTo(0.25, 6); expect(columnaTextura(90)).toBeCloseTo(0.5, 6);
+    expect(columnaTextura(-180)).toBeCloseTo(0.75, 6); expect(columnaTextura(180)).toBeCloseTo(0.75, 6);
+    for (let lon = -180; lon <= 180; lon += 7) { const c = columnaTextura(lon); expect(c).toBeGreaterThanOrEqual(0); expect(c).toBeLessThan(1); }
+  });
+});

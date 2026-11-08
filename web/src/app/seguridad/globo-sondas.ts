@@ -5,7 +5,7 @@ import type * as THREE from 'three';
 import { resolverColor } from '../core/color-css';
 import { CieloConfig } from '../core/cielo-config';
 import { SistemaService } from '../inicio/sistema.service';
-import { puntosDeTierra } from './tierra';
+import { puntosDeTierra, texturaTierra } from './tierra';
 
 export interface Punto { lat: number; lon: number; pais: string; ciudad: string; sondas: number; ips: number; ultima: string; rutas: string[]; }
 interface AccesoGeo { id: number; fecha: string; exito: boolean; lugar: string | null; lat: number | null; lon: number | null; motivo: string; }
@@ -211,13 +211,19 @@ export class GloboSondas implements OnInit {
     const matRejilla = new THREE.LineBasicMaterial({ color: 0x4a5a82, transparent: true, opacity: 0.45 });
     globo.add(new THREE.LineSegments(geo, matRejilla));
     // los continentes, como puntitos
-    const tierra = puntosDeTierra(3).flatMap(([lat, lon]) => sobreEsfera(lat, lon, 1.51));
+    const tierra = puntosDeTierra(1.2).flatMap(([lat, lon]) => sobreEsfera(lat, lon, 1.51));
     const geoTierra = new THREE.BufferGeometry(); geoTierra.setAttribute('position', new THREE.Float32BufferAttribute(tierra, 3));
-    const matTierra = new THREE.PointsMaterial({ color: 0x9fb3e6, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.9 });
+    const matTierra = new THREE.PointsMaterial({ color: 0x9fb3e6, size: 0.03, sizeAttenuation: true, transparent: true, opacity: 0.9 });
     globo.add(new THREE.Points(geoTierra, matTierra));
+    // y encima el relleno de cada continente con su costa, para que se reconozcan de un vistazo
+    const matSuelo = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
+    const suelo = new THREE.Mesh(new THREE.SphereGeometry(1.506, 64, 48), matSuelo); globo.add(suelo);
+    let texSuelo: THREE.CanvasTexture | null = null;
+    const pintarSuelo = (relleno: string, costa: string) => { texSuelo?.dispose(); texSuelo = new THREE.CanvasTexture(texturaTierra(relleno, costa)); matSuelo.map = texSuelo; matSuelo.needsUpdate = true; };
     const aplicarModo = () => {
       const c = paleta();
       matBola.color.set(c.bola); matBola.opacity = c.opBola; matRejilla.color.set(c.rejilla); matRejilla.opacity = c.opRejilla; matTierra.color.set(c.tierra);
+      pintarSuelo(document.documentElement.dataset['mode'] === 'light' ? 'rgba(58,79,140,.16)' : 'rgba(159,179,230,.12)', document.documentElement.dataset['mode'] === 'light' ? 'rgba(58,79,140,.6)' : 'rgba(159,179,230,.45)');
     };
     aplicarModo();
     const observadorModo = new MutationObserver(() => { aplicarModo(); if (reducido) dibujar(0); });
@@ -335,7 +341,7 @@ export class GloboSondas implements OnInit {
 
     return () => {
       cerrado = true; this.pintar = null; this.lanzar = null; rayos.forEach(quitarRayo);
-      cancelAnimationFrame(marco); observador.disconnect(); observadorModo.disconnect(); io.disconnect();
+      cancelAnimationFrame(marco); observador.disconnect(); observadorModo.disconnect(); io.disconnect(); texSuelo?.dispose();
       canvas.removeEventListener('pointerdown', abajo); canvas.removeEventListener('pointermove', mueve); canvas.removeEventListener('pointerup', arriba);
       scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => x.dispose()); });
       renderer.dispose(); renderer.forceContextLoss();
