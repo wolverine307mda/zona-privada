@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CuentaAtras } from './cuenta-atras';
 import { PersonalizarInicio } from './personalizar-inicio';
@@ -33,6 +33,16 @@ interface EstadoPcInicio { agenteConectado: boolean; salud: { volumenes: { nombr
   styleUrl: './panel.css',
 })
 export class Panel {
+  /** el Inicio de antes (las tarjetas que ya no salen) queda aparcado; true lo recupera */
+  protected readonly antiguo = false;
+  // las tarjetas que Inicio coloca donde quiere
+  readonly tDinero = viewChild<TemplateRef<unknown>>('tDinero');
+  readonly tTiempo = viewChild<TemplateRef<unknown>>('tTiempo');
+  readonly tMusica = viewChild<TemplateRef<unknown>>('tMusica');
+  readonly tCoche = viewChild<TemplateRef<unknown>>('tCoche');
+  readonly tAgenda = viewChild<TemplateRef<unknown>>('tAgenda');
+  readonly tRecordatorios = viewChild<TemplateRef<unknown>>('tRecordatorios');
+  readonly tGasolina = viewChild<TemplateRef<unknown>>('tGasolina');
   private readonly http = inject(HttpClient);
   protected readonly asistente = inject(AsistenteService);
   protected readonly euros = euros;

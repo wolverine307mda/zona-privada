@@ -11,6 +11,7 @@ import { Panel } from './panel';
 import { Bateria } from './bateria';
 import { Espacio } from './espacio';
 import { DatosPc, Pc3d } from './pc-3d';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { PerfilService } from '../core/perfil.service';
 import { SesionService } from '../core/sesion.service';
@@ -31,7 +32,7 @@ export function velocidad(b: number): string {
 // Inicio: el saludo con accesos rápidos, el panel con todas las secciones y el equipo de casa en directo
 @Component({
   selector: 'app-inicio',
-  imports: [Bateria, Espacio, Linea, BienvenidaFrase, GloboInicio, MandoPc, Panel, RouterLink, Pc3d, SemaforoVida, Numero],
+  imports: [NgTemplateOutlet, Bateria, Espacio, Linea, BienvenidaFrase, GloboInicio, MandoPc, Panel, RouterLink, Pc3d, SemaforoVida, Numero],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })
@@ -47,6 +48,9 @@ export class Inicio implements OnDestroy {
   private graficaHistorial?: echarts.ECharts;
   private observador?: ResizeObserver;
 
+  /** el Inicio de antes queda aparcado (comentado en la plantilla); true lo recupera */
+  protected readonly antiguo = false;
+  protected readonly panel = viewChild(Panel);
   protected readonly ahora = signal(new Date());
   protected readonly a = computed(() => this.sistema.actual());
   protected readonly nombre = computed(() => {

@@ -1,19 +1,6 @@
-<div class="panel">
-  <!-- el asistente: apuntar cualquier cosa con una frase -->
-  <div class="asis-inicio">
-    <button class="asis-inicio__campo" type="button" (click)="asistente.abrir()">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
-      <span>Dime qué apunto… <em>«ayer 12 € en el Mercadona»</em></span>
-    </button>
-    <button class="asis-inicio__mic" type="button" (click)="asistente.abrir('', true)" aria-label="Decírselo hablando">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
-    </button>
-  </div>
-  <app-personalizar-inicio />
-  <!-- la ropa tendida y la lluvia -->
-  <app-ropa-chip />
-  <app-cumples-chip />
-  <!-- el dinero del mes -->
+<!-- Cada tarjeta del panel es una plantilla: Inicio las coloca donde quiere (portada del globo, columnas del equipo) y los datos se cargan una sola vez. -->
+<ng-template #tDinero>
+<!-- el dinero del mes -->
   <a class="caja dinero" routerLink="/gastos" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 10h18M7 15h3" /></svg></span><h3>{{ nombreMes }}</h3>
       @if (mes()?.pendientes?.length) { <em class="chip">{{ mes()!.pendientes.length }} fijos por apuntar</em> }</header>
@@ -43,11 +30,15 @@
       </div>
     } @else { <div class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></div> }
   </a>
+</ng-template>
 
-  <!-- el tiempo -->
+<ng-template #tTiempo>
+<!-- el tiempo -->
   <app-tiempo class="caja tiempo" />
+</ng-template>
 
-  <!-- lo que suena -->
+<ng-template #tMusica>
+<!-- lo que suena -->
   @if (spotify() === 'si' && sonando()?.cancion; as c) {
     <a class="caja musica" routerLink="/musica" [class.parado]="!sonando()!.sonando">
       @if (c.imagen) { <img class="musica__fondo" [src]="c.imagen" alt=""> }
@@ -74,8 +65,10 @@
       <p class="vacio">{{ spotify() === 'no' ? 'Conecta Spotify para ver lo que suena' : spotify() === 'si' ? 'No suena nada ahora mismo' : 'Cargando…' }}</p>
     </a>
   }
+</ng-template>
 
-  <!-- el coche (o la deuda que quede) -->
+<ng-template #tCoche>
+<!-- el coche (o la deuda que quede) -->
   @if (deuda(); as d) {
     <a class="caja coche" routerLink="/gastos/deudas" data-inclina>
       <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14v-5l-2-5H7l-2 5zM5 12h14M7 17v2M17 17v2" /></svg></span><h3>{{ d.nombre }}</h3></header>
@@ -86,9 +79,11 @@
       <p class="coche__pie"><strong>{{ eurosCorto(d.restante) }}</strong> por pagar</p>
     </a>
   }
+</ng-template>
 
-  <!-- lo próximo de la agenda -->
-  <a class="caja lista" routerLink="/agenda" data-inclina>
+<ng-template #tAgenda>
+<!-- lo próximo de la agenda -->
+  <a class="caja lista lista--agenda" routerLink="/agenda" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /></svg></span><h3>Lo próximo</h3></header>
     <app-cuenta-atras [eventos]="agenda()" />
     <ul class="agenda">
@@ -97,9 +92,11 @@
       } @empty { @if (agenda()) { <li class="vacio">Nada en las próximas dos semanas</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
+</ng-template>
 
-  <!-- recordatorios -->
-  <a class="caja lista" routerLink="/agenda" data-inclina>
+<ng-template #tRecordatorios>
+<!-- recordatorios -->
+  <a class="caja lista lista--recordatorios" routerLink="/agenda" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg></span><h3>Recordatorios</h3>
       @if (recordatorios().length) { <em class="chip">{{ recordatorios().length }}</em> }</header>
     <ul class="recordatorios">
@@ -111,7 +108,39 @@
       } @empty { @if (agenda()) { <li class="vacio">Todo hecho 🎉</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
+</ng-template>
 
+<ng-template #tGasolina>
+<!-- gasolina -->
+  @if (gasolina(); as g) {
+    @if (g.repostajes.length) {
+      <a class="caja mini mini--gasolina" routerLink="/gastos/gasolina" data-inclina>
+        <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8h2a2 2 0 0 1 2 2v6a2 2 0 0 0 4 0V8l-3-3" /></svg></span><h3>Gasolina</h3></header>
+        <strong class="cifra">{{ numero(g.ultimoPrecio, 3) }}<small> €/L</small></strong>
+        <span class="sub">{{ numero(g.consumoMedio, 1) }} L/100 km · {{ numero((g.costePorKm ?? 0) * 100, 1) }} cént./km</span>
+      </a>
+    }
+  }
+</ng-template>
+
+<!-- El Inicio de antes (asistente, ropa, cumpleaños, notas fijadas, hábitos, fotografía, mi PC, casa, seguridad y carpetas), tal cual estaba.
+     Para recuperarlo: `antiguo = true` en panel.ts y vuelve a poner `<app-panel />` donde estaba. -->
+@if (antiguo) {
+<div class="panel">
+  <!-- el asistente: apuntar cualquier cosa con una frase -->
+  <div class="asis-inicio">
+    <button class="asis-inicio__campo" type="button" (click)="asistente.abrir()">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+      <span>Dime qué apunto… <em>«ayer 12 € en el Mercadona»</em></span>
+    </button>
+    <button class="asis-inicio__mic" type="button" (click)="asistente.abrir('', true)" aria-label="Decírselo hablando">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+    </button>
+  </div>
+  <app-personalizar-inicio />
+  <!-- la ropa tendida y la lluvia -->
+  <app-ropa-chip />
+  <app-cumples-chip />
   <!-- notas fijadas -->
   <a class="caja lista" routerLink="/notas" data-inclina>
     <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 5 4 3v2H6v-2l4-3zM12 14v6" /></svg></span><h3>Notas fijadas</h3></header>
@@ -176,17 +205,6 @@
     <span class="sub">{{ sesiones().length }} sesiones · {{ seguridad()?.dosPasos ? 'dos pasos ✓' : 'activa los dos pasos' }}{{ llaves() ? ' · ' + llaves() + (llaves() === 1 ? ' llave' : ' llaves') : '' }}</span>
   </a>
 
-  <!-- gasolina -->
-  @if (gasolina(); as g) {
-    @if (g.repostajes.length) {
-      <a class="caja mini" routerLink="/gastos/gasolina" data-inclina>
-        <header class="cab"><span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8h2a2 2 0 0 1 2 2v6a2 2 0 0 0 4 0V8l-3-3" /></svg></span><h3>Gasolina</h3></header>
-        <strong class="cifra">{{ numero(g.ultimoPrecio, 3) }}<small> €/L</small></strong>
-        <span class="sub">{{ numero(g.consumoMedio, 1) }} L/100 km · {{ numero((g.costePorKm ?? 0) * 100, 1) }} cént./km</span>
-      </a>
-    }
-  }
-
   <!-- carpetas -->
   @if (raices().length) {
     <a class="caja carpetas" routerLink="/documentos" data-inclina>
@@ -199,3 +217,4 @@
     </a>
   }
 </div>
+}

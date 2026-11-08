@@ -152,3 +152,42 @@
 .equipo .pc-vivo__datos { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px; border-radius: var(--radio); border: 1px solid var(--vidrio-borde); background: var(--brillo), var(--vidrio); box-shadow: var(--sombra); }
 @media (max-width: 1100px) { .equipo { grid-template-columns: minmax(0, 1fr); } }
 .equipo__der .fila { grid-template-columns: minmax(0, 1fr); }
+
+/* —— Inicio «central» según la plantilla G: el globo con las tarjetas encima y el equipo en dos columnas —— */
+app-panel { display: none; }
+.ch { position: relative; display: grid; grid-template-columns: 340px minmax(0, 1fr) 300px; grid-template-rows: auto 1fr; min-height: clamp(740px, 60vw, 840px); }
+.ch__globo { grid-area: 1 / 1 / -1 / -1; height: auto; min-height: 0; }
+.ch__hola { grid-area: 1 / 1 / 2 / -1; position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 26px 28px 0; pointer-events: none; }
+.ch__hola > * { pointer-events: auto; }
+.ch__fecha { margin: 0; font-size: .85rem; color: var(--soft); text-transform: capitalize; }
+.ch__titulo { margin: 4px 0 6px; font: var(--peso-ligero) var(--step-saludo)/1.05 var(--font-text); letter-spacing: -0.04em; }
+.ch__titulo em { font-style: normal; color: var(--brand); }
+.ch__estado { flex: none; width: min(360px, 34%); }
+.ch__estado ::ng-deep .semaforo { padding: 10px 14px; border-left-width: 3px; background: color-mix(in srgb, var(--tarjeta) 86%, transparent); backdrop-filter: blur(8px); }
+.ch__estado ::ng-deep header { margin-bottom: 6px; } .ch__estado ::ng-deep header h3 { font-size: .98rem; }
+.ch__estado ::ng-deep ul { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8rem; } .ch__estado ::ng-deep li .texto small { display: none; }
+.ch__izq { grid-area: 2 / 1; position: relative; z-index: 2; align-self: start; padding: 14px 0 20px 20px; }
+.ch__der { grid-area: 2 / 3; position: relative; z-index: 2; align-self: start; display: grid; gap: var(--hueco, 14px); padding: 14px 20px 20px 0; }
+.slot { display: grid; min-width: 0; } .slot:empty { display: none; }
+.ch__dock { position: fixed; z-index: 30; bottom: 14px; left: calc(50% + 140px); translate: -50% 0; width: min(520px, calc(100vw - 32px)); }
+.ch__dock ::ng-deep .musica--vacia { display: none; }
+.ch__dock ::ng-deep .musica { box-shadow: 0 18px 50px rgb(0 0 0 / .35); }
+.equipo__par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--hueco, 14px); align-items: stretch; }
+.equipo__pila { display: grid; gap: var(--hueco, 14px); align-content: stretch; grid-template-rows: auto 1fr; min-width: 0; }
+@media (max-width: 1100px) {
+  .ch { display: flex; flex-direction: column; gap: var(--hueco, 14px); min-height: 0; }
+  .ch__hola { order: 0; padding: 4px 4px 0; flex-wrap: wrap; } .ch__estado { width: 100%; }
+  .ch__globo { order: 1; height: clamp(380px, 70vw, 520px); }
+  .ch__izq, .ch__der { order: 2; padding: 0; }
+  .ch__dock { position: static; translate: none; width: auto; order: 3; }
+  .equipo__par { grid-template-columns: minmax(0, 1fr); }
+}
+.ch__globo ::ng-deep .gi-cab { display: none; }
+/* la columna derecha siempre llega abajo: la gráfica se estira con lo que sobre */
+.equipo { align-items: stretch; }
+.equipo__der { display: flex; flex-direction: column; }
+.equipo__der > .bloque--grafica { flex: 1 1 auto; display: flex; flex-direction: column; }
+.equipo__der > .bloque--grafica .linea-tiempo { flex: 1 1 auto; height: auto; min-height: 240px; }
+.equipo__par:not(:has(> .slot)) { grid-template-columns: minmax(0, 1fr); }
+.ch__dock ::ng-deep .musica { padding: 14px 18px; gap: 8px; }
+.ch__dock ::ng-deep .musica > .cab { display: none; }

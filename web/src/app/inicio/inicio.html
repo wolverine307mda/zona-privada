@@ -1,36 +1,21 @@
-<div class="cabecera">
-<section class="hola">
-  <img class="hola__foto" [src]="perfil.foto()" width="72" height="72" alt="">
-  <div class="hola__texto">
-    <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time class="hola__hora">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</time></p>
-    <h2 class="hola__titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h2>
-    <app-bienvenida-frase [nombre]="nombre()" [equipo]="a()?.equipo ?? 'tu equipo'" />
-    <nav class="rapidos" aria-label="Crear">
-      <button type="button" (click)="nuevoGasto()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Gasto</button>
-      <a routerLink="/notas" [queryParams]="{ nueva: 1 }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6" /></svg>Nota</a>
-      <a routerLink="/agenda" [queryParams]="{ nuevo: 'evento' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /></svg>Evento</a>
-      <a routerLink="/agenda" [queryParams]="{ nuevo: 'recordatorio' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg>Recordatorio</a>
-    </nav>
-  </div>
-  @if (a()) {
-    @if (real()) {
-      <p class="origen origen--ok"><span class="origen__punto"></span>datos reales del PC</p>
-    } @else {
-      <p class="origen origen--aviso" title="Arranca el agente de Windows para ver tu PC de verdad">
-        <span class="origen__punto"></span>midiendo Docker · arranca el agente
-      </p>
-    }
-  }
-</section>
-
-<app-semaforo />
-</div>
-
-<app-globo-inicio class="globo-hero" />
-
+<!-- Inicio «central»: la portada con el globo (y encima el saludo, el dinero, lo próximo y la música) y debajo el equipo en dos columnas.
+     Las tarjetas salen de <app-panel>, que las carga una sola vez; aquí solo se colocan. -->
 <app-panel />
 
-<h2 class="seccion"><span>El equipo de casa</span><code>en directo</code></h2>
+<section class="ch">
+  <app-globo-inicio class="ch__globo" />
+  <header class="ch__hola">
+    <div class="ch__saludo">
+      <p class="ch__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time>{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) }}</time></p>
+      <h2 class="ch__titulo">{{ saludo() }}@if (nombre()) {, <em>{{ nombre() }}</em>}</h2>
+      <app-bienvenida-frase [nombre]="nombre()" [equipo]="a()?.equipo ?? 'tu equipo'" />
+    </div>
+    <app-semaforo class="ch__estado" />
+  </header>
+  <div class="ch__izq">@if (panel()?.tDinero(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
+  <div class="ch__der">@if (panel()?.tAgenda(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }@if (panel()?.tRecordatorios(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
+  <div class="ch__dock">@if (panel()?.tMusica(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
+</section>
 
 <div class="equipo">
   <div class="equipo__izq">
@@ -79,8 +64,55 @@
 </section>
   </div>
   <div class="equipo__der">
+    <div class="equipo__par">
+      @if (panel()?.tCoche(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }
+      <div class="equipo__pila">@if (panel()?.tGasolina(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }@if (panel()?.tTiempo(); as t) { <div class="slot "><ng-container [ngTemplateOutlet]="t" /></div> }</div>
+    </div>
     <app-mando-pc [volumen]="a()?.volumen ?? null" [brillo]="a()?.brillo ?? null" [enLinea]="real()" />
-    <div class="pc-vivo__datos">
+    <article class="tarjeta bloque bloque--grafica">
+    <header class="bloque__cabeza">
+      <h3>Últimos dos minutos</h3>
+      <code>cpu y memoria · %</code>
+    </header>
+    <div class="linea-tiempo" #historial role="img" aria-label="Evolución de CPU y memoria en los últimos dos minutos"></div>
+  </article>
+  </div>
+</div>
+
+<!-- El Inicio de antes (cabecera con foto y atajos, batería, espacio, «ahora mismo», discos, la línea y la ficha del equipo), tal cual estaba.
+     Para recuperarlo: `antiguo = true` en inicio.ts. -->
+@if (antiguo) {
+<div class="cabecera">
+<section class="hola">
+  <img class="hola__foto" [src]="perfil.foto()" width="72" height="72" alt="">
+  <div class="hola__texto">
+    <p class="hola__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time class="hola__hora">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</time></p>
+    <h2 class="hola__titulo">{{ saludo() }}@if (nombre()) {, {{ nombre() }}}</h2>
+    <app-bienvenida-frase [nombre]="nombre()" [equipo]="a()?.equipo ?? 'tu equipo'" />
+    <nav class="rapidos" aria-label="Crear">
+      <button type="button" (click)="nuevoGasto()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Gasto</button>
+      <a routerLink="/notas" [queryParams]="{ nueva: 1 }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6" /></svg>Nota</a>
+      <a routerLink="/agenda" [queryParams]="{ nuevo: 'evento' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4" /></svg>Evento</a>
+      <a routerLink="/agenda" [queryParams]="{ nuevo: 'recordatorio' }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /></svg>Recordatorio</a>
+    </nav>
+  </div>
+  @if (a()) {
+    @if (real()) {
+      <p class="origen origen--ok"><span class="origen__punto"></span>datos reales del PC</p>
+    } @else {
+      <p class="origen origen--aviso" title="Arranca el agente de Windows para ver tu PC de verdad">
+        <span class="origen__punto"></span>midiendo Docker · arranca el agente
+      </p>
+    }
+  }
+</section>
+
+<app-semaforo />
+</div>
+
+<h2 class="seccion"><span>El equipo de casa</span><code>en directo</code></h2>
+
+<div class="pc-vivo__datos">
     @if (a()?.bateria != null) {
       <section class="modulo"><h4>Batería</h4><app-bateria [nivel]="a()!.bateria!" [cargando]="!!a()!.cargando" /></section>
     }
@@ -99,14 +131,9 @@
       <a class="pc-vivo__enlace" routerLink="/pc">Salud, órdenes y tendencia en «Mi PC» →</a>
     </section>
   </div>
-    <section class="fila">
-  <article class="tarjeta bloque bloque--grafica">
-    <header class="bloque__cabeza">
-      <h3>Últimos dos minutos</h3>
-      <code>cpu y memoria · %</code>
-    </header>
-    <div class="linea-tiempo" #historial role="img" aria-label="Evolución de CPU y memoria en los últimos dos minutos"></div>
-  </article>
+    
+<section class="fila">
+  
 
   <article class="tarjeta bloque">
     <header class="bloque__cabeza">
@@ -125,8 +152,6 @@
     </ul>
   </article>
 </section>
-  </div>
-</div>
 
 <app-linea />
 
@@ -144,3 +169,5 @@
     <div><dt>encendido</dt><dd>{{ encendido() }}</dd></div>
   </dl>
 </section>
+
+}
