@@ -105,7 +105,7 @@
           <button class="check" type="button" (click)="hecho($event, a)" [attr.aria-label]="'Marcar «' + a.titulo + '» como hecho'"></button>
           <span><strong>{{ a.titulo }}</strong><small [class.tarde]="cuando(a).startsWith('Atrasado')">{{ cuando(a) }}</small></span>
         </li>
-      } @empty { @if (agenda()) { <li class="vacio">Todo hecho 🎉</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
+      } @empty { @if (agenda()) { <li class="vacio">Todo hecho</li> } @else { <li class="esqueleto" aria-label="Cargando"><i></i><i></i><i></i></li> } }
     </ul>
   </a>
 </ng-template>

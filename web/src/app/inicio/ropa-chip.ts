@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { ICONOS } from '../core/iconos';
 
 interface EstadoRopa { tendida: boolean; desde: string | null; lluvia: { minutos: number; mm: number } | null; aviso: string | null; }
 
@@ -14,13 +15,13 @@ interface EstadoRopa { tendida: boolean; desde: string | null; lluvia: { minutos
       @if (r.tendida) {
         <div class="ropa" [class.ropa--lluvia]="!!r.lluvia" role="status">
           <span class="ropa__texto">
-            <strong>🧺 Ropa tendida desde las {{ hora(r.desde!) }}</strong>
+            <strong>Ropa tendida desde las {{ hora(r.desde!) }}</strong>
             <small>{{ r.aviso ?? 'De momento no se espera lluvia.' }}</small>
           </span>
           <button type="button" class="ropa__boton" (click)="recoger()" [disabled]="ocupado()">Recogida</button>
         </div>
       } @else {
-        <button type="button" class="ropa__tender" (click)="tender()" [disabled]="ocupado()">🧺 Tender la ropa</button>
+        <button type="button" class="ropa__tender" (click)="tender()" [disabled]="ocupado()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.camiseta" /></svg> Tender la ropa</button>
       }
     }
   `,
@@ -32,11 +33,12 @@ interface EstadoRopa { tendida: boolean; desde: string | null; lluvia: { minutos
     .ropa__texto small { color: var(--soft); font-size: .8rem; }
     .ropa__boton, .ropa__tender { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: none; color: var(--texto); font: inherit; cursor: pointer; }
     .ropa__boton { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
-    .ropa__tender { color: var(--soft); font-size: .85rem; min-height: 40px; }
+    .ropa__tender .icon { width: 16px; height: 16px; stroke-width: 1.5; } .ropa__tender { display: inline-flex; align-items: center; gap: 8px; color: var(--soft); font-size: .85rem; min-height: 40px; }
   `,
 })
 export class RopaChip implements OnDestroy {
   private readonly http = inject(HttpClient);
+  protected readonly iconos = ICONOS;
   protected readonly e = signal<EstadoRopa | null>(null);
   protected readonly ocupado = signal(false);
   // mientras esté tendida se mira cada 5 minutos (el servidor guarda la previsión de lluvia ese tiempo)

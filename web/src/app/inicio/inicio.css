@@ -15,19 +15,13 @@
   display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: clamp(22px, 3vw, 36px);
   background: var(--negra-vidrio); border: 1px solid var(--negra-linea); border-radius: var(--radio-xl);
 }
-/* trama de puntos del color de acento, que se funde hacia la izquierda */
-.hola::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand) 30%, transparent) 1.3px, transparent 1.6px) 0 0 / 14px 14px;
-  mask: linear-gradient(90deg, transparent 40%, #000);
-}
 .hola > * { position: relative; }
 .hola__texto { flex: 1 1 280px; min-width: 0; }
-.hola__foto { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--brand); box-shadow: 0 0 0 3px var(--negra), 0 0 0 6px var(--brand); flex: none; }
+.hola__foto { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--brand); box-shadow: 0 0 0 1px var(--negra-linea); flex: none; }
 .hola__fecha { font-size: var(--step-small); font-weight: 500; color: var(--brand-2); margin-bottom: 8px; }
 .hola__fecha::first-letter { text-transform: uppercase; }
 .hola__hora { font-variant-numeric: tabular-nums; }
-.hola__titulo { font: var(--peso-ligero) clamp(2rem, 1.2rem + 3vw, 3.6rem)/1 var(--font-text); letter-spacing: -0.045em; }
+.hola__titulo { font: var(--peso-ligero) clamp(2rem, 1.2rem + 3vw, 3.6rem)/1.05 var(--font-text); letter-spacing: -0.04em; }
 .hola__lead { margin-top: 10px; color: var(--soft); }
 .hola__lead strong { color: var(--on-negra); font-weight: 500; }
 .rapidos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
@@ -39,7 +33,7 @@
 .rapidos .icon { width: 17px; height: 17px; color: var(--brand-2); }
 .rapidos :first-child { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 .rapidos :first-child .icon { color: inherit; }
-.rapidos :active { transform: scale(0.95); }
+.rapidos :active { transform: scale(0.97); }
 @media (hover: hover) { .rapidos a:hover, .rapidos button:hover { border-color: var(--brand-2); } }
 .seccion { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--tono-titulo); font: var(--peso-ligero) var(--step-head)/1 var(--font-text); letter-spacing: -0.035em; }
 .seccion code { font: 500 12px/1 var(--font-code); color: var(--ok); text-transform: none; letter-spacing: 0; }
@@ -54,8 +48,8 @@
 
 /* ---------- KPI ---------- */
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--hueco, 14px); }
-.kpi { display: flex; flex-direction: column; gap: 12px; padding: 22px; min-height: 230px; border-radius: var(--radio); transition: transform 300ms var(--ease-out), border-color 300ms ease; }
-@media (hover: hover) { .kpi:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--brand) 45%, var(--linea)); } }
+.kpi { display: flex; flex-direction: column; gap: 12px; padding: 24px; min-height: 230px; border-radius: var(--radio); transition: border-color 160ms ease; }
+@media (hover: hover) { .kpi:hover { border-color: color-mix(in srgb, var(--texto) 22%, var(--linea)); } }
 .kpi__cabeza { display: flex; align-items: center; gap: 10px; }
 .kpi__cabeza h3 { font-size: var(--step-small); font-weight: 500; color: var(--soft); }
 .kpi__icono { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--tono-icono-fondo); color: var(--tono-icono); }
@@ -91,7 +85,7 @@
 
 .ficha { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
 .ficha div { padding: 14px 16px; border-radius: var(--radio-m); background: var(--tarjeta-2); min-width: 0; }
-.ficha dt { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); }
+.ficha dt { font-size: 12px; font-weight: 500; color: var(--soft); }
 .ficha dd { margin: 4px 0 0; font-weight: 500; overflow-wrap: anywhere; }
 
 /* ---------- Tamaños ---------- */
@@ -117,30 +111,27 @@
 .pc-vivo__cab h3 { font: var(--peso-ligero) var(--step-head)/1.1 var(--font-text); letter-spacing: -0.035em; }
 .pc-vivo__cab code { font-size: .78rem; color: var(--soft); }
 .pc-vivo__marco { position: relative; }
-.pc-vivo__marco::before { content: ''; position: absolute; inset: 6% 10%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 22%, transparent), transparent 78%); filter: blur(34px); pointer-events: none; }
 .pc-vivo__escena { position: relative; height: clamp(320px, 54vw, 500px); -webkit-mask-image: radial-gradient(76% 78% at 50% 50%, #000 60%, transparent 100%); mask-image: radial-gradient(76% 78% at 50% 50%, #000 60%, transparent 100%); }
 .pc-vivo__escena app-pc-3d { position: absolute; inset: 0; }
 .etiquetas { list-style: none; margin: 0; padding: 0; }
 .etq { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: var(--tarjeta); box-shadow: var(--sombra-flota); font-size: .8rem; color: var(--soft); white-space: nowrap; pointer-events: auto; }
 .etq .icon { width: 16px; height: 16px; color: var(--acento); }
-.etq b { color: var(--texto); font: 600 .92rem/1 var(--font-text); font-variant-numeric: tabular-nums; }
+.etq b { color: var(--texto); font: 500 .92rem/1 var(--font-text); font-variant-numeric: tabular-nums; }
 @media (min-width: 761px) {
   .etiquetas { position: absolute; inset: 0; pointer-events: none; }
-  .etq { position: absolute; animation: etq-flota 6s ease-in-out infinite alternate; }
-  .etq--cpu { left: 4%; top: 12%; } .etq--mem { right: 4%; top: 20%; animation-delay: -1.5s; } .etq--disco { right: 7%; bottom: 14%; animation-delay: -3s; }
-  .etq--red { left: 6%; bottom: 20%; animation-delay: -4.5s; } .etq--on { left: 0; right: 0; bottom: 1%; margin-inline: auto; width: fit-content; animation: none; }
+  .etq { position: absolute; }
+  .etq--cpu { left: 4%; top: 12%; } .etq--mem { right: 4%; top: 20%; } .etq--disco { right: 7%; bottom: 14%; }
+  .etq--red { left: 6%; bottom: 20%; } .etq--on { left: 0; right: 0; bottom: 1%; margin-inline: auto; width: fit-content; }
 }
 @media (max-width: 760px) { .etiquetas { display: flex; flex-wrap: wrap; gap: 8px; } }
-@keyframes etq-flota { to { transform: translateY(-7px); } }
 .pc-vivo__datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 26px 44px; }
 .modulo { display: grid; align-content: start; gap: 14px; min-width: 0; padding-top: 14px; border-top: 1px solid var(--linea); }
-.modulo h4 { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+.modulo h4 { font-size: .8rem; font-weight: 500; color: var(--soft); }
 .modulo dl { display: grid; gap: 10px; margin: 0; }
 .modulo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .9rem; }
 .modulo dt { color: var(--soft); }
 .modulo dd { margin: 0; font: 600 .92rem/1.2 var(--font-code); font-variant-numeric: tabular-nums; text-align: right; }
 .pc-vivo__enlace { color: var(--acento); font-weight: 600; font-size: .88rem; text-decoration: none; }
-@media (prefers-reduced-motion: reduce) { .etq { animation: none; } }
 
 /* —— Inicio «central»: la portada con el globo y el equipo en dos columnas —— */
 .globo-hero { margin-top: 4px; }
@@ -159,7 +150,8 @@ app-panel { display: none; }
 .ch__globo { grid-area: 1 / 1 / -1 / -1; height: auto; min-height: 0; }
 .ch__hola { grid-area: 1 / 1 / 2 / -1; position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 26px 28px 0; pointer-events: none; }
 .ch__hola > * { pointer-events: auto; }
-.ch__fecha { margin: 0; font-size: .85rem; color: var(--soft); text-transform: capitalize; }
+.ch__fecha { margin: 0; font-size: .85rem; color: var(--soft); }
+.ch__fecha::first-letter { text-transform: uppercase; }
 .ch__titulo { margin: 4px 0 6px; font: var(--peso-ligero) var(--step-saludo)/1.05 var(--font-text); letter-spacing: -0.04em; }
 .ch__titulo em { font-style: normal; color: var(--brand); }
 .ch__estado { flex: none; width: min(360px, 34%); }

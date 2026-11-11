@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { RecargaService } from '../core/recarga';
+import { ICONOS } from '../core/iconos';
 
 interface Lugar { nombre: string; lat: number; lon: number; region?: string | null; }
 interface Actual { temperatura: number; sensacion: number; codigo: number; deDia: boolean; viento: number; humedad: number; texto: string; icono: string; }
@@ -18,7 +19,7 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
       <span class="ico" aria-hidden="true">{{ datos()?.ahora?.icono ?? '🌤️' }}</span>
       <h3>El tiempo</h3>
       @if (datos()?.lugar && !buscando()) {
-        <button type="button" class="lugar" (click)="empezarBusqueda()" [title]="datos()!.lugar!.region ?? ''">📍 {{ datos()!.lugar!.nombre }}</button>
+        <button type="button" class="lugar" (click)="empezarBusqueda()" [title]="datos()!.lugar!.region ?? ''"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.pin" /></svg> {{ datos()!.lugar!.nombre }}</button>
       }
       @if (datos()?.ahora && !buscando()) {
         <button type="button" class="avisos" [class.avisos--on]="datos()!.avisos" role="switch" [attr.aria-checked]="datos()!.avisos"
@@ -60,15 +61,15 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
         @if (hoy(); as d) {
           <div class="ahora__dia">
             <span><b>{{ d.maxima | number: '1.0-0' }}°</b> / {{ d.minima | number: '1.0-0' }}°</span>
-            <span>💧 {{ d.lluvia }} %</span>
+            <span class="con-icono"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.gota" /></svg> {{ d.lluvia }} %</span>
           </div>
         }
       </div>
       <ul class="datos" aria-label="Detalles de ahora">
-        <li><span aria-hidden="true">🌡️</span>Sensación {{ a.sensacion | number: '1.0-0' }}°</li>
-        <li><span aria-hidden="true">💧</span>Humedad {{ a.humedad }} %</li>
-        <li><span aria-hidden="true">💨</span>{{ a.viento | number: '1.0-0' }} km/h</li>
-        @if (hoy()?.sale) { <li><span aria-hidden="true">☀️</span>{{ hoy()!.sale }}–{{ hoy()!.pone }}</li> }
+        <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.termometro" /></svg>Sensación {{ a.sensacion | number: '1.0-0' }}°</li>
+        <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.gota" /></svg>Humedad {{ a.humedad }} %</li>
+        <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.viento" /></svg>{{ a.viento | number: '1.0-0' }} km/h</li>
+        @if (hoy()?.sale) { <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconos.sol" /></svg>{{ hoy()!.sale }}–{{ hoy()!.pone }}</li> }
       </ul>
 
       <ol class="horas" aria-label="Próximas horas">
@@ -89,7 +90,7 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
             <span class="semana__i" aria-hidden="true">{{ d.icono }}</span>
             <b>{{ d.maxima | number: '1.0-0' }}°</b>
             <span class="semana__min">{{ d.minima | number: '1.0-0' }}°</span>
-            <small [class.oculto]="d.lluvia < 20">💧{{ d.lluvia }}%</small>
+            <small [class.oculto]="d.lluvia < 20">{{ d.lluvia }} %</small>
           </li>
         }
       </ul>
@@ -102,10 +103,12 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
   styles: `
     :host { --t-gap: 12px; }
     .cab { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .cab h3 { flex: 1; min-width: 0; font: 700 0.92rem/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -0.02em; }
+    .cab h3 { flex: 1; min-width: 0; font: 500 0.95rem/1.1 var(--font-text); letter-spacing: -0.01em; }
     .ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--brand) 16%, transparent); font-size: 18px; }
     .lugar { max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-radius: 999px; padding: 5px 11px; background: var(--tarjeta-2); color: var(--soft); font: 500 12px/1.2 var(--font-text); cursor: pointer; }
     .lugar:hover { color: var(--texto); }
+    .lugar { display: inline-flex; align-items: center; gap: 6px; } .lugar .icon, .datos .icon, .con-icono .icon { width: 16px; height: 16px; stroke-width: 1.5; }
+    .con-icono { display: inline-flex; align-items: center; gap: 6px; } .datos li { display: flex; align-items: center; gap: 8px; } .datos .icon { color: var(--soft); }
     .sub { margin: 0; font-size: 13px; color: var(--soft); }
     .enlace { border: 0; background: none; padding: 0; color: var(--acento); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; justify-self: start; }
 
@@ -162,6 +165,7 @@ interface Respuesta { lugar: Lugar | null; ahora?: Actual; horas?: Hora[]; dias?
 })
 export class Tiempo {
   private readonly http = inject(HttpClient);
+  protected readonly iconos = ICONOS;
   protected readonly datos = signal<Respuesta | null>(null);
   protected readonly error = signal('');
   protected readonly buscando = signal(false);

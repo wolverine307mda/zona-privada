@@ -55,7 +55,7 @@ export function cuentas(eventos: readonly Aparicion[], ahora: number): Cuenta[] 
     :host { display: grid; gap: 8px; }
     :host:empty { display: none; }
     .cuenta { display: grid; gap: 2px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--c, var(--brand)) 12%, transparent); border-left: 3px solid var(--c, var(--brand)); }
-    .cuenta__tipo { font: 600 11px/1 var(--font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--soft); }
+    .cuenta__tipo { font: 500 12px/1 var(--font-text); color: var(--soft); }
     .cuenta__titulo { font: 600 15px/1.25 var(--font-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cuenta__tiempo { display: flex; align-items: baseline; gap: 3px; font-variant-numeric: tabular-nums; }
     .cuenta__tiempo b { font: 600 22px/1.1 var(--font-display); margin-left: 6px; }

@@ -53,7 +53,7 @@ const NOMBRES: Record<string, string> = { bat: 'Batería', ssd: 'Disco', ram: 'M
     .p3-etqs { position: absolute; inset: 0; pointer-events: none; }
     .p3-et { position: absolute; left: 0; top: 0; font-size: 12px; line-height: 1.3; white-space: nowrap; color: var(--texto); padding: 3px 9px; border-radius: 10px; border: 1px solid var(--vidrio-borde);
       background: color-mix(in srgb, var(--tarjeta) 82%, transparent); pointer-events: auto; cursor: pointer; border-width: 1px; }
-    .p3-et b { display: block; font: 500 10.5px var(--font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--tono-titulo, var(--brand)); }
+    .p3-et b { display: block; font: 500 12px var(--font-text); color: var(--tono-titulo, var(--brand)); }
     .p3-et.activo { border-color: var(--brand); font-weight: 600; } .p3-et.activo b { color: var(--brand); }
     .p3-detalle { position: absolute; left: 14px; top: 14px; width: 200px; padding: 12px 14px; border-radius: 18px; font-size: 13px; background: color-mix(in srgb, var(--tarjeta) 88%, transparent); border: 1px solid var(--vidrio-borde); backdrop-filter: blur(8px); }
     .p3-detalle p { margin: 0; color: var(--soft); } .p3-detalle h4 { margin: 0 0 4px; font: 700 11px var(--font-display); letter-spacing: .02em; color: var(--tono-titulo, var(--brand)); text-transform: uppercase; }

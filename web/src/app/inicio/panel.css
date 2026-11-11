@@ -39,7 +39,7 @@
 .ico--verde { background: rgba(30, 215, 96, 0.16); color: #1ed760; }
 .chip { flex: none; font-style: normal; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: var(--brand); color: var(--on-brand); font-weight: 600; white-space: nowrap; }
 .chip--suave { background: var(--tarjeta-2); color: var(--soft); max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
-.etq { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--soft); }
+.etq { font-size: 12px; font-weight: 500; color: var(--soft); }
 .cifra { font: var(--peso-ligero) clamp(1.8rem, 1.2rem + 1.4vw, 2.6rem)/1 var(--font-text); letter-spacing: -0.04em; white-space: nowrap; }
 .cifra small { font: 500 13px/1 var(--font-text); letter-spacing: 0; color: var(--soft); }
 .sub { font-size: 13px; color: var(--soft); }
@@ -118,7 +118,7 @@ ul { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 
 .coche__anillo > span { display: flex; flex-direction: column; align-items: center; }
 .coche__anillo strong { font: 700 2.3rem/1 var(--font-display); letter-spacing: -0.05em; }
 .coche__anillo strong small { font-size: 0.45em; color: var(--soft); }
-.coche__anillo em { font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); }
+.coche__anillo em { font-style: normal; font-size: 12px; color: var(--soft); }
 .coche__pie { color: var(--soft); font-size: 14px; }
 .coche__pie strong { color: var(--texto); }
 

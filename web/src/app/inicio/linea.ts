@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { ICONOS, Icono } from '../core/iconos';
 import { Esqueleto } from '../ui';
 
 interface Suceso { hora: string; tipo: string; titulo: string; detalle: string; }
 
-const ICONO: Record<string, string> = { dinero: '💸', foto: '📷', pc: '🖥️', acceso: '🔓', alerta: '🚨' };
+const ICONO: Record<string, Icono> = { dinero: 'euro', foto: 'camara', pc: 'monitor', acceso: 'candado', alerta: 'alerta' };
 const hoyIso = (): string => new Date().toLocaleDateString('sv-SE');
 
 // La línea del tiempo de un día: gastos, salidas de fotografía, órdenes al PC y accesos a la app, todo en orden.
@@ -28,7 +29,7 @@ const hoyIso = (): string => new Date().toLocaleDateString('sv-SE');
           @for (s of sucesos(); track s.hora + s.titulo) {
             <li [attr.data-tipo]="s.tipo">
               <time>{{ hora(s.hora) }}</time>
-              <span class="ico" aria-hidden="true">{{ icono(s.tipo) }}</span>
+              <span class="ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icono(s.tipo)" /></svg></span>
               <span class="txt"><strong>{{ s.titulo }}</strong><small>{{ s.detalle }}</small></span>
             </li>
           }
@@ -38,6 +39,7 @@ const hoyIso = (): string => new Date().toLocaleDateString('sv-SE');
   `,
   styles: `
     :host { display: block; }
+    .ico { display: grid; place-items: center; color: var(--soft); } .ico .icon { width: 18px; height: 18px; stroke-width: 1.5; }
     .linea { padding: 16px 18px; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     header h3 { margin: 0; font: 600 1rem/1.2 var(--font-display); }
@@ -64,7 +66,7 @@ export class Linea implements OnInit {
 
   ngOnInit(): void { void this.leer(); }
 
-  protected icono(t: string): string { return ICONO[t] ?? '•'; }
+  protected icono(t: string): string { return ICONOS[ICONO[t] ?? 'punto']; }
   protected hora(iso: string): string { return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
 
   protected mover(d: number): void {

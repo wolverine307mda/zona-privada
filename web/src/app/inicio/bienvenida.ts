@@ -15,7 +15,7 @@ export interface Frase { id: string; texto: string; categoria: string; }
 type Plantillas = Record<string, string[]>;
 // Las frases, por situación. {n} = nombre, {x} = el dato de la situación (festivo, concepto, número…).
 export const FRASES: Plantillas = {
-  cumple: ['Hoy cumple años {x}: no se te olvide felicitar.', '🎂 {x} está de cumpleaños. Un mensaje sienta de maravilla.', 'Día de cumpleaños de {x}. Ya sabes qué toca.', 'Hoy es el cumple de {x}: un detalle, aunque sea pequeño.'],
+  cumple: ['Hoy cumple años {x}: no se te olvide felicitar.', '{x} está de cumpleaños. Un mensaje sienta de maravilla.', 'Día de cumpleaños de {x}. Ya sabes qué toca.', 'Hoy es el cumple de {x}: un detalle, aunque sea pequeño.'],
   festivo: ['Hoy es fiesta: {x}. Sin prisas.', '{x}: día de descanso, aprovéchalo.', 'Festivo por {x}. Que el reloj mande lo justo.', 'Hoy no se trabaja: {x}.'],
   gasto: ['Ayer el gasto más grande fue {x}.', 'Lo más caro de ayer: {x}.', 'Ayer te llevaste el gasto de {x}.', 'Para tener en cuenta: ayer, {x}.'],
   racha: ['Llevas {x} días seguidos con «{n}». Así se hace.', 'Racha de {x} días en «{n}». Constancia pura.', '«{n}»: {x} días sin fallar.', 'Otro día más en la racha de «{n}» ({x}).'],
