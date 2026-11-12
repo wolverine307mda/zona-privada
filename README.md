@@ -231,7 +231,7 @@ Resumen:
 | `ZONA_HORARIA` | no (`Europe/Madrid`) | repeticiones y avisos en hora local |
 | `AGENTE_TOKEN` | para el agente | token compartido API ↔ agente |
 | `CARPETA_*` | no | carpetas del PC que se ven en Documentos |
-| `CORREO_*` | no | avisos por correo (SMTP) |
+| `CORREO_*` | no | avisos por correo (SMTP; `CORREO_DE` = remitente) |
 | `WHATSAPP_*` | no | avisos por WhatsApp (CallMeBot) |
 | `TELEGRAM_TOKEN` | no | bot de Telegram (@BotFather) |
 | `SPOTIFY_*`, `GOOGLE_*` | no | cuentas enlazadas por OAuth |

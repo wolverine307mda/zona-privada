@@ -80,6 +80,7 @@ services:
       Correo__Puerto: ${CORREO_PUERTO:-587}
       Correo__Usuario: ${CORREO_USUARIO:-}
       Correo__Clave: ${CORREO_CLAVE:-}
+      Correo__De: ${CORREO_DE:-}
       Correo__Para: ${CORREO_PARA:-}
       WhatsApp__Telefono: ${WHATSAPP_TELEFONO:-}
       WhatsApp__ApiKey: ${WHATSAPP_APIKEY:-}

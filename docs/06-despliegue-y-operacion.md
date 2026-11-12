@@ -36,7 +36,7 @@ docker compose down                              # parar (los volúmenes y datos
 | `CARPETA_DOCUMENTOS` … `CARPETA_VIDEOS` | montajes en `Archivos:Base=/carpetas` | rutas de Windows con `/` |
 | `URL_PUBLICA` | `App:UrlPublica` | enlaces de correos y vueltas OAuth |
 | `ZONA_HORARIA` | `App:Zona` | por defecto `Europe/Madrid` |
-| `CORREO_SERVIDOR/PUERTO/USUARIO/CLAVE/PARA` | `Correo:*` | SMTP |
+| `CORREO_SERVIDOR/PUERTO/USUARIO/CLAVE/DE/PARA` | `Correo:*` | SMTP con STARTTLS; `CORREO_DE` es el remitente (p. ej. `avisos@wolvem.dev` con Resend) |
 | `WHATSAPP_TELEFONO/APIKEY` | `WhatsApp:*` | CallMeBot |
 | `TELEGRAM_TOKEN` | `Telegram:Token` | bot |
 | `SPOTIFY_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET` | `Spotify:*`, `Google:*` | OAuth |
