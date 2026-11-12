@@ -1,7 +1,6 @@
-# Zona privada en el equipo de casa: base de datos, API (con el front dentro), registros y Tailscale Funnel (o Cloudflare Tunnel).
-#   docker compose up -d --build                    -> todo menos la salida a Internet (prueba en http://localhost:8080)
-#   docker compose --profile publico up -d --build  -> también Tailscale Funnel: la app sale por Internet con HTTPS
-#   docker compose --profile tunel up -d --build    -> alternativa con Cloudflare Tunnel
+# Zona privada en el equipo de casa: base de datos, API (con el front dentro), registros, copias y Cloudflare Tunnel.
+#   docker compose up -d --build   -> todo: en local http://localhost:8080 y en Internet https://app.wolvem.dev (HTTPS por Cloudflare)
+# Necesita CLOUDFLARE_TUNNEL_TOKEN en .env (sin él, Compose se niega a arrancar).
 name: zona-privada
 
 # registros de Docker con tope: sin esto el json-file crece sin límite
@@ -56,7 +55,7 @@ services:
       start_period: 40s
     environment:
       # solo se aceptan estos nombres de host (la cabecera Host); separados por «;»
-      AllowedHosts: ${ALLOWED_HOSTS:-*.ts.net;localhost;127.0.0.1;api;equipo-de-casa}
+      AllowedHosts: ${ALLOWED_HOSTS:-app.wolvem.dev;localhost;127.0.0.1;api;equipo-de-casa}
       # true = se pueden subir .exe, .bat, .ps1… a Documentos (por defecto, no)
       Archivos__PermitirEjecutables: ${PERMITIR_EJECUTABLES:-false}
       ConnectionStrings__Postgres: Host=db;Port=5432;Database=zonaprivada;Username=mda;Password=${POSTGRES_PASSWORD};Gss Encryption Mode=Disable
@@ -124,30 +123,10 @@ services:
   tunel:
     image: cloudflare/cloudflared:2026.10.6
     restart: unless-stopped
-    profiles: ["tunel"]
     command: tunnel --no-autoupdate run
     environment:
-      # solo hace falta con el perfil «tunel»; sin él, el resto arranca igual
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
-    depends_on:
-      - api
-
-  # Tailscale Funnel: da al equipo una dirección HTTPS pública y fija (https://equipo-de-casa.<tu-red>.ts.net)
-  # sin abrir puertos del router. Usa TS_AUTHKEY del .env solo la primera vez; luego guarda su estado.
-  #   docker compose --profile publico up -d
-  tailscale:
-    image: tailscale/tailscale:v1.104.4
-    hostname: equipo-de-casa
-    restart: unless-stopped
-    profiles: ["publico"]
-    environment:
-      TS_AUTHKEY: ${TS_AUTHKEY:-}
-      TS_STATE_DIR: /var/lib/tailscale
-      TS_SERVE_CONFIG: /config/serve.json
-      TS_USERSPACE: "true"
-    volumes:
-      - tailscale:/var/lib/tailscale
-      - ./tailscale:/config:ro
+      # la ruta app.wolvem.dev → http://api:8080 se configura en Cloudflare (Zero Trust > Networks > Tunnels), no aquí
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Falta CLOUDFLARE_TUNNEL_TOKEN en .env (Cloudflare Zero Trust > Networks > Tunnels)}
     depends_on:
       - api
 
@@ -202,7 +181,6 @@ volumes:
   seq:
   claves:
   derivados:
-  tailscale:
   homeassistant:
   adguard-trabajo:
   adguard-conf:
