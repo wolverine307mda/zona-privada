@@ -34,7 +34,7 @@ public class SemaforoTests
     [Fact]
     public void El_global_es_el_peor_de_las_areas_y_cada_una_explica_su_motivo()
     {
-        var s = SemaforoVida.Evaluar(Sano() with { PresupuestosPasados = 2, FunnelResponde = false });
+        var s = SemaforoVida.Evaluar(Sano() with { PresupuestosPasados = 2, DireccionResponde = false });
         Assert.Equal("rojo", s.Estado);
         Assert.Equal("ambar", Estado(s, "dinero"));
         Assert.Contains("Internet", s.Areas.Single(a => a.Id == "red").Motivo);

@@ -8,7 +8,7 @@
 - La app sale a Internet por un túnel de Cloudflare en **https://app.wolvem.dev** (servicio `tunel`, ya sin perfil: `docker compose up -d --build` lo arranca; `CLOUDFLARE_TUNNEL_TOKEN` es obligatorio). Sin Cloudflare Access.
 - Quitado de Docker: servicio y volumen `tailscale`, `tailscale-pruebas` (entorno de pruebas, ahora sin salida a Internet), carpeta `tailscale/` y `TS_AUTHKEY`. El cliente de Tailscale de Windows no se ha tocado.
 - CORS de `/api/salud` y `/api/publico/*`: ahora `https://wolvem.dev` (portafolio) y `https://wolverine307mda.github.io`.
-- **Pendiente**: el código C# del Funnel, del lanzador de escritorio y de «aparatos de la red» aún menciona Tailscale (se decide aparte). Los volúmenes `zona-privada_tailscale` y `zona-privada_tailscale-pruebas` siguen en Docker hasta que se confirme su borrado.
+- Vigilante de la dirección pública renombrado (`VigilanteFunnel` → `VigilanteDireccion`, `EstadoDireccion`, `DireccionResponde`) y sus avisos ahora hablan del túnel de Cloudflare. **Pendiente**: el lanzador de escritorio (`Bandeja.cs`, `TailscaleNativa.cs`, `Logica/Tailscale.cs`) sigue con Tailscale y su menú «Salida a Internet» ya no apaga el túnel. Los volúmenes `zona-privada_tailscale` y `zona-privada_tailscale-pruebas` siguen en Docker hasta que se confirme su borrado.
 - Al cambiar de dominio: registrar de nuevo las llaves de acceso, reinstalar la PWA del iPhone (y aceptar las notificaciones) y poner las URL de vuelta de Spotify y Google en sus consolas.
 
 ## ⚠️ Lo primero: esto se escribió SIN poder compilar C#

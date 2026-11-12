@@ -97,7 +97,7 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.Name = LlamadasExternas.CookieSesion = builder.Configuration["App:CookieNombre"] is { Length: > 0 } nombreCookie ? nombreCookie : "mda.sesion";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict;
-    // en producción la cookie solo viaja por HTTPS (el proxy, Tailscale Funnel, avisa con X-Forwarded-Proto)
+    // en producción la cookie solo viaja por HTTPS (el proxy, el túnel de Cloudflare, avisa con X-Forwarded-Proto)
     // App:CookieSegura=peticion (versión de escritorio por http://localhost): Secure solo cuando la petición llega por HTTPS
     o.Cookie.SecurePolicy = builder.Environment.IsProduction() && builder.Configuration["App:CookieSegura"] != "peticion" ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     // la cookie dura lo mismo que el tope de la sesión apuntada (Sesiones.Maxima): antes caducaba a las 8 h y pedía entrar de nuevo.
@@ -166,11 +166,11 @@ builder.Services.AddCors(o => o.AddPolicy(WebPublica, p => p
     .WithOrigins(builder.Configuration.GetSection("WebPublica:Origenes").Get<string[]>() ?? ["https://wolvem.dev", "https://wolverine307mda.github.io"])
     .WithMethods("GET")));
 
-// ---- Detrás de Tailscale Funnel: respetar el esquema y la IP originales ----
+// ---- Detrás del túnel de Cloudflare: respetar el esquema y la IP originales ----
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // la API solo es accesible desde la red interna de Docker (tailscale) y desde 127.0.0.1, así que se confía en el proxy.
+    // la API solo es accesible desde la red interna de Docker (cloudflared) y desde 127.0.0.1, así que se confía en el proxy.
     // ForwardLimit=1 (por defecto): se toma la IP que añadió el último proxy, no la que escriba el visitante
     o.KnownIPNetworks.Clear();
     o.KnownProxies.Clear();
@@ -201,8 +201,8 @@ builder.Services.AddHostedService<VigilanteRed>();
 builder.Services.AddSingleton<Carpetas>();
 // miniaturas WebP de la galería pública (sin EXIF)
 builder.Services.AddSingleton<Derivados>();
-builder.Services.AddSingleton<EstadoFunnel>();
-builder.Services.AddHostedService<VigilanteFunnel>();
+builder.Services.AddSingleton<EstadoDireccion>();
+builder.Services.AddHostedService<VigilanteDireccion>();
 builder.Services.AddSingleton<Sondas>();
 builder.Services.AddSingleton<LlamadasEnVivo>();
 builder.Services.AddSingleton<GeoIp>();

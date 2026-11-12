@@ -147,8 +147,8 @@ public class SeguridadApiTests(ModulosFactory factory) : IClassFixture<ModulosFa
     {
         var req = new HttpRequestMessage(HttpMethod.Post, "/api/sistema/agente") { Content = JsonContent.Create(new { cpu = 1 }) };
         req.Headers.Add("X-Agente-Token", ApiFactory.Token);
-        // llega de Internet por el Funnel: UseForwardedHeaders ya ha retirado X-Forwarded-For y deja X-Original-For
-        // (el servidor de pruebas no tiene IP remota y el middleware no la copia; en producción se comprueba con curl al Funnel)
+        // llega de Internet por el túnel: UseForwardedHeaders ya ha retirado X-Forwarded-For y deja X-Original-For
+        // (el servidor de pruebas no tiene IP remota y el middleware no la copia; en producción se comprueba con curl a la dirección pública)
         req.Headers.Add("X-Original-For", "203.0.113.5");
         Assert.Equal(HttpStatusCode.NotFound, (await factory.CreateClient().SendAsync(req)).StatusCode);
     }

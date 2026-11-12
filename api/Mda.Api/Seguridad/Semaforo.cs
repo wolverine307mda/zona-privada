@@ -13,7 +13,7 @@ public record AreaVida(string Id, string Nombre, string Estado, string Motivo);
 public record Semaforo(string Estado, IReadOnlyList<AreaVida> Areas);
 public record DatosVida(
     bool CopiaVigilada, double? CopiaHoras, bool PanicoActivo, int FallosAcceso, bool DosPasos,
-    decimal? SaldoLibre, int PresupuestosPasados, bool AgenteConectado, int AlertasPc, bool? FunnelResponde, int? DiasCertificado, int DispositivosCaidos, int EquiposSospechosos = 0);
+    decimal? SaldoLibre, int PresupuestosPasados, bool AgenteConectado, int AlertasPc, bool? DireccionResponde, int? DiasCertificado, int DispositivosCaidos, int EquiposSospechosos = 0);
 
 // Un vistazo: cada área de tu vida digital en verde, ámbar o rojo con el motivo. El estado global es el peor de todos.
 public static class SemaforoVida
@@ -55,19 +55,19 @@ public static class SemaforoVida
         : new("pc", "Mi PC", Verde, "Equipo conectado y sano.");
 
     private static AreaVida Red(DatosVida d) =>
-        d.FunnelResponde == false ? new("red", "Red", Rojo, "La app no responde desde Internet.")
+        d.DireccionResponde == false ? new("red", "Red", Rojo, "La app no responde desde Internet.")
         : d.DiasCertificado is <= 10 ? new("red", "Red", Ambar, $"El certificado HTTPS caduca en {Math.Max(0, d.DiasCertificado.Value)} día(s).")
         : d.DispositivosCaidos > 0 ? new("red", "Red", Ambar, $"{d.DispositivosCaidos} aparato(s) de la red caído(s).")
         : new("red", "Red", Verde, "Todo responde.");
 
     public static void MapInicioResumen(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/inicio/resumen", async (AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct) =>
-            Results.Ok(await Calcular(db, vigilante, agente, funnel, reloj, zona, ct))).RequireAuthorization();
+        app.MapGet("/api/inicio/resumen", async (AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoDireccion direccion, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+            Results.Ok(await Calcular(db, vigilante, agente, direccion, reloj, zona, ct))).RequireAuthorization();
     }
 
     // Lee el estado real (copias, accesos, dinero, PC, red) y lo pasa por `Evaluar`; lo usan Inicio y el atajo «Estado»
-    public static async Task<Semaforo> Calcular(AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct)
+    public static async Task<Semaforo> Calcular(AppDbContext db, Vigilante vigilante, EstadoAgente agente, EstadoDireccion direccion, TimeProvider reloj, Zona zona, CancellationToken ct)
     {
         {
             var ahora = reloj.GetUtcNow();
@@ -88,7 +88,7 @@ public static class SemaforoVida
             var dosPasos = await db.Users.AnyAsync(u => u.TwoFactorEnabled, ct);
             return Evaluar(new DatosVida(copia.Vigilada, copia.Fecha is { } f ? (ahora - f).TotalHours : null, panicoActivo,
                 await db.Accesos.CountAsync(a => !a.Exito && !a.Revisado && a.Fecha > desde, ct), dosPasos, libre, pasados, agente.Conectado(TimeSpan.FromMinutes(2)), alertas,
-                funnel.Ultimo?.Responde, funnel.Ultimo?.DiasCertificado, caidos, await db.Equipos.CountAsync(e => e.Sospechoso, ct)));
+                direccion.Ultimo?.Responde, direccion.Ultimo?.DiasCertificado, caidos, await db.Equipos.CountAsync(e => e.Sospechoso, ct)));
         }
     }
 

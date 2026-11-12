@@ -383,9 +383,9 @@ public static class AtajosApi
         }).Requiere("pc");
 
         // «Estado»: el semáforo de Inicio en una frase y por áreas, para que Siri lo lea o un widget lo pinte
-        a.MapGet("/estado", async (AppDbContext db, Mda.Api.Avisos.Vigilante vigilante, Mda.Api.Sistema.EstadoAgente agente, EstadoFunnel funnel, TimeProvider reloj, Zona zona, CancellationToken ct) =>
+        a.MapGet("/estado", async (AppDbContext db, Mda.Api.Avisos.Vigilante vigilante, Mda.Api.Sistema.EstadoAgente agente, EstadoDireccion direccion, TimeProvider reloj, Zona zona, CancellationToken ct) =>
         {
-            var s = await SemaforoVida.Calcular(db, vigilante, agente, funnel, reloj, zona, ct);
+            var s = await SemaforoVida.Calcular(db, vigilante, agente, direccion, reloj, zona, ct);
             var mal = s.Areas.Where(x => x.Estado != SemaforoVida.Verde).ToList();
             var mensaje = mal.Count == 0 ? "Todo en orden." : string.Join(" ", mal.Select(x => $"{x.Nombre}: {x.Motivo}"));
             return Results.Ok(new { estado = s.Estado, mensaje, areas = s.Areas });

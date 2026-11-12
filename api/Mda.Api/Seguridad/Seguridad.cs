@@ -19,7 +19,7 @@ public static class Limites
 
 public static class IpCliente
 {
-    // La IP viene de la conexión, que UseForwardedHeaders ya ha reescrito con X-Forwarded-For del proxy (Tailscale Funnel).
+    // La IP viene de la conexión, que UseForwardedHeaders ya ha reescrito con X-Forwarded-For del proxy (cloudflared).
     // CF-Connecting-IP solo se cree con Proxy:Cloudflare=true: sin Cloudflare delante, cualquiera puede inventarse esa cabecera.
     public static string De(HttpContext ctx)
     {

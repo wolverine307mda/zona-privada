@@ -4,20 +4,20 @@ using Mda.Api.Avisos;
 
 namespace Mda.Api.Seguridad;
 
-public record ResultadoFunnel(bool Responde, int? DiasCertificado, string? Error, DateTimeOffset Hora);
+public record ResultadoDireccion(bool Responde, int? DiasCertificado, string? Error, DateTimeOffset Hora);
 
 // Lo que hay que decir tras cada comprobación (puro, para probarlo sin red): avisa al caerse (a la segunda vez seguida, para no gritar por un parpadeo),
 // al volver, y cuando el certificado está a punto de caducar (una vez por certificado).
-public sealed class EstadoFunnel
+public sealed class EstadoDireccion
 {
     public const int DiasAviso = 10;
     private int _fallos;
     private bool _avisadoCaida;
     private DateTimeOffset? _certAvisado;
 
-    public ResultadoFunnel? Ultimo { get; private set; }
+    public ResultadoDireccion? Ultimo { get; private set; }
 
-    public List<string> Evaluar(ResultadoFunnel r)
+    public List<string> Evaluar(ResultadoDireccion r)
     {
         Ultimo = r;
         var avisos = new List<string>();
@@ -27,7 +27,7 @@ public sealed class EstadoFunnel
             if (_fallos >= 2 && !_avisadoCaida)
             {
                 _avisadoCaida = true;
-                avisos.Add($"🌐 La app no responde desde Internet ({r.Error ?? "sin respuesta"}). Si el PC está encendido, revisa Tailscale y el Funnel: `tailscale funnel status`.");
+                avisos.Add($"🌐 La app no responde desde Internet ({r.Error ?? "sin respuesta"}). Si el PC está encendido, revisa el túnel de Cloudflare: `docker compose logs tunel`.");
             }
         }
         else
@@ -41,7 +41,7 @@ public sealed class EstadoFunnel
                 if (_certAvisado != caduca)
                 {
                     _certAvisado = caduca;
-                    avisos.Add(d <= 0 ? "🔐 El certificado HTTPS de la app ha caducado." : $"🔐 El certificado HTTPS de la app caduca en {d} día(s). Tailscale debería renovarlo solo: si no lo hace, reinicia el Funnel.");
+                    avisos.Add(d <= 0 ? "🔐 El certificado HTTPS de la app ha caducado." : $"🔐 El certificado HTTPS de la app caduca en {d} día(s). Cloudflare debería renovarlo solo: si no lo hace, reinicia el túnel (`docker compose restart tunel`).");
                 }
             }
         }
@@ -50,8 +50,8 @@ public sealed class EstadoFunnel
 }
 
 // Cada 10 minutos pide /api/salud a la dirección pública (App:UrlPublica) como lo haría cualquiera desde fuera y mira cuánto le queda al certificado.
-// Es el complemento del latido de Healthchecks.io: ese avisa si el PC se apaga, este si el PC está bien pero el Funnel o el certificado no.
-public class VigilanteFunnel(IConfiguration config, EstadoFunnel estado, IAvisos avisos, TimeProvider reloj, ILogger<VigilanteFunnel> log) : BackgroundService
+// Es el complemento del latido de Healthchecks.io: ese avisa si el PC se apaga, este si el PC está bien pero el túnel o el certificado no.
+public class VigilanteDireccion(IConfiguration config, EstadoDireccion estado, IAvisos avisos, TimeProvider reloj, ILogger<VigilanteDireccion> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -63,13 +63,13 @@ public class VigilanteFunnel(IConfiguration config, EstadoFunnel estado, IAvisos
             do
             {
                 try { foreach (var a in estado.Evaluar(await Comprobar(uri, ct))) await avisos.PorTelegram(a, ct); }
-                catch (Exception e) when (e is not OperationCanceledException) { log.LogError(e, "Fallo al vigilar el Funnel"); }
+                catch (Exception e) when (e is not OperationCanceledException) { log.LogError(e, "Fallo al vigilar la dirección pública"); }
             } while (await t.WaitForNextTickAsync(ct));
         }
         catch (OperationCanceledException) { }
     }
 
-    public async Task<ResultadoFunnel> Comprobar(Uri uri, CancellationToken ct)
+    public async Task<ResultadoDireccion> Comprobar(Uri uri, CancellationToken ct)
     {
         X509Certificate2? cert = null;
         using var manejador = new SocketsHttpHandler
@@ -85,13 +85,13 @@ public class VigilanteFunnel(IConfiguration config, EstadoFunnel estado, IAvisos
         {
             using var r = await cliente.GetAsync(uri, ct);
             int? dias = cert is null ? null : (int)Math.Floor((new DateTimeOffset(cert.NotAfter.ToUniversalTime()) - ahora).TotalDays);
-            return new ResultadoFunnel(r.IsSuccessStatusCode, dias, r.IsSuccessStatusCode ? null : $"HTTP {(int)r.StatusCode}", ahora);
+            return new ResultadoDireccion(r.IsSuccessStatusCode, dias, r.IsSuccessStatusCode ? null : $"HTTP {(int)r.StatusCode}", ahora);
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            log.LogWarning("El Funnel no responde ({Motivo})", e.GetType().Name);
+            log.LogWarning("La dirección pública no responde ({Motivo})", e.GetType().Name);
             int? dias = cert is null ? null : (int)Math.Floor((new DateTimeOffset(cert.NotAfter.ToUniversalTime()) - ahora).TotalDays);
-            return new ResultadoFunnel(false, dias, e is HttpRequestException { InnerException: System.Security.Authentication.AuthenticationException } ? "certificado no válido" : e.GetType().Name, ahora);
+            return new ResultadoDireccion(false, dias, e is HttpRequestException { InnerException: System.Security.Authentication.AuthenticationException } ? "certificado no válido" : e.GetType().Name, ahora);
         }
     }
 }
