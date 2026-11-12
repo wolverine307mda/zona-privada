@@ -19,7 +19,8 @@ en su PC de casa, publicada con Cloudflare Tunnel en https://app.wolvem.dev). Ha
 - Código, comentarios, CSS y commits **en español**, imitando el estilo existente (comentarios cortos que explican el porqué).
 - Comprueba los cambios: `dotnet test ZonaPrivada.slnx`, `cd web && npx ng build`; para cambios visuales, pruébalo en
   escritorio y en móvil (375 px) con la API en memoria.
-- Desplegar = `actualizar.cmd` en el equipo de casa (recompila front + API, levanta todo y vuelve atrás si la API no queda sana).
+- La app real corre **sin Docker**: la versión de escritorio (`ZonaPrivada.exe`, API en `127.0.0.1:8090`, PostgreSQL propio) con el túnel de Cloudflare como servicio de Windows (`herramientas/instalar-tunel.ps1`).
+- Desplegar = `actualizar.cmd` en el equipo de casa (compila lo cambiado, para la app, copia, la reabre y comprueba salud local y pública). `actualizar-docker.cmd` es la alternativa con Docker.
 - Las pruebas de `PostgresTests` arrancan un PostgreSQL con Testcontainers (hace falta Docker; sin él se saltan). Las migraciones se hacen con
   `dotnet ef migrations add Nombre --output-dir Data/Migraciones` desde `api/Mda.Api`. `SemillaAdmin` tiene que ser el PRIMER servicio de fondo.
 

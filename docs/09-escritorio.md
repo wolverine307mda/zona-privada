@@ -56,3 +56,14 @@ No lo hace nada solo. Con la versión de escritorio estable y los datos importad
 - `serve`/`funnel` usan la sintaxis actual de Tailscale; si cambia, ajustar `Logica/Tailscale.cs`.
 - La cuenta `zp-servicio` se crea con el lanzador como administrador; sin esos permisos la versión de escritorio no arranca (no hay modo menos seguro).
 - Lo que lee `Docker` en la importación es solo la base y las claves de cifrado; las miniaturas se regeneran.
+
+## Salida a Internet con Cloudflare (sin Docker)
+
+La app real sale por `https://app.wolvem.dev` con el túnel de Cloudflare instalado como **servicio de Windows** (arranca con el PC, no depende del lanzador ni de Docker):
+
+1. Una vez: `powershell -File herramientas\instalar-tunel.ps1` (instala `cloudflared` con winget si falta, lee `CLOUDFLARE_TUNNEL_TOKEN` del `.env` y crea el servicio `Cloudflared`; pide permiso de administrador).
+2. En Cloudflare (Zero Trust → Networks → Tunnels → zona-privada → Public hostname → `app.wolvem.dev`) el servicio debe ser `http://localhost:8090`.
+3. En `C:\ProgramData\ZonaPrivada\config\.env` (la configuración de escritorio) tienen que estar `URL_PUBLICA=https://app.wolvem.dev` y `ALLOWED_HOSTS` con `app.wolvem.dev`; en `%AppData%\ZonaPrivada\config.json`, `"urlNativa":"https://app.wolvem.dev"` (así los enlaces y las llaves de acceso usan esa dirección).
+4. Actualizar: `actualizar.cmd`. Desinstalar el túnel: `herramientas\instalar-tunel.ps1 -Quitar`.
+
+Los items de menú de Tailscale del lanzador (`Bandeja.cs`) siguen ahí pero ya no hacen falta.

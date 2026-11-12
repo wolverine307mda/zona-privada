@@ -8,7 +8,7 @@ Cómo volver a generar la zona privada cuando cambias algo, **solo lo que has to
 | **Pruebas en Docker** | un proyecto de Docker aparte (`zona-privada-pruebas`) con su base, sin avisos ni Telegram | `localhost:8080` | probar de verdad, con datos copiados, sin tocar lo real |
 | **La app real (escritorio)** | `ZonaPrivada.exe` con PostgreSQL y la API como procesos de Windows, en `C:\Program Files\ZonaPrivada` | `127.0.0.1:8090` | lo que usas a diario |
 
-El Docker «de siempre» (`compose.yaml`) sigue existiendo y se despliega con `herramientas\desplegar.ps1` ([06](06-despliegue-y-operacion.md)); esta guía se centra en el escritorio y las pruebas.
+El Docker «de siempre» (`compose.yaml`) sigue existiendo como alternativa y se despliega con `actualizar-docker.cmd` ([06](06-despliegue-y-operacion.md)); esta guía se centra en el escritorio y las pruebas.
 
 ## 1. Qué toco → qué hago
 
@@ -69,10 +69,12 @@ docker compose -f compose.yaml -f compose.test.yaml stop
 
 ## 4. La app real (escritorio)
 
-Un solo comando, por partes. Compilar no pide permisos; instalar sí (Windows pregunta una vez).
+Un solo comando (`actualizar.cmd`, doble clic o desde una consola), por partes. Compilar no pide permisos; instalar sí (Windows pregunta una vez).
 
 ```powershell
 cd C:\Users\wolve\Proyectos\zona-privada
+
+.\actualizar.cmd                                    # = actualizar-escritorio.ps1 (todo); admite -Web, -Api, -Lanzador, -SoloCompilar
 
 .\herramientas\actualizar-escritorio.ps1 -Web         # solo el front: no cierra nada, recarga la página para verlo
 .\herramientas\actualizar-escritorio.ps1 -Api         # API + web: cierra y vuelve a abrir el lanzador

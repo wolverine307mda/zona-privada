@@ -1,5 +1,11 @@
 @echo off
-rem Un solo comando: recompila todo (front + API) y vuelve a levantar la zona privada con red de seguridad.
-rem Si la API nueva no arranca, vuelve sola a la anterior. Uso:  actualizar.cmd   (o  actualizar.cmd -Volver)
+rem UN SOLO COMANDO para la zona privada (version de escritorio, sin Docker): compila lo que haya cambiado, para la app,
+rem copia lo nuevo, la vuelve a abrir y comprueba que responde. Windows pide permiso de administrador una vez.
+rem   actualizar.cmd              todo (web + API + lanzador)
+rem   actualizar.cmd -Web         solo el front (no para nada)
+rem   actualizar.cmd -Api         API + web
+rem   actualizar.cmd -Lanzador    el .exe y el agente del PC
+rem   actualizar.cmd -Api -SoloCompilar   compila y no instala
 cd /d "%~dp0"
-powershell -NoProfile -ExecutionPolicy Bypass -File herramientas\desplegar.ps1 %*
+powershell -NoProfile -ExecutionPolicy Bypass -File herramientas\actualizar-escritorio.ps1 %*
+pause

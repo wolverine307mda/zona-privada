@@ -89,3 +89,11 @@ for ($i = 0; $i -lt 40 -and -not $ok; $i++) {
     try { $ok = (Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:8090/api/salud' -TimeoutSec 3).StatusCode -eq 200 } catch { Start-Sleep -Seconds 3 }
 }
 if ($ok) { Write-Host 'Listo: /api/salud responde 200.' -ForegroundColor Green } else { Write-Host 'La API no ha contestado en 2 minutos: mira el icono de la bandeja y los registros.' -ForegroundColor Yellow }
+
+# ---- y desde fuera: la direccion publica (URL_PUBLICA del .env) por el tunel de Cloudflare ----
+$envRepo = Join-Path $raiz '.env'
+$url = if (Test-Path $envRepo) { (Get-Content $envRepo | Where-Object { $_ -match '^URL_PUBLICA=' } | Select-Object -First 1) -replace '^URL_PUBLICA=', '' } else { '' }
+if ($ok -and $url) {
+    try { $c = (Invoke-WebRequest -UseBasicParsing ($url.TrimEnd('/') + '/api/salud') -TimeoutSec 10).StatusCode; Write-Host "Publica: $url responde $c." -ForegroundColor Green }
+    catch { Write-Host "Publica: $url no responde. Si es la primera vez, instala el tunel con herramientas\instalar-tunel.ps1 y apunta la ruta a http://localhost:8090." -ForegroundColor Yellow }
+}
