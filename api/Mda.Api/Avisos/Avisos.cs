@@ -51,6 +51,11 @@ public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, T
                 Credentials = C("Correo:Usuario") is { } u ? new NetworkCredential(u, C("Correo:Clave")) : null,
             };
             var de = C("Correo:De") ?? C("Correo:Usuario") ?? C("Correo:Para")!;
+            if (!MailAddress.TryCreate(de, out _))
+            {
+                log.LogWarning("No se pudo mandar el correo «{Asunto}»: Correo:De no es un correo válido (es «{De}»). Pon CORREO_DE=avisos@tudominio en el .env.", asunto, de);
+                return false;
+            }
             using var msg = new MailMessage(new MailAddress(de, "Zona privada MDA"), new MailAddress(C("Correo:Para")!))
             {
                 // un salto de línea en el asunto (un título pegado desde Telegram) hace que SMTP lo rechace

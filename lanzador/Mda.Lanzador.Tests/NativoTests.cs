@@ -64,6 +64,15 @@ public class NativoTests
     }
 
     [Fact]
+    public void El_remitente_del_correo_llega_a_la_api_salvo_en_ensayo()
+    {
+        var env = new Dictionary<string, string>(Env) { ["CORREO_DE"] = "avisos@ejemplo.es" };
+        Assert.Equal("avisos@ejemplo.es", ConfigNativa.EntornoApi(env, R, "x", ensayo: false)["Correo__De"]);
+        Assert.DoesNotContain("Correo__De", ConfigNativa.EntornoApi(env, R, "x", ensayo: true).Keys);
+        Assert.DoesNotContain("Correo__De", ConfigNativa.EntornoApi(Env, R, "x", ensayo: false).Keys);   // sin CORREO_DE no se inventa
+    }
+
+    [Fact]
     public void El_agente_sigue_con_docker_mientras_el_escritorio_esta_en_ensayo()
     {
         Assert.Equal("http://localhost:8080", ConfigNativa.UrlAgente(nativo: false, ensayo: true));

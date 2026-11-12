@@ -97,7 +97,7 @@ public static class ConfigNativa
         {
             foreach (var (clave, destino) in new[]
             {
-                ("CORREO_SERVIDOR", "Correo__Servidor"), ("CORREO_PUERTO", "Correo__Puerto"), ("CORREO_USUARIO", "Correo__Usuario"), ("CORREO_CLAVE", "Correo__Clave"), ("CORREO_PARA", "Correo__Para"),
+                ("CORREO_SERVIDOR", "Correo__Servidor"), ("CORREO_PUERTO", "Correo__Puerto"), ("CORREO_USUARIO", "Correo__Usuario"), ("CORREO_CLAVE", "Correo__Clave"), ("CORREO_DE", "Correo__De"), ("CORREO_PARA", "Correo__Para"),
                 ("WHATSAPP_TELEFONO", "WhatsApp__Telefono"), ("WHATSAPP_APIKEY", "WhatsApp__ApiKey"), ("TELEGRAM_TOKEN", "Telegram__Token"),
                 ("SPOTIFY_CLIENT_ID", "Spotify__ClientId"), ("SPOTIFY_CLIENT_SECRET", "Spotify__ClientSecret"),
                 ("GOOGLE_CLIENT_ID", "Google__ClientId"), ("GOOGLE_CLIENT_SECRET", "Google__ClientSecret"), ("HEALTHCHECK_URL", "Healthcheck__Url"),
