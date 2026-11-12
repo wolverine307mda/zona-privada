@@ -49,8 +49,8 @@
       </label>
     }
 
-    <button class="button entrar" type="submit" [disabled]="ocupado()" [attr.aria-busy]="ocupado() || null">
-      <span>{{ ocupado() ? 'Comprobando…' : 'Entrar' }}</span>
+    <button class="button entrar" type="submit" [disabled]="ocupado() || entrando()" [attr.aria-busy]="ocupado() || entrando() || null">
+      <span>{{ entrando() ? 'Entrando…' : ocupado() ? 'Comprobando…' : 'Entrar' }}</span>
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
     @if (conPasskey) {

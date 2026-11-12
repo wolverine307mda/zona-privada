@@ -16,10 +16,19 @@ export class PerfilService {
     if (!d) return null;
     return d.nombre ? `${d.nombre} ${d.apellidos ?? ''}`.trim() : 'Mario'; // sin nombre en el perfil, el de siempre
   });
-  readonly foto = computed(() => (this.datos()?.foto ? `/api/perfil/foto?v=${this.version()}` : 'img/avatar.webp?v=3'));
+  // se recuerda si hay foto propia para pintar la buena desde el primer instante (sin saltar del avatar a la foto cuando llegan los datos)
+  private readonly conFotoGuardada = (() => { try { return localStorage.getItem('mda-foto-propia') === '1'; } catch { return false; } })();
+  readonly foto = computed(() => {
+    const d = this.datos();
+    return (d ? d.foto : this.conFotoGuardada) ? `/api/perfil/foto?v=${this.version()}` : 'img/avatar.webp?v=3';
+  });
 
   async cargar(): Promise<void> {
-    try { this.datos.set(await firstValueFrom(this.http.get<DatosPerfil>('/api/perfil'))); } catch { /* sin conexión: se queda el usuario */ }
+    try {
+      const d = await firstValueFrom(this.http.get<DatosPerfil>('/api/perfil'));
+      this.datos.set(d);
+      try { localStorage.setItem('mda-foto-propia', d.foto ? '1' : '0'); } catch { /* sin almacenamiento */ }
+    } catch { /* sin conexión: se queda el usuario */ }
   }
 
   async guardar(d: { nombre: string; apellidos: string; email: string; telefono: string }): Promise<void> {

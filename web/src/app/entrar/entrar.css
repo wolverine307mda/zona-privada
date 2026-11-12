@@ -1,4 +1,5 @@
-:host { display: block; min-height: 100svh; }
+/* la pantalla de entrar se queda fija sobre todo lo demás: mientras carga la app (o llega el menú tras entrar) no se ve ni se desplaza nada por debajo */
+:host { display: block; position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: none; background: var(--fondo); }
 .escena { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 :host::after {
   content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
@@ -10,7 +11,7 @@
 .volver { text-underline-offset: 0.2em; }
 
 .main {
-  position: relative; z-index: 2; min-height: calc(100svh - 80px);
+  position: relative; z-index: 2; min-height: calc(100dvh - 80px);
   /* composición centrada a cualquier ancho: el candado arriba (lo coloca candado-3d.ts) y la tarjeta centrada debajo, con el mismo hueco a los dos lados */
   display: grid; grid-template-columns: minmax(0, 440px); justify-content: center; align-items: end;
   padding: 32vh var(--margin) 48px;

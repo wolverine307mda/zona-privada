@@ -160,19 +160,23 @@ app-panel { display: none; }
 .ch__estado ::ng-deep ul { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8rem; } .ch__estado ::ng-deep li .texto small { display: none; }
 .ch__izq { grid-area: 2 / 1; position: relative; z-index: 2; align-self: start; padding: 14px 0 20px 20px; }
 .ch__der { grid-area: 2 / 3; position: relative; z-index: 2; align-self: start; display: grid; gap: var(--hueco, 14px); padding: 14px 20px 20px 0; }
-.slot { display: grid; min-width: 0; } .slot:empty { display: none; }
+.slot { display: grid; min-width: 0; } .slot:empty, .slot:not(:has(*)) { display: none; }
 .ch__dock { position: fixed; z-index: 30; bottom: 14px; left: calc(50% + 140px); translate: -50% 0; width: min(520px, calc(100vw - 32px)); }
 .ch__dock ::ng-deep .musica--vacia { display: none; }
 .ch__dock ::ng-deep .musica { box-shadow: 0 18px 50px rgb(0 0 0 / .35); }
-.equipo__par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--hueco, 14px); align-items: stretch; }
-.equipo__pila { display: grid; gap: var(--hueco, 14px); align-content: stretch; grid-template-rows: auto 1fr; min-width: 0; }
+/* coche y gasolina comparten la fila y miden lo mismo; si falta uno, el otro ocupa todo el ancho (sin columna vacía) */
+.equipo__par { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--hueco, 14px); align-items: stretch; }
+.equipo__pila { display: grid; gap: var(--hueco, 14px); grid-template-rows: minmax(0, 1fr); min-width: 0; }
+.equipo__pila:not(:has(.slot > *)) { display: none; }
+.equipo__pila .slot ::ng-deep .caja { height: 100%; }
+.equipo__pila ::ng-deep .mini--gasolina { justify-content: space-between; }
+.equipo__pila ::ng-deep .mini--gasolina .cifra { font-size: clamp(1.6rem, 20cqi, 2.8rem); }
 @media (max-width: 1100px) {
   .ch { display: flex; flex-direction: column; gap: var(--hueco, 14px); min-height: 0; }
   .ch__hola { order: 0; padding: 4px 4px 0; flex-wrap: wrap; } .ch__estado { width: 100%; }
   .ch__globo { order: 1; height: clamp(380px, 70vw, 520px); }
   .ch__izq, .ch__der { order: 2; padding: 0; align-self: stretch; }
   .ch__dock { position: static; translate: none; width: auto; order: 3; }
-  .equipo__par { grid-template-columns: minmax(0, 1fr); }
 }
 .ch__globo ::ng-deep .gi-cab { display: none; }
 /* la columna derecha siempre llega abajo: la gráfica se estira con lo que sobre */
@@ -180,7 +184,7 @@ app-panel { display: none; }
 .equipo__der { display: flex; flex-direction: column; }
 .equipo__der > .bloque--grafica { flex: 1 1 auto; display: flex; flex-direction: column; }
 .equipo__der > .bloque--grafica .linea-tiempo { flex: 1 1 auto; height: auto; min-height: 240px; }
-.equipo__par:not(:has(> .slot)) { grid-template-columns: minmax(0, 1fr); }
+.equipo__par:not(:has(.slot > *)) { display: none; }
 .ch__dock ::ng-deep .musica { padding: 14px 18px; gap: 8px; }
 .ch__dock ::ng-deep .musica > .cab { display: none; }
 /* el tiempo, a todo lo ancho de la columna y sin la tira de horas: con un lugar elegido la tarjeta se estiraba mucho */

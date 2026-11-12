@@ -24,7 +24,6 @@ import { MiniMusica } from './mini-musica';
 
 const leer = (k: string): string | null => { try { return localStorage.getItem(k); } catch { return null; } };
 const guardar = (k: string, v: string): void => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
-const leerLista = (k: string): string[] => { try { const v = JSON.parse(leer(k) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; } };
 
 const leerUso = (): Record<string, number> => { try { const v = JSON.parse(leer('mda-uso') ?? '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } };
 // de partida, las de siempre: así la barra no empieza vacía de criterio
@@ -86,14 +85,6 @@ export class Shell {
 
   // ---- submenús y modo compacto del lateral (se recuerdan en este navegador) ----
   protected readonly compacto = signal(leer('mda-menu-compacto') === '1');
-  private readonly abiertos = signal<string[]>(leerLista('mda-menu-grupos'));
-  protected readonly grupoActivo = computed(() => GRUPOS.find((g) => g.modulos.some((m) => m.id === this.seccion().id))?.id ?? null);
-  protected abierto(id: string): boolean { return this.abiertos().includes(id); }
-
-  protected alternar(id: string): void {
-    this.abiertos.update((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
-    guardar('mda-menu-grupos', JSON.stringify(this.abiertos()));
-  }
 
   protected alternarCompacto(): void {
     this.compacto.update((c) => !c);
@@ -149,11 +140,6 @@ export class Shell {
     });
     // el fondo «solo del menú» o «solo de las páginas» necesita saber cuánto mide el menú ahora
     effect(() => document.documentElement.style.setProperty('--ancho-lateral-html', this.compacto() ? '112px' : '312px'));
-    // la sección abierta despliega su grupo (sin cerrar los demás)
-    effect(() => {
-      const g = this.grupoActivo();
-      if (g) untracked(() => { if (!this.abierto(g)) this.alternar(g); });
-    });
     // cerrar el menú del móvil al navegar
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.menuAbierto.set(false));
     // con el menú abierto, la página de detrás no se desplaza

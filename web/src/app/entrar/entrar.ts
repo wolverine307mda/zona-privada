@@ -44,6 +44,7 @@ export class Entrar implements OnDestroy {
   protected readonly pideCodigo = signal(false);
   protected readonly verClave = signal(false);
   protected readonly ocupado = signal(false);
+  protected readonly entrando = signal(false);
   protected readonly error = signal('');
   protected readonly sacude = signal(false);
   // «en línea» solo si /api/salud contesta (con la app guardada por el service worker, la página puede cargar sin servidor)
@@ -80,12 +81,15 @@ export class Entrar implements OnDestroy {
     this.error.set('');
     this.escena.intento();
     const r = await this.sesion.entrar(this.usuario().trim(), this.password(), this.pideCodigo() ? this.codigo().trim() : undefined);
-    this.ocupado.set(false);
-
     if (r === 'ok') {
+      // el botón sigue «ocupado» hasta que el menú está cargado: con mala conexión no se puede pulsar dos veces ni parece colgado
+      this.entrando.set(true);
       this.escena.abrir();
       setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
-    } else if (r === 'segundo-factor') {
+      return;
+    }
+    this.ocupado.set(false);
+    if (r === 'segundo-factor') {
       this.pideCodigo.set(true);
       this.error.set('Falta el código de tu app de autenticación.');
     } else {
@@ -117,6 +121,7 @@ export class Entrar implements OnDestroy {
   private async terminar(credencial: unknown): Promise<void> {
     await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
     if (await this.sesion.trasPasskey()) {
+      this.entrando.set(true);
       this.escena.abrir();
       setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
     }

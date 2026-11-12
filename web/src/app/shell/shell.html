@@ -30,27 +30,19 @@
       </a>
 
       @for (g of grupos; track g.id) {
-        <div class="grupo" [class.grupo--abierto]="abierto(g.id)" [class.grupo--activo]="grupoActivo() === g.id">
-          <button class="menu__item grupo__cab" type="button" (click)="alternar(g.id)" [attr.aria-expanded]="abierto(g.id)" [attr.aria-controls]="'sub-' + g.id" [attr.title]="compacto() ? g.titulo : null">
-            <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="g.icono" /></svg></span>
-            <span class="menu__txt">{{ g.titulo }}</span>
-            <span class="menu__cuenta" aria-hidden="true">{{ g.modulos.length }}</span>
-            <svg class="grupo__flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-          </button>
-          <div class="grupo__sub" [id]="'sub-' + g.id">
-            <ul class="grupo__lista">
-              <li class="grupo__titulo" aria-hidden="true">{{ g.titulo }}</li>
-              @for (m of g.modulos; track m.id; let i = $index) {
-                <li>
-                  <a class="menu__item menu__item--sub" [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [style.--i]="i">
-                    <span class="menu__ico menu__ico--sub"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg></span>
-                    <span class="menu__txt">{{ m.titulo }}</span>
-                  </a>
-                </li>
-              }
-            </ul>
-          </div>
-        </div>
+        <section class="grupo" [attr.aria-labelledby]="'g-' + g.id">
+          <h2 class="grupo__titulo" [id]="'g-' + g.id">{{ g.titulo }}</h2>
+          <ul class="grupo__lista">
+            @for (m of g.modulos; track m.id) {
+              <li>
+                <a class="menu__item" [routerLink]="'/' + m.id" routerLinkActive="is-activo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? m.titulo : null">
+                  <span class="menu__ico"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="m.icono" /></svg></span>
+                  <span class="menu__txt">{{ m.titulo }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
       }
     </nav>
 
@@ -69,7 +61,7 @@
 
       <section class="perfil">
         <a class="perfil__enlace" routerLink="/perfil" title="Editar el perfil">
-          <img class="perfil__foto" [src]="perfil.foto()" width="40" height="40" alt="">
+          <img class="perfil__foto" [src]="perfil.foto()" width="40" height="40" alt="" decoding="async" fetchpriority="high">
           <span class="perfil__datos">
             <strong [title]="perfil.nombreVisible() ?? ''">{{ perfil.nombreVisible() ?? usuario() ?? '—' }}</strong>
             <span>&#64;{{ usuario() }} · Editar perfil</span>

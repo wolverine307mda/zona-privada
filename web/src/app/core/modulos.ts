@@ -129,10 +129,14 @@ export const MODULOS: Modulo[] = [
   },
 ];
 
+// Secciones del menú, siempre a la vista y separadas por un título (sin desplegables)
 const GRUPOS_DEF = [
-  { id: 'vida', titulo: 'Vida', icono: 'M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z', ids: ['gastos', 'compra', 'agenda', 'tareas', 'papeles', 'habitos', 'personas', 'cocina', 'series', 'bienestar', 'notas'] },
-  { id: 'medios', titulo: 'Medios', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['fotos', 'fotografia', 'musica'] },
-  { id: 'equipo', titulo: 'Mi equipo', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'pared', 'contexto', 'servicios', 'automatizaciones', 'documentos', 'seguridad'] },
+  { id: 'dia', titulo: 'Mi día', icono: 'M12 8v4l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', ids: ['hoy', 'agenda', 'tareas', 'notas', 'habitos'] },
+  { id: 'dinero', titulo: 'Dinero y papeles', icono: 'M4 7a2 2 0 0 1 2-2h12v4M4 7v11a2 2 0 0 0 2 2h14V9H6a2 2 0 0 1-2-2z', ids: ['gastos', 'compra', 'papeles', 'documentos'] },
+  { id: 'casa-vida', titulo: 'Personas y hogar', icono: 'M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10', ids: ['personas', 'cocina', 'bienestar'] },
+  { id: 'ocio', titulo: 'Ocio y creación', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['musica', 'series', 'fotografia', 'fotos'] },
+  { id: 'equipo', titulo: 'Mi equipo y casa', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'contexto', 'pared', 'servicios', 'automatizaciones'] },
+  { id: 'proteccion', titulo: 'Protección', icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z', ids: ['seguridad'] },
 ];
 
 export const GRUPOS: Grupo[] = GRUPOS_DEF.map((g) => ({
