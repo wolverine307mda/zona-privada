@@ -163,7 +163,7 @@ builder.Services.AddRateLimiter(o =>
 // ---- La web pública (GitHub Pages) solo puede preguntar si el equipo está encendido: GET /api/salud ----
 const string WebPublica = "web-publica";
 builder.Services.AddCors(o => o.AddPolicy(WebPublica, p => p
-    .WithOrigins(builder.Configuration.GetSection("WebPublica:Origenes").Get<string[]>() ?? ["https://wolverine307mda.github.io"])
+    .WithOrigins(builder.Configuration.GetSection("WebPublica:Origenes").Get<string[]>() ?? ["https://wolvem.dev", "https://wolverine307mda.github.io"])
     .WithMethods("GET")));
 
 // ---- Detrás de Tailscale Funnel: respetar el esquema y la IP originales ----

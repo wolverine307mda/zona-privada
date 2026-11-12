@@ -95,6 +95,11 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var res = await client.SendAsync(salud);
         Assert.Equal("https://wolverine307mda.github.io", res.Headers.GetValues("Access-Control-Allow-Origin").Single());
 
+        // el portafolio en su dominio propio también puede preguntar
+        var portafolio = new HttpRequestMessage(HttpMethod.Get, "/api/salud");
+        portafolio.Headers.Add("Origin", "https://wolvem.dev");
+        Assert.Equal("https://wolvem.dev", (await client.SendAsync(portafolio)).Headers.GetValues("Access-Control-Allow-Origin").Single());
+
         var otraWeb = new HttpRequestMessage(HttpMethod.Get, "/api/salud");
         otraWeb.Headers.Add("Origin", "https://otra-web.com");
         Assert.False((await client.SendAsync(otraWeb)).Headers.Contains("Access-Control-Allow-Origin"));

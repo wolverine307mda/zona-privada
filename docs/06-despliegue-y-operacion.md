@@ -45,7 +45,7 @@ docker compose down                              # parar (los volúmenes y datos
 | `CLOUDFLARE_TUNNEL_TOKEN` | (cloudflared) | perfil `tunel` |
 
 Solo en desarrollo: `Datos:EnMemoria=true` (con `ASPNETCORE_ENVIRONMENT=Development`) usa EF InMemory.
-`WebPublica:Origenes` (opcional) cambia los orígenes CORS de `/api/salud`.
+`WebPublica:Origenes` (opcional) cambia los orígenes CORS de `/api/salud` (por defecto `https://wolvem.dev` y `https://wolverine307mda.github.io`).
 
 ## Tailscale Funnel
 
