@@ -4,7 +4,7 @@
 
 La zona privada es una **aplicación de un solo usuario** (el dueño) que vive en el PC de casa. No hay nube propia:
 todo (base de datos, API, front, registros, copias) corre en contenedores de Docker Desktop sobre Windows, y se
-publica en Internet con **Tailscale Funnel**, que da una dirección HTTPS fija sin abrir puertos del router.
+publica en Internet con un **túnel de Cloudflare** (`https://app.wolvem.dev`), que da HTTPS sin abrir puertos del router.
 
 ```mermaid
 flowchart TB
@@ -14,8 +14,7 @@ flowchart TB
     TGU[App de Telegram]
   end
   subgraph Docker["Docker Compose · proyecto zona-privada"]
-    TS[tailscale<br/>perfil publico]
-    CF[tunel cloudflared<br/>perfil tunel, alternativa]
+    CF[tunel<br/>cloudflared]
     API[api :8080<br/>ASP.NET Core 10 + Angular]
     DB[(db<br/>postgres:17-alpine)]
     SEQ[seq :5341]
@@ -24,8 +23,7 @@ flowchart TB
   AG[Mda.Agente<br/>Windows, fuera de Docker]
   EXT[(Open-Meteo · Spotify · Google<br/>SMTP · CallMeBot · Telegram API)]
 
-  PWA & PC -->|HTTPS| TS --> API
-  CF -.-> API
+  PWA & PC -->|HTTPS| CF --> API
   API <--> DB
   API --> SEQ
   COP --> DB
@@ -42,10 +40,9 @@ flowchart TB
 | `api` | construida con `Dockerfile` | `127.0.0.1:8080` | API + front; `hostname: equipo-de-casa` (sale en el panel) |
 | `seq` | `datalust/seq:2026.1` | `127.0.0.1:5341` | registros estructurados (volumen `seq`) |
 | `copias` | `postgres:17-alpine` | — | bucle: cada 10 min, si son más de las 3:00 y hoy no hay copia, `pg_dump -Fc` a `./copias`; guarda 14 |
-| `tailscale` | `tailscale/tailscale` | 443 público | perfil `publico`; Funnel → `http://api:8080` (`tailscale/serve.json`) |
-| `tunel` | `cloudflare/cloudflared` | — | perfil `tunel`; alternativa a Tailscale |
+| `tunel` | `cloudflare/cloudflared` | — | conexión saliente a Cloudflare; la ruta `app.wolvem.dev` → `http://api:8080` se define en Cloudflare; necesita `CLOUDFLARE_TUNNEL_TOKEN` |
 
-Volúmenes: `db`, `seq`, `claves` (claves de Data Protection: la sesión sobrevive a reinicios), `tailscale` (estado del nodo).
+Volúmenes: `db`, `seq`, `claves` (claves de Data Protection: la sesión sobrevive a reinicios).
 Montajes: `./copias` (solo lectura en la API, para vigilar que existan), carpetas del PC en `/carpetas/<id>` para Documentos.
 
 ### Imagen (`Dockerfile`, multi-etapa)
@@ -59,7 +56,7 @@ Montajes: `./copias` (solo lectura en la API, para vigilar que existan), carpeta
 ```mermaid
 sequenceDiagram
   participant N as Navegador
-  participant T as Tailscale Funnel
+  participant T as Cloudflare Tunnel
   participant A as API (Kestrel)
   participant D as PostgreSQL
   N->>T: HTTPS GET /api/gastos/mes/2026/10 (cookie mda.sesion)

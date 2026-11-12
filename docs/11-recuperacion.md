@@ -13,7 +13,7 @@ solo con lo que está fuera del PC.
 | **Clave privada de `age`** | **tu gestor de contraseñas / USB, NUNCA en el PC ni en las carpetas de copias** | es lo único que abre lo anterior: si la pierdes, las copias no valen |
 | Código | GitHub (`zona-privada`) | — |
 | Tus archivos de Documentos, Imágenes, etc. | **solo en el PC** (no entran en estas copias) | usa la copia de Windows / OneDrive de carpetas conocidas |
-| Estado de Tailscale | volumen `tailscale` (se pierde) | en el equipo nuevo se registra otro nodo con `TS_AUTHKEY` nueva |
+| Túnel de Cloudflare | en Cloudflare (no en el PC) | en el equipo nuevo basta el mismo `CLOUDFLARE_TUNNEL_TOKEN` (va en el `.env` cifrado) |
 
 > La contraseña de Postgres, `MDA_CLAVE_MAESTRA` (que cifra notas y claves de servicios) y `AGENTE_TOKEN` viven en el `.env`: por eso va cifrado en las copias.
 > Sin `MDA_CLAVE_MAESTRA` las notas y las claves guardadas **no se pueden leer**, aunque tengas el dump.
@@ -30,7 +30,7 @@ solo con lo que está fuera del PC.
    age -d -i clave-privada.txt zonaprivada-AAAAMMDD.dump.age > copia.dump
    mkdir claves-restauradas && age -d -i clave-privada.txt zonaprivada-AAAAMMDD-claves.tar.age | tar -x -C claves-restauradas
    ```
-5. Edita el `.env` recién descifrado: rutas de carpetas (`CARPETA_*`, `COPIAS_NUBE`, `COPIAS_DRIVE`) del equipo nuevo y, si hace falta, `TS_AUTHKEY` nueva.
+5. Edita el `.env` recién descifrado: rutas de carpetas (`CARPETA_*`, `COPIAS_NUBE`, `COPIAS_DRIVE`) del equipo nuevo y. El `CLOUDFLARE_TUNNEL_TOKEN` sirve tal cual en el equipo nuevo (si el viejo sigue encendido, páralo para que no compitan).
 6. Levanta solo la base y restaura:
 
    ```bash
@@ -43,7 +43,7 @@ solo con lo que está fuera del PC.
    docker compose create api
    docker run --rm -v zona-privada_claves:/claves -v "$PWD/claves-restauradas:/origen:ro" alpine sh -c 'cp -a /origen/. /claves/'
    ```
-8. `docker compose --profile publico up -d --build` y comprueba `curl http://localhost:8080/api/salud`.
+8. `docker compose up -d --build` y comprueba `curl http://localhost:8080/api/salud`.
 9. Entra; si la dirección pública cambió, actualiza `URL_PUBLICA` (los **passkeys** están atados al dominio: si cambia, usa contraseña + 2FA y registra los passkeys otra vez) y avisa a la web pública.
 
 ## Simulacro completo (hazlo una vez al año)
@@ -64,7 +64,7 @@ El simulacro semanal automático solo prueba que el dump **se restaura**. El de 
 - [ ] `COPIAS_NUBE` (OneDrive) y `COPIAS_DRIVE` (Google Drive para escritorio) apuntan a carpetas que sincronizan de verdad.
 - [ ] En esas carpetas aparecen, tras la copia de las 3:00, **tres** archivos `.age` nuevos por día.
 - [ ] La app te manda «✅ copia verificada» por Telegram cada semana.
-- [ ] Un segundo sitio con los datos de acceso: Tailscale, GitHub, dominio, `HEALTHCHECK_URL`.
+- [ ] Un segundo sitio con los datos de acceso: Cloudflare, GitHub, dominio, `HEALTHCHECK_URL`.
 
 ## Desplegar sin miedo (y volver atrás)
 

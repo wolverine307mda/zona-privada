@@ -3,6 +3,14 @@
 > Tanda del 6 de noviembre de 2026, rama `claude/private-area-project-review-zc1bju`. Detalle de cada cosa: [docs/10-nuevas-funciones.md](docs/10-nuevas-funciones.md).
 > Mapa de dónde está cada módulo: la tabla de [CLAUDE.md](CLAUDE.md).
 
+## 12 de noviembre de 2026 · Cloudflare en lugar de Tailscale
+
+- La app sale a Internet por un túnel de Cloudflare en **https://app.wolvem.dev** (servicio `tunel`, ya sin perfil: `docker compose up -d --build` lo arranca; `CLOUDFLARE_TUNNEL_TOKEN` es obligatorio). Sin Cloudflare Access.
+- Quitado de Docker: servicio y volumen `tailscale`, `tailscale-pruebas` (entorno de pruebas, ahora sin salida a Internet), carpeta `tailscale/` y `TS_AUTHKEY`. El cliente de Tailscale de Windows no se ha tocado.
+- CORS de `/api/salud` y `/api/publico/*`: ahora `https://wolvem.dev` (portafolio) y `https://wolverine307mda.github.io`.
+- **Pendiente**: el código C# del Funnel, del lanzador de escritorio y de «aparatos de la red» aún menciona Tailscale (se decide aparte). Los volúmenes `zona-privada_tailscale` y `zona-privada_tailscale-pruebas` siguen en Docker hasta que se confirme su borrado.
+- Al cambiar de dominio: registrar de nuevo las llaves de acceso, reinstalar la PWA del iPhone (y aceptar las notificaciones) y poner las URL de vuelta de Spotify y Google en sus consolas.
+
 ## ⚠️ Lo primero: esto se escribió SIN poder compilar C#
 
 El entorno donde se hizo no tenía .NET. El **front sí se compiló, se probó (`ng build`, 82 tests Vitest) y se vio en un navegador**. El **C# (API y agente), las migraciones y sus tests están sin compilar ni ejecutar**.
@@ -50,7 +58,7 @@ orden `descargar` en `POST /api/pc/ordenes` · evento `bandeja` en `POST /api/si
 - **Cielo en vivo** es un ajuste **de cada dispositivo** (`localStorage`), no del servidor: la pantalla de entrar se ve antes de tener sesión. Por defecto sigue el candado 3D.
 - **La bandeja** guarda los 50 últimos en memoria: se vacía al reiniciar la API (los archivos están en el PC).
 - **«Enciende el PC» desde Siri no se puede** si el PC es el que corre la zona privada (ver [docs/12-siri-y-atajos.md](docs/12-siri-y-atajos.md)); sí despertar otros aparatos.
-- **Funnel**: sigue como estaba. `tailscale/serve-privado.json` es la alternativa sin Funnel (documentada en `docs/07-seguridad.md`), **no activada**.
+- **Salida a Internet**: ya no es Tailscale Funnel sino un túnel de Cloudflare en `https://app.wolvem.dev` (ver abajo, «Cloudflare en lugar de Tailscale»).
 - No se envió ningún mensaje de prueba real (Telegram, correo, WhatsApp) en esta tanda.
 
 ## Ideas que quedaron sobre la mesa (no hechas)

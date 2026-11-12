@@ -3,13 +3,13 @@
 ## Dónde corre
 
 - **Equipo de casa**: Windows 11 + Docker Desktop (WSL 2). Proyecto Compose `zona-privada` en `C:\Users\wolve\Proyectos\zona-privada`.
-- **Dirección pública**: `https://equipo-de-casa.tail77819b.ts.net` (Tailscale Funnel, perfil `publico`).
+- **Dirección pública**: `https://app.wolvem.dev` (Cloudflare Tunnel, servicio `tunel`). El portafolio irá en `https://wolvem.dev`.
 - La web pública (`wolverine307mda.github.io`, otro repo) enlaza a la app y pregunta `GET /api/salud` para saber si el equipo está encendido.
 
 ## Comandos del día a día
 
 ```bash
-docker compose --profile publico up -d --build   # levantar todo (primera vez o tras cambios grandes)
+docker compose up -d --build                     # levantar todo (primera vez o tras cambios grandes)
 docker compose up -d --build api                 # desplegar cambios de código (front + API)
 .\herramientas\desplegar.ps1                      # lo mismo con red de seguridad: espera a que esté sana y, si no, vuelve a la versión anterior
 docker compose ps                                # estado
@@ -41,19 +41,20 @@ docker compose down                              # parar (los volúmenes y datos
 | `TELEGRAM_TOKEN` | `Telegram:Token` | bot |
 | `SPOTIFY_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET` | `Spotify:*`, `Google:*` | OAuth |
 | — | `Copias:Ruta=/copias` | la API vigila que haya copia reciente |
-| `TS_AUTHKEY` | (tailscale) | solo la primera vez; luego usa su estado guardado |
-| `CLOUDFLARE_TUNNEL_TOKEN` | (cloudflared) | perfil `tunel` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | (cloudflared) | obligatorio: sin él Compose no arranca |
+| `ALLOWED_HOSTS` | `AllowedHosts` | por defecto `app.wolvem.dev;localhost;127.0.0.1;api;equipo-de-casa` |
 
 Solo en desarrollo: `Datos:EnMemoria=true` (con `ASPNETCORE_ENVIRONMENT=Development`) usa EF InMemory.
 `WebPublica:Origenes` (opcional) cambia los orígenes CORS de `/api/salud` (por defecto `https://wolvem.dev` y `https://wolverine307mda.github.io`).
 
-## Tailscale Funnel
+## Cloudflare Tunnel
 
-- Servicio `tailscale` (perfil `publico`), `hostname: equipo-de-casa`, modo *userspace*, estado en el volumen `tailscale`.
-- `tailscale/serve.json`: HTTPS en 443 → `http://api:8080`, con `AllowFunnel` (accesible desde Internet).
-- Primera vez: clave de un solo uso en https://login.tailscale.com/admin/settings/keys → `TS_AUTHKEY`. Funnel debe estar
-  permitido en la política del tailnet.
-- Alternativa: **Cloudflare Tunnel** (perfil `tunel`) + Cloudflare Access con tu email (ver historial del README antiguo en git).
+- Servicio `tunel` (`cloudflare/cloudflared`): conexión **saliente** a Cloudflare, sin abrir puertos. Arranca con todo lo demás (`docker compose up -d`).
+- El túnel se llama «zona-privada» (Cloudflare Zero Trust → Networks → Tunnels). Su ruta pública `app.wolvem.dev` → `http://api:8080` y el registro DNS
+  se definen allí, no en el repositorio. `CLOUDFLARE_TUNNEL_TOKEN` (en `.env`, nunca en git) es obligatorio.
+- Sin Cloudflare Access: la app ya pide su propio acceso (usuario, contraseña y 2FA, o llave de acceso).
+- Las llaves de acceso (passkeys), las notificaciones push y la PWA del iPhone están atadas al dominio: tras un cambio de dirección hay que registrarlas e instalarla de nuevo.
+- Las vueltas OAuth de Spotify y Google (`https://app.wolvem.dev/api/conexiones/<proveedor>/vuelta`) se dan de alta en sus consolas de desarrollador.
 
 ## Copias de seguridad
 

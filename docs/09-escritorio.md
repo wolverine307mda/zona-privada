@@ -46,7 +46,7 @@ Telegram escuchando, ni órdenes dobles a tus aparatos. El agente del PC sigue c
 No lo hace nada solo. Con la versión de escritorio estable y los datos importados:
 
 1. Sal del **ensayo** (menú; avisa de que se duplicarían los avisos si Docker sigue encendido).
-2. Para el Funnel de Docker (`docker compose --profile publico stop tailscale`) y abre el de escritorio (menú **Abrir… a Internet (Funnel)**).
+2. Para el Funnel de Docker (`docker compose stop tunel`) y abre el de escritorio (menú **Abrir… a Internet (Funnel)**).
 3. Los passkeys están atados al dominio: el de escritorio usa el nombre Tailscale de este equipo; registra de nuevo tus llaves desde Seguridad.
 4. Cuando todo vaya bien durante unos días, puedes parar Docker. Para **volver**, cambia a «Modo Docker» en el menú: Docker no se ha tocado.
 

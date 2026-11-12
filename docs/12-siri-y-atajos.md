@@ -1,7 +1,7 @@
 # 12. Siri y Atajos del iPhone (recetas)
 
 Todo lo que el iPhone puede hacer con la zona privada, sin app nativa y sin pagar nada: la app **Atajos** de iOS llama a la API con un token. Cada token lleva solo los permisos que le des
-(Seguridad › Claves y atajos), no abre la app y se revoca con un toque. La dirección es la de tu Funnel (`URL_PUBLICA`), en los ejemplos `https://equipo-de-casa.tail77819b.ts.net`.
+(Seguridad › Claves y atajos), no abre la app y se revoca con un toque. La dirección es la pública (`URL_PUBLICA`), en los ejemplos `https://app.wolvem.dev`.
 
 **Receta base de cualquier atajo**: acción **Obtener contenido de URL** → dirección → método → cabecera `Authorization` = `Bearer mda_…` → (si es POST) cuerpo **JSON**.
 Para que Siri lo diga, añade **Mostrar resultado** o **Pronunciar texto** con el campo `mensaje` de la respuesta (`Obtener valor del diccionario › mensaje`).
@@ -18,8 +18,8 @@ Para ejecutarlo con la voz: ponle un nombre corto al atajo («Oye Siri, enciende
 | avisar de un pago de Apple Pay | `POST /api/atajos/pago` | pago | `{"comercio":"Mercadona","importe":12.5}` | — |
 | «llegué a casa» / «me voy» | `POST /api/atajos/casa` | casa | `{"estado":"llegada"}` o `{"estado":"salida"}` | `mensaje` (al salir, con la comprobación: puertas abiertas y aparatos encendidos) |
 | «me voy a dormir» / «despierto» | `POST /api/atajos/dormir` | casa | `{"estado":"duermo"}` o `{"estado":"despierto"}` | `mensaje` (agenda, tiempo, hora de despertar y lo que queda abierto) |
-| «ropa tendida» / «ropa recogida» | `POST /api/atajos/ropa` | casa | `{"estado":"tendida"}` o `{"estado":"recogida"}` | `mensaje` |
-| añadir un contacto desde su ficha (hoja de compartir) | `POST /api/atajos/persona` | personas | `{"nombre":"María","dia":3,"mes":3,"telefono":"600…"}` | `mensaje` (si ya estaba, lo dice y no lo repite) |
+| «ropa tendida» / «ropa recogida» | `POST /api/atajos/ropa` | casa | `{"estado":"tendida"}` o `{"estado":"recogida"}` | `mensaje` |
+| añadir un contacto desde su ficha (hoja de compartir) | `POST /api/atajos/persona` | personas | `{"nombre":"María","dia":3,"mes":3,"telefono":"600…"}` | `mensaje` (si ya estaba, lo dice y no lo repite) |
 | pasos, peso, sueño y entrenos de Apple Salud | `POST /api/atajos/salud` | salud | `{"pasos":8200,"peso":80.2,"sueño":7.1,"entrenos":[{"tipo":"carrera","minutos":30}]}` | `mensaje` (se guarda cifrado; un entreno repetido no se duplica) |
 | poner un momento musical | `POST /api/atajos/momento` | casa | `{"nombre":"Dormir"}` | `mensaje` |
 | poner una escena del PC | `POST /api/atajos/escena` | casa | `{"nombre":"Cine"}` | `mensaje` |

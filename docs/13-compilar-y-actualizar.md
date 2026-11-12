@@ -50,7 +50,7 @@ Entra en `http://localhost:4200`. Trucos:
 
 ## 3. Pruebas en Docker (con datos copiados, sin avisos)
 
-Para probar la app «de verdad» (PostgreSQL real, PWA, Tailscale) sin tocar la real. No manda Telegram, correo, WhatsApp ni notificaciones, y tus carpetas van en solo lectura. Detalle en [`compose.test.yaml`](../compose.test.yaml).
+Para probar la app «de verdad» (PostgreSQL real, PWA) sin tocar la real. No manda Telegram, correo, WhatsApp ni notificaciones, y tus carpetas van en solo lectura. Detalle en [`compose.test.yaml`](../compose.test.yaml).
 
 ```powershell
 # levantar o actualizar las pruebas con lo que haya en el código (front + API)

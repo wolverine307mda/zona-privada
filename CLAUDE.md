@@ -1,7 +1,7 @@
 # Guía para asistentes de IA
 
 Proyecto personal de Mario: «zona privada», app de un solo usuario (Angular 22 + ASP.NET Core 10 + PostgreSQL, en Docker
-en su PC de casa, publicada con Tailscale Funnel). Habla con él en **español**.
+en su PC de casa, publicada con Cloudflare Tunnel en https://app.wolvem.dev). Habla con él en **español**.
 
 ## Antes de tocar nada
 

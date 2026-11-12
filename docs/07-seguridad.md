@@ -8,11 +8,7 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 ## Exposición de red
 
 - Ningún puerto abierto en el router. La API escucha en `127.0.0.1:8080` y Seq en `127.0.0.1:5341`.
-- Internet llega solo por **Tailscale Funnel** (HTTPS con certificado de Tailscale) o, como alternativa, Cloudflare Tunnel (+ Access).
-- **Más cerrado aún (opcional): sin Funnel.** `tailscale/serve-privado.json` publica la app solo dentro de tu tailnet (HTTPS, sin `AllowFunnel`): únicamente entran los
-  dispositivos con Tailscale (PC e iPhone con su app). Se pierden la galería pública, el estado en vivo y el aviso «encendido» de la web pública, y lo que dependa de
-  que un servicio externo llame a tu dirección (comprueba las vueltas OAuth de Spotify/Google y los webhooks antes de cambiar). Para activarlo, en `compose.yaml` pon
-  `TS_SERVE_CONFIG: /config/serve-privado.json` en el servicio `tailscale` y `docker compose --profile publico up -d tailscale`. Para volver, `serve.json`.
+- Internet llega solo por el **túnel de Cloudflare** (`https://app.wolvem.dev`): `cloudflared` abre una conexión saliente y Cloudflare pone el HTTPS. No hay Cloudflare Access: la barrera es el acceso propio de la app (usuario, contraseña y 2FA, o llave de acceso).
 - `ForwardedHeaders` confía en el proxy (solo accesible desde la red interna de Docker) para conocer IP y esquema reales.
 
 ## Autenticación
@@ -79,8 +75,8 @@ Internet. Objetivos: que nadie más entre, que un robo de cookie o de token valg
 - **Sondas**: `/.env`, `/wp-login.php`, `/admin`, `/.git/config`… contestan 404 como cualquier ruta inexistente, se apuntan y la IP pública queda
   bloqueada 1 hora (nunca una IP local o desconocida). Resumen por hora a Telegram, solo si hubo alguna.
 - **Latido** a Healthchecks.io: ver «Latido» en [6. Despliegue](06-despliegue-y-operacion.md).
-- Opción no activada: dejar la app **solo dentro de Tailscale** (sin Funnel). Es lo más seguro, pero la app instalada en el iPhone y el
-  portfolio dejarían de llegar desde fuera de tu red.
+- Opción no activada: poner **Cloudflare Access** delante de `app.wolvem.dev`. Es más cerrado, pero la app instalada en el iPhone y el
+  portafolio dejarían de llegar sin pasar por esa puerta.
 
 ## Continuidad
 
@@ -132,7 +128,7 @@ El agente lee las zonas térmicas de ACPI por WMI (`MSAcpi_ThermalZoneTemperatur
 aconsejando el plan «Ahorro» de energía, y avisa de nuevo cuando baja. La salud se evalúa cada 10 minutos, así que el aviso llega en la segunda lectura caliente seguida.
 Limitaciones: es la zona térmica de la placa, que en muchos portátiles sigue de cerca al procesador pero no es la lectura del chip, y hay equipos que no la exponen (entonces no hay dato ni aviso).
 Para la temperatura exacta del chip haría falta una librería con su propio controlador (LibreHardwareMonitor), que no se ha añadido.
-- **Vigilante del Funnel** (`Seguridad/VigilanteFunnel.cs`): cada 10 minutos pide `/api/salud` a `App:UrlPublica` como lo haría alguien de fuera y mira cuánto le queda al certificado; avisa por Telegram si deja de responder (a la segunda vez seguida), cuando vuelve y cuando el certificado está a menos de 10 días de caducar.
+- **Vigilante de la dirección pública** (`Seguridad/VigilanteFunnel.cs`, el nombre es de la época de Tailscale Funnel): cada 10 minutos pide `/api/salud` a `App:UrlPublica` como lo haría alguien de fuera y mira cuánto le queda al certificado; avisa por Telegram si deja de responder (a la segunda vez seguida), cuando vuelve y cuando el certificado está a menos de 10 días de caducar.
 - **Tarpit** (`Seguridad/Tarpit.cs`): las rutas de sonda reciben el 404 a un byte cada 2 s durante un minuto (tope de 20 conexiones a la vez); las IP de casa no.
 - **Mapa de atacantes** (`Seguridad/GeoSondas.cs`, globo en Seguridad): cada sonda se guarda 90 días y se ubica con la base DB-IP Lite (CC BY 4.0, hay que citarla: «IP geolocation by DB-IP»). La IP de origen queda guardada en tu base de datos; la geolocalización es aproximada (ciudad o país).
 

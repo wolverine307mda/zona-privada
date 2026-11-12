@@ -19,7 +19,7 @@ recurrentes, gasolina, deudas del coche), la **agenda** (eventos, recordatorios,
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| Docker Desktop | reciente (con WSL 2 en Windows) | producción: PostgreSQL, API, Seq, copias, Tailscale |
+| Docker Desktop | reciente (con WSL 2 en Windows) | producción: PostgreSQL, API, Seq, copias, Cloudflare Tunnel |
 | .NET SDK | 10.0 | desarrollo de la API, tests, agente de Windows |
 | Node.js | 24+ (npm 11) | desarrollo del front (Angular 22) |
 | Git | cualquiera | — |
@@ -29,18 +29,18 @@ recurrentes, gasolina, deudas del coche), la **agenda** (eventos, recordatorios,
 ```bash
 # 1. Configuración (una vez): copia la plantilla y rellena los valores
 cp .env.example .env          # en Windows: copy .env.example .env
-#    obligatorios: POSTGRES_PASSWORD, ADMIN_USUARIO, ADMIN_EMAIL, ADMIN_PASSWORD (12+, mejor una frase larga), SEQ_PASSWORD
-#    opcionales:   TS_AUTHKEY, URL_PUBLICA, AGENTE_TOKEN, CARPETA_*, CORREO_*, WHATSAPP_*, TELEGRAM_TOKEN, SPOTIFY_*, GOOGLE_*
+#    obligatorios: POSTGRES_PASSWORD, ADMIN_USUARIO, ADMIN_EMAIL, ADMIN_PASSWORD (12+, mejor una frase larga), SEQ_PASSWORD, CLOUDFLARE_TUNNEL_TOKEN
+#    opcionales:   URL_PUBLICA, ALLOWED_HOSTS, AGENTE_TOKEN, CARPETA_*, CORREO_*, WHATSAPP_*, TELEGRAM_TOKEN, SPOTIFY_*, GOOGLE_*
 
-# 2. Todo (base de datos, API con el front dentro, Seq, copias diarias) + Tailscale Funnel (HTTPS público)
-docker compose --profile publico up -d --build
+# 2. Todo (base de datos, API con el front dentro, Seq, copias diarias) + Cloudflare Tunnel (HTTPS público)
+docker compose up -d --build
 
 # 3. Comprobar
 docker compose ps
 curl http://localhost:8080/api/salud          # {"estado":"ok",...}
 ```
 
-- App en local: **http://localhost:8080** · en Internet: **https://equipo-de-casa.tail77819b.ts.net** (Tailscale Funnel).
+- App en local: **http://localhost:8080** · en Internet: **https://app.wolvem.dev** (Cloudflare Tunnel).
 - Registros (Seq): **http://localhost:5341** (usuario `admin`, contraseña `SEQ_PASSWORD`).
 - El usuario administrador se crea (o se actualiza su contraseña) al arrancar la API con `ADMIN_*` del `.env`.
 - Las **migraciones** de la base de datos se aplican solas al arrancar.
@@ -53,8 +53,8 @@ curl http://localhost:8080/api/salud          # {"estado":"ok",...}
 docker compose up -d --build api              # recompila front + API y reinicia solo la API
 ```
 
-Sin Tailscale (solo en este equipo): `docker compose up -d --build`. Con Cloudflare Tunnel en vez de Tailscale:
-`docker compose --profile tunel up -d --build` (necesita `CLOUDFLARE_TUNNEL_TOKEN`).
+El túnel de Cloudflare ("zona-privada") sale con todo lo demás; su ruta `app.wolvem.dev` → `http://api:8080` se configura en
+Cloudflare (Zero Trust → Networks → Tunnels) y `CLOUDFLARE_TUNNEL_TOKEN` es obligatorio en `.env`.
 
 ### B) Desarrollo rápido sin Docker (base de datos en memoria)
 
@@ -125,7 +125,7 @@ cd web && npx ng build                # comprobar que el front compila
 | Registros | **Serilog** + **Seq** | consola + Seq en `http://seq:5341` |
 | Notificaciones | **Web Push** (VAPID propio, paquete `WebPush`), correo SMTP, WhatsApp (CallMeBot), **Telegram Bot API** |
 | Integraciones | Spotify (OAuth), Google Calendar (OAuth), **Open-Meteo** (tiempo, sin clave) |
-| Despliegue | **Docker Compose** (imagen única multi-etapa), **Tailscale Funnel** (o Cloudflare Tunnel), copias `pg_dump` diarias |
+| Despliegue | **Docker Compose** (imagen única multi-etapa), **Cloudflare Tunnel**, copias `pg_dump` diarias |
 | Tests | **xUnit** + `Microsoft.AspNetCore.Mvc.Testing` · **Vitest** + jsdom |
 | Agente | consola .NET 10 en Windows que manda CPU/RAM/discos/red reales a la API |
 
@@ -141,21 +141,21 @@ flowchart LR
     SP[Spotify / Google / Open-Meteo]
   end
   subgraph "Equipo de casa (Windows + Docker Desktop)"
-    TS[tailscale<br/>Funnel :443] --> API
+    CF[tunel<br/>cloudflared] --> API
     API[api<br/>ASP.NET Core 10<br/>+ Angular en wwwroot<br/>127.0.0.1:8080]
     API --> DB[(db<br/>PostgreSQL 17)]
     API --> SEQ[seq<br/>127.0.0.1:5341]
     CP[copias<br/>pg_dump diario] --> DB
     AG[agente Windows<br/>Mda.Agente] -- POST /api/sistema/agente --> API
   end
-  M -- HTTPS --> TS
+  M -- HTTPS --> CF
   API -- long polling --> TG
   API --> SP
 ```
 
 - **Una sola imagen** (`Dockerfile`): compila Angular, lo copia a `wwwroot` y publica la API. La API sirve el front
   y cualquier ruta que no sea `/api/*` ni `/hubs/*` devuelve `index.html`.
-- **Ningún puerto abierto al exterior**: la API escucha en `127.0.0.1:8080`; Internet entra por Tailscale Funnel.
+- **Ningún puerto abierto al exterior**: la API escucha en `127.0.0.1:8080`; Internet entra por el túnel de Cloudflare (conexión saliente).
 - Detalle completo: [docs/01-arquitectura.md](docs/01-arquitectura.md).
 
 ---
@@ -208,8 +208,7 @@ Todas las rutas HTTP: [docs/03-api.md](docs/03-api.md).
 ├── web/                         Angular 22
 │   ├── public/                  sw.js, manifest, iconos, fuentes, img/avatar.webp
 │   └── src/app/                 core/, shell/, entrar/, inicio/, gastos/, agenda/, notas/, documentos/, musica/, perfil/, seguridad/, pronto/
-├── tailscale/serve.json         configuración de Tailscale Funnel (proxy a api:8080)
-├── compose.yaml                 db, api, seq, copias, tailscale (perfil publico), tunel (perfil tunel)
+├── compose.yaml                 db, api, seq, copias, tunel (Cloudflare)
 ├── Dockerfile                   imagen única: front + API
 ├── .env.example                 plantilla de configuración (el .env real NUNCA se sube)
 ├── CLAUDE.md                    guía rápida para asistentes de IA
@@ -228,7 +227,6 @@ Resumen:
 | `POSTGRES_PASSWORD` | sí | contraseña de PostgreSQL |
 | `ADMIN_USUARIO`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | sí | la única cuenta; se sincroniza al arrancar |
 | `SEQ_PASSWORD` | sí | panel de registros |
-| `TS_AUTHKEY` | con perfil `publico` | Tailscale (solo la primera vez) |
 | `URL_PUBLICA` | recomendable | enlaces de los correos y vueltas OAuth |
 | `ZONA_HORARIA` | no (`Europe/Madrid`) | repeticiones y avisos en hora local |
 | `AGENTE_TOKEN` | para el agente | token compartido API ↔ agente |
@@ -237,7 +235,7 @@ Resumen:
 | `WHATSAPP_*` | no | avisos por WhatsApp (CallMeBot) |
 | `TELEGRAM_TOKEN` | no | bot de Telegram (@BotFather) |
 | `SPOTIFY_*`, `GOOGLE_*` | no | cuentas enlazadas por OAuth |
-| `CLOUDFLARE_TUNNEL_TOKEN` | con perfil `tunel` | alternativa a Tailscale |
+| `CLOUDFLARE_TUNNEL_TOKEN` | sí | token del túnel de Cloudflare (la ruta pública `app.wolvem.dev`) |
 
 ---
 
@@ -257,6 +255,6 @@ Detalle: [docs/07-seguridad.md](docs/07-seguridad.md).
 3. [API HTTP](docs/03-api.md) — todas las rutas con método, cuerpo y respuesta
 4. [Frontend](docs/04-frontend.md) — estructura Angular, rutas, servicios, estilos, temas, PWA
 5. [Integraciones](docs/05-integraciones.md) — Telegram, Spotify, Google Calendar, correo, WhatsApp, Web Push, Open-Meteo
-6. [Despliegue y operación](docs/06-despliegue-y-operacion.md) — Docker, Tailscale, variables, copias, restaurar, base de datos, agente, problemas típicos
+6. [Despliegue y operación](docs/06-despliegue-y-operacion.md) — Docker, Cloudflare Tunnel, variables, copias, restaurar, base de datos, agente, problemas típicos
 7. [Seguridad](docs/07-seguridad.md)
 8. [Desarrollo](docs/08-desarrollo.md) — convenciones, tests, migraciones, cómo añadir un módulo, trucos
