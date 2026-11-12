@@ -1,0 +1,2 @@
+# Los scripts que se ejecutan dentro de contenedores Linux deben quedarse con saltos de línea LF (con CRLF, sh falla)
+*.sh text eol=lf
