@@ -11,7 +11,7 @@
 ```bash
 docker compose up -d --build                     # levantar todo (primera vez o tras cambios grandes)
 docker compose up -d --build api                 # desplegar cambios de código (front + API)
-.ctualizar.cmd                                  # UN SOLO COMANDO: recompila todo (front + API), levanta todo y, si la API no queda sana, vuelve a la versión anterior
+.\actualizar.cmd                                  # UN SOLO COMANDO: recompila todo (front + API), levanta todo y, si la API no queda sana, vuelve a la versión anterior
 docker compose ps                                # estado
 docker compose logs -f api                       # registros de la API (también en Seq: http://localhost:5341)
 docker compose restart api                       # reiniciar sin recompilar (relee .env)
