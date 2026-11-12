@@ -17,6 +17,8 @@ La zona privada también puede correr **sin Docker**, como procesos de Windows q
 Los programas viven en `C:\Program Files\ZonaPrivada\` (solo lectura salvo administradores) y los datos en `C:\ProgramData\ZonaPrivada\`.
 
 **La configuración real es `C:\ProgramData\ZonaPrivada\config\.env`**: el lanzador la lee y pasa a la API solo las variables de una lista fija (`ConfigNativa.EntornoApi`). El `.env` de la carpeta del repositorio es de la época de Docker y solo sirve de plantilla: la API de escritorio no lo lee. Si añades una variable nueva, hay que añadirla también a esa lista y reiniciar el lanzador.
+
+**Ojo con las claves de servicios (correo, Telegram, WhatsApp, Spotify, Google…):** el `.env` solo las siembra la primera vez; la API las guarda cifradas en su base de datos y lo guardado en **Seguridad → Claves** manda sobre el `.env` (`Seguridad/Secretos.cs`). Cambiar `CORREO_*` en el `.env` de ProgramData no cambia nada si el campo ya está en la base: hay que cambiarlo en esa pantalla (no hace falta reiniciar).
 Las dos versiones no comparten puertos ni base de datos: pueden estar encendidas a la vez.
 
 ## Instalarla
