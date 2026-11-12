@@ -1,5 +1,7 @@
-# Despliega la API con red de seguridad: guarda la imagen actual, reconstruye, espera a que /api/salud conteste
-# y, si no arranca, vuelve sola a la versión anterior. Uso (desde la raíz del repo):  .\herramientas\desplegar.ps1
+# Actualiza TODA la zona privada con red de seguridad: guarda la imagen actual de la API, recompila (Angular + API en el Dockerfile),
+# levanta todos los servicios (base de datos, API, Seq, copias y túnel) con lo que haya en el código y en compose.yaml,
+# espera a que /api/salud conteste y, si la API no arranca, vuelve sola a la versión anterior.
+# Uso (desde la raíz del repo):  .ctualizar.cmd   (o  .\herramientas\desplegar.ps1)
 #   -Volver   : no reconstruye, solo vuelve a la imagen guardada como «anterior»
 param([switch]$Volver)
 $ErrorActionPreference = 'Stop'
@@ -35,7 +37,7 @@ if ($contenedor) {
     Write-Host "Guardada la versión actual como $imagen`:anterior" -ForegroundColor Cyan
 } elseif ($Volver) { Write-Host 'No hay contenedor de la API.' -ForegroundColor Red; exit 1 }
 
-docker compose up -d --build api
+docker compose up -d --build
 if (-not (Esperar-Salud)) {
     Write-Host 'La API nueva no está sana tras el despliegue.' -ForegroundColor Red
     docker compose logs --tail 40 api
