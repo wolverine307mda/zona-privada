@@ -33,6 +33,8 @@ public static class Copia
 
     public static string CifradoDump(DateTime local) => $"{Prefijo}{local:yyyyMMdd}.dump.age";
     public static string CifradoClaves(DateTime local) => $"{Prefijo}{local:yyyyMMdd}-claves.tar.age";
+    // el .env de esta instalación (la clave maestra, la contraseña de PostgreSQL…): sin él las notas y las claves guardadas no se pueden leer aunque se tenga el dump
+    public static string CifradoEntorno(DateTime local) => $"{Prefijo}{local:yyyyMMdd}-entorno.age";
     public static bool EsDomingo(DateTime local) => local.DayOfWeek == DayOfWeek.Sunday;
 }
 

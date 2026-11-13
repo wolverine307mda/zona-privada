@@ -18,6 +18,8 @@ solo con lo que está fuera del PC.
 > La contraseña de Postgres, `MDA_CLAVE_MAESTRA` (que cifra notas y claves de servicios) y `AGENTE_TOKEN` viven en el `.env`: por eso va cifrado en las copias.
 > Sin `MDA_CLAVE_MAESTRA` las notas y las claves guardadas **no se pueden leer**, aunque tengas el dump.
 
+> **Versión de escritorio (la real):** sus copias cifradas diarias llevan los mismos tres archivos (`.dump.age`, `-claves.tar.age` y, desde noviembre de 2026, `-entorno.age`). Para llevarla a otro equipo a propósito (el mini PC) hay un camino más corto y comprobado: [14-mover-al-mini-pc.md](14-mover-al-mini-pc.md). Los pasos de abajo son los de Docker.
+
 ## Recuperar en un equipo nuevo
 
 1. Instala Docker Desktop (WSL 2), Git y [age](https://github.com/FiloSottile/age/releases).

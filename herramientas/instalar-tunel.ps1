@@ -47,9 +47,12 @@ try {
     if ($existe) {
         Write-Host "El servicio Cloudflared ya existe ($($existe.Status)). Usa -Reinstalar para rehacerlo." -ForegroundColor Yellow
     } else {
-        $envRepo = Join-Path $raiz '.env'
-        $linea = if (Test-Path $envRepo) { Get-Content $envRepo | Where-Object { $_ -match '^CLOUDFLARE_TUNNEL_TOKEN=.+' } | Select-Object -First 1 } else { $null }
-        if (-not $linea) { throw 'Falta CLOUDFLARE_TUNNEL_TOKEN en el .env de la raiz.' }
+        # el .env de la raiz (la epoca de Docker) y, si no lo tiene, la configuracion de escritorio (la que deja mover-equipo.ps1 en un equipo nuevo)
+        $linea = $null
+        foreach ($envRepo in @((Join-Path $raiz '.env'), (Join-Path $env:ProgramData 'ZonaPrivada\config\.env'))) {
+            if (-not $linea -and (Test-Path $envRepo)) { $linea = Get-Content $envRepo | Where-Object { $_ -match '^CLOUDFLARE_TUNNEL_TOKEN=.+' } | Select-Object -First 1 }
+        }
+        if (-not $linea) { throw 'Falta CLOUDFLARE_TUNNEL_TOKEN en el .env de la raiz y en C:\ProgramData\ZonaPrivada\config\.env.' }
         $token = ($linea -replace '^CLOUDFLARE_TUNNEL_TOKEN=', '').Trim().Trim('"')
         Write-Host 'Instalo el servicio Cloudflared (el token no se muestra)...' -ForegroundColor Cyan
         & $exe service install $token

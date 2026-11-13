@@ -11,6 +11,7 @@ public class CopiasTests
         Assert.Equal("zonaprivada-20261105-0307.dump", Copia.Nombre(t));
         Assert.Equal("zonaprivada-20261105.dump.age", Copia.CifradoDump(t));
         Assert.Equal("zonaprivada-20261105-claves.tar.age", Copia.CifradoClaves(t));
+        Assert.Equal("zonaprivada-20261105-entorno.age", Copia.CifradoEntorno(t));   // el mismo nombre que da copias.sh a la configuración
     }
 
     [Fact]

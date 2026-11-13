@@ -95,6 +95,7 @@ sealed class CopiasNativas
         if (_agePublica.Length == 0 || !File.Exists(_r.AgeExe) || _nube.Length == 0 || !Directory.Exists(_nube)) return;
         var cifDump = Path.Combine(_nube, Copia.CifradoDump(ahora));
         var cifClaves = Path.Combine(_nube, Copia.CifradoClaves(ahora));
+        var cifEntorno = Path.Combine(_nube, Copia.CifradoEntorno(ahora));
         var tar = Path.Combine(_r.Temporal, "claves.tar");
         try
         {
@@ -105,15 +106,19 @@ sealed class CopiasNativas
                 TarFile.CreateFromDirectory(_r.Claves, tar, includeBaseDirectory: false);
                 if (!await Cifrar(tar, cifClaves)) return;
             }
+            // la configuración (con la clave maestra): se cifra directamente desde su sitio, sin dejar una copia en claro
+            var env = Path.Combine(_r.Config, ".env");
+            if (File.Exists(env) && !await Cifrar(env, cifEntorno)) return;
             if (Copia.EsDomingo(ahora))
             {
                 var semanal = Path.Combine(_nube, "semanal");
                 Directory.CreateDirectory(semanal);
                 File.Copy(cifDump, Path.Combine(semanal, Path.GetFileName(cifDump)), true);
                 if (File.Exists(cifClaves)) File.Copy(cifClaves, Path.Combine(semanal, Path.GetFileName(cifClaves)), true);
-                Limpiar(semanal, $"{Copia.Prefijo}*.dump.age", Copia.Semanales); Limpiar(semanal, $"{Copia.Prefijo}*-claves.tar.age", Copia.Semanales);
+                if (File.Exists(cifEntorno)) File.Copy(cifEntorno, Path.Combine(semanal, Path.GetFileName(cifEntorno)), true);
+                Limpiar(semanal, $"{Copia.Prefijo}*.dump.age", Copia.Semanales); Limpiar(semanal, $"{Copia.Prefijo}*-claves.tar.age", Copia.Semanales); Limpiar(semanal, $"{Copia.Prefijo}*-entorno.age", Copia.Semanales);
             }
-            Limpiar(_nube, $"{Copia.Prefijo}*.dump.age", Copia.Diarias); Limpiar(_nube, $"{Copia.Prefijo}*-claves.tar.age", Copia.Diarias);
+            Limpiar(_nube, $"{Copia.Prefijo}*.dump.age", Copia.Diarias); Limpiar(_nube, $"{Copia.Prefijo}*-claves.tar.age", Copia.Diarias); Limpiar(_nube, $"{Copia.Prefijo}*-entorno.age", Copia.Diarias);
             _log($"copias: copia cifrada subida {Path.GetFileName(cifDump)}");
         }
         finally { try { File.Delete(tar); } catch (IOException) { } }
