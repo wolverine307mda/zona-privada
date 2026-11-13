@@ -6,7 +6,7 @@
   <app-globo-inicio class="ch__globo" />
   <header class="ch__hola">
     <div class="ch__saludo">
-      <p class="ch__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time>{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) }}</time></p>
+      <p class="ch__fecha">{{ ahora().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) }} · <time class="ch__hora">{{ ahora().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</time></p>
       <h2 class="ch__titulo">{{ saludo() }}@if (nombre()) {, <em>{{ nombre() }}</em>}</h2>
       <app-bienvenida-frase [nombre]="nombre()" [equipo]="a()?.equipo ?? 'tu equipo'" />
     </div>

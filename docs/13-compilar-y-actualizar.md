@@ -89,6 +89,23 @@ Lo que hace, en orden:
 2. **Pide permisos** una vez e **instala**: copia a `C:\Program Files\ZonaPrivada\componentes\api` y/o `ZonaPrivada.exe`. Con `-Api` o `-Lanzador` cierra el lanzador, la API y PostgreSQL antes de copiar, y lo vuelve a abrir.
 3. **Comprueba** que `http://127.0.0.1:8090/api/salud` contesta 200 (espera hasta 2 minutos; el arranque tarda más si hay migraciones).
 
+**Sin nadie delante** (una tarea, o el gestor de servicios) el mismo script admite:
+
+| Interruptor | Qué hace |
+|---|---|
+| (si ya es administrador) | no pide el aviso de Windows: instala directamente. Nunca hace preguntas |
+| `-RevertirSiFalla` | si tras instalar la API no contesta **con la versión nueva**, vuelve sola a la anterior |
+| `-Volver` | restaura la API y el lanzador del despliegue anterior (`C:\ProgramData\ZonaPrivada\anterior`, una sola copia) |
+| `-NoReabrir` | instala y no abre el lanzador ni comprueba la salud: el lanzador es un icono de bandeja y necesita la sesión del usuario, que un servicio no tiene |
+
+Códigos de salida: `0` bien · `1` falló al compilar (no se instala nada) · `2` falló la instalación · `3` instalado pero no contesta (o con otra versión). Llámalo siempre a `actualizar-escritorio.ps1`, no a `actualizar.cmd` (que termina con `pause`).
+
+Cómo para la app: pide al lanzador que salga con calma (`ZonaPrivada.exe --salir`, que hace lo del menú «Salir»: API y PostgreSQL con `pg_ctl stop -m fast`). Si es una versión sin esa señal o no sale en 90 s, lo cierra a la fuerza. Después solo cierra **lo suyo**: los `Mda.Api.exe` y `postgres.exe` que viven en `Archivos de programa\ZonaPrivada` (otro PostgreSQL u otra API de desarrollo no se tocan).
+
+**Parar, iniciar y reiniciar** sin compilar nada: `.\herramientas\control-zona.ps1 parar|iniciar|reiniciar` (parar y reiniciar piden administrador; `iniciar` espera a que `/api/salud` conteste). Comparte con `actualizar-escritorio.ps1` las funciones de `herramientas\zona-comun.ps1`.
+
+**El gestor de servicios** (el proyecto hermano `C:\Users\wolve\Proyectos\gestor-servicios`, en https://serv.wolvem.dev) llama a estos mismos scripts desde un botón, con el catálogo `proyectos.json`: «Recompilar y desplegar» = `actualizar-escritorio.ps1 -Todo -RevertirSiFalla`, «Reiniciar/Parar/Iniciar» = `control-zona.ps1`, «Volver» = `-Volver`. El entorno de pruebas de Docker (apartado 3) lo recompila con `scripts\docker-zona-privada.ps1 actualizar`, del propio gestor, que ejecuta `docker compose -f compose.yaml -f compose.test.yaml up -d --build api`. Si cambias los argumentos de estos scripts o los comandos de Docker, cambia también el catálogo del gestor.
+
 Qué pasa al arrancar una API distinta:
 
 - El lanzador hace **solo una copia previa de la base** (`antes-de-actualizar-*.dump`, en la carpeta de copias de `C:\ProgramData\ZonaPrivada`) y después se aplican las migraciones nuevas. Las migraciones **no se deshacen**: si algo sale mal, esa copia es el camino de vuelta ([11](11-recuperacion.md)).

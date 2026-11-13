@@ -10,7 +10,7 @@
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/salud` | `{ estado: "ok", hora }`. CORS solo GET para la web pública (GitHub Pages) |
+| GET | `/api/salud` | `{ estado: "ok", hora, version }` (`version` = commit de la compilación; `desconocida` si se compiló sin git). CORS solo GET para la web pública (GitHub Pages) |
 | GET | `/api/inicio/resumen` | el semáforo de vida: copias, seguridad, dinero, PC y red en verde, ámbar o rojo con su motivo, y el peor como estado global (`Seguridad/Semaforo.cs`) |
 | GET | `/api/inicio/linea?fecha=` | la línea del tiempo de un día: gastos, salidas de fotografía, órdenes al PC y accesos, por hora (se compone al momento con lo que guardan los demás módulos, sin tabla propia; `Seguridad/Linea.cs`) |
 | GET | `/api/seguridad/sondas?dias=` | las sondas de los últimos 7 a 90 días agrupadas por sitio de origen (IP geolocalizada con DB-IP Lite, que se baja sola cada mes a `GeoIp:Ruta`, por defecto en la carpeta de derivados) para el globo de Seguridad (`Seguridad/GeoSondas.cs`) |

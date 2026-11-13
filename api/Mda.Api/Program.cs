@@ -349,7 +349,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseBloqueoSesion();
 
-app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow })).AllowAnonymous().RequireCors(WebPublica);
+app.MapGet("/api/salud", () => Results.Ok(new { estado = "ok", hora = DateTimeOffset.UtcNow, version = Mda.Api.Sistema.VersionApp.Actual })).AllowAnonymous().RequireCors(WebPublica);
 app.MapAuth();
 app.MapPasskeys();
 app.MapReautenticar();

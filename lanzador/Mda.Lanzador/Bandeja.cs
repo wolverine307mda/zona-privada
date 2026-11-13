@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.Json;
 
 namespace Mda.Lanzador;
@@ -48,6 +50,44 @@ sealed class Bandeja : ApplicationContext
     private bool _ocupado;
     private DateTime _ultimoArranque = DateTime.MinValue;
 
+    // «ZonaPrivada.exe --salir» (o quien abra este evento) pide salir con calma: lo usa actualizar-escritorio.ps1 antes de cambiar los archivos.
+    internal const string EventoSalir = @"Global\ZonaPrivada.Lanzador.Salir";
+    private EventWaitHandle? _pedirSalida;
+    private readonly System.Windows.Forms.Timer _vigilaSalida = new() { Interval = 1000 };
+
+    internal static int PedirSalida()
+    {
+        if (!EventWaitHandle.TryOpenExisting(EventoSalir, out var e)) return 1; // no hay lanzador abierto (o es de una versión sin esta señal)
+        using (e) e.Set();
+        return 0;
+    }
+
+    // Global\ y con permisos explícitos: quien pide salir puede ser el instalador con permisos de administrador o un servicio (SYSTEM).
+    // Se mira desde el hilo de la interfaz (un reloj), no desde otro hilo, para que Salir() haga lo mismo que el menú.
+    private void EscucharPeticionDeSalida()
+    {
+        try
+        {
+            var acl = new EventWaitHandleSecurity();
+            var derechos = EventWaitHandleRights.Modify | EventWaitHandleRights.Synchronize;
+            foreach (var sid in new SecurityIdentifier[] { WindowsIdentity.GetCurrent().User!, new(WellKnownSidType.BuiltinAdministratorsSid, null), new(WellKnownSidType.LocalSystemSid, null) })
+                acl.AddAccessRule(new EventWaitHandleAccessRule(sid, derechos, AccessControlType.Allow));
+            _pedirSalida = EventWaitHandleAcl.Create(false, EventResetMode.AutoReset, EventoSalir, out _, acl);
+            _vigilaSalida.Tick += (_, _) =>
+            {
+                if (_pedirSalida is null || !_pedirSalida.WaitOne(0)) return;
+                Log("salida pedida desde fuera");
+                _vigilaSalida.Stop();
+                Salir();
+            };
+            _vigilaSalida.Start();
+        }
+        catch (Exception e) when (e is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException or PlatformNotSupportedException)
+        {
+            Log($"no se pudo abrir la señal de salida: {e.Message}");
+        }
+    }
+
     public Bandeja()
     {
         Log($"arranque: lanzador {Version}, modo {_modo}");
@@ -67,6 +107,7 @@ sealed class Bandeja : ApplicationContext
         _ = ArrancarAgente();
         _ = ArrancarTodo(primeraVez: true);
         _reloj.Start();
+        EscucharPeticionDeSalida();
         Log("arranque: listo");
     }
 
@@ -521,6 +562,7 @@ sealed class Bandeja : ApplicationContext
     private void Salir()
     {
         _agente.Cancel();
+        _vigilaSalida.Stop(); _pedirSalida?.Dispose(); _pedirSalida = null;
         // la versión de escritorio se para con calma; Docker no se toca
         if (_nativo is { } n) { try { Task.Run(n.Parar).Wait(TimeSpan.FromSeconds(60)); } catch (AggregateException) { } }
         _reloj.Stop();
