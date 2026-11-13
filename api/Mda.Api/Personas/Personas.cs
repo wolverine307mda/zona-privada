@@ -289,7 +289,7 @@ public static class PersonasServicio
         await db.SaveChangesAsync(ct);
         foreach (var t in textos)
         {
-            try { await avisos.PorPush("🎂 Cumpleaños", t, "/personas", ct); await avisos.PorTelegram(t, ct); }
+            try { await avisos.Avisar("personas", "🎂 Cumpleaños", t, textoTelegram: t, ct: ct); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar de un cumpleaños"); }
         }
     }

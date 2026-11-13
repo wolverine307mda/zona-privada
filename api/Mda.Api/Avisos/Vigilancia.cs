@@ -65,8 +65,7 @@ public class AlertaErrores(RegistroVigilancia registro, IAvisos avisos, TimeProv
         if (_ultimoAviso is { } u && ahora - u < Silencio) return;
         _ultimoAviso = ahora;
         var texto = $"La API ha dado {n} errores del servidor en los últimos 10 minutos. Mira los registros en Seq (http://localhost:5341).";
-        await avisos.PorPush("🔥 Errores en la API", texto, "/seguridad", ct);
-        await avisos.PorTelegram($"🔥 {texto}", ct);
+        await avisos.Avisar("seguridad", "🔥 Errores en la API", texto, textoTelegram: $"🔥 {texto}", ct: ct);
     }
 }
 

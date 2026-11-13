@@ -24,6 +24,8 @@ interface Estado {
   dosPasos: boolean; canales: { correo: boolean; whatsApp: boolean; telegram?: boolean }; avisarInicios: boolean; soloNuevos: boolean; fallosMes: number;
   resumenSemanal: boolean; dispositivosPush: number; copia: { vigilada: boolean; fecha: string | null; tamano: number; nombre: string | null };
 }
+interface TipoAviso { id: string; nombre: string; detalle: string; ruta: string; canales: string[]; }
+interface PreferenciasAvisos { canales: { id: string; nombre: string; disponible: boolean }[]; tipos: TipoAviso[]; }
 interface Telegram { configurado: boolean; vinculado: boolean; nombre: string | null; bot: string | null; }
 interface DosPasos { sharedKey: string; recoveryCodesLeft: number; recoveryCodes: string[] | null; isTwoFactorEnabled: boolean; }
 
@@ -82,6 +84,10 @@ export class Seguridad {
   protected readonly plantillasSenuelo = signal<{ id: string; nombre: string }[]>([]);
   protected readonly cerrarSesionSenuelo = signal(true);
 
+  // qué avisos llegan por qué canal
+  protected readonly preferencias = signal<PreferenciasAvisos | null>(null);
+  private readonly nombresCanal: Record<string, string> = { push: 'Notificaciones', telegram: 'Telegram', correo: 'Correo', whatsapp: 'WhatsApp' };
+
   // Telegram
   protected readonly telegram = signal<Telegram | null>(null);
   protected readonly enlaceTelegram = signal<string | null>(null);
@@ -127,9 +133,25 @@ export class Seguridad {
     inject(DestroyRef).onDestroy(() => { clearInterval(t); clearInterval(this.esperaTelegram); });
   }
 
+  protected async alternarCanal(tipo: TipoAviso, canal: string): Promise<void> {
+    const antes = this.preferencias();
+    if (!antes) return;
+    const canales = tipo.canales.includes(canal) ? tipo.canales.filter((c) => c !== canal) : [...tipo.canales, canal];
+    this.preferencias.set({ ...antes, tipos: antes.tipos.map((t) => (t.id === tipo.id ? { ...t, canales } : t)) });
+    try {
+      await firstValueFrom(this.http.put(`/api/seguridad/avisos/preferencias/${tipo.id}`, { canales }));
+    } catch {
+      this.preferencias.set(antes); // no se guardó: se vuelve a lo que había
+      this.aviso.set('No se pudo guardar ese cambio. Prueba otra vez.');
+    }
+  }
+
+  protected nombreCanal(id: string): string { return this.nombresCanal[id] ?? id; }
+
   private async cargar(): Promise<void> {
     this.leerSesiones();
     const get = <T>(url: string) => firstValueFrom(this.http.get<T>(url));
+    get<PreferenciasAvisos>('/api/seguridad/avisos/preferencias').then((p) => this.preferencias.set(p)).catch(() => {});
     get<Acceso[]>('/api/seguridad/accesos').then((a) => this.accesos.set(a)).catch(() => {});
     this.leerSenuelos();
     get<Estado>('/api/seguridad/estado').then((e) => {

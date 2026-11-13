@@ -1,5 +1,7 @@
+using System.Data.Common;
 using System.Net;
 using System.Net.Mail;
+using Microsoft.EntityFrameworkCore;
 
 namespace Mda.Api.Avisos;
 
@@ -21,11 +23,62 @@ public interface IAvisos
     Task<bool> PorPush(string titulo, string texto, string? url = null, CancellationToken ct = default) => Task.FromResult(false);
     // correo con versión HTML (el resumen semanal); el texto plano va de respaldo
     Task<bool> PorCorreoHtml(string asunto, string html, string texto, string? ruta = null, CancellationToken ct = default) => PorCorreo(asunto, texto, ct);
+
+    // Un aviso de una clase concreta (ver TiposAviso): sale por los canales que se hayan elegido para ella y, al pulsarlo, abre `ruta`
+    // (por defecto, la pantalla de origen de esa clase). `textoTelegram` permite añadir algo solo para el chat (por ejemplo, un comando).
+    // Esta versión de respaldo usa los canales de siempre; la de verdad (Avisos) lee las preferencias.
+    async Task<bool> Avisar(string tipo, string titulo, string texto, string? ruta = null, string? textoTelegram = null, CancellationToken ct = default)
+    {
+        var t = TiposAviso.Buscar(tipo);
+        return await Enviar(t?.PorDefecto ?? [TiposAviso.Push, TiposAviso.Telegram], titulo, texto, ruta ?? t?.Ruta, textoTelegram, ct);
+    }
+
+    // reparte un aviso por los canales dados; cada uno falla por su cuenta y basta con que uno llegue
+    // `enlace`: la dirección completa de la pantalla de origen; en Telegram (que no tiene botón) va como una última línea que se pulsa
+    async Task<bool> Enviar(IEnumerable<string> canales, string titulo, string texto, string? ruta, string? textoTelegram, CancellationToken ct, string? enlace = null)
+    {
+        var ok = false;
+        foreach (var c in canales)
+        {
+            try
+            {
+                ok |= c switch
+                {
+                    TiposAviso.Push => await PorPush(titulo, texto, ruta, ct),
+                    TiposAviso.Telegram => await PorTelegram((textoTelegram ?? $"{titulo}\n{texto}") + (enlace is null ? "" : $"\n{enlace}"), ct),
+                    TiposAviso.Correo => await PorCorreo(titulo, texto, ruta ?? "/inicio", ct),
+                    TiposAviso.WhatsApp => await PorWhatsApp($"{titulo}\n{texto}", ct),
+                    _ => false,
+                };
+            }
+            catch (Exception e) when (e is not OperationCanceledException) { /* un canal caído no frena a los demás */ }
+        }
+        return ok;
+    }
 }
 
-public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, Telegram.Bot bot, ILogger<Avisos> log) : IAvisos
+public class Avisos(IConfiguration config, IHttpClientFactory http, Push push, Telegram.Bot bot, IServiceScopeFactory scopes, ILogger<Avisos> log) : IAvisos
 {
     private string? C(string k) => string.IsNullOrWhiteSpace(config[k]) ? null : config[k];
+
+    // la elección de canales de cada clase de aviso (si no hay base de datos a mano, los de siempre)
+    public async Task<bool> Avisar(string tipo, string titulo, string texto, string? ruta = null, string? textoTelegram = null, CancellationToken ct = default)
+    {
+        var t = TiposAviso.Buscar(tipo);
+        var canales = t?.PorDefecto ?? [TiposAviso.Push, TiposAviso.Telegram];
+        try
+        {
+            using var scope = scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+            var fila = await db.Ajustes.AsNoTracking().FirstOrDefaultAsync(a => a.Clave == TiposAviso.Clave(tipo), ct);
+            if (t is not null) canales = TiposAviso.Interpretar(fila?.Valor, t);
+        }
+        catch (Exception e) when (e is InvalidOperationException or DbException) { log.LogWarning("No se pudieron leer las preferencias de avisos ({Tipo}): se usan las de siempre", tipo); }
+        if (canales.Length == 0) return false;
+        var destino = ruta ?? t?.Ruta ?? "/inicio";
+        var enlace = C("App:UrlPublica") is { } baseUrl ? baseUrl.TrimEnd('/') + destino : null;
+        return await ((IAvisos)this).Enviar(canales, titulo, texto, destino, textoTelegram, ct, enlace);
+    }
 
     public Canales Disponibles() => new(
         C("Correo:Servidor") is not null && C("Correo:Para") is not null,

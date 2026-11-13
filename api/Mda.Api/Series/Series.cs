@@ -182,7 +182,7 @@ public static class SeriesServicio
         await db.SaveChangesAsync(ct);
         foreach (var t in textos)
         {
-            try { await avisos.PorPush("📺 Series y películas", t, "/series", ct); await avisos.PorTelegram(t, ct); }
+            try { await avisos.Avisar("series", "📺 Series y películas", t, textoTelegram: t, ct: ct); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar de una serie"); }
         }
     }

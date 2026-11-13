@@ -103,7 +103,7 @@ public static class DiaDeCobro
 
     private static void Avisar(IAvisos avisos, ILogger log, string titulo, string texto) => _ = Task.Run(async () =>
     {
-        try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorTelegram($"{titulo}\n{texto}"); }
+        try { await avisos.Avisar("cartera", titulo, texto); }
         catch (Exception e) { log.LogWarning(e, "No se pudo avisar del cobro"); }
     });
 

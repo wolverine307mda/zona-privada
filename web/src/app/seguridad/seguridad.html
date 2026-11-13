@@ -151,6 +151,26 @@
           }
         </li>
       </ul>
+
+      @if (preferencias(); as p) {
+        <h4 class="avisos__titulo">Qué te avisa y por dónde</h4>
+        <p class="avisos__ayuda">Elige el canal de cada clase de aviso. Al pulsar una notificación se abre la pantalla de donde viene.</p>
+        <ul class="tipos">
+          @for (t of p.tipos; track t.id) {
+            <li class="tipo">
+              <span class="tipo__texto"><strong>{{ t.nombre }}</strong><span>{{ t.detalle }}</span></span>
+              <span class="tipo__canales" role="group" [attr.aria-label]="'Canales de ' + t.nombre">
+                @for (c of p.canales; track c.id) {
+                  <button class="chip" type="button" [class.on]="t.canales.includes(c.id)" [attr.aria-pressed]="t.canales.includes(c.id)"
+                          [disabled]="!c.disponible && !t.canales.includes(c.id)" [attr.title]="c.disponible ? null : c.nombre + ' no está configurado'"
+                          (click)="alternarCanal(t, c.id)">{{ c.nombre }}</button>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
       <label class="interruptor" [class.off]="!e.canales.correo">
         <input type="checkbox" [checked]="e.avisarInicios" [disabled]="!e.canales.correo" (change)="avisarInicios($any($event.target).checked)">
         <span class="interruptor__pista" aria-hidden="true"></span>

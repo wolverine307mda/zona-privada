@@ -99,7 +99,7 @@ public static class Garantias
         await db.SaveChangesAsync(ct);
         foreach (var t in textos)
         {
-            try { await avisos.PorPush("🧾 Garantía o devolución", t, "/papeles", ct); await avisos.PorTelegram($"🧾 {t}", ct); }
+            try { await avisos.Avisar("papeles", "🧾 Garantía o devolución", t, textoTelegram: $"🧾 {t}", ct: ct); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar de una garantía"); }
         }
     }

@@ -58,7 +58,7 @@ public static class EquiposConfianza
 
             var lugar = e.Pais == "?" ? "lugar desconocido" : e.Ciudad.Length > 0 ? $"{e.Ciudad}, {e.Pais}" : e.Pais;
             var texto = $"Has marcado «{e.Nombre}» como NO reconocido. IP {e.UltimaIp} ({lugar}). Se han cerrado {plan.SesionesACerrar.Count} sesión(es). Cambia tu contraseña en Perfil por si acaso.";
-            try { await avisos.PorPush("🚨 Equipo no reconocido", texto, "/perfil", ct); await avisos.PorTelegram($"🚨 {texto}", ct); } catch (Exception) { /* el aviso es un extra: lo importante ya está hecho */ }
+            try { await avisos.Avisar("seguridad", "🚨 Equipo no reconocido", texto, "/perfil", $"🚨 {texto}", ct); } catch (Exception) { /* el aviso es un extra: lo importante ya está hecho */ }
             return Results.Ok(new { cerradas = plan.SesionesACerrar.Count, cambiarClave = true, ip = e.UltimaIp, lugar });
         });
 

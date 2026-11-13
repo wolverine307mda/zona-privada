@@ -9,6 +9,7 @@ namespace Mda.Api.Seguridad;
 public record Latido(bool App);
 public record ConfianzaEquipo(bool Confianza);
 public record AjustesSeguridad(bool AvisarInicios, bool? ResumenSemanal = null, bool? SoloNuevos = null);
+public record PreferenciaAviso(string[]? Canales);
 
 // Seguridad: sesiones abiertas (con quién está en línea ahora), historial de accesos, avisos y verificación en dos pasos
 public static class SeguridadEndpoints
@@ -153,6 +154,38 @@ public static class SeguridadEndpoints
                 var r = await db.Ajustes.FindAsync(Vigilante.ResumenSemanal) ?? db.Ajustes.Add(new Ajuste { Clave = Vigilante.ResumenSemanal }).Entity;
                 r.Valor = rs ? "si" : "no";
             }
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        // qué avisos llegan por qué canal: cada clase de aviso con sus canales activos y a qué pantalla lleva al pulsarla
+        g.MapGet("/avisos/preferencias", async (AppDbContext db, IAvisos avisos) =>
+        {
+            var guardado = await db.Ajustes.AsNoTracking().Where(a => a.Clave.StartsWith("avisos:")).ToDictionaryAsync(a => a.Clave, a => a.Valor);
+            var d = avisos.Disponibles();
+            return Results.Ok(new
+            {
+                canales = new[]
+                {
+                    new { id = TiposAviso.Push, nombre = "Notificaciones", disponible = d.Push },
+                    new { id = TiposAviso.Telegram, nombre = "Telegram", disponible = d.Telegram },
+                    new { id = TiposAviso.Correo, nombre = "Correo", disponible = d.Correo },
+                    new { id = TiposAviso.WhatsApp, nombre = "WhatsApp", disponible = d.WhatsApp },
+                },
+                tipos = TiposAviso.Todos.Select(t => new
+                {
+                    t.Id, t.Nombre, t.Detalle, t.Ruta,
+                    canales = TiposAviso.Interpretar(guardado.GetValueOrDefault(TiposAviso.Clave(t.Id)), t),
+                }),
+            });
+        });
+
+        g.MapPut("/avisos/preferencias/{tipo}", async (string tipo, PreferenciaAviso p, AppDbContext db) =>
+        {
+            if (TiposAviso.Buscar(tipo) is null) return Results.NotFound();
+            var clave = TiposAviso.Clave(tipo);
+            var fila = await db.Ajustes.FindAsync(clave) ?? db.Ajustes.Add(new Ajuste { Clave = clave }).Entity;
+            fila.Valor = TiposAviso.Guardar(p.Canales ?? []);
             await db.SaveChangesAsync();
             return Results.NoContent();
         });

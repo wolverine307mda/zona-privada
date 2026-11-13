@@ -155,8 +155,7 @@ public class AvisosBateria(IServiceScopeFactory scopes, EstadoAgente agente, IAv
             if (m is null || _reglas.Evaluar(m.Bateria, m.Cargando, reloj.GetUtcNow()) is not { } texto) return;
             using var scope = scopes.CreateScope();
             if (!(await AvisosPcAjustes.Leer(scope.ServiceProvider.GetRequiredService<AppDbContext>(), ct)).Bateria) return;
-            await avisos.PorPush("🔋 Batería del portátil", texto, "/pc", ct);
-            await avisos.PorTelegram(texto, ct);
+            await avisos.Avisar("pc", "🔋 Batería del portátil", texto, textoTelegram: texto, ct: ct);
         }
         catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Fallo en el aviso de batería"); }
     }
@@ -216,18 +215,15 @@ public static class CasaEndpoints
             var a = await AvisosPcAjustes.Leer(scope.ServiceProvider.GetRequiredService<AppDbContext>());
             if (tipo == "descarga" && a.Descargas)
             {
-                await avisos.PorPush("⬇️ Descarga terminada", texto, "/pc");
-                await avisos.PorTelegram($"⬇️ Descarga terminada en el PC: {texto}");
+                await avisos.Avisar("pc", "⬇️ Descarga terminada", texto, textoTelegram: $"⬇️ Descarga terminada en el PC: {texto}");
             }
             else if (tipo == "bandeja" && a.Descargas)
             {
-                await avisos.PorPush("📥 Nuevo en la bandeja del PC", texto, "/pc");
-                await avisos.PorTelegram($"📥 Nuevo en la bandeja de entrada del PC: {texto}");
+                await avisos.Avisar("pc", "📥 Nuevo en la bandeja del PC", texto, textoTelegram: $"📥 Nuevo en la bandeja de entrada del PC: {texto}");
             }
             else if (tipo == "reinicio-pendiente" && a.Windows)
             {
-                await avisos.PorPush("🔄 Windows quiere reiniciar", "Hay actualizaciones esperando un reinicio.", "/pc");
-                await avisos.PorTelegram("🔄 Windows ha terminado de preparar actualizaciones y pide reiniciar el PC.");
+                await avisos.Avisar("pc", "🔄 Windows quiere reiniciar", "Hay actualizaciones esperando un reinicio.", textoTelegram: "🔄 Windows ha terminado de preparar actualizaciones y pide reiniciar el PC.");
             }
             return Results.NoContent();
         }).AllowAnonymous().RequireRateLimiting(Limites.Agente);

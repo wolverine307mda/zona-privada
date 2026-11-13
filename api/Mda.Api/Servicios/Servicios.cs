@@ -174,8 +174,7 @@ public sealed class MotorServicios(IServiceScopeFactory ambitos, IComprobadorSer
         foreach (var (s, c) in avisar)
         {
             var texto = c.Cayo ? $"🔴 «{s.Nombre}» no responde ({s.UltimoError ?? "sin respuesta"})." : $"🟢 «{s.Nombre}» vuelve a responder (estuvo caído {ServicioServicios.Duracion(c.Duracion ?? TimeSpan.Zero)}).";
-            await avisos.PorPush(c.Cayo ? "Servicio caído" : "Servicio recuperado", texto, "/servicios", ct);
-            await avisos.PorTelegram(texto, ct);
+            await avisos.Avisar("servicios", c.Cayo ? "Servicio caído" : "Servicio recuperado", texto, textoTelegram: texto, ct: ct);
         }
     }
 }

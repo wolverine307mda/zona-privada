@@ -142,8 +142,7 @@ public class AvisosLuz(IServiceScopeFactory scopes, ServicioLuz luz, ServicioTie
                 ? $"{v.Detalle}. Noche de {local:dddd d} · {local:HH:mm} · puntuación {p}/10."
                 : $"{v.Titulo}: de {local:HH:mm} a {TimeZoneInfo.ConvertTime(v.Fin, zona.Info):HH:mm} · puntuación {p}/10. Estás libre.";
             var titulo = v.Tipo == "noche" ? "🌌 Noche para la Vía Láctea" : v.Tipo == "amanecer" ? "🌅 Hora dorada de la mañana" : "🌇 Hora dorada";
-            await avisos.PorPush(titulo, texto, "/fotografia", ct);
-            await avisos.PorTelegram($"{titulo}\n{texto}", ct);
+            await avisos.Avisar("fotografia", titulo, texto, ct: ct);
             avisado.Add(clave);
             var reg = await db.Ajustes.FindAsync([ServicioLuz.ClaveAvisado], ct);
             if (reg is null) db.Ajustes.Add(reg = new Ajuste { Clave = ServicioLuz.ClaveAvisado });

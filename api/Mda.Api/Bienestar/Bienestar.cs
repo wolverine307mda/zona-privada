@@ -115,7 +115,7 @@ public static class BienestarServicio
         }
         if (ahoraLocal.DayOfWeek == DayOfWeek.Sunday && ahoraLocal.Hour >= 18 && await db.Entrenos.AnyAsync(e => e.Fecha >= Lunes(hoy), ct)) textos.Add("📊 " + await ResumenSemanal(db, hoy, ct));
         if (ahoraLocal.DayOfWeek != DayOfWeek.Sunday || ahoraLocal.Hour >= 18) { if (marca is null) db.Ajustes.Add(new Ajuste { Clave = clave, Valor = hoy.ToString("O") }); else marca.Valor = hoy.ToString("O"); await db.SaveChangesAsync(ct); }
-        foreach (var t in textos) { await avisos.PorPush("💪 Bienestar", t, "/bienestar", ct); await avisos.PorTelegram(t, ct); }
+        foreach (var t in textos) { await avisos.Avisar("habitos", "💪 Bienestar", t, "/bienestar", t, ct); }
     }
 }
 

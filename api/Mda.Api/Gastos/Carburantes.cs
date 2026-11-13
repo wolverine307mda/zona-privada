@@ -247,7 +247,7 @@ public static class CarburantesApi
         var texto = $"{mas.Precio:0.000} €/L en {mas.Rotulo} ({mas.Localidad}, a {mas.Km:0.#} km): {(m7 - c) * 100:0.#} céntimos menos que la semana pasada.".Replace('.', ',');
         _ = Task.Run(async () =>
         {
-            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorTelegram($"{titulo}\n{texto}"); }
+            try { await avisos.Avisar("cartera", titulo, texto); }
             catch (Exception e) { log.LogWarning(e, "No se pudo avisar del precio del combustible"); }
         });
     }

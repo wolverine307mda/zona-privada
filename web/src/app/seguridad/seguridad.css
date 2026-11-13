@@ -60,6 +60,20 @@
 .canal__texto strong, .app__texto strong { font-weight: 500; }
 .canal__texto span, .app__texto span { font-size: 12.5px; color: var(--soft); overflow-wrap: anywhere; }
 .canales .button, .app .button { min-height: 38px; padding: 0 14px; }
+/* qué aviso por qué canal: una fila por clase de aviso con sus canales como botones de activar/desactivar */
+.avisos__titulo { margin: 18px 0 2px; font-size: 15px; font-weight: 500; }
+.avisos__ayuda { margin: 0 0 10px; font-size: 12.5px; color: var(--soft); }
+.tipos { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0 0 16px; padding: 0; }
+.tipo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 12px; border-radius: 14px; background: var(--tarjeta-2); }
+.tipo__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
+.tipo__texto strong { font-weight: 500; }
+.tipo__texto span { font-size: 12.5px; color: var(--soft); }
+.tipo__canales { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--linea); background: transparent; color: var(--soft); font: inherit; font-size: 13px; cursor: pointer; transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease; }
+.chip.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.chip:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .chip { transition: none; } }
 .interruptor { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .interruptor__pista { flex: none; width: 44px; height: 26px; border-radius: 999px; background: var(--tarjeta-2); border: 1px solid var(--linea); position: relative; transition: background-color 200ms ease; }

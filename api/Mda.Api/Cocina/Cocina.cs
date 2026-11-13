@@ -232,7 +232,6 @@ public static class CocinaServicio
         if (marca is null) db.Ajustes.Add(new Ajuste { Clave = ClaveAvisado, Valor = hoy.ToString("O") }); else marca.Valor = hoy.ToString("O");
         await db.SaveChangesAsync(ct);
         if (texto is null) return;
-        await avisos.PorPush("🍽️ Hoy toca", texto, "/cocina", ct);
-        await avisos.PorTelegram(texto, ct);
+        await avisos.Avisar("cocina", "🍽️ Hoy toca", texto, textoTelegram: texto, ct: ct);
     }
 }

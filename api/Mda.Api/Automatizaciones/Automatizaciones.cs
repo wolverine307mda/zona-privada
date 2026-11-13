@@ -164,8 +164,7 @@ public sealed class MotorAutomatizaciones(IServiceScopeFactory ambitos, IAvisos 
         else
         {
             var cab = prueba ? "🤖 (prueba) " : "🤖 ";
-            await avisos.PorPush(cab + r.Nombre, texto, "/automatizaciones", ct);
-            await avisos.PorTelegram(cab + texto, ct);
+            await avisos.Avisar("automatizaciones", cab + r.Nombre, texto, textoTelegram: cab + texto, ct: ct);
         }
     }
 }

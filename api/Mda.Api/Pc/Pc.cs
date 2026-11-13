@@ -196,15 +196,13 @@ public class AvisosSalud(IServiceScopeFactory scopes, EstadoSalud salud, EstadoS
         foreach (var (id, texto) in activas)
         {
             if (avisadas.TryGetValue(id, out var ultimo) && ultimo == hoy) continue;
-            await avisos.PorPush("💻 Salud del PC", texto, "/pc", ct);
-            await avisos.PorTelegram($"💻 {texto}", ct);
+            await avisos.Avisar("pc", "💻 Salud del PC", texto, textoTelegram: $"💻 {texto}", ct: ct);
             avisadas[id] = hoy;
         }
         foreach (var id in avisadas.Keys.Where(k => !activas.ContainsKey(k)).ToList())
         {
             var texto = ReglasSalud.Resuelto(id);
-            await avisos.PorPush("💻 Salud del PC", texto, "/pc", ct);
-            await avisos.PorTelegram($"💻 {texto}", ct);
+            await avisos.Avisar("pc", "💻 Salud del PC", texto, textoTelegram: $"💻 {texto}", ct: ct);
             avisadas.Remove(id);
         }
         if (reg is null) db.Ajustes.Add(reg = new Ajuste { Clave = ClaveAvisadas });

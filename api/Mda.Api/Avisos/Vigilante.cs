@@ -109,9 +109,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         var texto = c.Fecha is { } fecha
             ? $"La última copia de seguridad de la base de datos es del {TimeZoneInfo.ConvertTime(fecha, zona.Info):dd/MM/yyyy HH:mm}. {AyudaCopias(config)}"
             : $"No hay ninguna copia de seguridad de la base de datos. {AyudaCopias(config)}";
-        await avisos.PorPush("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
-        await avisos.PorCorreo("💾 Falta la copia de seguridad", texto, "/seguridad", ct);
-        await avisos.PorTelegram($"💾 Falta la copia de seguridad\n{texto}", ct);
+        await avisos.Avisar("copias", "💾 Falta la copia de seguridad", texto, ct: ct);
     }
 
     // «💾 Copia hecha»: un aviso por cada copia nueva (si lo tienes activado en Mi PC › Avisos)
@@ -156,8 +154,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         else
         {
             var texto = $"La copia «{s.Copia}» NO se pudo restaurar en la prueba semanal. Haz una copia a mano y {AyudaCopias(config, minuscula: true)}";
-            await avisos.PorPush("⚠️ Copia de seguridad dudosa", texto, "/seguridad", ct);
-            await avisos.PorTelegram($"⚠️ {texto}", ct);
+            await avisos.Avisar("copias", "⚠️ Copia de seguridad dudosa", texto, ct: ct);
         }
     }
 
@@ -173,8 +170,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         hecho.Valor = hoy.ToString("O");
         await db.SaveChangesAsync(ct);
         if (Mda.Api.Tiempo.ServicioTiempo.AvisoDe(p, hoy.AddDays(1)) is not { } aviso) return;
-        await avisos.PorPush(aviso.Titulo, aviso.Texto, "/inicio", ct);
-        await avisos.PorTelegram($"{aviso.Titulo}\n{aviso.Texto}", ct);
+        await avisos.Avisar("tiempo", aviso.Titulo, aviso.Texto, ct: ct);
     }
 
     // ---- hábitos: a su hora, si aún no están hechos, un aviso (una vez al día), con la racha en juego si es larga ----
@@ -195,8 +191,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             if (r.GetValueOrDefault(hoy) >= h.Objetivo) continue;
             var racha = Mda.Api.Habitos.Rachas.Calcular(h.Dias, h.Objetivo, r, Mda.Api.Habitos.ServicioHabitos.Inicio(h, r, hoy), hoy).Actual;
             var texto = racha >= 3 ? $"Aún no has hecho «{h.Nombre}» hoy. Llevas {racha} días seguidos: no la pierdas." : $"Aún no has hecho «{h.Nombre}» hoy.";
-            await avisos.PorPush($"✅ {h.Nombre}", texto, "/habitos", ct);
-            await avisos.PorTelegram($"✅ {texto}\nEscribe /hecho {h.Nombre.ToLowerInvariant()} para apuntarlo.", ct);
+            await avisos.Avisar("habitos", $"✅ {h.Nombre}", texto, textoTelegram: $"✅ {texto}\nEscribe /hecho {h.Nombre.ToLowerInvariant()} para apuntarlo.", ct: ct);
         }
         await db.SaveChangesAsync(ct);
     }
@@ -214,8 +209,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             await db.SaveChangesAsync(ct);
             var lineas = deHoy.Select(t => $"• Hoy: {t.Titulo}").Concat(vencidas.Select(t => $"• Vencida: {t.Titulo}")).Take(8).ToList();
             var cabecera = vencidas.Count == 0 ? $"{deHoy.Count} tarea(s) para hoy" : $"{deHoy.Count} para hoy y {vencidas.Count} vencida(s)";
-            await avisos.PorPush($"📝 {cabecera}", string.Join("\n", lineas), "/tareas", ct);
-            await avisos.PorTelegram($"📝 {cabecera}\n{string.Join("\n", lineas)}\nEscribe /tareas para verlas.", ct);
+            await avisos.Avisar("tareas", $"📝 {cabecera}", string.Join("\n", lineas), textoTelegram: $"📝 {cabecera}\n{string.Join("\n", lineas)}\nEscribe /tareas para verlas.", ct: ct);
         }
         await Mda.Api.Tareas.ServicioTareas.Podar(db, reloj, ct);
     }
@@ -240,8 +234,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
         {
             var cuando = dias < 0 ? $"caducó hace {-dias} día(s)" : dias == 0 ? "caduca HOY" : $"caduca en {dias} día(s) ({p.Vence:dd/MM/yyyy})";
             var texto = $"«{p.Nombre}» {cuando}.";
-            await avisos.PorPush("📄 Papel que caduca", texto, "/papeles", ct);
-            await avisos.PorTelegram($"📄 {texto}", ct);
+            await avisos.Avisar("papeles", "📄 Papel que caduca", texto, textoTelegram: $"📄 {texto}", ct: ct);
         }
     }
 
@@ -275,8 +268,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
                 {
                     var hora = TimeZoneInfo.ConvertTime(p.Inicio, zona.Info);
                     var texto = $"La Estación Espacial Internacional pasa a las {hora:HH:mm}: sale por el {p.DesdeRumbo}, sube hasta {p.AlturaMax:0}° y se esconde por el {p.HastaRumbo}. Se ve como una estrella muy brillante que no parpadea.";
-                    await avisos.PorPush("🛰️ La ISS sobre ti", texto, "/fotografia", ct);
-                    await avisos.PorTelegram($"🛰️ La ISS sobre ti\n{texto}", ct);
+                    await avisos.Avisar("fotografia", "🛰️ La ISS sobre ti", texto, ct: ct);
                 }
             }
         }
@@ -293,8 +285,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
                 var cielo = NubesA(ev.Pico);
                 if (cielo is > 50) continue;
                 var texto = $"Esta noche es el máximo de las {ev.Nombre}: hasta {ev.Zhr} por hora, luna al {ev.LunaPct} %{(cielo is { } n ? $" y nubes al {n} %" : "")}. Lo mejor, hacia las 03:00 y lejos de las luces.";
-                await avisos.PorPush($"☄️ {ev.Nombre} esta noche", texto, "/fotografia", ct);
-                await avisos.PorTelegram($"☄️ {ev.Nombre} esta noche\n{texto}", ct);
+                await avisos.Avisar("fotografia", $"☄️ {ev.Nombre} esta noche", texto, ct: ct);
             }
         }
     }
@@ -315,9 +306,7 @@ public class Vigilante(IServiceScopeFactory scopes, IAvisos avisos, ServicioCone
             if (e.FaltanDias is { } fd) cuando.Add(fd <= 0 ? $"venció el {e.ProximaFecha:dd/MM/yyyy}" : $"toca el {e.ProximaFecha:dd/MM/yyyy}");
             var titulo = e.Nivel == "vencido" ? $"🚗 {m.Nombre}: ya toca" : $"🚗 {m.Nombre}: falta poco";
             var texto = string.Join(" · ", cuando);
-            await avisos.PorPush(titulo, texto, "/gastos/deudas", ct);
-            await avisos.PorTelegram($"{titulo}\n{texto}", ct);
-            await avisos.PorCorreo(titulo, $"{texto}.\n\nCuando lo hagas, márcalo como hecho en Cartera › Coche.", "/gastos/deudas", ct);
+            await avisos.Avisar("coche", titulo, $"{texto}.\n\nCuando lo hagas, márcalo como hecho en Cartera › Coche.", textoTelegram: $"{titulo}\n{texto}", ct: ct);
         }
         await db.SaveChangesAsync(ct);
     }

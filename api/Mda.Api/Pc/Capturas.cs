@@ -252,8 +252,7 @@ public static class CapturasEndpoints
             var m = Capturas.Motivos.Contains(motivo ?? "") ? motivo! : "manual";
             if (await Capturas.Guardar(db, reloj, origen, m, ms.ToArray(), ct) is not { } c) return Results.BadRequest();
             var texto = $"Se ha tomado una foto de {Capturas.TextoOrigen(origen)} ({m switch { "panico" => "por el pánico", "intruso" => "por intentos de entrar fallidos", _ => "a petición tuya" }}).";
-            await avisos.PorPush("📷 Foto del PC", texto, "/pc", ct);
-            _ = avisos.PorTelegram($"📷 {texto}", ct);
+            await avisos.Avisar("pc", "📷 Foto del PC", texto, textoTelegram: $"📷 {texto}", ct: ct);
             return Results.Ok(new { c.Id });
         }).AllowAnonymous().RequireRateLimiting(Limites.Agente);
     }

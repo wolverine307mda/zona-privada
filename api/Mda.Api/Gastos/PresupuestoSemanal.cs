@@ -80,7 +80,7 @@ public static class PresupuestosSemana
         // en segundo plano y sin correo: una semana es corta y no hace falta un correo por cada aviso
         _ = Task.Run(async () =>
         {
-            try { await avisos.PorPush(titulo, texto, "/gastos"); await avisos.PorTelegram($"{titulo}\n{texto}"); }
+            try { await avisos.Avisar("cartera", titulo, texto); }
             catch (Exception ex) { log.LogWarning(ex, "No se pudo avisar del presupuesto semanal"); }
         });
     }
