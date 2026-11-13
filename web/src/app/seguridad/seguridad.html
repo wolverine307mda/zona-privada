@@ -5,7 +5,8 @@
 <nav class="pestanas-seg" role="tablist" aria-label="Secciones de seguridad">
   <button type="button" role="tab" [attr.aria-selected]="pestana() === 'cuenta'" (click)="ponerPestana('cuenta')">Cuenta</button>
   <button type="button" role="tab" [attr.aria-selected]="pestana() === 'vigilancia'" (click)="ponerPestana('vigilancia')">Vigilancia</button>
-  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'claves'" (click)="ponerPestana('claves')">Claves y atajos</button>
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'claves'" (click)="ponerPestana('claves')">Claves</button>
+  <button type="button" role="tab" [attr.aria-selected]="pestana() === 'atajos'" (click)="ponerPestana('atajos')">Atajos</button>
 </nav>
 
 @if (pestana() === 'cuenta') {
@@ -341,8 +342,10 @@ WHATSAPP_APIKEY=la-clave-que-te-da</pre>
 <app-globo-sondas />
 }
 
-@if (pestana() === 'claves') {
+@if (pestana() === 'atajos') {
 <app-atajos />
+}
 
+@if (pestana() === 'claves') {
 <app-claves />
 }

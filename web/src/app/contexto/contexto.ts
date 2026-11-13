@@ -76,7 +76,7 @@ const TIEMPOS: Record<string, string> = { '': 'Da igual el tiempo', lluvia: 'Si 
       <details class="caja ayuda">
         <summary>Cómo avisar desde el iPhone</summary>
         <ol>
-          <li>En <strong>Seguridad › Claves y atajos</strong> crea un token con el permiso <strong>casa</strong> y copia su valor.</li>
+          <li>En <strong>Seguridad › Atajos</strong> crea un token con el permiso <strong>casa</strong> y copia su valor.</li>
           <li>En la app <strong>Atajos</strong> ve a <strong>Automatización › + › Llegar</strong> (elige tu casa) y márcala como «Ejecutar inmediatamente».</li>
           <li>Añade <strong>Obtener contenido de URL</strong>: dirección <code>{{ origen }}/api/atajos/casa</code>, método <strong>POST</strong>, cabecera <code>Authorization</code> = <code>Bearer tu-token</code> y cuerpo JSON con <code>estado</code> = <code>llegada</code>.</li>
           <li>Repite con <strong>Salir</strong> y <code>estado</code> = <code>salida</code>.</li>

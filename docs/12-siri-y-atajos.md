@@ -1,7 +1,7 @@
 # 12. Siri y Atajos del iPhone (recetas)
 
 Todo lo que el iPhone puede hacer con la zona privada, sin app nativa y sin pagar nada: la app **Atajos** de iOS llama a la API con un token. Cada token lleva solo los permisos que le des
-(Seguridad › Claves y atajos), no abre la app y se revoca con un toque. La dirección es la pública (`URL_PUBLICA`), en los ejemplos `https://app.wolvem.dev`.
+(Seguridad › Atajos), no abre la app y se revoca con un toque. La dirección es la pública (`URL_PUBLICA`), en los ejemplos `https://app.wolvem.dev`.
 
 **Receta base de cualquier atajo**: acción **Obtener contenido de URL** → dirección → método → cabecera `Authorization` = `Bearer mda_…` → (si es POST) cuerpo **JSON**.
 Para que Siri lo diga, añade **Mostrar resultado** o **Pronunciar texto** con el campo `mensaje` de la respuesta (`Obtener valor del diccionario › mensaje`).

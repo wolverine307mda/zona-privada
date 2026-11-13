@@ -65,7 +65,7 @@ const OJO_CERRADO = 'M3 3l18 18M10.6 5.1A9.9 9.9 0 0 1 12 5c6 0 10 7 10 7a17 17 
                     <button class="ojo" type="button" (click)="verNuevo.set(!verNuevo())" [attr.aria-label]="verNuevo() ? 'Ocultar lo escrito' : 'Mostrar lo escrito'">
                       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="verNuevo() ? ojoCerrado : ojo"/></svg>
                     </button>
-                    <button class="button" type="submit" [disabled]="ocupado() || !nuevo().trim()">{{ ocupado() ? 'Guardando…' : 'Guardar' }}</button>
+                    <button class="button" type="submit" [disabled]="guardando() || !nuevo().trim()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
                     <button class="enlace" type="button" (click)="editando.set(null)">Cancelar</button>
                   </form>
                 } @else {
@@ -110,8 +110,11 @@ export class Claves implements OnInit {
   protected readonly nuevo = signal('');
   protected readonly verNuevo = signal(false);
   protected readonly error = signal('');
-  protected readonly ocupado = signal(false);
+  // «Guardando…» del formulario de la clave. Va aparte de `ocupado` (el de la confirmación): si fueran el mismo, el panel de confirmar
+  // que sale a mitad de un guardado nacería con sus botones desactivados y no se podría confirmar nunca.
+  protected readonly guardando = signal(false);
   // confirmación (Face ID o contraseña)
+  protected readonly ocupado = signal(false);
   protected readonly confirmando = signal(false);
   protected readonly clave = signal('');
   protected readonly codigo = signal('');
@@ -199,14 +202,14 @@ export class Claves implements OnInit {
 
   protected async guardar(ev: Event, s: Servicio, c: Campo): Promise<void> {
     ev.preventDefault();
-    if (this.ocupado() || !this.nuevo().trim()) return;
-    this.ocupado.set(true); this.error.set('');
+    if (this.guardando() || !this.nuevo().trim()) return;
+    this.guardando.set(true); this.error.set('');
     try {
       const hecho = await this.conConfirmacion(() => firstValueFrom(this.http.put(`/api/seguridad/claves/${s.id}/${c.nombre}`, { valor: this.nuevo() })).then(() => true));
       if (!hecho) return;
       this.ocultar(this.id(s, c)); this.editando.set(null); this.nuevo.set('');
       await this.leer();
-    } finally { this.ocupado.set(false); }
+    } finally { this.guardando.set(false); }
   }
 
   protected async quitar(s: Servicio, c: Campo): Promise<void> {

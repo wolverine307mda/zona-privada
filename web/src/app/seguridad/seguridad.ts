@@ -34,6 +34,8 @@ const ICONOS: Record<string, string> = {
   otro: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
 };
 
+type PestanaSeg = 'cuenta' | 'vigilancia' | 'claves' | 'atajos';
+
 // Seguridad: dónde está abierta la sesión (y si está en línea), quién ha intentado entrar,
 // la verificación en dos pasos, los avisos por correo y WhatsApp y las cuentas enlazadas.
 @Component({
@@ -44,10 +46,10 @@ const ICONOS: Record<string, string> = {
 })
 export class Seguridad {
   // las secciones de la pantalla; se recuerda la última que miraste
-  protected readonly pestana = signal<'cuenta' | 'vigilancia' | 'claves'>(((): 'cuenta' | 'vigilancia' | 'claves' => {
-    try { const g = localStorage.getItem('mda.seg.pestana'); return g === 'vigilancia' || g === 'claves' ? g : 'cuenta'; } catch { return 'cuenta'; }
+  protected readonly pestana = signal<PestanaSeg>(((): PestanaSeg => {
+    try { const g = localStorage.getItem('mda.seg.pestana'); return g === 'vigilancia' || g === 'claves' || g === 'atajos' ? g : 'cuenta'; } catch { return 'cuenta'; }
   })());
-  protected ponerPestana(p: 'cuenta' | 'vigilancia' | 'claves'): void {
+  protected ponerPestana(p: PestanaSeg): void {
     this.pestana.set(p);
     try { localStorage.setItem('mda.seg.pestana', p); } catch { /* sin almacenamiento */ }
   }
