@@ -31,9 +31,11 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
     public static readonly Proveedor Spotify = new("spotify", "Spotify", "Spotify", "https://accounts.spotify.com/authorize", "https://accounts.spotify.com/api/token",
         "user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative", [], "/musica");
     public static readonly Proveedor Google = new("google", "Google Calendar", "Google", "https://accounts.google.com/o/oauth2/v2/auth", "https://oauth2.googleapis.com/token",
-        "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly", ["access_type=offline", "prompt=consent"], "/agenda");
+        "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly", ["access_type=offline", "prompt=select_account%20consent"], "/agenda");
     public static readonly Proveedor[] Todos = [Spotify, Google];
-    public static Proveedor? Por(string id) => Todos.FirstOrDefault(p => p.Id == id);
+    // Google admite varias cuentas: la primera se guarda como «google» (como siempre) y las demás como «google-a1b2c3»
+    public static Proveedor? Por(string id) => Todos.FirstOrDefault(p => p.Id == id || (p == Google && id.StartsWith("google-", StringComparison.Ordinal) && id.Length is > 7 and <= 24));
+    public static bool EsDe(Proveedor p, string clave) => clave == p.Id || (p == Google && clave.StartsWith("google-", StringComparison.Ordinal));
 
     private readonly IDataProtector cifra = proteccion.CreateProtector("conexiones");
     private readonly SemaphoreSlim cerrojo = new(1, 1);
@@ -68,14 +70,22 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
     {
         var t = await PedirToken(p, new() { ["grant_type"] = "authorization_code", ["code"] = code, ["redirect_uri"] = Vuelta(p, req) }, ct);
         if (t?.Refresh is null) return false;
+        var cuenta = await NombreCuenta(p, t.Value.Access, ct);
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var c = await db.Conexiones.FindAsync([p.Id], ct) ?? db.Conexiones.Add(new Conexion { Proveedor = p.Id }).Entity;
+        var existentes = (await db.Conexiones.ToListAsync(ct)).Where(x => EsDe(p, x.Proveedor)).ToList();
+        // volver a enlazar la misma cuenta de Google la renueva; Spotify solo tiene una; otra cuenta de Google se añade
+        var c = existentes.FirstOrDefault(x => p != Google || (cuenta is not null && x.Cuenta == cuenta));
+        if (c is null)
+        {
+            var clave = existentes.Count == 0 ? p.Id : $"{p.Id}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(3)).ToLowerInvariant()}";
+            c = db.Conexiones.Add(new Conexion { Proveedor = clave }).Entity;
+        }
         c.RefreshToken = cifra.Protect(t.Value.Refresh);
         c.AccessToken = cifra.Protect(t.Value.Access);
         c.Caduca = DateTimeOffset.UtcNow.AddSeconds(t.Value.Segundos - 60);
         c.Conectado = DateTimeOffset.UtcNow;
-        c.Cuenta = await NombreCuenta(p, t.Value.Access, ct);
+        c.Cuenta = cuenta;
         await db.SaveChangesAsync(ct);
         return true;
     }
@@ -98,28 +108,34 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
         }
     }
 
-    public async Task<Conexion?> Leer(Proveedor p, CancellationToken ct = default)
+    // Todas las cuentas enlazadas de un proveedor, la más antigua primero (la primera de Google es la de siempre)
+    public async Task<IReadOnlyList<Conexion>> Listar(Proveedor p, CancellationToken ct = default)
     {
         using var scope = scopes.CreateScope();
-        return await scope.ServiceProvider.GetRequiredService<AppDbContext>().Conexiones.AsNoTracking().FirstOrDefaultAsync(c => c.Proveedor == p.Id, ct);
+        var todas = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Conexiones.AsNoTracking().ToListAsync(ct);
+        return todas.Where(c => EsDe(p, c.Proveedor)).OrderBy(c => c.Conectado).ToList();
     }
 
-    public async Task Desconectar(Proveedor p, CancellationToken ct = default)
+    // La primera cuenta del proveedor, o la de esa clave si se da
+    public async Task<Conexion?> Leer(Proveedor p, CancellationToken ct = default, string? clave = null) =>
+        (await Listar(p, ct)).FirstOrDefault(c => clave is null || c.Proveedor == clave);
+
+    public async Task Desconectar(Proveedor p, CancellationToken ct = default, string? clave = null)
     {
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (await db.Conexiones.FindAsync([p.Id], ct) is { } c) { db.Conexiones.Remove(c); await db.SaveChangesAsync(ct); }
+        if (await db.Conexiones.FindAsync([clave ?? p.Id], ct) is { } c) { db.Conexiones.Remove(c); await db.SaveChangesAsync(ct); }
     }
 
     // Un token de acceso válido (renovándolo si ha caducado), o null si no hay cuenta enlazada
-    public async Task<string?> Token(Proveedor p, CancellationToken ct = default)
+    public async Task<string?> Token(Proveedor p, CancellationToken ct = default, string? clave = null)
     {
         await cerrojo.WaitAsync(ct);
         try
         {
             using var scope = scopes.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var c = await db.Conexiones.FindAsync([p.Id], ct);
+            var c = await db.Conexiones.FindAsync([clave ?? p.Id], ct);
             if (c is null) return null;
             try
             {
@@ -173,9 +189,9 @@ public class ServicioConexiones(IConfiguration config, IServiceScopeFactory scop
     }
 
     // Una petición a la API del proveedor con el token; null si no hay cuenta enlazada
-    public async Task<HttpResponseMessage?> Llamar(Proveedor p, HttpMethod metodo, string url, object? cuerpo = null, CancellationToken ct = default)
+    public async Task<HttpResponseMessage?> Llamar(Proveedor p, HttpMethod metodo, string url, object? cuerpo = null, CancellationToken ct = default, string? clave = null)
     {
-        var token = await Token(p, ct);
+        var token = await Token(p, ct, clave);
         if (token is null) return null;
         using var req = new HttpRequestMessage(metodo, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -201,8 +217,13 @@ public static class ConexionesEndpoints
             var lista = new List<object>();
             foreach (var p in ServicioConexiones.Todos)
             {
-                var c = await s.Leer(p);
-                lista.Add(new { id = p.Id, nombre = p.Nombre, configurado = s.Configurado(p), conectado = c is not null, cuenta = c?.Cuenta, desde = c?.Conectado, vuelta = s.Vuelta(p, req) });
+                var cuentas = await s.Listar(p);
+                var c = cuentas.FirstOrDefault();
+                lista.Add(new
+                {
+                    id = p.Id, nombre = p.Nombre, configurado = s.Configurado(p), conectado = c is not null, cuenta = c?.Cuenta, desde = c?.Conectado, vuelta = s.Vuelta(p, req),
+                    cuentas = cuentas.Select(x => new { clave = x.Proveedor, cuenta = x.Cuenta, desde = x.Conectado }),
+                });
             }
             return Results.Ok(lista);
         }).RequireAuthorization();
@@ -225,7 +246,7 @@ public static class ConexionesEndpoints
         g.MapDelete("/{id}", async (string id, ServicioConexiones s) =>
         {
             if (ServicioConexiones.Por(id) is not { } p) return Results.NotFound();
-            await s.Desconectar(p);
+            await s.Desconectar(p, clave: id);
             return Results.NoContent();
         }).RequireAuthorization();
     }

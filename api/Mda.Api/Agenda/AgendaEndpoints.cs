@@ -7,12 +7,14 @@ namespace Mda.Api.Agenda;
 
 public record EventoEntrada(
     TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin, bool TodoElDia, string? Color,
-    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false, bool PorPush = false, bool PorTelegram = false);
+    Repeticion Repetir, DateOnly? RepetirHasta, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool EnGoogle, bool Hecho = false, bool PorPush = false, bool PorTelegram = false,
+    string? GoogleCuenta = null, string? GoogleCalendario = null);
 
 // Cada aparición de un evento en el calendario: el evento (o el de Google) con el inicio de esa repetición
 public record Aparicion(
     string Clave, int? Id, string Origen, TipoEvento Tipo, string Titulo, string? Notas, string? Lugar, DateTimeOffset Inicio, DateTimeOffset? Fin,
-    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url, bool PorPush = false, bool PorTelegram = false);
+    bool TodoElDia, string Color, Repeticion Repetir, int? AvisoMinutos, bool PorCorreo, bool PorWhatsApp, bool Hecho, bool EnGoogle, string? Url, bool PorPush = false, bool PorTelegram = false,
+    string? GoogleCuenta = null, string? GoogleCalendario = null, string? Calendario = null);
 
 // Agenda: eventos y recordatorios propios más los de Google Calendar, si está enlazado
 public static class AgendaEndpoints
@@ -27,14 +29,14 @@ public static class AgendaEndpoints
         {
             if (hasta <= desde || hasta - desde > TimeSpan.FromDays(400)) return Results.BadRequest();
             var lista = await Apariciones(db, desde, hasta, zona, ct);
-            var deGoogle = await google.Leer(desde, hasta, ct);
+            var deGoogle = await google.Leer(desde, hasta, await GoogleAjustes.Leer(db, ct), ct);
             if (deGoogle is not null)
             {
                 // los que ya son nuestros (copiados a Google) no se repiten
                 var propios = (await db.Eventos.AsNoTracking().Where(e => e.GoogleId != null).Select(e => e.GoogleId!).ToListAsync(ct)).ToHashSet();
                 lista.AddRange(deGoogle.Where(x => !propios.Contains(x.Id) && (x.Recurrente is null || !propios.Contains(x.Recurrente)))
-                    .Select(x => new Aparicion($"g:{x.Id}", null, "google", TipoEvento.Evento, x.Titulo, x.Notas, x.Lugar, x.Inicio, x.Fin, x.TodoElDia,
-                        "google", Repeticion.No, null, false, false, false, true, x.Url)));
+                    .Select(x => new Aparicion($"g:{x.Cuenta}:{x.Calendario}:{x.Id}", null, "google", TipoEvento.Evento, x.Titulo, x.Notas, x.Lugar, x.Inicio, x.Fin, x.TodoElDia,
+                        x.Color ?? "google", Repeticion.No, null, false, false, false, true, x.Url, GoogleCuenta: x.Cuenta, GoogleCalendario: x.Calendario, Calendario: x.NombreCalendario)));
             }
             return Results.Ok(new { google = deGoogle is not null, apariciones = lista.OrderBy(a => a.Inicio) });
         });
@@ -53,18 +55,17 @@ public static class AgendaEndpoints
             return Results.Ok(lista.Where(a => !(a.Tipo == TipoEvento.Recordatorio && a.Hecho)).OrderBy(a => a.Inicio).Take(50));
         });
 
-        g.MapPost("/", (EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct) =>
-            Crear(e, db, google, con, zona, reloj, ct));
+        g.MapPost("/", (EventoEntrada e, AppDbContext db, GoogleCalendar google, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+            Crear(e, db, google, zona, reloj, ct));
 
-        g.MapPut("/{id:int}", async (int id, EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct) =>
+        g.MapPut("/{id:int}", async (int id, EventoEntrada e, AppDbContext db, GoogleCalendar google, Zona zona, TimeProvider reloj, CancellationToken ct) =>
         {
             if (Validar(e) is { } error) return error;
             var ev = await db.Eventos.FindAsync([id], ct);
             if (ev is null) return Results.NotFound();
-            var estabaEnGoogle = ev.GoogleId;
             Copiar(e, ev, zona, reloj.GetUtcNow());
-            if (!ev.EnGoogle && estabaEnGoogle is not null) { await google.Borrar(estabaEnGoogle, ct); ev.GoogleId = null; }
-            var aviso = await Sincronizar(ev, google, con, ct);
+            if (!ev.EnGoogle && ev.GoogleId is not null) { await google.Borrar(ev, ct); ev.GoogleId = null; ev.GoogleCuenta = null; ev.GoogleCalendario = null; }
+            var aviso = await Sincronizar(ev, e, db, google, ct);
             await db.SaveChangesAsync(ct);
             return Results.Ok(new { ev.Id, googleError = aviso });
         });
@@ -82,16 +83,36 @@ public static class AgendaEndpoints
 
         g.MapDelete("/{id:int}", (int id, AppDbContext db, GoogleCalendar google, CancellationToken ct) => Borrar(id, db, google, ct));
 
-        // qué canales de aviso hay, si Google está enlazado y tu horario de trabajo
-        g.MapGet("/estado", async (IAvisos avisos, ServicioConexiones con, AppDbContext db, CancellationToken ct) =>
+        // qué canales de aviso hay, las cuentas de Google enlazadas (con sus calendarios y el de por defecto) y tu horario de trabajo
+        g.MapGet("/estado", async (IAvisos avisos, ServicioConexiones con, GoogleCalendar google, AppDbContext db, CancellationToken ct) =>
         {
-            var c = await con.Leer(ServicioConexiones.Google, ct);
+            var cuentas = await google.Cuentas(ct);
+            var ajustes = await GoogleAjustes.Leer(db, ct);
             return Results.Ok(new
             {
                 canales = avisos.Disponibles(),
-                google = new { configurado = con.Configurado(ServicioConexiones.Google), conectado = c is not null, cuenta = c?.Cuenta },
+                google = new
+                {
+                    configurado = con.Configurado(ServicioConexiones.Google), conectado = cuentas.Count > 0, cuenta = cuentas.FirstOrDefault()?.Cuenta,
+                    cuentas = cuentas.Select(c => new
+                    {
+                        clave = c.Clave, cuenta = c.Cuenta,
+                        calendarios = c.Calendarios.Select(x => new { x.Id, x.Nombre, x.Color, x.Principal, x.Escribible, mostrar = GoogleAjustes.Mostrados(c, ajustes).Any(m => m.Id == x.Id) }),
+                    }),
+                    defecto = GoogleAjustes.Destino(null, null, ajustes, cuentas),
+                },
                 horario = await Horario.Leer(db, ct),
             });
+        });
+
+        // qué calendarios de cada cuenta se ven y dónde se copian los eventos nuevos
+        g.MapPut("/google", async (AjustesGoogle a, GoogleCalendar google, AppDbContext db, CancellationToken ct) =>
+        {
+            a = a with { Mostrar = a.Mostrar ?? [] };
+            if (GoogleAjustes.Validar(a, await google.Cuentas(ct)) is { } error)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["google"] = [error] });
+            await GoogleAjustes.Guardar(db, a, ct);
+            return Results.NoContent();
         });
 
         g.MapGet("/horario", async (AppDbContext db, CancellationToken ct) => Results.Ok(await Horario.Leer(db, ct)));
@@ -99,14 +120,14 @@ public static class AgendaEndpoints
     }
 
     // crear y borrar (los usan la API y el bot de Telegram)
-    internal static async Task<IResult> Crear(EventoEntrada e, AppDbContext db, GoogleCalendar google, ServicioConexiones con, Zona zona, TimeProvider reloj, CancellationToken ct)
+    internal static async Task<IResult> Crear(EventoEntrada e, AppDbContext db, GoogleCalendar google, Zona zona, TimeProvider reloj, CancellationToken ct)
     {
         if (Validar(e) is { } error) return error;
         var ev = new Evento();
         Copiar(e, ev, zona, reloj.GetUtcNow());
         db.Eventos.Add(ev);
         await db.SaveChangesAsync(ct);
-        var aviso = await Sincronizar(ev, google, con, ct);
+        var aviso = await Sincronizar(ev, e, db, google, ct);
         await db.SaveChangesAsync(ct);
         return Results.Created($"/api/agenda/{ev.Id}", new { ev.Id, googleError = aviso });
     }
@@ -115,7 +136,7 @@ public static class AgendaEndpoints
     {
         var ev = await db.Eventos.FindAsync([id], ct);
         if (ev is null) return Results.NotFound();
-        if (ev.GoogleId is { } gid) await google.Borrar(gid, ct);
+        await google.Borrar(ev, ct);
         db.Eventos.Remove(ev);
         await db.SaveChangesAsync(ct);
         return Results.NoContent();
@@ -134,14 +155,25 @@ public static class AgendaEndpoints
 
     private static Aparicion Aparicion(Evento e, DateTimeOffset inicio) => new(
         $"{e.Id}:{inicio.ToUnixTimeSeconds()}", e.Id, "propio", e.Tipo, e.Titulo, e.Notas, e.Lugar, inicio, e.Fin is { } f ? inicio + (f - e.Inicio) : null,
-        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null, e.PorPush, e.PorTelegram);
+        e.TodoElDia, e.Color, e.Repetir, e.AvisoMinutos, e.PorCorreo, e.PorWhatsApp, e.Hecho, e.EnGoogle, null, e.PorPush, e.PorTelegram, e.GoogleCuenta, e.GoogleCalendario);
 
     // Copia en Google si toca; devuelve un aviso para el front si no se pudo
-    private static async Task<string?> Sincronizar(Evento ev, GoogleCalendar google, ServicioConexiones con, CancellationToken ct)
+    private static async Task<string?> Sincronizar(Evento ev, EventoEntrada e, AppDbContext db, GoogleCalendar google, CancellationToken ct)
     {
         if (!ev.EnGoogle) return null;
-        if (await con.Leer(ServicioConexiones.Google, ct) is null) return "Google Calendar no está enlazado: se ha guardado solo aquí.";
-        var id = await google.Guardar(ev, ct);
+        var cuentas = await google.Cuentas(ct);
+        if (cuentas.Count == 0) return "Google Calendar no está enlazado: se ha guardado solo aquí.";
+        // un evento copiado antes de las varias cuentas no apunta a un calendario concreto: era el principal de la primera cuenta
+        if (ev.GoogleId is not null && ev.GoogleCalendario is null)
+        {
+            ev.GoogleCuenta ??= "google";
+            ev.GoogleCalendario = cuentas.FirstOrDefault(c => c.Clave == ev.GoogleCuenta)?.Calendarios.FirstOrDefault(c => c.Principal)?.Id ?? "primary";
+        }
+        // si ya está en Google se queda donde está, salvo que se pida otro sitio; si no, el que se pida o el de por defecto
+        var (cuenta, calendario) = e.GoogleCuenta is null && ev.GoogleId is not null ? (ev.GoogleCuenta, ev.GoogleCalendario) : (e.GoogleCuenta, e.GoogleCalendario);
+        var destino = GoogleAjustes.Destino(cuenta, calendario, await GoogleAjustes.Leer(db, ct), cuentas);
+        if (destino is null) return "No hay ningún calendario de Google donde se pueda escribir: se ha guardado solo aquí.";
+        var id = await google.Guardar(ev, destino, ct);
         if (id is null) return "No se pudo copiar en Google Calendar: se ha guardado solo aquí.";
         ev.GoogleId = id;
         return null;

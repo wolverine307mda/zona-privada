@@ -34,7 +34,13 @@ La CSP permite imágenes de `*.scdn.co` y `*.spotifycdn.com`.
 2. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Reiniciar.
 3. En la app: Agenda/Seguridad → Conectar Google.
 
-Da: los eventos del calendario principal aparecen en la agenda; los eventos propios marcados «en Google» se copian allí.
+Da: los eventos de los calendarios que elijas aparecen en la agenda; los eventos propios marcados «en Google» se copian allí.
+
+**Varias cuentas.** Agenda › «Cuentas y calendarios» (o «Añadir otra cuenta» en ese diálogo) enlaza más cuentas de Google: Google pregunta con qué cuenta entrar cada vez. Por cada cuenta se marcan los calendarios que se ven (por defecto, solo el principal) y se elige **un calendario por defecto** (cuenta + calendario, escribible) donde se copian los eventos nuevos, también los que crea el bot de Telegram. Al crear o editar un evento se puede elegir otro calendario; si ya estaba en Google y se cambia, se mueve (se borra del anterior y se crea en el nuevo). Los eventos de Google se pintan con el color de su calendario.
+
+- Las conexiones se guardan como `google` (la primera, la de siempre) y `google-<6 hex>` (las demás). Volver a enlazar la misma cuenta la renueva sin duplicarla; «Quitar cuenta» borra solo esa.
+- Los ajustes (calendario por defecto y calendarios visibles) están en el ajuste `google-agenda`; cada evento propio guarda su `GoogleCuenta` y `GoogleCalendario` (`null` = la primera cuenta y su calendario principal, como antes de esto).
+- API: `GET /api/agenda/estado` (cuentas con calendarios y `defecto`), `PUT /api/agenda/google` (`{ defecto, mostrar }`), `DELETE /api/conexiones/{clave}`. Código en `Agenda/GoogleCalendar.cs` y `GoogleAjustes.cs`.
 
 ## Correo (SMTP)
 

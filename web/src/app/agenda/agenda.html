@@ -32,6 +32,14 @@
       </div>
       @if (e.google.configurado) { <button class="button" type="button" (click)="conectarGoogle()">Enlazar</button> }
     </section>
+  } @else {
+    <section class="caja google google--mini">
+      <div class="google__texto">
+        <strong>Google Calendar</strong>
+        <span>{{ e.google.cuentas.length === 1 ? e.google.cuenta : e.google.cuentas.length + ' cuentas enlazadas' }}</span>
+      </div>
+      <button class="button button--ghost" type="button" (click)="abrirGoogle()">Cuentas y calendarios</button>
+    </section>
   }
 }
 
@@ -101,7 +109,7 @@
               @if (a.lugar) { 📍 {{ a.lugar }} }
               @if (a.repetir !== 'No') { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Se repite"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg> }
               @if (a.avisoMinutos != null && (a.porCorreo || a.porWhatsApp || a.porPush || a.porTelegram)) { <svg class="icon mini" viewBox="0 0 24 24" aria-label="Con aviso"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg> }
-              @if (a.origen === 'google') { <em class="g">Google</em> }
+              @if (a.origen === 'google') { <em class="g">{{ a.calendario || 'Google' }}</em> }
             </span>
           </span>
           @if (a.tipo === 'Recordatorio') {
@@ -213,8 +221,15 @@
     @if (estado()?.google?.conectado) {
       <label class="interruptor">
         <input type="checkbox" [checked]="enGoogle()" (change)="enGoogle.set(marcado($event))">
-        <span class="interruptor__pista" aria-hidden="true"></span><span>Copiar en Google Calendar <em>({{ estado()!.google.cuenta }})</em></span>
+        <span class="interruptor__pista" aria-hidden="true"></span><span>Copiar en Google Calendar@if (destinos().length < 2) { <em> ({{ estado()!.google.cuenta }})</em> }</span>
       </label>
+      @if (enGoogle() && destinos().length > 1) {
+        <label class="campo"><span class="campo__etiqueta">Calendario de Google</span>
+          <select class="campo__input" (change)="destinoGoogle.set(valor($event))">
+            @if (!destinoGoogle()) { <option value="" selected>Donde está ahora</option> }
+            @for (d of destinos(); track d.valor) { <option [value]="d.valor" [selected]="d.valor === destinoGoogle()">{{ d.texto }}</option> }
+          </select></label>
+      }
     }
 
     @for (e of erroresLista(); track e) { <p class="error">{{ e }}</p> }
@@ -224,6 +239,45 @@
       <button class="button" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
     </footer>
   </form>
+</dialog>
+
+<!-- cuentas y calendarios de Google -->
+<dialog class="dlg" #dialogoGoogle (click)="$event.target === dialogoGoogle && dialogoGoogle.close()" aria-labelledby="dlg-g-t">
+  <div class="dlg__caja">
+    <header class="dlg__cabeza">
+      <h2 id="dlg-g-t">Google Calendar</h2>
+      <button class="dlg__x" type="button" (click)="dialogoGoogle.close()" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+    </header>
+    <p class="dlg__lead">Marca los calendarios que quieres ver aquí y elige en cuál se copian los eventos nuevos. Los cambios se guardan al momento.</p>
+    @for (c of estado()?.google?.cuentas ?? []; track c.clave) {
+      <section class="gcuenta" [attr.aria-label]="c.cuenta || c.clave">
+        <header class="gcuenta__cab">
+          <strong>{{ c.cuenta || c.clave }}</strong>
+          <button class="enlace-peligro" type="button" (click)="quitarCuenta(c)">{{ quitando() === c.clave ? '¿Seguro? Pulsa otra vez' : 'Quitar cuenta' }}</button>
+        </header>
+        <ul class="gcals">
+          @for (k of c.calendarios; track k.id) {
+            <li class="gcal">
+              <label class="gcal__ver">
+                <input type="checkbox" [checked]="k.mostrar" (change)="alternarCalendario(c, k)">
+                <i class="gcal__color" [style.--c]="k.color || '#4285f4'" aria-hidden="true"></i>
+                <span>{{ k.nombre }}@if (!k.escribible) { <em> · solo lectura</em> }</span>
+              </label>
+              @if (k.escribible) {
+                <button class="gcal__defecto" type="button" role="radio" [attr.aria-checked]="esDefecto(c, k)" (click)="ponerDefecto(c, k)">
+                  {{ esDefecto(c, k) ? '✓ Por defecto' : 'Usar por defecto' }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    <footer class="dlg__pie">
+      <button class="button button--ghost" type="button" (click)="dialogoGoogle.close()">Cerrar</button>
+      @if (estado()?.google?.configurado) { <button class="button" type="button" (click)="conectarGoogle()">Añadir otra cuenta</button> }
+    </footer>
+  </div>
 </dialog>
 
 <!-- mi horario de trabajo -->

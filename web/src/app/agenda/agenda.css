@@ -132,3 +132,19 @@ select.campo__input { appearance: auto; }
 .ev__abrir:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
 button.check { position: relative; z-index: 1; padding: 0; background-color: transparent; color: inherit; }
 button.check:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; }
+
+/* cuentas y calendarios de Google */
+.google--mini { padding-block: 12px; }
+.gcuenta { display: grid; gap: 8px; margin-top: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 3%, transparent); }
+.gcuenta__cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.gcuenta__cab strong { min-width: 0; overflow-wrap: anywhere; }
+.enlace-peligro { background: none; border: 0; padding: 4px 0; color: var(--bad); font: 600 .82rem/1.2 var(--font-text); cursor: pointer; }
+.gcals { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gcal { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.gcal__ver { display: flex; align-items: center; gap: 10px; min-height: 40px; min-width: 0; flex: 1 1 180px; cursor: pointer; }
+.gcal__ver span { min-width: 0; overflow-wrap: anywhere; }
+.gcal__ver em { color: var(--soft); font-style: normal; font-size: .8rem; }
+.gcal__color { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.gcal__defecto { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--vidrio-borde); background: transparent; color: var(--soft); font: 600 .78rem/1 var(--font-text); cursor: pointer; }
+.gcal__defecto[aria-checked='true'] { border-color: var(--brand); color: var(--texto); background: color-mix(in srgb, var(--brand) 16%, transparent); }
+@media (max-width: 560px) { .google--mini .button { width: 100%; } }

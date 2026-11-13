@@ -245,7 +245,7 @@ public class Conversacion(
         IResult r = p.Clase switch
         {
             "movimiento" when p.Movimiento is { } m => await GastosEndpoints.Crear(m, db, avisos, log, ct),
-            "agenda" when p.Evento is { } e => await AgendaEndpoints.Crear(e, db, google, con, zona, reloj, ct),
+            "agenda" when p.Evento is { } e => await AgendaEndpoints.Crear(e, db, google, zona, reloj, ct),
             "hucha" when p.Hucha is { } h => await Cartera.Aportar(h.Id, new Aportacion(h.Importe), db, ct),
             "horario" when p.Horario is { } hz => await Horario.Poner(db, hz, ct),
             _ => Results.BadRequest(),

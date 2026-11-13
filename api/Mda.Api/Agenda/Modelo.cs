@@ -40,6 +40,9 @@ public class Evento
     public bool Hecho { get; set; }
     public bool EnGoogle { get; set; }
     public string? GoogleId { get; set; }
+    // en qué cuenta (clave de la conexión) y calendario de Google está la copia; null = la cuenta de siempre y su calendario principal
+    public string? GoogleCuenta { get; set; }
+    public string? GoogleCalendario { get; set; }
     public DateTimeOffset Creado { get; set; } = DateTimeOffset.UtcNow;
 }
 

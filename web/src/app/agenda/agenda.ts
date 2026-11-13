@@ -5,8 +5,8 @@ import { Errores, erroresDe } from '../gastos/gastos.service';
 import { seguirTeclado } from '../gastos/teclado';
 import { MESES } from '../gastos/modelo';
 import {
-  AVISOS_DIA, AVISOS_HORA, AgendaService, Aparicion, COLORES_EVENTO, DIAS_SEMANA, EstadoAgenda, Horario, REPETICIONES, Repeticion, TipoEvento,
-  colorEvento, diaHorario, hora, iso, mismoDia, textoHorario,
+  AVISOS_DIA, AVISOS_HORA, AgendaService, Aparicion, COLORES_EVENTO, CalendarioGoogle, CuentaGoogle, DIAS_SEMANA, DestinoGoogle, EstadoAgenda, Horario, REPETICIONES, Repeticion, TipoEvento,
+  colorEvento, destinosGoogle, diaHorario, hora, iso, mismoDia, textoHorario,
 } from './agenda.service';
 
 interface Dia { fecha: Date; delMes: boolean; hoy: boolean; eventos: Aparicion[]; }
@@ -35,6 +35,7 @@ export class Agenda {
   private readonly api = inject(AgendaService);
   private readonly router = inject(Router);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dialogo');
+  private readonly dlgGoogle = viewChild.required<ElementRef<HTMLDialogElement>>('dialogoGoogle');
 
   protected readonly mes = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   protected readonly elegido = signal(new Date());
@@ -168,6 +169,10 @@ export class Agenda {
   protected readonly porTelegram = signal(false);
   protected readonly porPush = signal(false);
   protected readonly enGoogle = signal(false);
+  // dónde se copia en Google: «cuenta|calendario»; vacío = donde ya estaba (un evento copiado antes de las varias cuentas)
+  protected readonly destinoGoogle = signal('');
+  protected readonly destinos = computed(() => destinosGoogle(this.estado()?.google.cuentas ?? []));
+  protected readonly quitando = signal<string | null>(null);
   protected readonly errores = signal<Errores>({});
   protected readonly erroresLista = computed(() => Object.values(this.errores()).flat());
   protected readonly guardando = signal(false);
@@ -265,6 +270,8 @@ export class Agenda {
     this.porTelegram.set(!!this.estado()?.canales.telegram);
     this.porPush.set(true);
     this.enGoogle.set(!!this.estado()?.google.conectado && tipo === 'Evento');
+    const d = this.estado()?.google.defecto;
+    this.destinoGoogle.set(d ? `${d.cuenta}|${d.calendario}` : '');
     this.abrirDialogo();
   }
 
@@ -289,6 +296,7 @@ export class Agenda {
     this.porTelegram.set(!!a.porTelegram);
     this.porPush.set(a.porPush);
     this.enGoogle.set(a.enGoogle);
+    this.destinoGoogle.set(a.googleCuenta && a.googleCalendario ? `${a.googleCuenta}|${a.googleCalendario}` : '');
     this.abrirDialogo();
   }
 
@@ -321,13 +329,14 @@ export class Agenda {
     let fin: Date | null = this.tipo() === 'Recordatorio' || this.todoElDia() ? null : new Date(a, m - 1, d, hf || 0, mf || 0);
     if (fin && fin < ini) fin = new Date(fin.getTime() + 86400_000); // acaba de madrugada al día siguiente
     this.guardando.set(true);
+    const [googleCuenta, googleCalendario] = this.enGoogle() && this.destinoGoogle() ? this.destinoGoogle().split('|') : [null, null];
     try {
       const r = await this.api.guardar({
         tipo: this.tipo(), titulo: this.tituloEv().trim(), notas: this.notas() || null, lugar: this.lugar() || null,
         inicio: ini.toISOString(), fin: fin?.toISOString() ?? null, todoElDia: this.todoElDia(), color: this.color(),
         repetir: this.repetir(), repetirHasta: this.repetir() !== 'No' && this.hasta() ? this.hasta() : null,
         avisoMinutos: this.avisoMin(), porCorreo: this.porCorreo(), porWhatsApp: this.porWhatsApp(), porTelegram: this.porTelegram(), porPush: this.porPush(), enGoogle: this.enGoogle(),
-        hecho: this.editando()?.hecho ?? false,
+        hecho: this.editando()?.hecho ?? false, googleCuenta, googleCalendario,
       }, this.editando()?.id ?? undefined);
       this.aviso.set(r.googleError ?? '');
       this.dlg().nativeElement.close();
@@ -345,6 +354,40 @@ export class Agenda {
   }
 
   protected conectarGoogle(): void { location.href = '/api/conexiones/google/conectar'; }
+
+  // ---- cuentas y calendarios de Google: cada cambio se guarda al momento ----
+  protected abrirGoogle(): void { this.quitando.set(null); this.dlgGoogle().nativeElement.showModal(); }
+  protected esDefecto(c: CuentaGoogle, cal: CalendarioGoogle): boolean { const d = this.estado()?.google.defecto; return d?.cuenta === c.clave && d.calendario === cal.id; }
+
+  protected alternarCalendario(c: CuentaGoogle, cal: CalendarioGoogle): void {
+    const cuentas = (this.estado()?.google.cuentas ?? []).map((x) => x.clave !== c.clave ? x : { ...x, calendarios: x.calendarios.map((k) => k.id === cal.id ? { ...k, mostrar: !k.mostrar } : k) });
+    void this.cambiarGoogle(cuentas, this.estado()?.google.defecto ?? null);
+  }
+
+  protected ponerDefecto(c: CuentaGoogle, cal: CalendarioGoogle): void {
+    void this.cambiarGoogle(this.estado()?.google.cuentas ?? [], { cuenta: c.clave, calendario: cal.id });
+  }
+
+  private async cambiarGoogle(cuentas: CuentaGoogle[], defecto: DestinoGoogle | null): Promise<void> {
+    const antes = this.estado();
+    if (!antes) return;
+    this.estado.set({ ...antes, google: { ...antes.google, cuentas, defecto } });
+    try { await this.api.guardarGoogle(cuentas, defecto); this.cargar(); }
+    catch { this.estado.set(antes); this.aviso.set('No se pudo guardar el cambio de Google.'); }
+  }
+
+  protected async quitarCuenta(c: CuentaGoogle): Promise<void> {
+    if (this.quitando() !== c.clave) { this.quitando.set(c.clave); return; }
+    this.quitando.set(null);
+    try {
+      await this.api.desconectarGoogle(c.clave);
+      const e = await this.api.estado();
+      this.estado.set(e);
+      if (!e.google.conectado) this.dlgGoogle().nativeElement.close();
+      this.cargar();
+    } catch { this.aviso.set('No se pudo quitar la cuenta.'); }
+  }
+
   protected alCerrar(): void { this.soltar?.(); this.soltar = undefined; }
   protected fuera(e: MouseEvent): void { if (e.target === this.dlg().nativeElement) this.dlg().nativeElement.close(); }
 }

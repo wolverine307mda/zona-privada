@@ -56,6 +56,12 @@ namespace Mda.Api.Data.Migraciones
                     b.Property<DateTimeOffset?>("Fin")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GoogleCalendario")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GoogleCuenta")
+                        .HasColumnType("text");
+
                     b.Property<string>("GoogleId")
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
