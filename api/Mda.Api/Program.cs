@@ -367,6 +367,8 @@ app.MapCasa();
 app.MapRed();
 app.MapPortapapeles();
 app.MapEstadoPublico();
+app.MapTemaWeb();
+app.MapTipoEquipo();
 app.MapDeudas();
 app.MapNotas();
 app.MapAgenda();

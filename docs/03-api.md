@@ -81,9 +81,10 @@
 | GET | `/?desde&hasta` | **apariciones** en el rango (repeticiones expandidas + eventos de Google) |
 | GET | `/proximos?dias` | próximos eventos y recordatorios |
 | POST | `/` | crea `EventoEntrada`: `{ tipo, titulo, notas?, lugar?, inicio, fin?, todoElDia, color, repetir, repetirHasta?, avisoMinutos?, porCorreo, porWhatsApp, porPush, porTelegram, enGoogle }` |
-| PUT/DELETE | `/{id}` | edita / borra (también en Google) |
+| PUT/DELETE | `/{id}` | edita / borra (también en Google; `googleCuenta` y `googleCalendario` eligen dónde se copia) |
 | POST | `/{id}/hecho?hecho=true` | marca un recordatorio hecho (o deshace) |
-| GET | `/estado` | canales disponibles, Google enlazado, **horario** |
+| GET | `/estado` | canales disponibles, **cuentas de Google** enlazadas con sus calendarios y el calendario por defecto (`google.cuentas`, `google.defecto`), **horario** |
+| PUT | `/google` | `{ defecto: { cuenta, calendario }?, mostrar: { <cuenta>: [calendarios que se ven] } }`: qué calendarios se ven y dónde se copian los eventos nuevos |
 | GET/PUT | `/horario` | horario de trabajo `{ activo, nombre, dias:[1..7], entrada:"08:30", salida:"17:30" }` |
 
 ## Notas (`/api/notas`)
@@ -161,6 +162,9 @@
 | PUT | `/api/galeria/orden` | `{ ids: [...] }` |
 | GET | `/api/galeria/fotos/{id}/{tam}` | vista previa con sesión |
 | GET/PUT | `/api/publico-ajustes` | `{ estado, cpu }`: qué ve el público del equipo (apagado por defecto) |
+| GET/PUT/DELETE | `/api/tema-web` | tema por defecto del portfolio `{ modo: light\|dark\|system, color: naranja\|lima\|cobalto\|rosa\|rojo }` (+ `configurado` en el GET); DELETE lo quita. Valores de lista cerrada |
+| GET/PUT | `/api/equipo` | tipo de equipo que hospeda la app `{ tipo: portatil\|minipc }` (ajuste `equipo-tipo`, con sesión); cambia el dibujo 3D de «Tu PC por dentro» |
+| GET | `/api/publico/tema` | lo que lee wolvem.dev: `{ modo, color }`, CORS solo del portfolio, `max-age=60`. 404 si no hay tema fijo (cada navegador usa el suyo) |
 
 ## Más módulos (luz, señuelos, atajos, globo)
 
@@ -176,6 +180,7 @@
 | GET/POST/DELETE | `/api/luz/salidas` | el diario de salidas: fecha, sitio, tipo, nota prevista (1-10), cómo salió (1-5) y una nota; el GET incluye la calibración por tipo de luz (`Luz/Puntos.cs`) |
 | GET/POST | `/api/senuelos` · PUT/DELETE `/{id}` · POST `/{id}/probar` · PUT `/ajustes` | archivos señuelo en Documentos |
 | GET/POST/DELETE | `/api/atajos-tokens` | tokens para Atajos de iOS (con sesión); el token solo sale al crearlo |
+| GET | `/api/atajos-tokens/direccion` | la dirección de Internet de la app (`App:UrlPublica`) para escribirla en el prompt del atajo; `url` vacía si no está configurada |
 | GET/POST | `/api/atajos/categorias` · `/movimiento` · `/frase` · `/resumen` · `/ping` · `/pago` | los usa el iPhone con `Authorization: Bearer mda_…` (alcance gasto, pago o lectura) |
 | GET/PUT | `/api/galeria/globo` | zona excluida alrededor de casa `{ lat, lon, radioKm }` |
 | GET | `/api/galeria/fotos/{id}/gps` | el GPS del archivo original (solo para ti); 204 si no tiene |

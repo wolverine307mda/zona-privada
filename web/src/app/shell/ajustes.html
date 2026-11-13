@@ -42,6 +42,10 @@
     <app-ajustes-entrada />
     <app-ajustes-sonido />
 
+    <app-ajustes-equipo />
+
+    <app-ajustes-web />
+
     @if (instalar.disponible()) {
       <section class="ajustes__seccion instalar" aria-labelledby="ajustes-app">
         <h3 id="ajustes-app">App en la pantalla de inicio</h3>
@@ -67,6 +71,6 @@
       <button class="button button--ghost" type="button" (click)="ajustes.close(); salir.emit()">Cerrar sesión</button>
     </section>
 
-    <p class="ajustes__nota ajustes__nota--pie">El tema se guarda en este navegador.</p>
+    <p class="ajustes__nota ajustes__nota--pie">El tema de la app se guarda en este navegador; el del portfolio, en el servidor.</p>
   </div>
 </dialog>

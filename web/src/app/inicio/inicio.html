@@ -21,11 +21,11 @@
   <div class="equipo__izq">
     <section class="pc-vivo" aria-label="Tu PC por dentro">
   <header class="pc-vivo__cab">
-    <h3>Tu PC por dentro</h3>
+    <h3>{{ equipo.tipo() === 'minipc' ? 'Tu mini PC por dentro' : 'Tu PC por dentro' }}</h3>
     <code>{{ real() ? 'en directo · arrastra para girarlo' : 'midiendo Docker · arranca el agente' }}</code>
   </header>
   <div class="pc-vivo__marco">
-    <div class="pc-vivo__escena"><app-pc-3d [datos]="datosPc()" [bateria]="a()?.bateria ?? null" [tempCpu]="temperaturaCpu()" [tempDisco]="temperatura()" /></div>
+    <div class="pc-vivo__escena"><app-pc-3d [datos]="datosPc()" [tipo]="equipo.tipo()" [bateria]="a()?.bateria ?? null" [tempCpu]="temperaturaCpu()" [tempDisco]="temperatura()" /></div>
   </div>
 </section>
     <section class="kpis" aria-label="Estado del equipo">

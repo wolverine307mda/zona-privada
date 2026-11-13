@@ -10,6 +10,7 @@ import { GastosService } from '../gastos/gastos.service';
 import { Panel } from './panel';
 import { Bateria } from './bateria';
 import { Espacio } from './espacio';
+import { EquipoService } from '../core/equipo.service';
 import { DatosPc, Pc3d } from './pc-3d';
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, OnDestroy, afterNextRender, computed, effect, inject, signal, viewChild } from '@angular/core';
@@ -41,6 +42,7 @@ export class Inicio implements OnDestroy {
   protected readonly perfil = inject(PerfilService);
   private readonly tema = inject(TemaService);
   protected readonly sistema = inject(SistemaService);
+  protected readonly equipo = inject(EquipoService);
 
   private readonly cpuEl = viewChild.required<ElementRef<HTMLDivElement>>('cpu');
   private readonly historialEl = viewChild.required<ElementRef<HTMLDivElement>>('historial');
@@ -97,6 +99,7 @@ export class Inicio implements OnDestroy {
   protected readonly so = computed(() => (this.a()?.sistemaOperativo ?? '').replace('Microsoft ', ''));
 
   constructor() {
+    this.equipo.cargar();
     const reloj = setInterval(() => this.ahora.set(new Date()), 1000);
     const temp = setInterval(() => { if (!document.hidden) void this.leerTemperatura(); }, 60_000);
     void this.leerTemperatura();

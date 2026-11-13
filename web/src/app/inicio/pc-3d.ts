@@ -1,18 +1,21 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterNextRender, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import type * as THREE from 'three';
 import { resolverColor } from '../core/color-css';
 
 export interface DatosPc { cpu: number; memoria: number; disco: number; real: boolean; }
+/** el tipo de equipo que se dibuja: un portátil (con batería y gráfica) o un mini PC de sobremesa (sin batería, gráfica integrada y un solo ventilador) */
+export type TipoEquipo = 'portatil' | 'minipc';
 
 type Three = typeof import('three');
 type Vista = 'normal' | 'uso' | 'calor' | 'aire';
-type Id = 'bat' | 'placa' | 'cpu' | 'gpu' | 'ram' | 'ssd' | 'vent' | 'tapa';
+type Id = 'bat' | 'base' | 'placa' | 'cpu' | 'gpu' | 'ram' | 'ssd' | 'vent' | 'tapa';
 interface Parte { id: Id; g: THREE.Group; nivel: number; lift: number; base: number; a: number; mats: Set<THREE.Material>; centro: THREE.Vector3; }
 
 const ETIQUETADAS: Id[] = ['bat', 'ssd', 'ram', 'cpu', 'vent'];
-const NOMBRES: Record<string, string> = { bat: 'Batería', ssd: 'Disco', ram: 'Memoria', cpu: 'Procesador', gpu: 'Gráfica', vent: 'Refrigeración' };
+const ETIQUETADAS_MINI: Id[] = ['ssd', 'ram', 'cpu', 'vent'];
+const NOMBRES: Record<string, string> = { bat: 'Batería', ssd: 'Disco', ram: 'Memoria', cpu: 'Procesador', gpu: 'Gráfica', vent: 'Refrigeración', base: 'Carcasa' };
 
-// «Tu PC por dentro»: un despiece del equipo con materiales y luz. La placa lleva circuitos; la memoria, el disco y la batería se iluminan según lo que usan;
+// «Tu PC por dentro»: un despiece del equipo (portátil o mini PC, según el ajuste de tipo de equipo) con materiales y luz. La placa lleva circuitos; la memoria, el disco y la batería se iluminan según lo que usan;
 // el procesador se calienta con su temperatura; los ventiladores giran más con la carga. Tres vistas (uso, calor, aire), un deslizador de despiece,
 // y al pasar el ratón o tocar una pieza se resalta y se ve su detalle. Arrastra para girarlo.
 @Component({
@@ -20,7 +23,7 @@ const NOMBRES: Record<string, string> = { bat: 'Batería', ssd: 'Disco', ram: 'M
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <canvas #lienzo class="p3-lienzo" role="img" aria-label="Dibujo en 3D de tu PC por dentro: batería, placa base, procesador, memoria, disco y ventiladores"></canvas>
+    <canvas #lienzo class="p3-lienzo" role="img" [attr.aria-label]="tipo() === 'minipc' ? 'Dibujo en 3D de tu mini PC por dentro: carcasa, placa base, procesador, memoria, disco y ventilador' : 'Dibujo en 3D de tu PC por dentro: batería, placa base, procesador, memoria, disco y ventiladores'"></canvas>
     <svg class="p3-lineas" #lineas aria-hidden="true"></svg>
     <div class="p3-etqs" #etqs></div>
     <div class="p3-detalle" aria-live="polite">
@@ -82,6 +85,8 @@ export class Pc3d {
   readonly bateria = input<number | null>(null);
   readonly tempCpu = input<number | null>(null);
   readonly tempDisco = input<number | null>(null);
+  /** qué equipo se dibuja; al cambiar se vuelve a montar la escena */
+  readonly tipo = input<TipoEquipo>('portatil');
 
   protected readonly vistas: { id: Vista; texto: string }[] = [{ id: 'normal', texto: 'Normal' }, { id: 'uso', texto: 'Uso' }, { id: 'calor', texto: 'Calor' }, { id: 'aire', texto: 'Aire' }];
   protected readonly vista = signal<Vista>('normal');
@@ -94,6 +99,7 @@ export class Pc3d {
   private readonly lineas = viewChild.required<ElementRef<SVGSVGElement>>('lineas');
   private readonly etqs = viewChild.required<ElementRef<HTMLDivElement>>('etqs');
   private cierre: (() => void) | null = null;
+  private remontar: (() => void) | null = null;
   private vivo = true;
 
   /** las cifras de cada pieza, con lo que haya medido */
@@ -114,6 +120,7 @@ export class Pc3d {
   constructor() {
     inject(DestroyRef).onDestroy(() => { this.vivo = false; this.cierre?.(); this.cierre = null; });
     afterNextRender(() => this.arrancar());
+    effect(() => { this.tipo(); untracked(() => this.remontar?.()); });
   }
 
   protected reintentar(): void { this.arrancar(); }
@@ -126,14 +133,17 @@ export class Pc3d {
         this.cierre?.();
         let actual = this.montar(THREE);
         // si cambia el tema (claro/oscuro o el color), se vuelve a montar con la paleta nueva; sin perder el contexto WebGL, que el lienzo sigue siendo el mismo
-        const obs = new MutationObserver(() => { if (!this.vivo) return; actual(false); actual = this.montar(THREE); });
+        const volver = () => { if (!this.vivo) return; actual(false); actual = this.montar(THREE); };
+        const obs = new MutationObserver(volver);
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-mode', 'data-color', 'data-tema', 'style'] });
-        this.cierre = () => { obs.disconnect(); actual(true); };
+        this.remontar = volver;
+        this.cierre = () => { obs.disconnect(); this.remontar = null; actual(true); };
       })
       .catch(() => { if (this.vivo) this.fallo.set(true); }); // sin WebGL, contexto agotado o chunk viejo en la caché
   }
 
   private montar(THREE: Three): (perderContexto?: boolean) => void {
+    const mini = this.tipo() === 'minipc';
     const canvas = this.lienzo().nativeElement, svg = this.lineas().nativeElement, cont = this.etqs().nativeElement;
     svg.replaceChildren(); cont.replaceChildren();
     const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -190,9 +200,17 @@ export class Pc3d {
       partes[id] = p; grp.add(g); return p;
     };
 
+    // —— mini PC: la base de la carcasa, con los puertos de delante y de detrás y el piloto de encendido ——
+    if (mini) {
+      const g = new THREE.Group(); g.add(filo(placa(3.1, 3.1, 0.14, 0.3, mat(P.gris))));
+      [-0.85, -0.55, -0.25].forEach((x) => g.add(caja(0.22, 0.07, 0.05, mat(P.metal, { metalness: 0.5 }), x, 0.07, 1.55)));
+      g.add(caja(0.12, 0.05, 0.05, mat(brand, { emissive: brand, emissiveIntensity: 0.9 }), 0.9, 0.08, 1.55));
+      [-0.9, -0.4, 0.1, 0.6].forEach((x) => g.add(caja(0.3, 0.09, 0.05, mat(0x1b2733, { metalness: 0.4 }), x, 0.06, -1.55)));
+      parte('base', g, 0, 0, 0.02);
+    }
     // —— batería: cinco celdas que se llenan según la carga ——
     const barrasBat: THREE.Mesh[] = [];
-    { const g = new THREE.Group(); g.add(filo(placa(4.3, 2.8, 0.1, 0.2, mat(P.gris))));
+    if (!mini) { const g = new THREE.Group(); g.add(filo(placa(4.3, 2.8, 0.1, 0.2, mat(P.gris))));
       for (let i = 0; i < 5; i++) {
         g.add(filo(caja(0.74, 0.08, 2.25, mat(P.apagado, { opacity: 0.55 }), -1.62 + i * 0.81, 0.1, 0), 0.25));
         const gb = geo(new THREE.BoxGeometry(0.66, 0.09, 1)); gb.translate(0, 0, 0.5);
@@ -200,17 +218,18 @@ export class Pc3d {
       }
       parte('bat', g, 0, 0, 0.02); }
     // —— placa base con circuitos ——
-    { const g = new THREE.Group(); g.add(filo(placa(4.2, 2.7, 0.08, 0.16, mat(P.placa))));
-      const c = document.createElement('canvas'); c.width = 840; c.height = 540; const x = c.getContext('2d')!; x.fillStyle = P.pcb; x.fillRect(0, 0, 840, 540);
+    { const [PW, PD] = mini ? [2.9, 2.9] : [4.2, 2.7], [CW, CH] = mini ? [600, 600] : [840, 540];
+      const g = new THREE.Group(); g.add(filo(placa(PW, PD, 0.08, 0.16, mat(P.placa))));
+      const c = document.createElement('canvas'); c.width = CW; c.height = CH; const x = c.getContext('2d')!; x.fillStyle = P.pcb; x.fillRect(0, 0, CW, CH);
       x.strokeStyle = hex(brand); x.globalAlpha = 0.55; x.lineWidth = 2.2; let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
       for (let i = 0; i < 90; i++) {
-        let px = 420 + (rnd() - 0.5) * 120, py = 270 + (rnd() - 0.5) * 120; x.beginPath(); x.moveTo(px, py);
+        let px = CW / 2 + (rnd() - 0.5) * 120, py = CH / 2 + (rnd() - 0.5) * 120; x.beginPath(); x.moveTo(px, py);
         for (let k = 0; k < 4; k++) { const dir = Math.floor(rnd() * 4), len = 40 + rnd() * 150; px += [len, 0, -len, 0][dir]; py += [0, len, 0, -len][dir]; x.lineTo(px, py); if (rnd() > 0.5) { px += (rnd() > 0.5 ? 1 : -1) * 30; py += (rnd() > 0.5 ? 1 : -1) * 30; x.lineTo(px, py); } }
         x.stroke(); x.fillStyle = hex(brand); x.beginPath(); x.arc(px, py, 4, 0, 6.283); x.fill();
       }
       const tex = new THREE.CanvasTexture(c); texturas.push(tex);
       const pm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, transparent: true }); pm.userData['op0'] = 1; materiales.push(pm);
-      const pl = new THREE.Mesh(geo(new THREE.PlaneGeometry(4.15, 2.65)), pm); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.092; g.add(pl);
+      const pl = new THREE.Mesh(geo(new THREE.PlaneGeometry(PW - 0.05, PD - 0.05)), pm); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.092; g.add(pl);
       parte('placa', g, 1, 0, 0.16); }
     // —— procesador ——
     const dieCpu = mat(brand, { emissive: brand, emissiveIntensity: 0.8, metalness: 0.3 });
@@ -218,9 +237,9 @@ export class Pc3d {
       g.add(filo(caja(0.85, 0.07, 0.85, mat(P.metal, { metalness: 0.5, roughness: 0.35 }), 0, 0.05, 0)));
       g.add(filo(caja(0.5, 0.06, 0.5, dieCpu, 0, 0.12, 0), 0.6));
       for (let i = 0; i < 6; i++) g.add(caja(0.05, 0.03, 0.85, mat(P.borde, { opacity: 0.45 }), -0.4 + i * 0.16, 0.12, 0));
-      g.position.set(-0.25, 0, 0); parte('cpu', g, 2, 0, 0.26, [0, 0.15, 0]); }
-    // —— gráfica ——
-    { const g = new THREE.Group(); g.add(filo(caja(1.35, 0.05, 0.95, mat(P.gris))));
+      g.position.set(mini ? 0 : -0.25, 0, 0); parte('cpu', g, 2, 0, 0.26, [0, 0.15, 0]); }
+    // —— gráfica (un mini PC usa la integrada en el procesador) ——
+    if (!mini) { const g = new THREE.Group(); g.add(filo(caja(1.35, 0.05, 0.95, mat(P.gris))));
       g.add(filo(caja(0.5, 0.08, 0.5, mat(azul, { emissive: azul, emissiveIntensity: 0.45, metalness: 0.3 }), -0.1, 0.05, 0), 0.6));
       ([[0.5, 0.25], [0.5, -0.25], [0.5, 0], [-0.55, 0.3]] as [number, number][]).forEach(([x, z]) => g.add(caja(0.2, 0.05, 0.22, mat(P.metal, { metalness: 0.5 }), x, 0.05, z)));
       g.position.set(1.45, 0, -0.45); parte('gpu', g, 2, 0.3, 0.26); }
@@ -231,19 +250,19 @@ export class Pc3d {
         const z = mdl * 0.44; g.add(filo(caja(1.6, 0.035, 0.34, mat(verde), 0, 0, z), 0.3));
         for (let i = 0; i < 8; i++) { const ch = caja(0.15, 0.05, 0.2, mat(0x30343a, { roughness: 0.4 }), -0.67 + i * 0.19, 0.035, z); g.add(ch); chipsRam.push(ch); }
       }
-      g.position.set(-1.35, 0, -0.9); parte('ram', g, 2, 0.55, 0.26, [0, 0.1, 0.2]); }
+      g.position.set(mini ? -0.5 : -1.35, 0, mini ? -1.15 : -0.9); parte('ram', g, 2, 0.55, 0.26, [0, 0.1, 0.2]); }
     // —— disco: veinte segmentos de capacidad ——
     const segsSsd: THREE.Mesh[] = [];
     { const g = new THREE.Group(); g.add(filo(caja(1.45, 0.035, 0.36, mat(claro ? 0x6f86a3 : 0x23384f), 0, 0, 0), 0.3));
       for (let i = 0; i < 20; i++) { const sg = caja(0.055, 0.05, 0.1, mat(0x3b4755), -0.66 + i * 0.068, 0.035, 0.11); g.add(sg); segsSsd.push(sg); }
       [-0.4, 0.1].forEach((x) => g.add(caja(0.4, 0.05, 0.17, mat(0x1b2733, { metalness: 0.4 }), x, 0.035, -0.07)));
-      g.position.set(-1.35, 0, 0.55); parte('ssd', g, 2, 0.12, 0.26); }
+      g.position.set(mini ? 0.15 : -1.35, 0, mini ? 1.05 : 0.55); parte('ssd', g, 2, 0.12, 0.26); }
     // —— refrigeración: ventiladores con aspas, tubos de calor, aletas y aire ——
     const ventis: { rot: THREE.Group; borr: THREE.Mesh; v: number }[] = [];
     const cobreMats: THREE.MeshStandardMaterial[] = [];
     let aire!: { pts: THREE.Points; meta: { k: number; t: number; z: number; y: number }[]; ps: Float32Array; pm: THREE.PointsMaterial };
     { const g = new THREE.Group();
-      ([[-1.5, 0.55], [1.5, 0.55]] as [number, number][]).forEach(([x, z], k) => {
+      ((mini ? [[0, 0]] : [[-1.5, 0.55], [1.5, 0.55]]) as [number, number][]).forEach(([x, z], k) => {
         const f = new THREE.Group(); f.position.set(x, 0.05, z);
         const aro = new THREE.Mesh(geo(new THREE.TorusGeometry(0.66, 0.035, 10, 56)), mat(P.metal, { metalness: 0.6, roughness: 0.3 })); aro.rotation.x = Math.PI / 2; f.add(aro);
         const marco = placa(1.5, 1.5, 0.06, 0.18, mat(P.gris, { opacity: 0.55 })); marco.position.y = -0.06; f.add(filo(marco, 0.3));
@@ -255,8 +274,11 @@ export class Pc3d {
         ventis.push({ rot, borr, v: k ? 0.22 : 0.27 }); g.add(f);
         for (let i = 0; i < 10; i++) g.add(caja(0.02, 0.16, 0.95, mat(P.metal, { metalness: 0.6, roughness: 0.3 }), x + (x < 0 ? -0.95 : 0.95) + (x < 0 ? -1 : 1) * i * 0.055, 0, z - 0.05));
       });
-      ([[-1, 0.12], [-1, -0.12], [1, 0.12], [1, -0.12]] as [number, number][]).forEach(([s, dz]) => {
-        const cu = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.25, 0.09, dz), new THREE.Vector3(-0.25 + s * 0.6, 0.09, dz * 2 + 0.2 * (s > 0 ? -1 : 1)), new THREE.Vector3(s * 1.6, 0.09, dz + 0.45), new THREE.Vector3(s * 2.15, 0.09, 0.5 + dz)]);
+      ((mini ? [[1, 0.12], [1, -0.12]] : [[-1, 0.12], [-1, -0.12], [1, 0.12], [1, -0.12]]) as [number, number][]).forEach(([s, dz]) => {
+        const cx = mini ? 0 : -0.25;
+        const cu = new THREE.CatmullRomCurve3(mini
+          ? [new THREE.Vector3(cx, 0.09, dz), new THREE.Vector3(0.5, 0.09, dz * 1.6), new THREE.Vector3(0.95, 0.09, dz * 1.4), new THREE.Vector3(1.3, 0.09, dz * 1.2)]
+          : [new THREE.Vector3(cx, 0.09, dz), new THREE.Vector3(cx + s * 0.6, 0.09, dz * 2 + 0.2 * (s > 0 ? -1 : 1)), new THREE.Vector3(s * 1.6, 0.09, dz + 0.45), new THREE.Vector3(s * 2.15, 0.09, 0.5 + dz)]);
         const mc = mat(P.cobre, { metalness: 0.85, roughness: 0.28 }); cobreMats.push(mc); g.add(new THREE.Mesh(geo(new THREE.TubeGeometry(cu, 36, 0.042, 10)), mc));
       });
       const n = 120, ps = new Float32Array(n * 3), meta: { k: number; t: number; z: number; y: number }[] = [];
@@ -264,9 +286,10 @@ export class Pc3d {
       const gp = geo(new THREE.BufferGeometry()); gp.setAttribute('position', new THREE.BufferAttribute(ps, 3));
       const pm = new THREE.PointsMaterial({ color: azul, size: 0.07, transparent: true, opacity: 0.35, depthWrite: false }); pm.userData['op0'] = 0.35; materiales.push(pm);
       aire = { pts: new THREE.Points(gp, pm), meta, ps, pm }; g.add(aire.pts);
-      parte('vent', g, 3, 0, 0.46, [1.5, 0.1, 0.5]); }
+      parte('vent', g, 3, 0, 0.46, mini ? [0.4, 0.1, 0] : [1.5, 0.1, 0.5]); }
     // —— tapa transparente ——
-    { const g = new THREE.Group(); g.add(filo(placa(4.5, 2.95, 0.05, 0.22, mat(0xffffff, { opacity: claro ? 0.12 : 0.06, roughness: 0.1 })), 0.55)); parte('tapa', g, 4.1, 0, 0.62); }
+    { const g = new THREE.Group(), vidrio = mat(0xffffff, { opacity: claro ? 0.12 : 0.06, roughness: 0.1 });
+      g.add(filo(mini ? placa(3.25, 3.25, 0.05, 0.32, vidrio) : placa(4.5, 2.95, 0.05, 0.22, vidrio), 0.55)); parte('tapa', g, 4.1, 0, 0.62); }
     // sombra suave en el suelo
     const sc2 = document.createElement('canvas'); sc2.width = sc2.height = 256; const sx = sc2.getContext('2d')!, gr = sx.createRadialGradient(128, 128, 10, 128, 128, 128);
     const sombra = new THREE.Color(P.sombra), rgb = `${Math.round(sombra.r * 255)},${Math.round(sombra.g * 255)},${Math.round(sombra.b * 255)}`;
@@ -274,15 +297,15 @@ export class Pc3d {
     const texSombra = new THREE.CanvasTexture(sc2); texturas.push(texSombra);
     const suelo = new THREE.Mesh(geo(new THREE.PlaneGeometry(8, 8)), new THREE.MeshBasicMaterial({ map: texSombra, transparent: true, depthWrite: false })); suelo.rotation.x = -Math.PI / 2; suelo.position.y = -0.4; scene.add(suelo); materiales.push(suelo.material as THREE.Material);
     // anillo de escaneo al montarse
-    const anillo = new THREE.Mesh(geo(new THREE.TorusGeometry(3.1, 0.018, 8, 96)), new THREE.MeshBasicMaterial({ color: brand, transparent: true })); anillo.rotation.x = Math.PI / 2; grp.add(anillo); materiales.push(anillo.material as THREE.Material);
+    const anillo = new THREE.Mesh(geo(new THREE.TorusGeometry(mini ? 2.5 : 3.1, 0.018, 8, 96)), new THREE.MeshBasicMaterial({ color: brand, transparent: true })); anillo.rotation.x = Math.PI / 2; grp.add(anillo); materiales.push(anillo.material as THREE.Material);
     // guías verticales desde cada pieza hasta su sitio
-    const guias = (['cpu', 'gpu', 'ram', 'ssd'] as Id[]).map((id) => {
+    const guias = (['cpu', 'gpu', 'ram', 'ssd'] as Id[]).filter((id) => partes[id]).map((id) => {
       const lm = new THREE.LineDashedMaterial({ color: P.borde, dashSize: 0.08, gapSize: 0.06, transparent: true, opacity: 0.45 }); materiales.push(lm);
       const g = new THREE.Line(geo(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)])), lm); grp.add(g); return { id, g, lm };
     });
 
     // etiquetas
-    const etqs = ETIQUETADAS.map((k) => {
+    const etqs = (mini ? ETIQUETADAS_MINI : ETIQUETADAS).map((k) => {
       const el = document.createElement('div'); el.className = 'p3-et'; el.addEventListener('click', () => this.sel.set(this.sel() === k ? null : k)); cont.appendChild(el);
       const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'), pt = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); pt.setAttribute('r', '3'); svg.append(ln, pt);
       return { k, el, ln, pt, texto: '' };
@@ -292,7 +315,7 @@ export class Pc3d {
     let hover: Id | null = null, arrastre = false, x0 = 0, movido = 0, manual = 0;
     const ray = new THREE.Raycaster(), ratón = new THREE.Vector2();
     const abajo = (e: PointerEvent) => { arrastre = true; x0 = e.clientX; movido = 0; canvas.setPointerCapture(e.pointerId); };
-    const arriba = () => { arrastre = false; if (movido < 4 && hover && hover !== 'placa' && hover !== 'tapa') this.sel.set(this.sel() === hover ? null : hover); };
+    const arriba = () => { arrastre = false; if (movido < 4 && hover && hover !== 'placa' && hover !== 'tapa' && hover !== 'base') this.sel.set(this.sel() === hover ? null : hover); };
     const mueve = (e: PointerEvent) => {
       if (arrastre) { grp.rotation.y += (e.clientX - x0) * 0.008; movido += Math.abs(e.clientX - x0); x0 = e.clientX; manual = performance.now(); return; }
       const b = canvas.getBoundingClientRect(); ratón.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1); ray.setFromCamera(ratón, camera);
@@ -313,7 +336,7 @@ export class Pc3d {
     const visibilidad = new IntersectionObserver((es) => { visible = es.some((x) => x.isIntersecting); }); visibilidad.observe(canvas);
 
     // —— el bucle ——
-    const OBJ: Record<Vista, Partial<Record<Id, number>>> = { normal: {}, uso: { cpu: 0.5, gpu: 0.5, vent: 0.45, placa: 0.6, tapa: 0.5 }, calor: { ram: 0.22, ssd: 0.22, bat: 0.22, placa: 0.35, tapa: 0.3 }, aire: { bat: 0.25, ram: 0.35, ssd: 0.35, gpu: 0.4, cpu: 0.55, placa: 0.3, tapa: 0.3 } };
+    const OBJ: Record<Vista, Partial<Record<Id, number>>> = { normal: {}, uso: { cpu: 0.5, gpu: 0.5, vent: 0.45, placa: 0.6, tapa: 0.5 }, calor: { ram: 0.22, ssd: 0.22, bat: 0.22, base: 0.22, placa: 0.35, tapa: 0.3 }, aire: { bat: 0.25, base: 0.25, ram: 0.35, ssd: 0.35, gpu: 0.4, cpu: 0.55, placa: 0.3, tapa: 0.3 } };
     const ease = (k: number) => 1 - Math.pow(1 - k, 3), calor = (t: number) => new THREE.Color().lerpColors(azul, new THREE.Color(0xff5a1f), Math.min(1, Math.max(0, t)));
     const v = new THREE.Vector3(), GAP = 1.05, t0 = performance.now(), colEt = 150;
     let marcoId = 0, cerrado = false, cpuS = 0, memS = 0, discoS = 0, batS = 0, tempS = 0.5;
@@ -346,7 +369,7 @@ export class Pc3d {
       aire.pm.opacity = vista === 'aire' ? 0.9 : 0.3; aire.pm.size = vista === 'aire' ? 0.09 : 0.06;
       for (let i = 0; i < aire.meta.length; i++) {
         const m = aire.meta[i]; if (!reducido) m.t += 0.006 * (vista === 'aire' ? 1.8 : 1); if (m.t > 1) { m.t = 0; m.z = (Math.random() - 0.5) * 0.8; }
-        const s = m.k ? 1 : -1, dd = m.t * 1.6; aire.ps[i * 3] = s * (1.7 + dd * 1.2); aire.ps[i * 3 + 1] = 0.1 + m.y + Math.sin(m.t * 6 + i) * 0.03; aire.ps[i * 3 + 2] = 0.55 + m.z;
+        const s = mini || m.k ? 1 : -1, dd = m.t * 1.6; aire.ps[i * 3] = s * ((mini ? 1.2 : 1.7) + dd * 1.2); aire.ps[i * 3 + 1] = 0.1 + m.y + Math.sin(m.t * 6 + i) * 0.03; aire.ps[i * 3 + 2] = (mini ? 0 : 0.55) + m.z;
       }
       aire.pts.geometry.attributes['position'].needsUpdate = true;
       // anillo de escaneo, sombra y guías

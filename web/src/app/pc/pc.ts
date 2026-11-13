@@ -5,6 +5,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { firstValueFrom } from 'rxjs';
 import { Reautenticar } from '../core/reautenticar';
 import { SistemaService } from '../inicio/sistema.service';
+import { EquipoService } from '../core/equipo.service';
 import { DatosPc, Pc3d } from '../inicio/pc-3d';
 import { ConfirmarService } from '../core/confirmar.service';
 import { BateriaSalud } from './bateria-salud';
@@ -68,6 +69,7 @@ export class Pc implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   protected readonly reauth = inject(Reautenticar);
   private readonly sistema = inject(SistemaService);
+  protected readonly equipo = inject(EquipoService);
   protected readonly a = computed(() => this.sistema.actual());
   protected readonly datosPc = computed<DatosPc>(() => {
     const m = this.a();
@@ -151,6 +153,7 @@ export class Pc implements OnInit, OnDestroy {
   });
 
   async ngOnInit(): Promise<void> {
+    this.equipo.cargar();
     await this.cargar();
     this.temporizador = setInterval(() => void this.cargar(), 15000);
   }

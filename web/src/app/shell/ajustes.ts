@@ -7,12 +7,14 @@ import { AjustesFondo } from './ajustes-fondo';
 import { AjustesAspecto } from './ajustes-aspecto';
 import { AjustesTema } from './ajustes-tema';
 import { AjustesSonido } from './ajustes-sonido';
+import { AjustesEquipo } from './ajustes-equipo';
+import { AjustesWeb } from './ajustes-web';
 
-// Ajustes de la app en un modal: modo (día, noche, sistema), paleta de colores, fondo animado, sonido, instalar la app y la sesión.
+// Ajustes de la app en un modal: modo (día, noche, sistema), paleta de colores, fondo animado, sonido, el tema por defecto del portfolio, instalar la app y la sesión.
 // Se cierra con Esc, con la X o pulsando fuera de la caja. `salir` avisa al marco de que se ha pedido cerrar la sesión.
 @Component({
   selector: 'app-ajustes',
-  imports: [AjustesEntrada, AjustesFondo, AjustesSonido, AjustesTema, AjustesAspecto],
+  imports: [AjustesEntrada, AjustesFondo, AjustesSonido, AjustesTema, AjustesAspecto, AjustesEquipo, AjustesWeb],
   templateUrl: './ajustes.html',
   styleUrl: './ajustes.css',
 })
