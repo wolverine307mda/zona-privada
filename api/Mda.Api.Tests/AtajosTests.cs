@@ -168,6 +168,17 @@ public class AtajosTests(ModulosFactory factory) : IClassFixture<ModulosFactory>
     }
 
     [Fact]
+    public async Task La_direccion_para_el_prompt_pide_sesion_y_no_enseña_nada_mas_que_el_origen()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync("/api/atajos-tokens/direccion")).StatusCode);
+        var c = await Dentro();
+        var r = await c.GetFromJsonAsync<JsonElement>("/api/atajos-tokens/direccion");
+        Assert.True(r.TryGetProperty("url", out var url));
+        // sin App:UrlPublica en los tests queda vacía; con ella, solo el origen (sin ruta)
+        Assert.DoesNotContain("/api", url.GetString()!);
+    }
+
+    [Fact]
     public async Task La_cookie_de_sesion_sola_no_vale_para_los_atajos_ni_el_token_para_la_app()
     {
         var c = await Dentro();

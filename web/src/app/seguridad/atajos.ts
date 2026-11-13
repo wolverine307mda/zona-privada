@@ -1,6 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { esDireccionLocal, generarPrompt, recetasPara } from './atajos-prompt';
 
 interface TokenAtajo { id: number; nombre: string; alcances: string[]; ultimoUso: string | null; ultimaIp: string; creado: string; revocado: boolean; }
 
@@ -12,15 +14,48 @@ const PERMISOS = [
   { id: 'nota', texto: 'Notas rápidas', icono: 'M6 3h9l4 4v14H6zM9 12h7M9 16h7' },
   { id: 'pc', texto: 'Encender aparatos (Wake-on-LAN)', icono: 'M12 3v9M7 6a8 8 0 1 0 10 0' },
   { id: 'panico', texto: 'Botón de pánico', icono: 'M12 3l9 16H3zM12 10v4M12 17v.5' },
+  { id: 'personas', texto: 'Añadir personas', icono: 'M15 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM4 20a8 8 0 0 1 16 0' },
+  { id: 'salud', texto: 'Apple Salud', icono: 'M12 20s-7-4.4-8.5-9A4.8 4.8 0 0 1 12 7.5 4.8 4.8 0 0 1 20.5 11C19 15.6 12 20 12 20z' },
 ];
 
-interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; permiso?: string; }
+interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; permiso?: string; metodo?: 'GET' | 'POST'; }
+
+// De qué token sale el prompt: uno recién creado (lleva el token dentro) o uno que ya existía (el token no se puede volver a ver: lleva una marca)
+interface Fuente { id: number | null; token: string | null; alcances: string[]; nombre: string; }
 
 // Los atajos del iPhone: un token por atajo (con permisos propios, que se puede revocar) y los pasos para montarlos en la app Atajos.
 @Component({
   selector: 'app-atajos',
+  imports: [NgTemplateOutlet],
   styleUrls: ['../gastos/comun.css', './claves.css'],
   template: `
+    <!-- el prompt para la app Atajos del iPhone: elegir qué atajo, la dirección y copiarlo -->
+    <ng-template #panelPrompt>
+      @if (fuente(); as f) {
+        <div class="panel">
+          <label class="campo"><span class="campo__etiqueta">Qué atajo quieres montar</span>
+            <select class="campo__input" (change)="recetaId.set($any($event.target).value)">
+              @for (r of recetas(); track r.id) { <option [value]="r.id" [selected]="r.id === receta()?.id">{{ r.titulo }}</option> }
+            </select></label>
+          <label class="campo"><span class="campo__etiqueta">Dirección que usará el iPhone</span>
+            <input class="campo__input" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" [value]="direccion()" (input)="direccion.set($any($event.target).value)"></label>
+          @if (direccionLocal()) { <p class="aviso" role="status">Esa dirección solo funciona en este equipo o en tu casa. Para usar el atajo desde fuera pon la de Internet, con https:// (la de tu dominio).</p> }
+          @if (receta(); as r) {
+            <details class="vista"><summary>Ver el prompt</summary><pre>{{ prompt() }}</pre></details>
+            <div class="acciones">
+              <button class="button" type="button" (click)="copiarPrompt()">{{ copiado() === 'prompt' ? '✓ Prompt copiado' : f.token ? 'Copiar prompt completo' : 'Copiar prompt (sin token)' }}</button>
+              @if (f.token; as t) { <button class="button button--ghost" type="button" (click)="copiar(t)">{{ copiado() === t ? '✓ Token copiado' : 'Copiar solo el token' }}</button> }
+            </div>
+            <p class="nota">
+              @if (f.token) { El prompt lleva el token dentro: pégalo solo en tu iPhone y no lo compartas. Si compartes el portapapeles entre dispositivos, el token viajará con él. }
+              @else { Va sin el token (ya no se puede volver a ver): al pegarlo en Atajos cambia <code>PEGA_AQUI_TU_TOKEN</code> por el tuyo. }
+              Apple Intelligence puede no montar todas las acciones: si falta alguna, el prompt sirve igualmente de guía paso a paso.
+            </p>
+          } @else { <p class="nada">Este token no tiene permisos que tengan receta de atajo.</p> }
+        </div>
+      }
+    </ng-template>
+
     <section class="caja">
       <header class="caja__cab"><h3>Atajos del iPhone</h3><span class="sub">Apunta gastos desde el Centro de control, con Siri o al pagar con Apple Pay</span></header>
 
@@ -28,10 +63,17 @@ interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; 
         <div class="nuevo" role="status">
           <p><strong>Copia el token ahora</strong>: es la única vez que se enseña.</p>
           <code class="nuevo__token">{{ t }}</code>
+          <p>Cópialo suelto o, mejor, <strong>copia el prompt completo</strong> y pégalo en la app Atajos del iPhone: lleva la dirección, el token y los pasos para montar el atajo.</p>
+          <ng-container [ngTemplateOutlet]="panelPrompt"/>
           <div class="acciones">
-            <button class="button" type="button" (click)="copiar(t)">{{ copiado() === t ? '✓ Copiado' : 'Copiar el token' }}</button>
-            <button class="enlace" type="button" (click)="tokenNuevo.set(null)">Ya lo he guardado</button>
+            <button class="enlace" type="button" (click)="cerrarNuevo()">Ya lo he guardado</button>
           </div>
+        </div>
+      } @else if (fuente()) {
+        <div class="nuevo nuevo--calma">
+          <p><strong>Prompt para «{{ fuente()!.nombre }}»</strong></p>
+          <ng-container [ngTemplateOutlet]="panelPrompt"/>
+          <div class="acciones"><button class="enlace" type="button" (click)="fuente.set(null)">Cerrar</button></div>
         </div>
       }
       @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
@@ -48,6 +90,9 @@ interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; 
                 @for (a of t.alcances; track a) { <span class="chip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icono(a)"/></svg>{{ texto(a) }}</span> }
               </div>
               <small>{{ t.revocado ? 'Revocado' : t.ultimoUso ? 'Usado ' + hace(t.ultimoUso) + (t.ultimaIp ? ' · ' + t.ultimaIp : '') : 'Aún sin usar' }}</small>
+              @if (!t.revocado && !tokenNuevo()) {
+                <button class="enlace enlace--prompt" type="button" (click)="abrirPrompt(t)" [attr.aria-pressed]="fuente()?.id === t.id">Prompt para un atajo…</button>
+              }
             </div>
             @if (t.revocado) {
               <button class="enlace" type="button" (click)="revocar(t.id)" [attr.aria-label]="'Quitar ' + t.nombre">Quitar</button>
@@ -82,7 +127,7 @@ interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; 
               <p>{{ p.texto }}</p>
               @if (p.ruta) {
                 <button class="url" type="button" (click)="copiar(origen + p.ruta)" [attr.aria-label]="'Copiar ' + origen + p.ruta">
-                  <span class="url__metodo">POST</span><code>{{ origen }}{{ p.ruta }}</code><span class="url__copiar">{{ copiado() === origen + p.ruta ? '✓' : 'Copiar' }}</span>
+                  <span class="url__metodo">{{ p.metodo ?? 'POST' }}</span><code>{{ origen }}{{ p.ruta }}</code><span class="url__copiar">{{ copiado() === origen + p.ruta ? '✓' : 'Copiar' }}</span>
                 </button>
               }
               @if (p.cuerpo) { <p class="cuerpo">Cuerpo JSON: <code>{{ p.cuerpo }}</code></p> }
@@ -99,6 +144,13 @@ interface Paso { titulo: string; texto: string; ruta?: string; cuerpo?: string; 
     .nuevo__token { display: block; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--texto) 8%, transparent); font: 600 .84rem/1.5 var(--font-code); word-break: break-all; user-select: all; }
     @keyframes aparece { from { opacity: 0; transform: translateY(10px) scale(.98); } }
     @keyframes brilla-borde { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 25%, transparent); } }
+    .nuevo--calma { animation: none; border-color: var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
+    .panel { display: grid; gap: 10px; }
+    .panel .aviso, .panel .nota { margin: 0; font-size: .82rem; line-height: 1.45; color: var(--soft); }
+    .panel .aviso { color: var(--texto); padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--bad) 12%, transparent); }
+    .vista summary { cursor: pointer; color: var(--acento); font: 600 .84rem/1.6 var(--font-text); }
+    .vista pre { margin: 8px 0 0; padding: 12px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; border-radius: 12px; background: color-mix(in srgb, var(--texto) 8%, transparent); font: .76rem/1.5 var(--font-code); }
+    .enlace--prompt { justify-self: start; padding: 0; }
     .tokens { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
     .token { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--vidrio-borde); background: color-mix(in srgb, var(--texto) 4%, transparent); }
     .token--revocado { opacity: .55; }
@@ -142,6 +194,15 @@ export class Atajos implements OnInit {
   protected readonly ocupado = signal(false);
   protected readonly error = signal('');
 
+  // el prompt para el iPhone: de qué token sale, qué receta y con qué dirección
+  protected readonly fuente = signal<Fuente | null>(null);
+  protected readonly recetaId = signal('');
+  protected readonly direccion = signal(location.origin);
+  protected readonly recetas = computed(() => recetasPara(this.fuente()?.alcances ?? []));
+  protected readonly receta = computed(() => this.recetas().find((r) => r.id === this.recetaId()) ?? this.recetas()[0] ?? null);
+  protected readonly prompt = computed(() => { const r = this.receta(), f = this.fuente(); return r && f ? generarPrompt(r, f.token, this.direccion()) : ''; });
+  protected readonly direccionLocal = computed(() => esDireccionLocal(this.direccion()));
+
   protected readonly pasos: Paso[] = [
     { titulo: 'Gasto rápido', permiso: 'gasto', ruta: '/api/atajos/movimiento', cuerpo: 'importe, concepto, tipo',
       texto: 'Atajos › + › «Pedir entrada» (número: importe; texto: concepto), «Elegir del menú» (Gasto / Ingreso) y «Obtener contenido de URL». Termina con «Mostrar notificación» con la respuesta (mensaje).' },
@@ -156,7 +217,7 @@ export class Atajos implements OnInit {
       texto: '«Dictar texto» y «Obtener contenido de URL» con el texto. La nota aparece en Notas con la etiqueta «atajo».' },
     { titulo: 'Encender el PC', permiso: 'pc', ruta: '/api/atajos/despertar', cuerpo: 'nombre = el del aparato en Red (necesita su MAC y el agente en marcha)',
       texto: 'Un atajo con «Obtener contenido de URL»; ponlo en la pantalla de bloqueo o en el botón de acción.' },
-    { titulo: 'Estado de un vistazo', permiso: 'lectura', ruta: '/api/atajos/estado', cuerpo: 'GET, sin cuerpo; devuelve mensaje, estado y áreas',
+    { titulo: 'Estado de un vistazo', permiso: 'lectura', metodo: 'GET', ruta: '/api/atajos/estado', cuerpo: 'GET, sin cuerpo; devuelve mensaje, estado y áreas',
       texto: 'GET con «Obtener contenido de URL» y «Obtener valor del diccionario» (mensaje) → «Decir texto» para que Siri lo lea.' },
     { titulo: 'Pánico', permiso: 'panico', ruta: '/api/atajos/panico',
       texto: 'Lo mismo que el botón de la app: cierra sesiones y revoca todos los tokens (también este). Añade «Mostrar alerta» con confirmación antes. Se levanta con /desbloquear en Telegram.' },
@@ -164,7 +225,23 @@ export class Atajos implements OnInit {
       texto: 'Una automatización por lugar u hora que haga POST aquí: el bot te pregunta y respondes desde la notificación de Telegram.' },
   ];
 
-  ngOnInit(): void { void this.leer(); }
+  ngOnInit(): void { void this.leer(); void this.leerDireccion(); }
+
+  // la dirección de Internet de la app (App:UrlPublica) si está configurada; si no, la que se está usando ahora
+  private async leerDireccion(): Promise<void> {
+    try { const r = await firstValueFrom(this.http.get<{ url: string }>('/api/atajos-tokens/direccion')); if (r.url) this.direccion.set(r.url); } catch { /* se queda con location.origin */ }
+  }
+
+  protected abrirPrompt(t: TokenAtajo): void {
+    this.recetaId.set('');
+    this.fuente.set(this.fuente()?.id === t.id ? null : { id: t.id, token: null, alcances: t.alcances, nombre: t.nombre });
+  }
+
+  protected cerrarNuevo(): void { this.tokenNuevo.set(null); this.fuente.set(null); }
+
+  protected async copiarPrompt(): Promise<void> {
+    try { await navigator.clipboard.writeText(this.prompt()); this.copiado.set('prompt'); setTimeout(() => this.copiado.set(null), 1600); } catch { /* sin portapapeles */ }
+  }
 
   protected icono(id: string): string { return PERMISOS.find((p) => p.id === id)?.icono ?? PERMISOS[0].icono; }
   protected texto(id: string): string { return PERMISOS.find((p) => p.id === id)?.texto ?? id; }
@@ -191,6 +268,8 @@ export class Atajos implements OnInit {
     this.ocupado.set(true); this.error.set('');
     try {
       const r = await firstValueFrom(this.http.post<{ token: string }>('/api/atajos-tokens', { nombre: this.nombre().trim(), alcances: this.elegidos() }));
+      this.recetaId.set('');
+      this.fuente.set({ id: null, token: r.token, alcances: this.elegidos(), nombre: this.nombre().trim() });
       this.tokenNuevo.set(r.token); this.nombre.set('');
       await this.leer();
     } catch (x) { this.error.set((x as HttpErrorResponse).error?.detail ?? 'No se pudo crear el token.'); }

@@ -142,6 +142,10 @@ public static class AtajosApi
             Results.Ok(await db.TokensAtajo.AsNoTracking().OrderBy(t => t.Id)
                 .Select(t => new { t.Id, t.Nombre, alcances = t.Alcances.Split(',', StringSplitOptions.None), t.Creado, t.UltimoUso, t.UltimaIp, t.Revocado }).ToListAsync(ct)));
 
+        // la dirección que tiene que usar el iPhone (la de Internet, no la local del PC) para escribirla en el prompt del atajo; vacía si no está configurada
+        g.MapGet("/direccion", (IConfiguration config) =>
+            Results.Ok(new { url = config["App:UrlPublica"] is { Length: > 0 } u && Uri.TryCreate(u, UriKind.Absolute, out var uri) ? uri.GetLeftPart(UriPartial.Authority) : "" }));
+
         // el token completo solo sale en esta respuesta
         g.MapPost("/", async (TokenEntrada e, AppDbContext db, CancellationToken ct) =>
         {

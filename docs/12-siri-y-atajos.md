@@ -26,6 +26,19 @@ Para ejecutarlo con la voz: ponle un nombre corto al atajo («Oye Siri, enciende
 | despertar un aparato de la red (tele, NAS, otro PC) | `POST /api/atajos/despertar` | pc | `{"nombre":"NAS"}` | `mensaje` |
 | el pánico | `POST /api/atajos/panico` | panico | — | `mensaje` |
 
+## Copiar el token o el prompt completo
+
+Al crear un token (Seguridad › Atajos) se enseña una sola vez y hay dos botones:
+
+- **Copiar solo el token** (`mda_…`).
+- **Copiar prompt completo**: un texto para pegar en la app Atajos del iPhone (con Apple Intelligence, o como guía paso a paso si hay que hacerlo a mano). Lleva el nombre del atajo, la dirección completa, el método, la cabecera `Authorization: Bearer …` con el token, el cuerpo JSON de ejemplo y las acciones de Atajos en orden. Se elige antes **qué atajo** montar (solo salen los que permite el token) y la **dirección**.
+
+La dirección sale de `URL_PUBLICA` (`GET /api/atajos-tokens/direccion`); si no está configurada se usa la del navegador y se avisa cuando es local, porque el iPhone no la alcanza desde fuera de casa.
+
+En un token que ya existe, el botón **«Prompt para un atajo…»** copia el prompt **sin token**, con `PEGA_AQUI_TU_TOKEN` en su lugar (el token no se puede volver a ver).
+
+Ojo: el prompt con token es tan secreto como el token; con el portapapeles compartido entre dispositivos viaja con él. Que Apple Intelligence monte bien todas las acciones no está garantizado: si falla, el mismo texto sirve para hacerlo a mano. Las recetas están en `web/src/app/seguridad/atajos-prompt.ts` (con tests); si añades una ruta a `Atajos.cs`, añade ahí su receta.
+
 ## Automatizaciones (sin tocar nada)
 
 En Atajos › **Automatización › +** (personal), con «Ejecutar inmediatamente» (así no pregunta):
