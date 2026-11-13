@@ -1,7 +1,7 @@
 // Service worker de la app instalada: abre al instante con lo último que se cargó y,
 // sin conexión, muestra la app (que avisa de que el equipo no responde) en vez de la página de error del navegador.
 // La API (/api, /hubs) nunca se guarda: los datos siempre son los del equipo.
-const CACHE = 'mda-v3';
+const CACHE = 'mda-v4';
 const MAX_ARCHIVOS = 120; // cada despliegue trae archivos nuevos con otra huella: sin tope la caché crecería sin parar
 
 self.addEventListener('install', (e) => {

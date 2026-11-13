@@ -7,7 +7,8 @@
 }
 
 .top { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 20px var(--margin); font-size: var(--step-small); font-weight: 500; }
-.marca { font: 600 var(--step-lead)/1 var(--font-text); letter-spacing: -0.04em; color: var(--acento); }
+.marca { display: inline-flex; align-items: center; gap: 12px; font: 600 var(--step-lead)/1 var(--font-text); letter-spacing: -0.04em; color: var(--acento); }
+.marca__logo { display: block; width: 36px; height: 36px; border-radius: 10px; }
 .volver { text-underline-offset: 0.2em; }
 
 .main {
