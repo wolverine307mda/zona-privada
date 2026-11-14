@@ -9,7 +9,7 @@ COPY web/ ./
 RUN npx ng build --configuration production
 
 # 2) API
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS api
 WORKDIR /src
 COPY api/Mda.Api/Mda.Api.csproj api/Mda.Api/
 # con el runtime de Linux para poder precompilar (ReadyToRun): el arranque y las primeras peticiones van más rápido
