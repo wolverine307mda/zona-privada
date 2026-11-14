@@ -51,6 +51,7 @@ en su PC de casa, publicada con Cloudflare Tunnel en https://app.wolvem.dev). Ha
 | modo pared · bandeja de entrada del PC · recetas de Siri | `web/src/app/pared/`; `agente/Mda.Agente/Vigias.cs` + `api/Mda.Api/Pc/Bandeja.cs`; [docs/12-siri-y-atajos.md](docs/12-siri-y-atajos.md) |
 | última vez de cada vigilancia y alerta de errores 5xx | `api/Mda.Api/Avisos/Vigilancia.cs` |
 | recuperar tras perder el equipo / desplegar con vuelta atrás | [docs/11-recuperacion.md](docs/11-recuperacion.md), `herramientas/desplegar.ps1` |
+| entrar con el iPhone · guardia · runbooks · despertar el PC · línea de tiempo del servidor | [docs/15-servidor.md](docs/15-servidor.md), `api/Mda.Api/Servidor/`, `Pc/Despertar.cs`; front `web/src/app/servidor/` |
 | mover la app a otro equipo (el mini PC) | [docs/14-mover-al-mini-pc.md](docs/14-mover-al-mini-pc.md), `herramientas/mover-equipo.ps1` (exportar/restaurar cifrado) |
 | ubicación del iPhone (simular GPS desde el PC) | `agente/Mda.Agente/Ubicacion*.cs`, `api/Mda.Api/Pc/UbicacionIphone.cs`, front `web/src/app/pc/ubicacion*.ts`, `mapa-ubicacion.*` |
 | pánico, sondas y latido | `api/Mda.Api/Seguridad/Panico.cs` |

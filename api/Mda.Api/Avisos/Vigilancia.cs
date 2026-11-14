@@ -37,7 +37,7 @@ public class RegistroVigilancia(TimeProvider reloj)
 }
 
 // Cada minuto mira cuántos errores del servidor ha habido: 5 o más en 10 minutos avisan por Telegram y push (como mucho una vez por hora).
-public class AlertaErrores(RegistroVigilancia registro, IAvisos avisos, TimeProvider reloj, ILogger<AlertaErrores> log) : BackgroundService
+public class AlertaErrores(RegistroVigilancia registro, IAvisos avisos, TimeProvider reloj, ILogger<AlertaErrores> log, Mda.Api.Servidor.GuardiaServicio? guardia = null) : BackgroundService
 {
     public const int Umbral = 5;
     public static readonly TimeSpan Ventana = TimeSpan.FromMinutes(10), Silencio = TimeSpan.FromHours(1);
@@ -66,6 +66,7 @@ public class AlertaErrores(RegistroVigilancia registro, IAvisos avisos, TimeProv
         _ultimoAviso = ahora;
         var texto = $"La API ha dado {n} errores del servidor en los últimos 10 minutos. Mira los registros en Seq (http://localhost:5341).";
         await avisos.Avisar("seguridad", "🔥 Errores en la API", texto, textoTelegram: $"🔥 {texto}", ct: ct);
+        if (guardia is not null) await guardia.Proponer("errores5xx", "Errores en la API", texto, ct);
     }
 }
 

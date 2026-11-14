@@ -87,6 +87,25 @@
 | PUT | `/google` | `{ defecto: { cuenta, calendario }?, mostrar: { <cuenta>: [calendarios que se ven] } }`: qué calendarios se ven y dónde se copian los eventos nuevos |
 | GET/PUT | `/horario` | horario de trabajo `{ activo, nombre, dias:[1..7], entrada:"08:30", salida:"17:30" }` |
 
+## Servidor (`/api/servidor`, `/api/auth/aprobacion`, `/api/pc/principal`) — ver [15](15-servidor.md)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/auth/aprobacion` | (sin sesión) el ordenador pide entrar: `{ id, codigo (2 cifras), secreto, caduca }`; avisa por Telegram y push. 409 sin canal de aviso, 429 con 3 pendientes |
+| POST | `/api/auth/aprobacion/{id}/estado` · `/entrar` | (sin sesión, con `{ secreto }`) el estado y, si está aprobada, recoger la sesión una sola vez |
+| GET | `/api/auth/aprobacion/pendientes` | las peticiones por aprobar (sin el código) |
+| POST | `/api/auth/aprobacion/{id}/aprobar` · `/denegar` | `{ codigo }`; aprobar pide Face ID/contraseña reciente (403 `reautenticar`) |
+| GET/POST | `/api/servidor/runbooks` | lista (con la última ejecución) / crea `{ nombre, descripcion, guardia, pasos[] }` |
+| PUT/DELETE | `/api/servidor/runbooks/{id}` | edita / borra |
+| POST | `/api/servidor/runbooks/{id}/ejecutar` | 202 `{ ejecucion }`; 409 si ya está en marcha |
+| GET | `/api/servidor/ejecuciones[/{id}]` | las últimas ejecuciones con el estado de cada paso |
+| POST | `/api/servidor/ejecuciones/{id}/aprobar` · `/cancelar` | dar el permiso a un paso que espera (Face ID) / cancelar |
+| GET/PUT | `/api/servidor/guardia` | `{ activa }` |
+| POST | `/api/servidor/guardia/probar` | manda a Telegram una alarma de prueba con botones |
+| GET | `/api/servidor/linea?desde&hasta&tipos&q&max` | la línea de tiempo del servidor (hasta 120 días) |
+| GET/PUT | `/api/pc/principal` | el PC principal `{ id }` (con MAC) |
+| POST | `/api/pc/principal/despertar` | lo despierta (paquete directo + agente si está conectado) |
+
 ## Notas (`/api/notas`)
 
 | Método | Ruta | Descripción |

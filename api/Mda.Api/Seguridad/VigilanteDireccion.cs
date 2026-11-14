@@ -51,7 +51,7 @@ public sealed class EstadoDireccion
 
 // Cada 10 minutos pide /api/salud a la dirección pública (App:UrlPublica) como lo haría cualquiera desde fuera y mira cuánto le queda al certificado.
 // Es el complemento del latido de Healthchecks.io: ese avisa si el PC se apaga, este si el PC está bien pero el túnel o el certificado no.
-public class VigilanteDireccion(IConfiguration config, EstadoDireccion estado, IAvisos avisos, TimeProvider reloj, ILogger<VigilanteDireccion> log) : BackgroundService
+public class VigilanteDireccion(IConfiguration config, EstadoDireccion estado, IAvisos avisos, TimeProvider reloj, ILogger<VigilanteDireccion> log, Mda.Api.Servidor.GuardiaServicio? guardia = null) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -62,7 +62,15 @@ public class VigilanteDireccion(IConfiguration config, EstadoDireccion estado, I
         {
             do
             {
-                try { foreach (var a in estado.Evaluar(await Comprobar(uri, ct))) await avisos.PorTelegram(a, ct); }
+                try
+                {
+                    foreach (var a in estado.Evaluar(await Comprobar(uri, ct)))
+                    {
+                        await avisos.PorTelegram(a, ct);
+                        // la caída es lo que la guardia sabe atender; el certificado y la vuelta a la normalidad, no
+                        if (guardia is not null && a.StartsWith("🌐", StringComparison.Ordinal)) await guardia.Proponer("direccion", "La app no responde desde Internet", a, ct);
+                    }
+                }
                 catch (Exception e) when (e is not OperationCanceledException) { log.LogError(e, "Fallo al vigilar la dirección pública"); }
             } while (await t.WaitForNextTickAsync(ct));
         }

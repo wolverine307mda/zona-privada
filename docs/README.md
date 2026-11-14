@@ -18,5 +18,6 @@ Lee en este orden si llegas de nuevas:
 | 12 | [Siri y Atajos](12-siri-y-atajos.md) | todas las recetas del iPhone: gastos por voz, llegar a casa, escenas, pánico… y qué se puede (y qué no) con «enciende el PC» |
 | 13 | [Compilar y actualizar](13-compilar-y-actualizar.md) | cómo regenerar todo o solo una parte (front, API, lanzador), probar en desarrollo y en Docker, y actualizar la app real |
 | 14 | [Mover al mini PC](14-mover-al-mini-pc.md) | trasladar la app, la base, las claves y la configuración a otro equipo sin perder nada (`mover-equipo.ps1`), probar en paralelo y hacer el corte |
+| 15 | [Servidor](15-servidor.md) | entrar con el iPhone, modo guardia, runbooks, despertar el PC principal y la línea de tiempo del servidor |
 
 Cómo levantarlo todo: al principio del [README principal](../README.md).

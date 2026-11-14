@@ -372,18 +372,20 @@ public static class AtajosApi
             return Results.Ok(new { id = n.Id, mensaje = "Nota guardada." });
         }).Requiere("nota");
 
-        // «Encender el PC»: despierta por Wake-on-LAN un aparato de tu red (por su nombre) a través del agente
+        // «Encender el PC»: despierta por Wake-on-LAN un aparato de tu red (por su nombre; sin nombre, el PC principal). La API manda el paquete
+        // ella misma (el mini PC está siempre encendido) y, si el agente está conectado, también se lo pide a él.
         a.MapPost("/despertar", async (DespertarAtajo e, AppDbContext db, Mda.Api.Sistema.EstadoAgente agente, IAvisos avisos, TimeProvider reloj, HttpContext ctx, CancellationToken ct) =>
         {
             var nombre = (e.Nombre ?? "").Trim();
-            var d = (await db.DispositivosRed.AsNoTracking().ToListAsync(ct)).FirstOrDefault(x => string.Equals(x.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
-            if (d is null) return Results.NotFound(new { mensaje = "No hay ningún aparato con ese nombre en Red." });
+            var d = nombre.Length == 0 ? await Mda.Api.Pc.PcPrincipal.Leer(db, ct)
+                : (await db.DispositivosRed.AsNoTracking().ToListAsync(ct)).FirstOrDefault(x => string.Equals(x.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
+            if (d is null) return Results.NotFound(new { mensaje = nombre.Length == 0 ? "Aún no has elegido tu PC principal (Red › «Es mi PC principal»)." : "No hay ningún aparato con ese nombre en Red." });
             if (d.Mac.Length == 0) return Results.Conflict(new { mensaje = "Ese aparato no tiene dirección MAC." });
-            if (!agente.Conectado(Mda.Api.Pc.OrdenesPc.AgenteConectado)) return Results.Conflict(new { mensaje = "El agente del PC no está en marcha." });
             var desde = "Atajo · " + IpCliente.De(ctx);
-            await Mda.Api.Pc.OrdenesPc.Encolar(db, reloj, "wol", d.Mac, desde, ct);
+            var (ok, mensaje) = await Mda.Api.Pc.PcPrincipal.Despertar(d, db, agente, reloj, desde, ct);
+            if (!ok) return Results.Conflict(new { mensaje });
             _ = avisos.PorTelegram($"💻 Orden al PC: despertar «{d.Nombre}»\nDesde {desde}. Si no has sido tú, revoca el atajo en Seguridad.");
-            return Results.Ok(new { mensaje = $"Despertando «{d.Nombre}»." });
+            return Results.Ok(new { mensaje });
         }).Requiere("pc");
 
         // «Estado»: el semáforo de Inicio en una frase y por áreas, para que Siri lo lea o un widget lo pinte

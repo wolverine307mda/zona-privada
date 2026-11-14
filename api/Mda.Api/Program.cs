@@ -27,6 +27,7 @@ using Mda.Api.Telegram;
 using Mda.Api.Tiempo;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Mda.Api.Servidor;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -146,6 +147,9 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(Limites.Atajos, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    o.AddPolicy(Limites.Sondeo, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        IpCliente.De(ctx),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 90, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Limites.Reauth, ctx => RateLimitPartition.GetFixedWindowLimiter(
         IpCliente.De(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -261,6 +265,8 @@ builder.Services.AddSingleton<Push>();
 // bot de Telegram: avisos y hablar con el asistente desde el chat
 builder.Services.AddSingleton<Bot>();
 builder.Services.AddScoped<Conversacion>();
+builder.Services.AddSingleton<Mda.Api.Servidor.GuardiaServicio>();
+builder.Services.AddSingleton<Mda.Api.Servidor.RunbookRunner>();
 builder.Services.AddHostedService<Sondeo>();
 // el tiempo (Open-Meteo)
 builder.Services.AddSingleton<ServicioTiempo>();
@@ -369,6 +375,11 @@ app.MapPortapapeles();
 app.MapEstadoPublico();
 app.MapTemaWeb();
 app.MapTipoEquipo();
+app.MapAprobaciones();
+app.MapRunbooks();
+app.MapGuardia();
+app.MapServidorLinea();
+app.MapPcPrincipal();
 app.MapDeudas();
 app.MapNotas();
 app.MapAgenda();

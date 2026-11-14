@@ -20,7 +20,8 @@ namespace Mda.Api.Telegram;
 // Lo que hay que guardar llega con botones para confirmarlo, y después se puede deshacer.
 public class Conversacion(
     Bot bot, AppDbContext db, IAvisos avisos, GoogleCalendar google, ServicioConexiones con, ServicioTiempo tiempo, Mda.Api.Domotica.ServicioCasa casa,
-    Zona zona, TimeProvider reloj, IMemoryCache cache, Mda.Api.Contexto.MotorContexto motorContexto, ILogger<Conversacion> log)
+    Zona zona, TimeProvider reloj, IMemoryCache cache, Mda.Api.Contexto.MotorContexto motorContexto, ILogger<Conversacion> log,
+    Mda.Api.Servidor.GuardiaServicio guardia, Mda.Api.Servidor.RunbookRunner runner, Mda.Api.Sistema.EstadoAgente agente)
 {
     private static readonly CultureInfo Es = new("es-ES");
 
@@ -42,7 +43,10 @@ public class Conversacion(
         "🛒 <i>/compra leche, pan</i> · /compra (la lista) · <i>/comprado leche</i>\n\n" +
         "Y estos atajos: /hoy (tu día), /tiempo, /saldo, /ayuda\n" +
         "✅ /habitos (lo de hoy) y /hecho meditar (lo apunta)\n" +
-        "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.";
+        "🚨 /panico lo corta todo (sesiones, tokens, galería pública, entrada 1 h) y /desbloquear lo levanta.\n\n" +
+        "🛡️ /guardia (con <i>on</i> u <i>off</i>): si algo falla te propongo qué hacer con botones\n" +
+        "💻 /enciende despierta tu PC principal\n" +
+        "📋 /runbooks (la lista) y <i>/ejecuta comprobar todo</i>";
 
     public async Task Atender(JsonElement u, CancellationToken ct)
     {
@@ -122,6 +126,12 @@ public class Conversacion(
             case "/hecho": await bot.Enviar(await Hecho(texto.Length > 6 ? texto[6..].Trim() : "", ct), html: true, ct: ct); return;
             case "/tiempo": texto = "qué tiempo hace hoy"; break;
             case "/saldo": texto = "¿cuánto tengo?"; break;
+            case "/guardia" or "/enciende" or "/despertar" or "/runbooks" or "/ejecuta":
+                {
+                    var (html, teclado) = await Mda.Api.Servidor.TelegramServidor.Comando(comando, texto.Contains(' ') ? texto[(texto.IndexOf(' ') + 1)..] : "", db, guardia, runner, agente, reloj, ct);
+                    await bot.Enviar(html, teclado, html: true, ct: ct);
+                    return;
+                }
             case "/panico" or "/pánico":
                 await bot.Enviar("🚨 " + Panico.Resumen(await Panico.Ejecutar(db, reloj, cache, ct)) + "\nPara volver a entrar antes, escribe /desbloquear.", ct: ct);
                 return;
@@ -187,6 +197,13 @@ public class Conversacion(
                     var (bien, mensajeCasa, _) = await casa.Ejecutar(db, a, "encendido", "false", ct);
                     await Editar(chat, idMensaje, bien ? $"✅ {H(a.Nombre)} apagado." : $"⚠️ No se pudo apagar {H(a.Nombre)}: {H(mensajeCasa)}", null, ct);
                     await Contestar(cb, bien ? "Apagado" : null, ct);
+                    return;
+                }
+            case "lg" or "gd" or "rb":
+                {
+                    var r = await Mda.Api.Servidor.TelegramServidor.Boton(accion, clave, db, guardia, runner, cache, reloj, ct);
+                    if (r is { } v) await Editar(chat, idMensaje, v.Html, null, ct);
+                    await Contestar(cb, r?.Aviso, ct);
                     return;
                 }
             case "rr":

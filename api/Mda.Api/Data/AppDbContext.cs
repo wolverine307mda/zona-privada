@@ -72,6 +72,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Mda.Api.Contexto.ReglaContexto> ReglasContexto => Set<Mda.Api.Contexto.ReglaContexto>();
     public DbSet<Senuelo> Senuelos => Set<Senuelo>();
     public DbSet<OrdenPc> OrdenesPc => Set<OrdenPc>();
+    public DbSet<Mda.Api.Servidor.EventoServidor> EventosServidor => Set<Mda.Api.Servidor.EventoServidor>();
+    public DbSet<Mda.Api.Servidor.AprobacionLogin> Aprobaciones => Set<Mda.Api.Servidor.AprobacionLogin>();
+    public DbSet<Mda.Api.Servidor.Runbook> Runbooks => Set<Mda.Api.Servidor.Runbook>();
+    public DbSet<Mda.Api.Servidor.EjecucionRunbook> EjecucionesRunbook => Set<Mda.Api.Servidor.EjecucionRunbook>();
     public DbSet<TokenAtajo> TokensAtajo => Set<TokenAtajo>();
     public DbSet<Secreto> Secretos => Set<Secreto>();
     public DbSet<Mda.Api.Pc.SaludBateria> SaludBaterias => Set<Mda.Api.Pc.SaludBateria>();
@@ -521,6 +525,46 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Estado).HasMaxLength(12);
             e.Property(x => x.Resultado).HasMaxLength(200);
             e.Property(x => x.Desde).HasMaxLength(200);
+        });
+
+        b.Entity<Mda.Api.Servidor.EventoServidor>(e =>
+        {
+            e.ToTable("eventos_servidor");
+            e.Property(x => x.Tipo).HasMaxLength(20);
+            e.Property(x => x.Titulo).HasMaxLength(160);
+            e.Property(x => x.Detalle).HasMaxLength(400);
+            e.Property(x => x.Gravedad).HasMaxLength(10);
+            e.HasIndex(x => x.Hora);
+        });
+
+        b.Entity<Mda.Api.Servidor.AprobacionLogin>(e =>
+        {
+            e.ToTable("aprobaciones_login");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(32);
+            e.Property(x => x.Codigo).HasMaxLength(4);
+            e.Property(x => x.SecretoHash).HasMaxLength(64);
+            e.Property(x => x.Estado).HasMaxLength(12);
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.Agente).HasMaxLength(400);
+            e.Property(x => x.Lugar).HasMaxLength(120);
+        });
+
+        b.Entity<Mda.Api.Servidor.Runbook>(e =>
+        {
+            e.ToTable("runbooks");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Descripcion).HasMaxLength(200);
+            e.HasIndex(x => x.Nombre).IsUnique();
+        });
+
+        b.Entity<Mda.Api.Servidor.EjecucionRunbook>(e =>
+        {
+            e.ToTable("ejecuciones_runbook");
+            e.Property(x => x.Nombre).HasMaxLength(60);
+            e.Property(x => x.Origen).HasMaxLength(12);
+            e.Property(x => x.Estado).HasMaxLength(12);
+            e.HasIndex(x => x.Inicio);
         });
 
         b.Entity<Senuelo>(e =>

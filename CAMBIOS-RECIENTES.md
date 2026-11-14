@@ -3,6 +3,19 @@
 > Tanda del 6 de noviembre de 2026, rama `claude/private-area-project-review-zc1bju`. Detalle de cada cosa: [docs/10-nuevas-funciones.md](docs/10-nuevas-funciones.md).
 > Mapa de dónde está cada módulo: la tabla de [CLAUDE.md](CLAUDE.md).
 
+## 14 de noviembre de 2026 · Servidor: entrar con el iPhone, guardia, runbooks, despertar el PC y línea de tiempo
+
+Detalle y límites en [docs/15-servidor.md](docs/15-servidor.md). Pantalla nueva **Servidor** (menú › Protección) y `/aprobar`.
+
+- **Entrar aprobando desde el iPhone:** el ordenador nuevo enseña un código de dos cifras y pide la entrada; en el iPhone te llega el aviso (Telegram con botón y push), tecleas el código y confirmas con Face ID; el ordenador recoge la sesión una vez. Caduca a los 3 min, 3 fallos la deniegan, máximo 3 pendientes.
+- **Modo guardia:** con la guardia activa (`/guardia on`), las alarmas (errores 5xx, dirección pública caída) llegan con botones: ejecutar un runbook, silenciar 1 h, ignorar, pánico.
+- **Runbooks:** secuencias de pasos (comprobar, avisar, esperar, despertar, escena, casa, orden al PC) que se ven en vivo; los pasos delicados (suspender, apagar, reiniciar) obligan a pedir permiso con Face ID. Desde la app y desde Telegram (`/runbooks`, `/ejecuta`).
+- **Despertar el PC principal:** se elige en Servidor; la API manda ella misma el paquete Wake-on-LAN (el mini PC siempre encendido). Con un toque, `/enciende` o el atajo de Siri «Encender el PC» sin nombre.
+- **Línea de tiempo del servidor:** accesos, entradas con el iPhone, alertas, guardia, runbooks y órdenes al PC en una vista filtrable.
+- Migración nueva `Servidor` (4 tablas). Límite nuevo `sondeo` (90/min) para que el ordenador que espera la aprobación no choque con el de los accesos (10/min).
+- **Verificado:** 31 tests de la API (incluido el flujo completo y los comandos/botones de Telegram), 254 del front, `ng build`, y en el navegador la entrada aprobada de punta a punta, las pantallas y una ejecución en vivo.
+- **Sin verificar:** que Telegram entregue mensajes y botones, el push al iPhone, Face ID real, que un paquete Wake-on-LAN despierte un PC real y las alarmas de la guardia ante un fallo real. Hay que **desplegar** para probarlo.
+
 ## 14 de noviembre de 2026 · Mover la app al mini PC (guía y script)
 
 - Nueva guía [docs/14-mover-al-mini-pc.md](docs/14-mover-al-mini-pc.md) y script `herramientas/mover-equipo.ps1`: **`-Exportar`** (en el portátil) deja la base, las claves, la configuración (con `MDA_CLAVE_MAESTRA`) y los ajustes del lanzador **cifrados con age**; **`-Restaurar`** (en el mini PC) lo coloca en dos pasadas (1.ª: configuración y claves, antes del primer arranque; 2.ª: la base, con copia de lo que hubiera y comprobación de usuarios y tablas). Pide administrador, no escribe secretos en claro fuera de una carpeta temporal que borra, y rechaza una clave privada equivocada o una clave pública de age vacía.

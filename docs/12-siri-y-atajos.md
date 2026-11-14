@@ -23,7 +23,7 @@ Para ejecutarlo con la voz: ponle un nombre corto al atajo («Oye Siri, enciende
 | pasos, peso, sueño y entrenos de Apple Salud | `POST /api/atajos/salud` | salud | `{"pasos":8200,"peso":80.2,"sueño":7.1,"entrenos":[{"tipo":"carrera","minutos":30}]}` | `mensaje` (se guarda cifrado; un entreno repetido no se duplica) |
 | poner un momento musical | `POST /api/atajos/momento` | casa | `{"nombre":"Dormir"}` | `mensaje` |
 | poner una escena del PC | `POST /api/atajos/escena` | casa | `{"nombre":"Cine"}` | `mensaje` |
-| despertar un aparato de la red (tele, NAS, otro PC) | `POST /api/atajos/despertar` | pc | `{"nombre":"NAS"}` | `mensaje` |
+| despertar un aparato de la red (tele, NAS, otro PC); **sin nombre, el PC principal** | `POST /api/atajos/despertar` | pc | `{"nombre":"NAS"}` o `{}` | `mensaje` (la API manda el paquete Wake-on-LAN ella misma; ver [15](15-servidor.md)) |
 | el pánico | `POST /api/atajos/panico` | panico | — | `mensaje` |
 
 ## Copiar el token o el prompt completo

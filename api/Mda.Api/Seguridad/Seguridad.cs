@@ -15,6 +15,8 @@ public static class Limites
     public const string Atajos = "atajos";
     // «contraseña otra vez» para acciones delicadas: el bloqueo de la cuenta (5 fallos) ya frena la fuerza bruta
     public const string Reauth = "reauth";
+    // el ordenador que espera la aprobación de su entrada pregunta cada par de segundos si ya está (el secreto de 192 bits es lo que protege, no el límite)
+    public const string Sondeo = "sondeo";
 }
 
 public static class IpCliente
