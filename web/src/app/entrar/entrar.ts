@@ -6,6 +6,7 @@ import { CieloConfig } from '../core/cielo-config';
 import { pedirCredencial, soportaCondicional, soportaPasskeys } from '../core/passkey';
 import { ResultadoEntrar, SesionService } from '../core/sesion.service';
 import { crearCandado } from './candado-3d';
+import { EntradaAprobada } from './aprobacion';
 import { CieloVivo } from './cielo-vivo';
 
 const MENSAJES: Record<Exclude<ResultadoEntrar, 'ok' | 'segundo-factor'>, string> = {
@@ -17,7 +18,7 @@ const MENSAJES: Record<Exclude<ResultadoEntrar, 'ok' | 'segundo-factor'>, string
 
 @Component({
   selector: 'app-entrar',
-  imports: [CieloVivo],
+  imports: [CieloVivo, EntradaAprobada],
   templateUrl: './entrar.html',
   styleUrl: './entrar.css',
 })
@@ -120,6 +121,15 @@ export class Entrar implements OnDestroy {
 
   private async terminar(credencial: unknown): Promise<void> {
     await firstValueFrom(this.http.post('/api/auth/passkey/entrada', { credencial }));
+    if (await this.sesion.trasPasskey()) {
+      this.entrando.set(true);
+      this.escena.abrir();
+      setTimeout(() => this.router.navigateByUrl('/inicio'), 700);
+    }
+  }
+
+  // aprobada desde el iPhone: el servidor ya abrió la sesión; se sigue como tras un passkey
+  protected async alAprobar(): Promise<void> {
     if (await this.sesion.trasPasskey()) {
       this.entrando.set(true);
       this.escena.abrir();

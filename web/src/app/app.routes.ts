@@ -54,6 +54,8 @@ export const routes: Routes = [
       { path: 'musica/resumen', title: 'Tu música · MDA', loadComponent: () => import('./musica/resumen-musica').then((m) => m.ResumenMusica) },
       { path: 'perfil', title: 'Perfil · MDA', loadComponent: () => import('./perfil/perfil').then((m) => m.Perfil) },
       { path: 'cartera', redirectTo: 'gastos' },
+      { path: 'servidor', title: 'Servidor · MDA', loadComponent: () => import('./servidor/servidor').then((m) => m.Servidor) },
+      { path: 'aprobar', title: 'Aprobar entrada · MDA', loadComponent: () => import('./servidor/aprobar').then((m) => m.Aprobar) },
       { path: 'seguridad', title: 'Seguridad · MDA', loadComponent: () => import('./seguridad/seguridad').then((m) => m.Seguridad) },
       { path: 'pronto/:id', title: 'Próximamente · MDA', loadComponent: () => import('./pronto/pronto').then((m) => m.Pronto) },
     ],

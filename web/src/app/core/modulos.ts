@@ -127,6 +127,10 @@ export const MODULOS: Modulo[] = [
     icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',
     planes: ['Activar la verificación en dos pasos con el móvil', 'Cambiar la contraseña', 'Ver y cerrar sesiones abiertas'],
   },
+  {
+    id: 'servidor', titulo: 'Servidor', resumen: 'Runbooks, modo guardia, despertar el PC principal y la línea de tiempo.', listo: true,
+    icono: 'M4 5h16v5H4zM4 14h16v5H4zM8 7.5h.01M8 16.5h.01M12 7.5h4M12 16.5h4',
+  },
 ];
 
 // Secciones del menú, siempre a la vista y separadas por un título (sin desplegables)
@@ -136,7 +140,7 @@ const GRUPOS_DEF = [
   { id: 'casa-vida', titulo: 'Personas y hogar', icono: 'M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10', ids: ['personas', 'cocina', 'bienestar'] },
   { id: 'ocio', titulo: 'Ocio y creación', icono: 'M4 5h16v14H4zM10 9l5 3-5 3z', ids: ['musica', 'series', 'fotografia', 'fotos'] },
   { id: 'equipo', titulo: 'Mi equipo y casa', icono: 'M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3M7 6h10v12H7z', ids: ['pc', 'casa', 'contexto', 'pared', 'servicios', 'automatizaciones'] },
-  { id: 'proteccion', titulo: 'Protección', icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z', ids: ['seguridad'] },
+  { id: 'proteccion', titulo: 'Protección', icono: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z', ids: ['seguridad', 'servidor'] },
 ];
 
 export const GRUPOS: Grupo[] = GRUPOS_DEF.map((g) => ({
