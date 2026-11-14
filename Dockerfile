@@ -19,7 +19,7 @@ COPY --from=web /web/dist/web/browser/ api/Mda.Api/wwwroot/
 RUN dotnet publish api/Mda.Api/Mda.Api.csproj -c Release -o /app --no-restore -r linux-x64 --self-contained false -p:PublishReadyToRun=true
 
 # 3) Ejecución: imagen mínima, usuario sin privilegios
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 COPY --from=api /app ./
 # QuestPDF (el informe mensual en PDF) necesita fontconfig y una tipografía en el sistema
